@@ -1,59 +1,59 @@
 "use server";
 
-import { createProfile, deleteProfile, getAllProfiles, getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
-import { InsertProfile } from "@/db/schema/profiles-schema";
-import { ActionState } from "@/types/actions/action-types";
+import { createTodo, deleteTodo, getTodo, getTodos, updateTodo } from "@/db/queries/todos-queries";
+import { InsertTodo } from "@/db/schema/todos-schema";
+import { ActionState } from "@/types";
 import { revalidatePath } from "next/cache";
 
-export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
+export async function createTodoAction(todo: InsertTodo): Promise<ActionState> {
   try {
-    const newProfile = await createProfile(data);
-    revalidatePath("/profile");
-    return { status: "success", message: "Profile created successfully", data: newProfile };
+    const newTodo = await createTodo(todo);
+    revalidatePath("/todo");
+    return { status: "success", message: "Todo created successfully", data: newTodo };
   } catch (error) {
-    return { status: "error", message: "Failed to create profile" };
+    console.error("Error creating todo:", error);
+    return { status: "error", message: "Failed to create todo" };
   }
 }
 
-export async function getProfileByUserIdAction(userId: string): Promise<ActionState> {
+export async function getTodosAction(userId: string): Promise<ActionState> {
   try {
-    const profile = await getProfileByUserId(userId);
-    return { status: "success", message: "Profile retrieved successfully", data: profile };
+    const todos = await getTodos(userId);
+    return { status: "success", message: "Todos retrieved successfully", data: todos };
   } catch (error) {
-    return { status: "error", message: "Failed to get profile" };
+    console.error("Error getting todos:", error);
+    return { status: "error", message: "Failed to get todos" };
   }
 }
 
-export async function getAllProfilesAction(): Promise<ActionState> {
+export async function getTodoAction(id: string): Promise<ActionState> {
   try {
-    const profiles = await getAllProfiles();
-    return { status: "success", message: "Profiles retrieved successfully", data: profiles };
+    const todo = await getTodo(id);
+    return { status: "success", message: "Todo retrieved successfully", data: todo };
   } catch (error) {
-    return { status: "error", message: "Failed to get profiles" };
+    console.error("Error getting todo by ID:", error);
+    return { status: "error", message: "Failed to get todo" };
   }
 }
 
-export async function updateProfileAction(userId: string, data: Partial<InsertProfile>): Promise<ActionState> {
+export async function updateTodoAction(id: string, data: Partial<InsertTodo>): Promise<ActionState> {
   try {
-    const updatedProfile = await updateProfile(userId, data);
-    revalidatePath("/profile");
-    return { status: "success", message: "Profile updated successfully", data: updatedProfile };
+    const updatedTodo = await updateTodo(id, data);
+    revalidatePath("/todo");
+    return { status: "success", message: "Todo updated successfully", data: updatedTodo };
   } catch (error) {
-    return { status: "error", message: "Failed to update profile" };
+    console.error("Error updating todo:", error);
+    return { status: "error", message: "Failed to update todo" };
   }
 }
 
-export async function deleteProfileAction(userId: string): Promise<ActionState> {
+export async function deleteTodoAction(id: string): Promise<ActionState> {
   try {
-    await deleteProfile(userId);
-    revalidatePath("/profile");
-    return { status: "success", message: "Profile deleted successfully" };
+    await deleteTodo(id);
+    revalidatePath("/todo");
+    return { status: "success", message: "Todo deleted successfully" };
   } catch (error) {
-    return { status: "error", message: "Failed to delete profile" };
+    console.error("Error deleting todo:", error);
+    return { status: "error", message: "Failed to delete todo" };
   }
 }
-
-
-// this defines the actions for the todos table
-// actions in Next.js are used to interact with the database from the front-end
-// they interact with queries
