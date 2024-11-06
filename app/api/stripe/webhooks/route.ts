@@ -3,6 +3,7 @@ import { manageSubscriptionStatusChange, updateStripeCustomer } from "@/actions/
 import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import StripeError from "stripe";
 
 // Define a set of relevant Stripe event types that this webhook will handle
 const relevantEvents = new Set(["checkout.session.completed", "customer.subscription.updated", "customer.subscription.deleted"]);
@@ -26,10 +27,10 @@ export async function POST(req: Request) {
 
     // Construct and verify the Stripe event using the webhook secret
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err: any) {
-    // Log and return an error response if event construction fails
-    console.error(`Webhook Error: ${err.message}`);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    console.error(`Webhook Error: ${errorMessage}`);
+    return new Response(`Webhook Error: ${errorMessage}`, { status: 400 });
   }
 
   // Check if the event type is one we're interested in handling
