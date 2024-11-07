@@ -20,7 +20,7 @@ import {
 
 // Import necessary libraries
 import { useAuth } from "@clerk/nextjs";
-import { updateProfileAction } from "@/actions/profiles-actions";
+import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
 
 // Main component for handling company details input
 export default function CompanyDetailsCard() {
@@ -132,16 +132,53 @@ export default function CompanyDetailsCard() {
   }
 
   // Handles description form submission
-  const handleDescriptionSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsDescriptionSaved(true)
-    console.log("Submitted Description:", companyDescription)
-  }
+  const handleDescriptionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userId) {
+      try {
+        const result = await updateProfileAction(userId, {
+          companyDescription: companyDescription
+        });
+
+        if (result.status === 'success') {
+          setIsDescriptionSaved(true);
+        } else {
+          throw new Error('Failed to update description');
+        }
+      } catch (error) {
+        console.error('Error updating description:', error);
+        alert('Failed to save description');
+      }
+    }
+  };
 
   // Enables description editing by resetting saved state
   const handleDescriptionEdit = () => {
     setIsDescriptionSaved(false)
   }
+
+  // Add this useEffect to load initial data
+  React.useEffect(() => {
+    const loadProfileData = async () => {
+      if (userId) {
+        const result = await getProfileByUserIdAction(userId);
+        if (result.status === 'success' && result.data) {
+          const profile = result.data;
+          if (profile.companyUrl) {
+            setUrl(profile.companyUrl);
+            setIsUrlValid(true);
+            setIsUrlSaved(true);
+          }
+          if (profile.companyDescription) {
+            setCompanyDescription(profile.companyDescription);
+            setIsDescriptionSaved(true);
+          }
+        }
+      }
+    };
+
+    loadProfileData();
+  }, [userId]);
 
   // Component render structure
   return (
