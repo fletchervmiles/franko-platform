@@ -8,12 +8,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
+import { geist, geistMono } from './fonts'
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Todo App",
-  description: "A full-stack template for a todo app."
+  title: "Franko - Platform",
+  description: "Automated Customer Interviews & Insights."
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,15 +28,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <ClerkProvider>
-      <html lang="en">
+    <ClerkProvider
+      dynamic={true}
+    >
+      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
         <body className={inter.className}>
           <Providers
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             disableTransitionOnChange
           >
-            <Header />
+            {/* <Header /> */}
             <ClerkProfileSync />
             {children}
             <Toaster />

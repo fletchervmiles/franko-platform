@@ -22,14 +22,7 @@ Below is an example of the existing table. The following fields should be added:
 
 **Fields to be added**
 
-- First Name (text)
-- Second Name (text)
-- Company URL (text)
-- Company Description (text)
-- Company Description Completed (true or false) (boolean)
-- Minutes - Total Used (integer)
-- Minutes - Used This Month (integer)
-- Minutes - Available (integer)
+- Email
 
 
 ```typescript

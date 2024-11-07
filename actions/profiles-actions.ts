@@ -57,7 +57,6 @@ export async function deleteProfileAction(userId: string): Promise<ActionState> 
 
 export async function syncClerkProfileAction(): Promise<ActionState> {
   try {
-    // Await the auth() function to get the Auth object
     const authResult = await auth();
     const userId = authResult.userId;
 
@@ -65,7 +64,6 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
       return { status: "error", message: "No user ID found" };
     }
 
-    // Await the clerkClient() function to get the ClerkClient instance
     const clerk = await clerkClient();
     
     const user = await clerk.users.getUser(userId);
@@ -73,14 +71,12 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
       return { status: "error", message: "No user found" };
     }
 
-    // Prepare profile data from Clerk
     const profileData: Partial<InsertProfile> = {
       firstName: user.firstName || undefined,
       secondName: user.lastName || undefined,
-      // You can add other Clerk fields here as needed
+      email: user.emailAddresses[0]?.emailAddress || undefined,
     };
 
-    // Update the profile
     const updatedProfile = await updateProfile(user.id, profileData);
     
     return { 
