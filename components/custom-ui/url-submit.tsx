@@ -158,7 +158,7 @@ export default function CompanyDetailsCard() {
               <div>
                 <h3 className="text-base font-medium">Your URL</h3>
                 <p className="text-sm text-muted-foreground">
-                  This will be used for context by the interview agent, so it's important it's correct.
+                  "This will be used for context by the interview agent, so it's important it's correct."
                 </p>
               </div>
               {/* URL input form */}
@@ -229,7 +229,7 @@ export default function CompanyDetailsCard() {
                 <div>
                   <h3 className="text-base font-medium">Your Company Description</h3>
                   <p className="text-sm text-muted-foreground">
-                    This company description will be used for context by the interview agent, please review and edit as needed.
+                    "This company description will be used for context by the interview agent, please review and edit as needed."
                   </p>
                 </div>
                 {/* Description input form */}
@@ -284,13 +284,13 @@ export default function CompanyDetailsCard() {
             <DialogHeader>
               <DialogTitle>Processing your company URL</DialogTitle>
               <DialogDescription>
-                We're analyzing your website and generating a company description. This may take a few moments.
+                "We're analyzing your website and generating a company description. This may take a few moments."
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center p-4 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">
-                Please don't close this window...
+                "Please don't close this window..."
               </p>
             </div>
           </DialogContent>
