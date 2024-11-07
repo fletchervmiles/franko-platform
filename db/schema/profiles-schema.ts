@@ -1,12 +1,20 @@
-import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const membershipEnum = pgEnum("membership", ["free", "pro"]);
 
 export const profilesTable = pgTable("profiles", {
   userId: text("user_id").primaryKey().notNull(),
-  membership: membershipEnum("membership").notNull().default("free"),
+  membership: membershipEnum("membership").default("free").notNull(),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  firstName: text("first_name"),
+  secondName: text("second_name"),
+  companyUrl: text("company_url"),
+  companyDescription: text("company_description"),
+  companyDescriptionCompleted: boolean("company_description_completed").default(false),
+  minutesTotalUsed: integer("minutes_total_used").default(0),
+  minutesUsedThisMonth: integer("minutes_used_this_month").default(0),
+  minutesAvailable: integer("minutes_available").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

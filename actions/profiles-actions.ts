@@ -2,8 +2,10 @@
 
 import { createProfile, deleteProfile, getAllProfiles, getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
 import { InsertProfile } from "@/db/schema/profiles-schema";
-import { ActionState } from "@/types/actions/action-types";
+import { ActionState } from "@/types";
+import console from "console";
 import { revalidatePath } from "next/cache";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
@@ -50,5 +52,44 @@ export async function deleteProfileAction(userId: string): Promise<ActionState> 
     return { status: "success", message: "Profile deleted successfully" };
   } catch (error) {
     return { status: "error", message: "Failed to delete profile" };
+  }
+}
+
+export async function syncClerkProfileAction(): Promise<ActionState> {
+  try {
+    // Await the auth() function to get the Auth object
+    const authResult = await auth();
+    const userId = authResult.userId;
+
+    if (!userId) {
+      return { status: "error", message: "No user ID found" };
+    }
+
+    // Await the clerkClient() function to get the ClerkClient instance
+    const clerk = await clerkClient();
+    
+    const user = await clerk.users.getUser(userId);
+    if (!user) {
+      return { status: "error", message: "No user found" };
+    }
+
+    // Prepare profile data from Clerk
+    const profileData: Partial<InsertProfile> = {
+      firstName: user.firstName || undefined,
+      secondName: user.lastName || undefined,
+      // You can add other Clerk fields here as needed
+    };
+
+    // Update the profile
+    const updatedProfile = await updateProfile(user.id, profileData);
+    
+    return { 
+      status: "success", 
+      message: "Profile synced with Clerk", 
+      data: updatedProfile 
+    };
+  } catch (error) {
+    console.error("Error syncing profile:", error);
+    return { status: "error", message: "Failed to sync profile" };
   }
 }

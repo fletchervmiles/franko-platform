@@ -7,6 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             disableTransitionOnChange
           >
             <Header />
+            <ClerkProfileSync />
             {children}
             <Toaster />
           </Providers>

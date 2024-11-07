@@ -8,6 +8,13 @@
       "when": 1730816589111,
       "tag": "0000_tough_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1730958765029,
+      "tag": "0001_regular_silver_sable",
+      "breakpoints": true
     }
   ]
 }
