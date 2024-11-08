@@ -26,6 +26,9 @@ export async function POST(req: Request) {
     }
 
     // Construct and verify the Stripe event using the webhook secret
+    if (!stripe) {
+      throw new Error("Stripe client not initialized");
+    }
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -88,6 +91,10 @@ async function handleCheckoutSession(event: Stripe.Event) {
     await updateStripeCustomer(checkoutSession.client_reference_id as string, subscriptionId, checkoutSession.customer as string);
 
     // Retrieve the full subscription details from Stripe
+    if (!stripe) {
+      throw new Error("Stripe client not initialized");
+    }
+    
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ["default_payment_method"]
     });

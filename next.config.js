@@ -1,0 +1,12 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  env: {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_STRIPE_PAYMENT_LINK_YEARLY: process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_YEARLY,
+    NEXT_PUBLIC_STRIPE_PAYMENT_LINK_MONTHLY: process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_MONTHLY,
+  },
+}
+
+module.exports = nextConfig 

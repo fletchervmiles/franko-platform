@@ -60,6 +60,21 @@ export const deleteProfile = async (userId: string) => {
   }
 };
 
+export async function getProfile(userId: string) {
+  try {
+    const [profile] = await db
+      .select()
+      .from(profilesTable)
+      .where(eq(profilesTable.userId, userId))
+      .limit(1);
+    
+    return profile || null;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+}
+
 
 // this defines the queries for the profiles table
 // it defines the functions that can be used to interact with the profiles table

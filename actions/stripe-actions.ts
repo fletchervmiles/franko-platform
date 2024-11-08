@@ -6,6 +6,8 @@ import { SelectProfile } from "@/db/schema";
 import { stripe } from "@/lib/stripe";
 // Import Stripe types for TypeScript support
 import Stripe from "stripe";
+// Import the redirect function from next/navigation
+import { redirect } from "next/navigation";
 
 // Define a type alias for membership status using the profile schema type
 type MembershipStatus = SelectProfile["membership"];
@@ -42,7 +44,10 @@ const getMembershipStatus = (status: Stripe.Subscription.Status, membership: Mem
  * Includes expanded payment method details for complete subscription info
  */
 const getSubscription = async (subscriptionId: string) => {
-  // Fetch subscription details from Stripe, including payment method information
+  if (!stripe) {
+    throw new Error("Stripe is not properly initialized");
+  }
+  
   return stripe.subscriptions.retrieve(subscriptionId, {
     expand: ["default_payment_method"]
   });
@@ -96,6 +101,9 @@ export const manageSubscriptionStatusChange = async (subscriptionId: string, cus
     const subscription = await getSubscription(subscriptionId);
 
     // Retrieve the product details to get the membership level
+    if (!stripe) {
+      throw new Error("Stripe is not properly initialized");
+    }
     const product = await stripe.products.retrieve(productId);
     // Extract membership type from product metadata
     const membership = product.metadata.membership as MembershipStatus;
@@ -118,5 +126,31 @@ export const manageSubscriptionStatusChange = async (subscriptionId: string, cus
     // Log and rethrow any errors that occur
     console.error("Error in manageSubscriptionStatusChange:", error);
     throw error instanceof Error ? error : new Error("Failed to update subscription status");
+  }
+};
+
+/**
+ * Creates a Stripe portal session for a user
+ * @param stripeCustomerId - The Stripe customer ID of the user
+ * @returns The URL of the portal session
+ */
+export const createStripePortalSession = async (stripeCustomerId: string) => {
+  try {
+    if (!stripeCustomerId) {
+      throw new Error("No Stripe customer ID provided");
+    }
+    if (!stripe) {
+      throw new Error("Stripe is not properly initialized");
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/account`,
+    });
+
+    return session.url;
+  } catch (error) {
+    console.error("Error creating portal session:", error);
+    throw error instanceof Error ? error : new Error("Failed to create portal session");
   }
 };
