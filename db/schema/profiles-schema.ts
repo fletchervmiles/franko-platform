@@ -1,10 +1,12 @@
-import { pgEnum, pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, boolean, integer, uuid } from "drizzle-orm/pg-core";
 
 export const membershipEnum = pgEnum("membership", ["free", "pro"]);
 
 export const profilesTable = pgTable("profiles", {
+  id: uuid("id").defaultRandom().notNull(),
   userId: text("user_id").primaryKey().notNull(),
   email: text("email"),
+  companyName: text("company_name"),
   membership: membershipEnum("membership").default("free").notNull(),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
@@ -20,7 +22,9 @@ export const profilesTable = pgTable("profiles", {
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .notNull()
-    .$onUpdate(() => new Date())
+    .$onUpdate(() => new Date()),
+  agentInterviewerName: text("agent_interviewer_name"),
+  voiceId: text("voice_id")
 });
 
 export type InsertProfile = typeof profilesTable.$inferInsert;

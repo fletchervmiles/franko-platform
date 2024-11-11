@@ -13,8 +13,34 @@ import { geist, geistMono } from './fonts'
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Franko - Platform",
-  description: "Automated Customer Interviews & Insights."
+  title: {
+    template: '%s | Customer Research',
+    default: 'Customer Research Platform'
+  },
+  description: 'Participate in our customer research interviews',
+  manifest: '/favicon/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon/favicon.ico' },
+      { url: '/favicon/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' }
+    ],
+    apple: {
+      url: '/favicon/apple-touch-icon.png',
+      type: 'image/png'
+    },
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/favicon/favicon.svg',
+        type: 'image/svg+xml'
+      },
+      {
+        rel: 'manifest',
+        url: '/favicon/site.webmanifest'
+      }
+    ]
+  }
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,16 +55,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <ClerkProvider
+      appearance={{
+        baseTheme: undefined
+      }}
       dynamic={true}
     >
       <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
-        <body className={inter.className}>
+        <body 
+          className={`${inter.className} bg-background text-foreground`}
+          suppressHydrationWarning
+        >
           <Providers
             attribute="class"
             defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
+            forcedTheme="light"
           >
-            {/* <Header /> */}
             <ClerkProfileSync />
             {children}
             <Toaster />

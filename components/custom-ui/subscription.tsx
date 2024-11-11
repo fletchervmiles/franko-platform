@@ -36,23 +36,25 @@ export default function AccountSection({ stripeCustomerId }: AccountSectionProps
   }
 
   return (
-    <Card className="w-full bg-gray-50/50">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold">Your Account</CardTitle>
+    <Card className="w-full bg-white p-2">
+      <CardHeader className="pb-6">
+        <CardTitle className="text-lg font-semibold">Your Account</CardTitle>
       </CardHeader>
       <CardContent>
-        <Button 
-          className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors"
-          onClick={handleManageSubscription}
-          disabled={isPending || !stripeCustomerId}
-        >
-          {isPending ? "Loading..." : "Manage Subscription"}
-        </Button>
-        {!stripeCustomerId && (
-          <p className="text-sm text-gray-500 mt-2">
-            No subscription found. Visit the pricing page to subscribe.
-          </p>
-        )}
+        <div className="space-y-4">
+          <Button 
+            className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors h-8 text-xs px-3"
+            onClick={handleManageSubscription}
+            disabled={isPending || !stripeCustomerId}
+          >
+            {isPending ? "Loading..." : "Manage Subscription"}
+          </Button>
+          {!stripeCustomerId && (
+            <p className="text-sm text-muted-foreground">
+              No subscription found. Visit the pricing page to subscribe.
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

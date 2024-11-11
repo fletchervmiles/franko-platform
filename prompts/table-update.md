@@ -6,7 +6,7 @@ Follow these instructions to update  a new table in the database.
 
 - User ids should be like this `userId: text("user_id").notNull()` because we user Clerk
 
-## Step 1: Create the Schema
+## Step 1: Update the Schema
 
 This is an example of how to update an existing table in the database.
 
@@ -22,7 +22,8 @@ Below is an example of the existing table. The following fields should be added:
 
 **Fields to be added**
 
-- Email
+- UUID (I want Supabase to create this when a new row is added)
+- Business name
 
 
 ```typescript

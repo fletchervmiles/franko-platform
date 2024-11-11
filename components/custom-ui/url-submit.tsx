@@ -184,18 +184,18 @@ export default function CompanyDetailsCard() {
   return (
     <>
       {/* Main card container */}
-      <Card className="w-full bg-gray-50/50 transition-all duration-300 ease-in-out">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Your Company Details</CardTitle>
+      <Card className="w-full bg-white transition-all duration-300 ease-in-out p-2">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-lg font-semibold">Company Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* URL input section */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-medium">Your URL</h3>
+                <h3 className="text-sm font-semibold">Website</h3>
                 <p className="text-sm text-muted-foreground">
-                  "This will be used for context by the interview agent, so it's important it's correct."
+                  This will be used for context by the interview agent, so it's important it's correct.
                 </p>
               </div>
               {/* URL input form */}
@@ -224,21 +224,21 @@ export default function CompanyDetailsCard() {
                     type="submit" 
                     size="sm" 
                     disabled={!isUrlValid || isUrlSaved || isLoading}
-                    className="transition-all duration-300 ease-in-out"
+                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-0.5" />
                         Saving...
                       </>
                     ) : isUrlSaved ? (
                       <>
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-3 h-3 mr-0.5" />
                         Saved
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-3 h-3 mr-0.5" />
                         Save
                       </>
                     )}
@@ -250,9 +250,9 @@ export default function CompanyDetailsCard() {
                       size="sm" 
                       variant="outline" 
                       onClick={handleUrlEdit}
-                      className="transition-all duration-300 ease-in-out"
+                      className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                     >
-                      <Edit className="w-4 h-4 mr-2" />
+                      <Edit className="w-3 h-3 mr-0.5" />
                       Edit
                     </Button>
                   )}
@@ -264,9 +264,9 @@ export default function CompanyDetailsCard() {
             {isUrlSaved && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-base font-medium">Your Company Description</h3>
+                  <h3 className="text-sm font-semibold">Company Description</h3>
                   <p className="text-sm text-muted-foreground">
-                    "This company description will be used for context by the interview agent, please review and edit as needed."
+                    This company description will be used for context by the interview agent, please review and edit as needed.
                   </p>
                 </div>
                 {/* Description input form */}
@@ -282,27 +282,25 @@ export default function CompanyDetailsCard() {
                       disabled={isDescriptionSaved}
                     />
                   </div>
-                  {/* Description form buttons */}
                   <div className="space-x-2">
                     <Button 
                       type="submit" 
                       size="sm" 
                       disabled={isDescriptionSaved || companyDescription.trim() === ""}
-                      className="transition-all duration-300 ease-in-out"
+                      className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save
+                      <Save className="w-3 h-3 mr-0.5" />
+                      Saved
                     </Button>
-                    {/* Edit button shown only when description is saved */}
                     {isDescriptionSaved && (
                       <Button 
                         type="button" 
                         size="sm" 
                         variant="outline" 
                         onClick={handleDescriptionEdit}
-                        className="transition-all duration-300 ease-in-out"
+                        className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                       >
-                        <Edit className="w-4 h-4 mr-2" />
+                        <Edit className="w-3 h-3 mr-0.5" />
                         Edit
                       </Button>
                     )}
@@ -321,13 +319,13 @@ export default function CompanyDetailsCard() {
             <DialogHeader>
               <DialogTitle>Processing your company URL</DialogTitle>
               <DialogDescription>
-                "We're analyzing your website and generating a company description. This may take a few moments."
+                We're analyzing your website and generating a company description. This may take a few moments.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center p-4 space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">
-                "Please don't close this window..."
+                Please don't close this window...
               </p>
             </div>
           </DialogContent>
