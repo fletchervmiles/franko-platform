@@ -36,6 +36,20 @@
       "when": 1731243340358,
       "tag": "0004_elite_marvel_apes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1731900445171,
+      "tag": "0005_lucky_invaders",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1732010268870,
+      "tag": "0006_smooth_leper_queen",
+      "breakpoints": true
     }
   ]
 }

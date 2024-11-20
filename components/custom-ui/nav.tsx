@@ -77,6 +77,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         return "Your Account"
       case "/setup":
         return "Setup"
+      case "/interview-page":
+        return "Interview Details"
       default:
         return "franko"
     }
@@ -85,9 +87,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <SidebarProvider>
       <Sidebar className="bg-white dark:bg-white w-[240px]">
-        <div className="group peer hidden md:block text-sidebar-foreground" data-state="expanded" data-collapsible="" data-variant="sidebar" data-side="left">
-          <div className="duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180 group-data-[collapsible=icon]:w-[--sidebar-width-icon] border-r border-gray-200"></div>
-          <div className="duration-200 fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] ease-linear md:flex left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l bg-white dark:bg-white w-[240px]">
+        <div 
+          className="group peer md:block text-sidebar-foreground"
+          data-state="expanded" 
+          data-collapsible="" 
+          data-variant="sidebar" 
+          data-side="left"
+        >
+          <div className="duration-200 relative h-svh w-[--sidebar-width] bg-white transition-[width] ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180 group-data-[collapsible=icon]:w-[--sidebar-width-icon] border-r border-gray-200"></div>
+          <div className="duration-200 fixed inset-y-0 z-10 h-svh transition-[left,right,width] ease-linear md:flex left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l bg-white dark:bg-white w-[240px]">
             <div className="flex h-full w-full flex-col bg-white">
               <SidebarHeader className="bg-white dark:bg-white">
                 <SidebarMenu>
