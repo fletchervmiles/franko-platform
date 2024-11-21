@@ -130,25 +130,17 @@ export default function InterviewForm({
       }
 
       try {
-        console.log('Sending payload:', payload)
-        
-        const response = await fetch('https://franko-06.onrender.com/call', {
+        const response = await fetch('/api/proxy/call', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Origin': 'https://app.franko.ai'
           },
           body: JSON.stringify(payload),
-          credentials: 'include',
         })
 
-        console.log('Raw response:', response)
-        
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Error response:', errorText)
-          throw new Error(`Failed to initiate call: ${response.status} ${response.statusText}`)
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to initiate call')
         }
 
         const responseData = await response.json()
