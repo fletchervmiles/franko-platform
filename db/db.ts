@@ -17,5 +17,5 @@ export const db = drizzle(client, { schema });
 
 // This initalises the database connection
 // it creates the schema in Supabase
-// it allows drizzle to communicate with the database
+// it allows drizzle to communicate with the database 
 

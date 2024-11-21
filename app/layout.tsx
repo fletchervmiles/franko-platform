@@ -9,6 +9,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
+import { Analytics } from "@vercel/analytics/react"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ClerkProfileSync />
             {children}
             <Toaster />
+            <Analytics />
           </Providers>
         </body>
       </html>

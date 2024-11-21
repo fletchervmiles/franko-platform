@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import InterviewCard from './interview-card'
 import { getInterviewsByUserId } from '@/db/queries/interviews-queries'
 import { Database } from '@/lib/supabase/database.types'
+import { Info } from 'lucide-react'
 
 type Interview = Database['public']['Tables']['interviews']['Row']
 
@@ -57,19 +58,33 @@ export default function InterviewDashboard() {
   return (
     <div className="container mx-auto p-4">
       <h2 className="text-xl font-semibold mb-6">Your Customer Interviews</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
-        {interviews.map((interview) => (
-          <InterviewCard
-            key={interview.id}
-            intervieweeName={`${interview.intervieweeFirstName} ${interview.intervieweeLastName}`}
-            date={formatDate(interview.dateCompleted as string)}
-            duration={interview.totalInterviewMinutes}
-            status={interview.status as 'ready for review' | 'reviewed'}
-            interviewType={interview.useCase}
-            onClick={() => handleInterviewClick(interview.id)}
-          />
-        ))}
-      </div>
+      {interviews.length === 0 ? (
+        <div className="rounded-lg border border-gray-200 p-6 bg-white max-w-2xl">
+          <div className="flex mb-4">
+            <Info className="h-8 w-8 text-[#f5a623]" />
+          </div>
+          <p className="text-sm text-gray-600 mb-2">No interviews to display yet.</p>
+          <p className="text-sm text-gray-600">
+            Please go to the setup page to find your unique shareable link. Share it with your customers 
+            so they can start completing interviews. Once an interview is completed, 
+            the transcript and analysis will appear on your dashboard.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+          {interviews.map((interview) => (
+            <InterviewCard
+              key={interview.id}
+              intervieweeName={`${interview.intervieweeFirstName} ${interview.intervieweeLastName}`}
+              date={formatDate(interview.dateCompleted as string)}
+              duration={interview.totalInterviewMinutes}
+              status={interview.status as 'ready for review' | 'reviewed'}
+              interviewType={interview.useCase}
+              onClick={() => handleInterviewClick(interview.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

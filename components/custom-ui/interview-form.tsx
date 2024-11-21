@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Phone } from "lucide-react"
+import { SelectProfile } from "@/db/schema"
 
 interface FormData {
   firstName: string
@@ -40,12 +41,14 @@ const countryCodes = [
 ]
 
 interface InterviewFormProps {
-  companyName?: string;
+  clientProfile: SelectProfile;
+  useCase: string;
   onSubmitSuccess?: () => void;
 }
 
 export default function InterviewForm({ 
-  companyName = "Our Company",
+  clientProfile,
+  useCase,
   onSubmitSuccess
 }: InterviewFormProps) {
   const [formData, setFormData] = useState<FormData>({
@@ -69,6 +72,8 @@ export default function InterviewForm({
   })
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -105,16 +110,55 @@ export default function InterviewForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
+    
     if (validateForm()) {
-      setIsSubmitted(true);
+      setIsSubmitting(true)
       const formattedPhoneNumber = formatPhoneNumber(formData.countryCode, formData.phoneNumber)
-      console.log("Form submitted:", { ...formData, phoneNumber: formattedPhoneNumber })
-      // In the future, you'll add the POST request here
       
-      // Call the success callback to trigger the modal
-      onSubmitSuccess?.()
+      const payload = {
+        client_name: clientProfile.companyName,
+        interviewee_name: formData.firstName,
+        interviewee_last_name: formData.lastName,
+        interviewee_email: formData.email,
+        interviewee_number: formattedPhoneNumber,
+        client_company_description: clientProfile.companyDescription,
+        agent_name: clientProfile.agentInterviewerName,
+        voice_id: clientProfile.voiceId,
+        userId: clientProfile.userId,
+        use_case: useCase
+      }
+
+      console.log('Submitting form with payload:', payload)
+
+      try {
+        console.log('Making POST request...')
+        const response = await fetch('https://franko-06.onrender.com/call', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+
+        console.log('Response status:', response.status)
+        const responseData = await response.json()
+        console.log('Response data:', responseData)
+
+        if (!response.ok) {
+          throw new Error(`Failed to initiate call: ${response.status} ${response.statusText}`)
+        }
+
+        onSubmitSuccess?.()
+      } catch (error) {
+        console.error('Detailed error:', error)
+        setSubmitError('Failed to initiate call. Please try again.')
+        setIsSubmitted(false)
+      } finally {
+        setIsSubmitting(false)
+      }
     } else {
-      console.log("Form has errors")
+      console.log('Form validation failed', errors)
     }
   }
 
@@ -204,18 +248,26 @@ export default function InterviewForm({
               />
               <div className="grid gap-1.5 leading-none">
                 <Label htmlFor="agreement" className="font-normal text-muted-foreground">
-                  I agree to participate in {companyName}&apos;s AI interview and receive a call upon form submission.
+                  I agree to participate in {clientProfile.companyName}&apos;s AI interview and receive a call upon form submission.
                 </Label>
                 {errors.agreement && <p className="text-sm text-red-500">This field is required</p>}
               </div>
             </div>
+            {submitError && (
+              <p className="text-sm text-red-500 mb-2">{submitError}</p>
+            )}
             <Button 
               type="submit" 
               size="sm"
-              disabled={isSubmitted}
+              disabled={isSubmitted || isSubmitting}
               className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
             >
-              {isSubmitted ? (
+              {isSubmitting ? (
+                <>
+                  <Phone className="w-3 h-3 mr-0.5 animate-pulse" />
+                  Initiating Call...
+                </>
+              ) : isSubmitted ? (
                 <>
                   <Phone className="w-3 h-3 mr-0.5" />
                   Submitted

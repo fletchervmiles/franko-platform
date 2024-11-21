@@ -5,19 +5,40 @@ import { Copy, Check } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { SelectProfile } from "@/db/schema"
 
-export default function ShareableLinkChurn() {
+interface ShareableLinkChurnProps {
+  profile: SelectProfile
+}
+
+export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps) {
   const [copied, setCopied] = React.useState(false)
-  const placeholderUrl = "www.placeholder.com"
+  
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const shareableUrl = profile?.userId 
+    ? `${baseUrl}/start-interview?clientId=${profile.userId}`
+    : ''
 
   const handleCopy = async () => {
+    if (!shareableUrl) return
+
     try {
-      await navigator.clipboard.writeText(placeholderUrl)
+      await navigator.clipboard.writeText(shareableUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy text: ", err)
     }
+  }
+
+  if (!profile) {
+    return (
+      <Card className="w-full bg-white transition-all duration-300 ease-in-out p-2">
+        <CardContent>
+          <div>Loading shareable link...</div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -38,7 +59,7 @@ export default function ShareableLinkChurn() {
             <div className="space-y-4">
               <div className="relative">
                 <Input 
-                  value={placeholderUrl}
+                  value={shareableUrl}
                   readOnly
                   className="bg-gray-100/50"
                 />
@@ -48,6 +69,7 @@ export default function ShareableLinkChurn() {
                   onClick={handleCopy}
                   variant="outline"
                   size="sm"
+                  disabled={!shareableUrl}
                   className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                 >
                   {copied ? (
