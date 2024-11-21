@@ -18,12 +18,21 @@ export default function SetupPage() {
             if (!user?.id) return
 
             try {
+                console.log('Fetching profile for user:', user.id)
                 const response = await fetch(`/api/clients/${user.id}`)
-                if (!response.ok) throw new Error('Failed to fetch profile')
+                
+                if (!response.ok) {
+                    const errorText = await response.text()
+                    console.error('Response not ok:', response.status, errorText)
+                    throw new Error(`Failed to fetch profile: ${response.status} ${errorText}`)
+                }
+                
                 const data = await response.json()
+                console.log('Profile data received:', data)
                 setProfile(data)
             } catch (error) {
-                console.error('Error fetching profile:', error)
+                console.error('Detailed error:', error)
+                setProfile(null)
             } finally {
                 setIsLoading(false)
             }

@@ -1,21 +1,24 @@
-import { NextResponse } from 'next/server'
+import { db } from "@/db/db"
+import { eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
+import { profilesTable } from "@/db/schema"
 
-export async function POST(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { clientId: string } }
+) {
   try {
-    const body = await request.json()
-    
-    const response = await fetch('https://franko-06.onrender.com/call', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profilesTable.userId, params.clientId),
     })
 
-    const data = await response.json()
-    return NextResponse.json(data)
+    if (!profile) {
+      return new NextResponse("Client not found", { status: 404 })
+    }
+
+    return NextResponse.json(profile)
   } catch (error) {
-    console.error('Error proxying call request:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error("Error fetching client profile:", error)
+    return new NextResponse("Internal Server Error", { status: 500 })
   }
 } 

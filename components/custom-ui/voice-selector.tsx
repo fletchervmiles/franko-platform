@@ -13,30 +13,30 @@ import { getProfile } from "@/db/queries/profiles-queries"
 const voiceOptions = [
   { 
     id: "american-female", 
-    name: "Francesca (American Female)", 
-    audioSrc: "/audio/american-female-francesca.mp3",
-    agentName: "francesca",
-    voiceId: "tnSpp4vdxKPjI9w0GnoV"
+    name: "Brittany (American Female)", 
+    audioSrc: "/audio/american-female-brittany.mp3",
+    agentName: "Brittany",
+    voiceId: "kPzsL2i3teMYv0FxEYQ6"
   },
   { 
     id: "american-male", 
     name: "Jim (American Male)", 
     audioSrc: "/audio/american-male-jim.mp3",
-    agentName: "jim",
+    agentName: "Jim",
     voiceId: "UgBBYS2sOqTuMpoF3BR0"
   },
   { 
     id: "australian-male", 
     name: "Charlie (Australian Male)", 
     audioSrc: "/audio/australian-male-charlie.mp3",
-    agentName: "charlie",
+    agentName: "Charlie",
     voiceId: "IKne3meq5aSn9XLyUdCD"
   },
   { 
     id: "british-female", 
     name: "Amelia (British Female)", 
     audioSrc: "/audio/british-female-amelia.mp3",
-    agentName: "amelia",
+    agentName: "Amelia",
     voiceId: "ZF6FPAbjXT4488VcRRnw"
   },
 ]
