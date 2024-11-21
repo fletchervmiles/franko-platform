@@ -133,7 +133,7 @@ export default function InterviewForm({
 
       try {
         console.log('Making POST request...')
-        const response = await fetch('https://app.franko.ai/call', {
+        const response = await fetch('https://franko-06.onrender.com/call', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
