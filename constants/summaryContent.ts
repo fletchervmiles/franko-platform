@@ -1,36 +1,41 @@
-import { AlertCircle, Target, MessageSquare, TrendingUp, CheckSquare } from 'lucide-react'
+import { AlertCircle, Target, MessageSquare, TrendingUp, CheckSquare, FileText } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
 
-export const SUMMARY_SECTIONS: {
-  [key: string]: {
-    title: string;
-    content: string;
-    icon: LucideIcon;
-  }
-} = {
+export type SummarySection = {
+  title: string;
+  field: string; // database field name
+  icon: LucideIcon;
+}
+
+export const SUMMARY_SECTIONS: { [key: string]: SummarySection } = {
+  summary: {
+    title: "Summary",
+    field: "analysisPart01",
+    icon: FileText
+  },
   reasonForCanceling: {
-    title: "REASON FOR CANCELING",
-    content: "Fletcher canceled his subscription primarily due to **lack of expected energy boost** and **taste preferences**.",
+    title: "Reason for Canceling",
+    field: "analysisPart02",
     icon: AlertCircle
   },
   desiredBenefit: {
-    title: "DESIRED BENEFIT",
-    content: "Fletcher was seeking **improved afternoon focus** and **sustained energy**.",
+    title: "Desired Benefit",
+    field: "analysisPart03",
     icon: Target
   },
   customerFeedback: {
-    title: "CUSTOMER FEEDBACK",
-    content: "The customer expressed **dissatisfaction with the flavor**.",
+    title: "Customer Feedback",
+    field: "analysisPart04",
     icon: MessageSquare
   },
   winBackAnalysis: {
-    title: "WIN BACK ANALYSIS",
-    content: "There's a **high potential for win-back**.",
+    title: "Win Back Analysis",
+    field: "analysisPart05",
     icon: TrendingUp
   },
   actionSteps: {
-    title: "ACTION STEPS",
-    content: "1. **Send flavor sampling kit**\n2. **Share user testimonials**",
+    title: "Action Steps",
+    field: "analysisPart06",
     icon: CheckSquare
   }
-}; 
+} 

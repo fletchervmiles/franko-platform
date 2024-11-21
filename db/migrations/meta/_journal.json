@@ -50,6 +50,13 @@
       "when": 1732010268870,
       "tag": "0006_smooth_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1732157002438,
+      "tag": "0007_shocking_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

@@ -98,3 +98,20 @@ body {
     @apply h-2.5 w-2.5 bg-black;
   }
 }
+
+.markdown-content ul ul {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+.markdown-content ul li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content ul li:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content blockquote {
+  margin: 1rem 0;
+}

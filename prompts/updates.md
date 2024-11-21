@@ -1,85 +1,49 @@
-# Tasks
+# Hooking UI together with Database
 
-## Objective
+I have a bunch of UI with placeholder content for now. I also have the backend database set up with Supabase. I want to go through and get it all connected and working.
 
-Reorganize components within the application by moving existing components to a new page, creating a new component, and updating the navigation menu accordingly.
+## Step 1 - Connect the content on the dashboard page with Supabase (DONE)
 
-### Step 1 - Update Components
+Here are the relevant pages:
 
-Remove Components from Account Page:
+`app\dashboard\page.tsx`
+`components\custom-ui\nav.tsx`
+`components\custom-ui\interview-dashboard.tsx`
 
-Locate the Account Page file - `app/account/page.tsx`
+Right now there's mock interview data:
 
-Remove the following components from the Account Page
-- URL Submission Form
-- Voice Selection Card
+const mockInterviews = [
+  { id: 1, intervieweeName: "Fletcher Miles-Thompson", date: "2024-08-07", duration: 45, status: "ready for review", interviewType: "Customer Churn" },
+]
 
-Add Components to Setup Page:
+Let me map the mock data fields above to my actual fields in my interviews-schema:
 
-Locate the Setup Page - `app/setup/page.tsx`
+id: = user_id (this is the Clerk id that will make to the relevant customer profile)
+intervieweeName: = interviewee_first_name, interviewee_last_name (this is actually two values, hopefully you can join these otherwise I can create a separate column in my database joining them)
+date: = date_completed (this will need some formatting)
+duration: = total_interview_minutes
+status: = status
+interviewType: = use_case
 
-Import and add the removed components to the Setup Page:
+## Step 2 - Card Creation on Dashboard Page (DONE)
 
-- URL Submission Form
-- Voice Selection Card
+Note, right now there are multiple cards on the dashboard page due to having multiple users with mock data. Let's delete the mock data and use what's in our database. AND it's important that when a new interview is added to the interviews-schema, a new card should be created for that interview. We probably need to trigger an action?
 
-### Step 2 - Update the Navigation Menu
+## Step 3 - Clickable Card (DONE)
 
-Add Setup Link:
+The card should click through to the `app\interview-page\page.tsx` with the relevant interview details. How am I am to do this? I have a unique ID for the interview itself too... so maybe I need to configure that. Let me know what information would be helpful. 
 
-Locate the Navigation Component file - `components/custom-ui/nav.tsx`
 
-Add a new navigation link labeled "Setup".
-Use an appropriate icon to match the style of existing navigation items.
-Ensure the link routes to the Setup Page.
+## Step 4 - Let's update the interview details component
 
-Reorder Navigation Items:
+The interview details component - `components\custom-ui\interview-details.tsx`
 
-Update the order of the navigation links to the following sequence:
-Dashboard
-Setup
-Account
-Sign Out
+I will help map them again. The titles remain the same but let's make the values dynamic.
 
-### Step 3 - Create and Add the Shareable-Link-Churn Component
+Name, John Doe = interviewee_first_name, interviewee_last_name
+Email, john.doe@example.com = interviewee_email
+Phone, +1 (555) 123-4567 = interviewee_number
+Interview Type, Customer Feedback = use_churn
+Date, 15th Jun 23 = date_completed
+Duration, 45 minutes = total_interview_minutes (not this is just a number so will need to keep minutes as text)
 
-Create the Component:
-
-In the components directory, update the following file:
-
-`C:\Users\fletc\Desktop\franko-platform\components\custom-ui\shareable-link-churn.tsx`
-
-Structure the component to match the styling of the URL Submission Form component.
-
-`C:\Users\fletc\Desktop\franko-platform\components\custom-ui\url-submit.tsx`
-
-Component Structure:
-
-Heading: Add a heading titled "Your Shareable Link".
-
-Subheading: Include a subheading with the text "Customer Churn Use Case".
-
-Description Text: Add gray-colored text saying 
-"Share this with your customers who have churned. Upon submitting the form, they'll immediately recieve a call from our AI interviewer."
-
-URL Display Box:
-Create a box or input field displaying the placeholder URL www.placeholder.com.
-
-Ensure the URL is not editable by the user.
-Copy Button:
-Add a button labeled "Copy" next to or below the URL box. Add a "Copied" interaction when the button is pressed.
-
-Implement functionality to copy the URL www.placeholder.com to the clipboard when clicked.
-
-Import Component into Setup Page:
-
-Import the Shareable-Link-Churn component into the Setup Page.
-
-Add it to the page below the URL Submission Form and above the Voice Selection Card, or arrange as per design specifications.
-
-Finalize Setup Page Components:
-
-The Setup Page should now include:
-URL Submission Form
-Shareable-Link-Churn
-Voice Selection Card

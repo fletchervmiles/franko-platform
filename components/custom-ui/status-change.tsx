@@ -3,15 +3,34 @@
 import React, { useState } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckIcon } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-export default function InterviewStatus() {
-  const [status, setStatus] = useState<'ready for review' | 'reviewed'>('ready for review')
+interface StatusChangeProps {
+  interviewId: string;
+  initialStatus: string;
+}
+
+export default function InterviewStatus({ interviewId, initialStatus }: StatusChangeProps) {
+  const [status, setStatus] = useState<string>(initialStatus)
   const [isSaving, setIsSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
 
-  const handleStatusChange = async (newStatus: 'ready for review' | 'reviewed') => {
+  const handleStatusChange = async (newStatus: string) => {
     setIsSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('interviews')
+      .update({ status: newStatus })
+      .eq('id', interviewId)
+
+    if (error) {
+      console.error('Error updating status:', error)
+      // You might want to add error handling UI here
+      setIsSaving(false)
+      return
+    }
+
     setStatus(newStatus)
     setIsSaving(false)
     setShowSaved(true)

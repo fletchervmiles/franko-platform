@@ -1,78 +1,136 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Button } from "@/components/ui/button"
+import React, { useRef, useState, useEffect } from 'react'
+import { Play, Pause, Volume2, VolumeX, Download } from 'lucide-react'
 import { Slider } from "@/components/ui/slider"
-import { PlayIcon, PauseIcon, DownloadIcon, Volume2Icon } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Button } from "@/components/ui/button"
 
-export default function AudioPlayer() {
+export interface AudioPlayerProps {
+  audioUrl: string | null;
+}
+
+export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [volume, setVolume] = useState(100)
+  const [duration, setDuration] = useState(0)
+  const [volume, setVolume] = useState(1)
   const [speed, setSpeed] = useState(1.5)
 
+  useEffect(() => {
+    if (audioUrl) {
+      audioRef.current = new Audio(audioUrl)
+      
+      // Set up event listeners
+      audioRef.current.addEventListener('loadedmetadata', () => {
+        setDuration(audioRef.current?.duration || 0)
+      })
+
+      audioRef.current.addEventListener('timeupdate', () => {
+        const currentTime = audioRef.current?.currentTime || 0
+        const duration = audioRef.current?.duration || 0
+        setProgress((currentTime / duration) * 100)
+      })
+
+      audioRef.current.addEventListener('ended', () => {
+        setIsPlaying(false)
+        setProgress(0)
+      })
+
+      // Set initial volume and playback rate
+      audioRef.current.volume = volume
+      audioRef.current.playbackRate = 1.5
+    }
+
+    // Cleanup
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      }
+    }
+  }, [audioUrl])
+
   const togglePlayPause = () => {
+    if (!audioRef.current) return
+
+    if (isPlaying) {
+      audioRef.current.pause()
+    } else {
+      audioRef.current.play()
+    }
     setIsPlaying(!isPlaying)
   }
 
   const handleProgressChange = (newValue: number[]) => {
+    if (!audioRef.current) return
+    const newTime = (newValue[0] / 100) * (audioRef.current.duration || 0)
+    audioRef.current.currentTime = newTime
     setProgress(newValue[0])
   }
 
   const handleVolumeChange = (newValue: number[]) => {
-    setVolume(newValue[0])
+    if (!audioRef.current) return
+    const newVolume = newValue[0] / 100
+    audioRef.current.volume = newVolume
+    setVolume(newVolume)
   }
 
   const toggleSpeed = () => {
+    if (!audioRef.current) return
     const speeds = [1, 1.5, 2]
     const currentIndex = speeds.indexOf(speed)
     const nextIndex = (currentIndex + 1) % speeds.length
-    setSpeed(speeds[nextIndex])
+    const newSpeed = speeds[nextIndex]
+    audioRef.current.playbackRate = newSpeed
+    setSpeed(newSpeed)
+  }
+
+  const handleDownload = () => {
+    if (audioUrl) {
+      // Open in new tab instead of downloading
+      window.open(audioUrl, '_blank')
+    }
   }
 
   const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) {
+      return '0:00'
+    }
     const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
+    const remainingSeconds = Math.floor(seconds % 60)
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  if (!audioUrl) {
+    return (
+      <div className="w-full bg-white relative pt-4 pb-4">
+        <h2 className="text-sm font-semibold px-6 pb-2">Audio File</h2>
+        <div className="border border-gray-200 rounded-lg mx-6 p-4 shadow-sm mb-4">
+          <div className="text-sm text-muted-foreground text-center">
+            Audio not available
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="w-full bg-white relative pt-4 pb-4">
-      <style jsx>{`
-        @keyframes ellipsis {
-          0% { content: ''; }
-          25% { content: '.'; }
-          50% { content: '..'; }
-          75% { content: '...'; }
-          100% { content: ''; }
-        }
-        .animate-ellipsis::after {
-          content: '';
-          animation: ellipsis 1.5s infinite;
-        }
-      `}</style>
       <h2 className="text-sm font-semibold px-6 pb-2">Audio File</h2>
       <div className="border border-gray-200 rounded-lg mx-6 p-4 shadow-sm mb-4">
         <div className="flex flex-col items-center mb-4">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <div
+            className="flex items-center justify-center h-14 w-14 rounded-full bg-black hover:bg-gray-800 shadow-md cursor-pointer"
+            onClick={togglePlayPause}
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="h-14 w-14 rounded-full bg-black hover:bg-gray-800 shadow-md"
-              onClick={togglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? 
-                <PauseIcon className="h-7 w-7 text-white" /> : 
-                <PlayIcon className="h-7 w-7 text-white" />
-              }
-            </Button>
-          </motion.div>
-          <p className={`mt-2 text-xs font-medium text-gray-600 ${isPlaying ? 'animate-ellipsis' : ''}`}>
+            {isPlaying ? 
+              <Pause className="h-7 w-7 text-white" /> : 
+              <Play className="h-7 w-7 text-white" />
+            }
+          </div>
+          <p className="mt-2 text-xs font-medium text-gray-600">
             {isPlaying ? "Now Playing" : "Paused"}
           </p>
         </div>
@@ -81,22 +139,22 @@ export default function AudioPlayer() {
           <Slider 
             value={[progress]} 
             max={100} 
-            step={1} 
+            step={0.1} 
             onValueChange={handleProgressChange}
             className="w-full relative flex items-center select-none touch-none h-3"
             aria-label="Audio progress"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatTime(Math.floor(progress * 1.8))}</span>
-            <span>{formatTime(180)}</span>
+            <span>{formatTime((duration * progress) / 100)}</span>
+            <span>{formatTime(duration)}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 w-1/3">
-            <Volume2Icon className="h-3 w-3 text-muted-foreground" />
+            <Volume2 className="h-3 w-3 text-muted-foreground" />
             <Slider 
-              value={[volume]} 
+              value={[volume * 100]} 
               max={100} 
               step={1} 
               onValueChange={handleVolumeChange}
@@ -115,13 +173,18 @@ export default function AudioPlayer() {
               {speed}x
             </Button>
 
-            <Button variant="ghost" size="icon" aria-label="Download audio" className="h-7 w-7">
-              <DownloadIcon className="h-3 w-3" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleDownload}
+              aria-label="Open audio in new tab" 
+              className="h-7 w-7"
+            >
+              <Download className="h-3 w-3" />
             </Button>
           </div>
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-border"></div>
     </div>
   )
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "interviews" ADD COLUMN "status" text DEFAULT 'ready_for_review' NOT NULL;

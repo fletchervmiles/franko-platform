@@ -2,9 +2,26 @@
 
 import React from 'react'
 import { CalendarIcon, ClockIcon, UserIcon, FileTextIcon, MailIcon, PhoneIcon } from 'lucide-react'
+import { Database } from '@/lib/supabase/database.types'
 
-export default function InterviewDetails() {
-  const formatDate = (dateString: string) => {
+type Interview = Database['public']['Tables']['interviews']['Row']
+
+interface InterviewDetailsProps {
+  interview: {
+    intervieweeFirstName: string;
+    intervieweeLastName: string;
+    intervieweeEmail: string;
+    intervieweeNumber: string | null;
+    useCase: string;
+    dateCompleted: string | null;
+    totalInterviewMinutes: number | null;
+    status: string;
+  }
+}
+
+export default function InterviewDetails({ interview }: InterviewDetailsProps) {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Not completed'
     const date = new Date(dateString)
     const day = date.getDate()
     const suffix = ['th', 'st', 'nd', 'rd'][(day > 3 && day < 21) || day % 10 > 3 ? 0 : day % 10]
@@ -25,7 +42,7 @@ export default function InterviewDetails() {
             <UserIcon className="w-4 h-4" />
             <span>Name</span>
           </div>
-          <span className="text-sm">John Doe</span>
+          <span className="text-sm">{`${interview.intervieweeFirstName || ''} ${interview.intervieweeLastName || ''}`}</span>
         </div>
         
         <div>
@@ -33,7 +50,7 @@ export default function InterviewDetails() {
             <MailIcon className="w-4 h-4" />
             <span>Email</span>
           </div>
-          <span className="text-sm break-all">john.doe@example.com</span>
+          <span className="text-sm break-all">{interview.intervieweeEmail || 'Not provided'}</span>
         </div>
         
         <div>
@@ -41,7 +58,7 @@ export default function InterviewDetails() {
             <PhoneIcon className="w-4 h-4" />
             <span>Phone</span>
           </div>
-          <span className="text-sm">+1 (555) 123-4567</span>
+          <span className="text-sm">{interview.intervieweeNumber || 'Not provided'}</span>
         </div>
 
         <div>
@@ -49,7 +66,7 @@ export default function InterviewDetails() {
             <FileTextIcon className="w-4 h-4" />
             <span>Interview Type</span>
           </div>
-          <span className="text-sm">Customer Feedback</span>
+          <span className="text-sm">{interview.useCase || 'Not specified'}</span>
         </div>
         
         <div>
@@ -57,7 +74,7 @@ export default function InterviewDetails() {
             <CalendarIcon className="w-4 h-4" />
             <span>Date</span>
           </div>
-          <span className="text-sm">15th Jun 23</span>
+          <span className="text-sm">{formatDate(interview.dateCompleted)}</span>
         </div>
         
         <div>
@@ -65,7 +82,7 @@ export default function InterviewDetails() {
             <ClockIcon className="w-4 h-4" />
             <span>Duration</span>
           </div>
-          <span className="text-sm">45 minutes</span>
+          <span className="text-sm">{`${interview.totalInterviewMinutes || 0} minutes`}</span>
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px bg-border"></div>

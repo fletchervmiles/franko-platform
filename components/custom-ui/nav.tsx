@@ -70,6 +70,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter()
 
   const getPageTitle = () => {
+    if (pathname.startsWith('/interview/')) {
+      return "Interview Details"
+    }
+
     switch (pathname) {
       case "/dashboard":
         return "Your Dashboard"
@@ -77,8 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         return "Your Account"
       case "/setup":
         return "Setup"
-      case "/interview-page":
-        return "Interview Details"
       default:
         return "franko"
     }

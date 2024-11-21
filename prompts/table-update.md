@@ -10,11 +10,11 @@ Follow these instructions to update  a new table in the database.
 
 This is an example of how to update an existing table in the database.
 
-The table to update is - `profiles-schema.ts`.
+The table to update is - `interviews-schema.ts`.
 
 This file is located in the `db/schema` folder.
 
-Make sure to export the `profiles-schema.ts` file in the `db/schema/index.ts` file. (This should already be done but let's double check)
+Make sure to export the `interviews-schema.ts` file in the `db/schema/index.ts` file. (This should already be done but let's double check)
 
 Make sure to add the table to the `schema` object in the `db/db.ts` file.
 
@@ -22,169 +22,197 @@ Below is an example of the existing table. The following fields should be added:
 
 **Fields to be added**
 
-- UUID (I want Supabase to create this when a new row is added)
-- Business name
+- status
 
 
 ```typescript
-import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core";
 
-export const membershipEnum = pgEnum("membership", ["free", "pro"]);
-
-export const profilesTable = pgTable("profiles", {
-  userId: text("user_id").primaryKey().notNull(),
-  membership: membershipEnum("membership").default("free").notNull(),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
+export const interviewsTable = pgTable("interviews", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull(),
+  clientName: text("client_name").notNull(),
+  uniqueCustomerIdentifier: text("unique_customer_identifier").notNull(),
+  useCase: text("use_case").notNull(),
+  intervieweeFirstName: text("interviewee_first_name").notNull(),
+  intervieweeLastName: text("interviewee_last_name").notNull(),
+  intervieweeEmail: text("interviewee_email").notNull(),
+  intervieweeNumber: text("interviewee_number"),
+  callId: text("call_id").notNull(),
+  dateCompleted: timestamp("date_completed").notNull(),
+  interviewStartTime: timestamp("interview_start_time").notNull(),
+  interviewEndTime: timestamp("interview_end_time").notNull(),
+  totalInterviewMinutes: integer("total_interview_minutes").notNull(),
+  conversationHistoryRaw: text("conversation_history_raw"),
+  conversationHistoryCleaned: text("conversation_history_cleaned"),
+  interviewAudioLink: text("interview_audio_link"),
+  clientCompanyDescription: text("client_company_description"),
+  agentName: text("agent_name").notNull(),
+  voiceId: text("voice_id").notNull(),
+  analysisOutput: text("analysis_output"),
+  analysisPart01: text("analysis_part01"),
+  analysisPart02: text("analysis_part02"),
+  analysisPart03: text("analysis_part03"),
+  analysisPart04: text("analysis_part04"),
+  analysisPart05: text("analysis_part05"),
+  analysisPart06: text("analysis_part06"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .notNull()
-    .$onUpdate(() => new Date())
+    .$onUpdate(() => new Date()),
 });
 
-export type InsertProfile = typeof profilesTable.$inferInsert;
-export type SelectProfile = typeof profilesTable.$inferSelect;
+export type InsertInterview = typeof interviewsTable.$inferInsert;
+export type SelectInterview = typeof interviewsTable.$inferSelect; 
 ```
 
 ## Step 2: Update the Queries (as required)
 
 Ensure queries for the table are updated
 
-This existing file is named `profiles-queries.ts`.
+This existing file is named `interviews-queries.ts`.
 
 This file is located in the `db/queries` folder.
 
 Updated the queries to ensure new fields are available.
 
 ```typescript
+"use server";
+
+import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { InsertProfile, profilesTable, SelectProfile } from "../schema/profiles-schema";
+import { InsertInterview, interviewsTable, SelectInterview } from "../schema/interviews-schema";
 
-export const createProfile = async (data: InsertProfile) => {
+export const createInterview = async (data: InsertInterview) => {
   try {
-    const [newProfile] = await db.insert(profilesTable).values(data).returning();
-    return newProfile;
+    const [newInterview] = await db.insert(interviewsTable).values(data).returning();
+    return newInterview;
   } catch (error) {
-    console.error("Error creating profile: ", error);
-    throw new Error("Failed to create profile");
+    console.error("Error creating interview:", error);
+    throw new Error("Failed to create interview");
   }
 };
 
-export const getProfileByUserId = async (userId: string) => {
+export const getInterviewById = async (id: string) => {
   try {
-    const profile = await db.query.profiles.findFirst({
-      where: eq(profilesTable.userId, userId)
+    const interview = await db.query.interviews.findFirst({
+      where: eq(interviewsTable.id, id),
     });
-
-    return profile;
+    return interview;
   } catch (error) {
-    console.error("Error getting profile by user ID:", error);
-    throw new Error("Failed to get profile");
+    console.error("Error getting interview:", error);
+    throw new Error("Failed to get interview");
   }
 };
 
-export const getAllProfiles = async (): Promise<SelectProfile[]> => {
-  return db.query.profiles.findMany();
-};
-
-export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
+export const getInterviewsByUserId = async (userId: string): Promise<SelectInterview[]> => {
   try {
-    const [updatedProfile] = await db.update(profilesTable).set(data).where(eq(profilesTable.userId, userId)).returning();
-    return updatedProfile;
+    const interviews = await db
+      .select()
+      .from(interviewsTable)
+      .where(eq(interviewsTable.userId, userId));
+    return interviews;
   } catch (error) {
-    console.error("Error updating profile:", error);
-    throw new Error("Failed to update profile");
+    console.error("Error getting interviews:", error);
+    throw new Error("Failed to get interviews");
   }
 };
 
-export const updateProfileByStripeCustomerId = async (stripeCustomerId: string, data: Partial<InsertProfile>) => {
+export const getAllInterviews = async (): Promise<SelectInterview[]> => {
+  return db.query.interviews.findMany();
+};
+
+export const updateInterview = async (id: string, data: Partial<InsertInterview>) => {
   try {
-    const [updatedProfile] = await db.update(profilesTable).set(data).where(eq(profilesTable.stripeCustomerId, stripeCustomerId)).returning();
-    return updatedProfile;
+    const [updatedInterview] = await db
+      .update(interviewsTable)
+      .set(data)
+      .where(eq(interviewsTable.id, id))
+      .returning();
+    return updatedInterview;
   } catch (error) {
-    console.error("Error updating profile by stripe customer ID:", error);
-    throw new Error("Failed to update profile");
+    console.error("Error updating interview:", error);
+    throw new Error("Failed to update interview");
   }
 };
 
-export const deleteProfile = async (userId: string) => {
+export const deleteInterview = async (id: string) => {
   try {
-    await db.delete(profilesTable).where(eq(profilesTable.userId, userId));
+    await db.delete(interviewsTable).where(eq(interviewsTable.id, id));
   } catch (error) {
-    console.error("Error deleting profile:", error);
-    throw new Error("Failed to delete profile");
+    console.error("Error deleting interview:", error);
+    throw new Error("Failed to delete interview");
   }
-};
+}; 
 ```
 
 ## Step 3: Update the Actions
 
 The actions already exist for the table - these will need to be updated as needed.
 
-This file is named `profiles-actions.ts`. It's located in the `/actions` folder
+This file is named `interviews-actions.ts`. It's located in the `/actions` folder
 
 ```typescript
 "use server";
 
-import { createProfile, deleteProfile, getAllProfiles, getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
-import { InsertProfile } from "@/db/schema/profiles-schema";
+import { createInterview, deleteInterview, getInterviewById, getAllInterviews, updateInterview } from "@/db/queries/interviews-queries";
+import { InsertInterview } from "@/db/schema/interviews-schema";
 import { ActionState } from "@/types";
-import console from "console";
 import { revalidatePath } from "next/cache";
 
-export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
+export async function createInterviewAction(interview: InsertInterview): Promise<ActionState> {
   try {
-    const newProfile = await createProfile(data);
-    console.log("New profile created", newProfile);
-    revalidatePath("/");
-    return { status: "success", message: "Profile created successfully", data: newProfile };
+    const newInterview = await createInterview(interview);
+    revalidatePath("/interview");
+    return { status: "success", message: "Interview created successfully", data: newInterview };
   } catch (error) {
-    return { status: "error", message: "Error creating profile" };
+    console.error("Error creating interview:", error);
+    return { status: "error", message: "Failed to create interview" };
   }
 }
 
-export async function getProfileByUserIdAction(userId: string): Promise<ActionState> {
+export async function getInterviewsAction(): Promise<ActionState> {
   try {
-    const profile = await getProfileByUserId(userId);
-    if (!profile) {
-      return { status: "error", message: "Profile not found" };
-    }
-    return { status: "success", message: "Profile retrieved successfully", data: profile };
+    const interviews = await getAllInterviews();
+    return { status: "success", message: "Interviews retrieved successfully", data: interviews };
   } catch (error) {
-    return { status: "error", message: "Failed to get profile" };
+    console.error("Error getting interviews:", error);
+    return { status: "error", message: "Failed to get interviews" };
   }
 }
 
-export async function getAllProfilesAction(): Promise<ActionState> {
+export async function getInterviewAction(id: string): Promise<ActionState> {
   try {
-    const profiles = await getAllProfiles();
-    return { status: "success", message: "Profiles retrieved successfully", data: profiles };
+    const interview = await getInterviewById(id);
+    return { status: "success", message: "Interview retrieved successfully", data: interview };
   } catch (error) {
-    return { status: "error", message: "Failed to get profiles" };
+    console.error("Error getting interview by ID:", error);
+    return { status: "error", message: "Failed to get interview" };
   }
 }
 
-export async function updateProfileAction(userId: string, data: Partial<InsertProfile>): Promise<ActionState> {
+export async function updateInterviewAction(id: string, data: Partial<InsertInterview>): Promise<ActionState> {
   try {
-    const updatedProfile = await updateProfile(userId, data);
-    revalidatePath("/profile");
-    return { status: "success", message: "Profile updated successfully", data: updatedProfile };
+    const updatedInterview = await updateInterview(id, data);
+    revalidatePath("/interview");
+    return { status: "success", message: "Interview updated successfully", data: updatedInterview };
   } catch (error) {
-    return { status: "error", message: "Failed to update profile" };
+    console.error("Error updating interview:", error);
+    return { status: "error", message: "Failed to update interview" };
   }
 }
 
-export async function deleteProfileAction(userId: string): Promise<ActionState> {
+export async function deleteInterviewAction(id: string): Promise<ActionState> {
   try {
-    await deleteProfile(userId);
-    revalidatePath("/profile");
-    return { status: "success", message: "Profile deleted successfully" };
+    await deleteInterview(id);
+    revalidatePath("/interview");
+    return { status: "success", message: "Interview deleted successfully" };
   } catch (error) {
-    return { status: "error", message: "Failed to delete profile" };
+    console.error("Error deleting interview:", error);
+    return { status: "error", message: "Failed to delete interview" };
   }
-}
+} 
 ```
 
 ## Step 4: Generate the SQL file and Migrate the DB
