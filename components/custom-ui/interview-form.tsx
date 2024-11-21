@@ -129,36 +129,38 @@ export default function InterviewForm({
         use_case: useCase
       }
 
-      console.log('Submitting form with payload:', payload)
-
       try {
-        console.log('Making POST request...')
-        const response = await fetch('/api/call', {
+        console.log('Sending payload:', payload)
+        
+        const response = await fetch('https://franko-06.onrender.com/call', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': 'https://app.franko.ai'
           },
           body: JSON.stringify(payload),
+          credentials: 'include',
         })
 
-        console.log('Response status:', response.status)
-        const responseData = await response.json()
-        console.log('Response data:', responseData)
-
+        console.log('Raw response:', response)
+        
         if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
           throw new Error(`Failed to initiate call: ${response.status} ${response.statusText}`)
         }
+
+        const responseData = await response.json()
+        console.log('Response data:', responseData)
 
         onSubmitSuccess?.()
       } catch (error) {
         console.error('Detailed error:', error)
         setSubmitError('Failed to initiate call. Please try again.')
-        setIsSubmitted(false)
       } finally {
         setIsSubmitting(false)
       }
-    } else {
-      console.log('Form validation failed', errors)
     }
   }
 
