@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useState, useEffect } from 'react'
-import { Play, Pause, Volume2, VolumeX, Download } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, Download, Headphones } from 'lucide-react'
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 
@@ -105,7 +105,10 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
   if (!audioUrl) {
     return (
       <div className="w-full bg-white relative pt-4 pb-4">
-        <h2 className="text-sm font-semibold px-6 pb-2">Audio File</h2>
+        <h2 className="text-sm font-semibold px-6 pb-2 flex items-center gap-2">
+          <Headphones className="h-4 w-4 text-[#f5a623]" />
+          Audio File
+        </h2>
         <div className="border border-gray-200 rounded-lg mx-6 p-4 shadow-sm mb-4">
           <div className="text-sm text-muted-foreground text-center">
             Audio not available
@@ -117,7 +120,10 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
 
   return (
     <div className="w-full bg-white relative pt-4 pb-4">
-      <h2 className="text-sm font-semibold px-6 pb-2">Audio File</h2>
+      <h2 className="text-sm font-semibold px-6 pb-2 flex items-center gap-2">
+        <Headphones className="h-4 w-4 text-[#f5a623]" />
+        Audio File
+      </h2>
       <div className="border border-gray-200 rounded-lg mx-6 p-4 shadow-sm mb-4">
         <div className="flex flex-col items-center mb-4">
           <div
@@ -185,6 +191,7 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
           </div>
         </div>
       </div>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-border"></div>
     </div>
   )
 }

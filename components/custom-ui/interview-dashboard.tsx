@@ -18,14 +18,21 @@ export default function InterviewDashboard() {
     async function fetchInterviews() {
       if (user?.id) {
         const data = await getInterviewsByUserId(user.id)
-        const formattedData = data.map(interview => ({
-          ...interview,
-          dateCompleted: interview.dateCompleted?.toISOString(),
-          updatedAt: interview.updatedAt.toISOString(),
-          createdAt: interview.createdAt.toISOString(),
-          interviewStartTime: interview.interviewStartTime?.toISOString(),
-          interviewEndTime: interview.interviewEndTime?.toISOString()
-        }))
+        const formattedData = data
+          .map(interview => ({
+            ...interview,
+            dateCompleted: interview.dateCompleted?.toISOString(),
+            updatedAt: interview.updatedAt.toISOString(),
+            createdAt: interview.createdAt.toISOString(),
+            interviewStartTime: interview.interviewStartTime?.toISOString(),
+            interviewEndTime: interview.interviewEndTime?.toISOString()
+          }))
+          .sort((a, b) => {
+            // Sort by dateCompleted in descending order (most recent first)
+            const dateA = a.dateCompleted ? new Date(a.dateCompleted).getTime() : 0
+            const dateB = b.dateCompleted ? new Date(b.dateCompleted).getTime() : 0
+            return dateB - dateA
+          })
         setInterviews(formattedData)
       }
     }

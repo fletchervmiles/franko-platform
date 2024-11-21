@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CalendarIcon, ClockIcon, UserIcon, FileTextIcon, MailIcon, PhoneIcon } from 'lucide-react'
+import { CalendarIcon, ClockIcon, UserIcon, FileTextIcon, MailIcon, PhoneIcon, Info } from 'lucide-react'
 import { Database } from '@/lib/supabase/database.types'
 
 type Interview = Database['public']['Tables']['interviews']['Row']
@@ -35,7 +35,10 @@ export default function InterviewDetails({ interview }: InterviewDetailsProps) {
 
   return (
     <div className="w-full bg-white relative">
-      <h2 className="text-sm font-semibold px-6 pt-4">Interview Details</h2>
+      <h2 className="text-sm font-semibold px-6 pt-4 flex items-center gap-2">
+        <Info className="h-4 w-4 text-[#f5a623]" />
+        Interview Details
+      </h2>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 p-6 pt-4">
         <div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">

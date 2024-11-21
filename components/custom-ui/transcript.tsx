@@ -2,6 +2,7 @@
 
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
+import { MessageSquare } from 'lucide-react'
 
 interface TranscriptProps {
   conversationHistory: string | null;
@@ -11,7 +12,10 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
   if (!conversationHistory) {
     return (
       <div className="w-full bg-white relative">
-        <h2 className="text-sm font-semibold px-6 pt-4">Full Transcript</h2>
+        <h2 className="text-sm font-semibold px-6 pt-4 flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-[#f5a623]" />
+          Full Transcript
+        </h2>
         <div className="p-6 pt-4">
           <div className="rounded-lg bg-gray-50 p-4">
             <div className="text-sm text-muted-foreground">
@@ -26,7 +30,10 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
 
   return (
     <div className="w-full bg-white relative">
-      <h2 className="text-sm font-semibold px-6 pt-4">Full Transcript</h2>
+      <h2 className="text-sm font-semibold px-6 pt-4 flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 text-[#f5a623]" />
+        Full Transcript
+      </h2>
       <div className="p-6 pt-4">
         <div className="rounded-lg bg-gray-50 p-4">
           <div className="text-sm space-y-4">

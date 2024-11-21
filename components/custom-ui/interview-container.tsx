@@ -203,6 +203,7 @@ export default function InterviewContainer({ interviewId }: { interviewId: strin
                       title={section.title}
                       content={interview[section.field as keyof typeof interview] as string}
                       icon={section.icon}
+                      isDefaultOpen={section.isDefaultOpen}
                     />
                   ))}
                 </div>
@@ -253,6 +254,7 @@ export default function InterviewContainer({ interviewId }: { interviewId: strin
                   title={section.title}
                   content={interview[section.field as keyof typeof interview] as string}
                   icon={section.icon}
+                  isDefaultOpen={section.isDefaultOpen}
                 />
               ))}
             </TabsContent>
