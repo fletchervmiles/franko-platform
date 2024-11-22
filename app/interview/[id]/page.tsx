@@ -1,10 +1,10 @@
 import React from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { redirect } from 'next/navigation'
 import { auth } from "@clerk/nextjs/server"
 import InterviewContainer from "@/components/custom-ui/interview-container"
 import Nav from "@/components/custom-ui/nav"
 import { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 
 interface Props {
   params: {
