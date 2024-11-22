@@ -123,9 +123,9 @@ export default function InterviewForm({
         interviewee_email: formData.email,
         interviewee_number: formattedPhoneNumber,
         client_company_description: clientProfile.companyDescription,
-        agent_name: clientProfile.agentInterviewerName,
-        voice_id: clientProfile.voiceId,
-        userId: clientProfile.userId,
+        agent_name: clientProfile.agentInterviewerName || "Amelia",
+        voice_id: clientProfile.voiceId || "ZF6FPAbjXT4488VcRRnw",
+        unique_customer_identifier: clientProfile.userId,
         use_case: useCase
       }
 
