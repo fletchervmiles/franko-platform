@@ -1,6 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
+import { PLAN_MINUTES, type MembershipTier } from "@/lib/stripe";
 import type Stripe from "stripe";
 
 export async function POST(req: Request) {
@@ -27,8 +28,8 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id;
-        const plan = session.metadata?.plan as "starter" | "pro";
+        const userId = session.metadata?.userId;
+        const plan = session.metadata?.plan as MembershipTier;
         
         if (!userId || !plan) {
           console.error("Missing userId or plan in session metadata:", session);
@@ -48,8 +49,8 @@ export async function POST(req: Request) {
           stripeCustomerId: session.customer as string,
           stripeSubscriptionId: session.subscription as string,
           membership: plan,
-          monthlyMinutes: plan === "pro" ? 500 : 200,
-          minutesAvailable: plan === "pro" ? 500 : 200,
+          monthlyMinutes: PLAN_MINUTES[plan],
+          minutesAvailable: PLAN_MINUTES[plan],
         });
 
         console.log("Profile updated successfully");
@@ -60,22 +61,23 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         
-        // Get the profile associated with this customer ID
-        const profile = await getProfileByUserId(customerId);
-        if (!profile) {
-          throw new Error("Profile not found for customer");
+        // Get the userId from the customer metadata
+        const customer = await stripe.customers.retrieve(customerId);
+        const userId = customer.metadata.userId;
+        
+        if (!userId) {
+          throw new Error("No userId found in customer metadata");
         }
 
         // Determine the plan from the subscription
         const planId = subscription.items.data[0]?.price.id;
         const plan = planId === process.env.STRIPE_PRO_PRICE_ID ? "pro" : "starter";
-        const monthlyMinutes = plan === "pro" ? 500 : 200;
 
-        // Update the profile with new subscription details
-        await updateProfile(profile.userId, {
-          membership: plan,
-          monthlyMinutes,
-          minutesAvailable: monthlyMinutes, // Reset available minutes on plan change
+        await updateProfile(userId, {
+          membership: plan as MembershipTier,
+          monthlyMinutes: PLAN_MINUTES[plan],
+          minutesAvailable: PLAN_MINUTES[plan], // Reset available minutes on plan change
+          stripeSubscriptionId: subscription.id
         });
 
         break;
@@ -85,30 +87,44 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         
-        // Get the profile associated with this customer ID
-        const profile = await getProfileByUserId(customerId);
-        if (!profile) {
-          throw new Error("Profile not found for customer");
+        // Get the userId from the customer metadata
+        const customer = await stripe.customers.retrieve(customerId);
+        const userId = customer.metadata.userId;
+        
+        if (!userId) {
+          throw new Error("No userId found in customer metadata");
         }
 
         // Reset to free plan
-        await updateProfile(profile.userId, {
+        await updateProfile(userId, {
           membership: "free",
-          monthlyMinutes: 100, // Free tier minutes
-          minutesAvailable: 100,
-          stripeSubscriptionId: null, // Clear subscription ID
+          monthlyMinutes: PLAN_MINUTES.free,
+          minutesAvailable: PLAN_MINUTES.free,
+          stripeSubscriptionId: null,
         });
 
         break;
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), { status: 200 });
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
   } catch (error) {
     console.error('Webhook error:', error);
     return new Response(
-      `Webhook Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      { status: 400 }
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
     );
   }
 }

@@ -1,6 +1,9 @@
 "use server";
 
-import { stripe } from "@/lib/stripe";
+import { stripe, PLAN_MINUTES } from "@/lib/stripe";
+import { db } from "@/db";
+import { profilesTable } from "@/db/schema/profiles-schema";
+import { eq } from "drizzle-orm";
 
 export async function createCheckoutSession(
   userId: string, 
@@ -10,35 +13,40 @@ export async function createCheckoutSession(
   try {
     if (!stripe) throw new Error("Stripe not initialized");
     
+    // Create Stripe customer first
+    const customer = await stripe.customers.create({
+      email: customerEmail,
+      metadata: {
+        userId,
+      },
+    });
+
     // Get the correct price ID
     const priceId = plan === "pro" 
       ? process.env.STRIPE_PRO_PRICE_ID 
       : process.env.STRIPE_STARTER_PRICE_ID;
 
-    // Log the selected plan and price (server-side)
-    console.log("Server: Plan selection:", {
-      selectedPlan: plan,
-      selectedPriceId: priceId,
-      hasStripeSecret: !!process.env.STRIPE_SECRET_KEY,
+    if (!priceId || !priceId.startsWith('price_')) {
+      throw new Error(`Invalid price ID for plan: ${plan}`);
+    }
+
+    // Create initial profile record
+    await db.insert(profilesTable).values({
+      userId,
+      email: customerEmail,
+      stripeCustomerId: customer.id,
+      membership: plan,
+      monthlyMinutes: PLAN_MINUTES[plan],
+      minutesAvailable: PLAN_MINUTES[plan],
     });
 
-    // Validate price ID exists and format
-    if (!priceId) {
-      throw new Error(`Price ID not configured for plan: ${plan}`);
-    }
-
-    if (!priceId.startsWith('price_')) {
-      throw new Error(`Invalid price ID format for plan: ${plan}`);
-    }
-
     const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
       mode: "subscription",
       payment_method_types: ["card"],
-      customer_email: customerEmail,
-      client_reference_id: userId,
       metadata: {
-        plan,
         userId,
+        plan,
       },
       line_items: [{
         price: priceId,
@@ -55,18 +63,10 @@ export async function createCheckoutSession(
   }
 }
 
-/**
- * Creates a Stripe portal session for a user
- * @param stripeCustomerId - The Stripe customer ID of the user
- * @returns The URL of the portal session
- */
 export async function createStripePortalSession(stripeCustomerId: string) {
   try {
     if (!stripeCustomerId) {
       throw new Error("No Stripe customer ID provided");
-    }
-    if (!stripe) {
-      throw new Error("Stripe is not properly initialized");
     }
 
     const session = await stripe.billingPortal.sessions.create({
@@ -78,5 +78,28 @@ export async function createStripePortalSession(stripeCustomerId: string) {
   } catch (error) {
     console.error("Error creating portal session:", error);
     throw error instanceof Error ? error : new Error("Failed to create portal session");
+  }
+}
+
+export async function updateProfileWithSubscription(
+  userId: string,
+  subscriptionId: string,
+  customerId: string,
+  plan: "starter" | "pro"
+) {
+  try {
+    await db
+      .update(profilesTable)
+      .set({
+        stripeSubscriptionId: subscriptionId,
+        stripeCustomerId: customerId,
+        membership: plan,
+        monthlyMinutes: PLAN_MINUTES[plan],
+        minutesAvailable: PLAN_MINUTES[plan],
+      })
+      .where(eq(profilesTable.userId, userId));
+  } catch (error) {
+    console.error("Error updating profile with subscription:", error);
+    throw error;
   }
 }
