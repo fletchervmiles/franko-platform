@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const body = await req.text();
     const signature = headers().get("Stripe-Signature");
     
-    console.log("Received webhook to correct endpoint");
+    console.log("Received webhook request");
     
     if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
       console.error("Missing signature or webhook secret");
@@ -39,8 +39,7 @@ export async function POST(req: Request) {
         const plan = session.metadata?.plan as MembershipTier;
         
         if (!userId) {
-          console.error("No userId found in session metadata:", session.id);
-          throw new Error("No userId in session metadata");
+          throw new Error("No userId found in session metadata");
         }
 
         if (!session.subscription) {
@@ -67,62 +66,6 @@ export async function POST(req: Request) {
         });
 
         console.log("Updated profile result:", updatedProfile);
-
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
-        
-        // Get the userId from the customer metadata
-        const customer = await stripe.customers.retrieve(customerId);
-        if ('deleted' in customer) {
-          throw new Error("Customer has been deleted");
-        }
-        const userId = customer.metadata.userId;
-        
-        if (!userId) {
-          throw new Error("No userId found in customer metadata");
-        }
-
-        // Determine the plan from the subscription
-        const planId = subscription.items.data[0]?.price.id;
-        const plan = planId === process.env.STRIPE_PRO_PRICE_ID ? "pro" : "starter";
-
-        await updateProfile(userId, {
-          membership: plan as MembershipTier,
-          monthlyMinutes: PLAN_MINUTES[plan],
-          minutesAvailable: PLAN_MINUTES[plan], // Reset available minutes on plan change
-          stripeSubscriptionId: subscription.id
-        });
-
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
-        
-        // Get the userId from the customer metadata
-        const customer = await stripe.customers.retrieve(customerId);
-        if ('deleted' in customer) {
-          throw new Error("Customer has been deleted");
-        }
-        const userId = customer.metadata.userId;
-        
-        if (!userId) {
-          throw new Error("No userId found in customer metadata");
-        }
-
-        // Reset to free plan
-        await updateProfile(userId, {
-          membership: "free",
-          monthlyMinutes: PLAN_MINUTES.free,
-          minutesAvailable: PLAN_MINUTES.free,
-          stripeSubscriptionId: null,
-        });
-
         break;
       }
     }
@@ -147,4 +90,4 @@ export async function POST(req: Request) {
       }
     );
   }
-}
+} 
