@@ -31,29 +31,39 @@ export async function POST(req: Request) {
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan as MembershipTier;
         
+        console.log("Webhook received session:", {
+          userId,
+          plan,
+          customer: session.customer,
+          subscription: session.subscription,
+        });
+
         if (!userId || !plan) {
           console.error("Missing userId or plan in session metadata:", session);
           throw new Error("Missing userId or plan in session metadata");
         }
 
-        // Verify profile exists
-        const profile = await getProfileByUserId(userId);
-        if (!profile) {
-          console.error("Profile not found for userId:", userId);
-          throw new Error("Profile not found");
+        if (!session.subscription) {
+          console.error("No subscription ID in session");
+          throw new Error("No subscription ID found in session");
         }
 
-        console.log("Updating profile for user:", userId, "with plan:", plan);
+        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+        
+        console.log("Retrieved subscription:", {
+          id: subscription.id,
+          status: subscription.status,
+        });
 
         await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
-          stripeSubscriptionId: session.subscription as string,
+          stripeSubscriptionId: subscription.id,
           membership: plan,
           monthlyMinutes: PLAN_MINUTES[plan],
           minutesAvailable: PLAN_MINUTES[plan],
         });
 
-        console.log("Profile updated successfully");
+        console.log("Profile updated successfully with subscription ID:", subscription.id);
         break;
       }
 

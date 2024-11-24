@@ -33,7 +33,16 @@ export const getAllProfiles = async (): Promise<SelectProfile[]> => {
 
 export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
   try {
-    const [updatedProfile] = await db.update(profilesTable).set(data).where(eq(profilesTable.userId, userId)).returning();
+    const [updatedProfile] = await db
+      .update(profilesTable)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(profilesTable.userId, userId))
+      .returning();
+    
+    console.log("Profile update result:", updatedProfile);
     return updatedProfile;
   } catch (error) {
     console.error("Error updating profile:", error);
