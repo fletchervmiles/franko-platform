@@ -1,5 +1,7 @@
-import { Clock, HourglassIcon } from "lucide-react"
+import { Clock, HourglassIcon, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from 'react'
+import { fetchUsageMetrics } from '@/actions/usage-actions'
 
 interface UsageMetrics {
   totalLifetimeMinutes: number
@@ -14,7 +16,35 @@ function formatMinutes(minutes: number): string {
   return `${hours} hours, ${remainingMinutes} minutes`
 }
 
-export default function UsageOverview({ metrics }: { metrics: UsageMetrics }) {
+export default function UsageOverview() {
+  const [metrics, setMetrics] = useState<UsageMetrics>({
+    totalLifetimeMinutes: 0,
+    minutesUsedThisMonth: 0,
+    remainingMinutes: 0,
+    monthlyQuota: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadMetrics() {
+      try {
+        const data = await fetchUsageMetrics();
+        setMetrics(data);
+      } catch (error) {
+        console.error('Failed to load usage metrics:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMetrics();
+  }, []);
+
+  if (loading) {
+    return <div>Loading usage metrics...</div>;
+  }
+
   const percentageUsed = (metrics.minutesUsedThisMonth / metrics.monthlyQuota) * 100
 
   return (
@@ -24,7 +54,7 @@ export default function UsageOverview({ metrics }: { metrics: UsageMetrics }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center">
@@ -37,6 +67,21 @@ export default function UsageOverview({ metrics }: { metrics: UsageMetrics }) {
                   {formatMinutes(metrics.totalLifetimeMinutes)}
                 </p>
                 <p className="text-sm text-blue-600 mt-1">Your all-time usage of the service.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-amber-50 border-amber-200">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 text-amber-500" />
+                  Allocated Minutes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-2">
+                <p className="text-lg font-bold text-amber-700">
+                  {formatMinutes(metrics.monthlyQuota)}
+                </p>
+                <p className="text-sm text-amber-600 mt-1">Total allocated minutes based on your monthly plan.</p>
               </CardContent>
             </Card>
 
@@ -75,3 +120,4 @@ export default function UsageOverview({ metrics }: { metrics: UsageMetrics }) {
     </Card>
   )
 }
+
