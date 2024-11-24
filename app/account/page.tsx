@@ -8,17 +8,10 @@ export default async function AccountPage() {
     const { userId } = await auth()
     const profile = userId ? await getProfile(userId) : null
     
-    const usageMetrics = {
-      totalLifetimeMinutes: 0,
-      minutesUsedThisMonth: 0,
-      remainingMinutes: 0,
-      monthlyQuota: 0
-    }
-    
     return (
       <RootLayout>
         <div className="space-y-4">
-          <UsageOverview metrics={usageMetrics} />
+          <UsageOverview />
           <AccountSection stripeCustomerId={profile?.stripeCustomerId} />
         </div>
       </RootLayout>
