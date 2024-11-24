@@ -58,15 +58,47 @@ export async function POST(req: Request) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        // Handle subscription updates
-        // You might want to update minutesAvailable or membership status
+        const customerId = subscription.customer as string;
+        
+        // Get the profile associated with this customer ID
+        const profile = await getProfileByUserId(customerId);
+        if (!profile) {
+          throw new Error("Profile not found for customer");
+        }
+
+        // Determine the plan from the subscription
+        const planId = subscription.items.data[0]?.price.id;
+        const plan = planId === process.env.STRIPE_PRO_PRICE_ID ? "pro" : "starter";
+        const monthlyMinutes = plan === "pro" ? 500 : 200;
+
+        // Update the profile with new subscription details
+        await updateProfile(profile.userId, {
+          membership: plan,
+          monthlyMinutes,
+          minutesAvailable: monthlyMinutes, // Reset available minutes on plan change
+        });
+
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        // Handle subscription cancellation
-        // Update membership to 'free' and reset minutes
+        const customerId = subscription.customer as string;
+        
+        // Get the profile associated with this customer ID
+        const profile = await getProfileByUserId(customerId);
+        if (!profile) {
+          throw new Error("Profile not found for customer");
+        }
+
+        // Reset to free plan
+        await updateProfile(profile.userId, {
+          membership: "free",
+          monthlyMinutes: 100, // Free tier minutes
+          minutesAvailable: 100,
+          stripeSubscriptionId: null, // Clear subscription ID
+        });
+
         break;
       }
     }
