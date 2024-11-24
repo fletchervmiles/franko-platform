@@ -1,5 +1,8 @@
 import { tavily } from "@tavily/core";
 
+export const maxDuration = 60; // Configure to maximum 60 seconds
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { url } = await request.json();

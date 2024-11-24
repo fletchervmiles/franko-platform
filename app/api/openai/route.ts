@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
 
+export const maxDuration = 60; // Configure to maximum 60 seconds
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { content } = await request.json();
@@ -10,8 +13,8 @@ export async function POST(request: Request) {
         role: 'user', 
         content: `Review this text and create a concise summary (max 200 words) of what this company does, including its main products and services: ${content}`
       }],
-      model: 'gpt-4',
-      max_tokens: 300
+      model: 'gpt-4o',
+      max_tokens: 300,
     });
 
     return Response.json({ 
