@@ -21,11 +21,20 @@ const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
 
 export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps) {
   const [copied, setCopied] = React.useState(false)
+  const [isReady, setIsReady] = React.useState(false)
   
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.franko.ai'
   const shareableUrl = profile?.userId 
     ? `${baseUrl}/start-interview?clientId=${profile.userId}&company=${encodeURIComponent(profile.companyName || '')}`
     : ''
+
+  React.useEffect(() => {
+    if (profile?.companyUrl && profile?.companyName && profile?.companyDescription) {
+      setIsReady(true)
+    } else {
+      setIsReady(false)
+    }
+  }, [profile?.companyUrl, profile?.companyName, profile?.companyDescription])
 
   const handleCopy = async () => {
     if (!shareableUrl) return
@@ -38,8 +47,6 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
       console.error("Failed to copy text: ", err)
     }
   }
-
-  const isReadyToShow = profile?.companyUrl && profile?.companyName && profile?.companyDescription
 
   if (!profile) {
     return (
@@ -62,14 +69,14 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
             <div>
               <h3 className="text-sm font-semibold flex items-center">
                 Customer Churn Use Case
-                <StatusDot status={isReadyToShow ? 'complete' : 'pending'} />
+                <StatusDot status={isReady ? 'complete' : 'pending'} />
               </h3>
               <p className="text-sm text-muted-foreground">
                 Share this link with your customers who have churned. Upon submitting the form, 
                 they'll immediately receive a call from our AI interviewer.
               </p>
             </div>
-            {isReadyToShow ? (
+            {isReady ? (
               <div className="space-y-4">
                 <div className="relative">
                   <Input 

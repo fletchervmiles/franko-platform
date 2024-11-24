@@ -210,6 +210,10 @@ export default function CompanyDetailsCard() {
             setCompanyDescription(profile.companyDescription);
             setIsDescriptionSaved(true);
           }
+          if (profile.companyName) {
+            setCompanyName(profile.companyName);
+            setIsCompanyNameSaved(true);
+          }
         }
       }
     };
