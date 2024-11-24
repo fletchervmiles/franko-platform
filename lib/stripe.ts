@@ -13,8 +13,8 @@ export type MembershipTier = "free" | "starter" | "pro";
 
 export const PLAN_MINUTES = {
   free: 0,
-  starter: 200,
-  pro: 500
+  starter: 180,
+  pro: 480
 } as const;
 
 export interface StripeSubscriptionData {

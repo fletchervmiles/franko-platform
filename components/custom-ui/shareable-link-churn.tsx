@@ -31,6 +31,8 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
     }
   }
 
+  const isReadyToShow = profile?.companyUrl && profile?.companyName && profile?.companyDescription
+
   if (!profile) {
     return (
       <Card className="w-full bg-white transition-all duration-300 ease-in-out p-2">
@@ -56,36 +58,42 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
                 they'll immediately receive a call from our AI interviewer.
               </p>
             </div>
-            <div className="space-y-4">
-              <div className="relative">
-                <Input 
-                  value={shareableUrl}
-                  readOnly
-                  className="bg-gray-100/50"
-                />
+            {isReadyToShow ? (
+              <div className="space-y-4">
+                <div className="relative">
+                  <Input 
+                    value={shareableUrl}
+                    readOnly
+                    className="bg-gray-100/50"
+                  />
+                </div>
+                <div className="space-x-2">
+                  <Button 
+                    onClick={handleCopy}
+                    variant="outline"
+                    size="sm"
+                    disabled={!shareableUrl}
+                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3 h-3 mr-0.5" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3 mr-0.5" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div className="space-x-2">
-                <Button 
-                  onClick={handleCopy}
-                  variant="outline"
-                  size="sm"
-                  disabled={!shareableUrl}
-                  className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3 h-3 mr-0.5" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3 mr-0.5" />
-                      Copy
-                    </>
-                  )}
-                </Button>
+            ) : (
+              <div className="text-sm text-yellow-600">
+                Please complete all required fields (Company URL, Name, and Description) to get your shareable link.
               </div>
-            </div>
+            )}
           </div>
         </div>
       </CardContent>

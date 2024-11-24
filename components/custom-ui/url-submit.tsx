@@ -22,6 +22,15 @@ import {
 import { useAuth } from "@clerk/nextjs";
 import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
 
+// Add this component at the top of your file
+const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
+  <span 
+    className={`inline-block w-2 h-2 rounded-full ml-2 ${
+      status === 'complete' ? 'bg-green-500' : 'bg-yellow-500'
+    }`}
+  />
+)
+
 // Main component for handling company details input
 export default function CompanyDetailsCard() {
   // State variables for managing form data and UI states
@@ -33,6 +42,8 @@ export default function CompanyDetailsCard() {
   const [isDescriptionSaved, setIsDescriptionSaved] = React.useState(false) // Tracks if description is saved
   const [isMounted, setIsMounted] = React.useState(false) // Tracks component mount state for dialog
   const { userId } = useAuth();
+  const [companyName, setCompanyName] = React.useState("")
+  const [isCompanyNameSaved, setIsCompanyNameSaved] = React.useState(false)
 
   // Set mounted state when component mounts
   React.useEffect(() => {
@@ -63,6 +74,25 @@ export default function CompanyDetailsCard() {
     setIsUrlValid(validateURL(input))
   }
 
+  // Add this function to extract company name from domain
+  const extractCompanyName = (url: string) => {
+    try {
+      const domain = new URL(url).hostname
+      const name = domain
+        .replace('www.', '')
+        .split('.')[0]
+        // Convert kebab-case or snake_case to space separated
+        .replace(/[-_]/g, ' ')
+        // Capitalize first letter of each word
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+      return name
+    } catch {
+      return ''
+    }
+  }
+
   // Handles URL form submission
   const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +102,10 @@ export default function CompanyDetailsCard() {
       setIsLoading(true);
 
       try {
+        // Extract company name from URL if not already set
+        const extractedName = extractCompanyName(formattedURL)
+        const finalCompanyName = companyName || extractedName
+
         // First API call - Tavily
         const tavilyResponse = await fetch('/api/tavily', {
           method: 'POST',
@@ -96,16 +130,19 @@ export default function CompanyDetailsCard() {
           throw new Error('Failed to generate description');
         }
 
-        // Update database
+        // Update database with both URL and company name
         const result = await updateProfileAction(userId, {
           companyUrl: formattedURL,
-          companyDescription: openaiData.description
+          companyDescription: openaiData.description,
+          companyName: finalCompanyName
         });
 
         if (result.status === 'success') {
           setCompanyDescription(openaiData.description);
           setIsUrlSaved(true);
           setIsDescriptionSaved(true);
+          setCompanyName(finalCompanyName);
+          setIsCompanyNameSaved(true);
         } else {
           throw new Error('Failed to update profile');
         }
@@ -180,6 +217,27 @@ export default function CompanyDetailsCard() {
     loadProfileData();
   }, [userId]);
 
+  // Add this function after handleDescriptionEdit
+  const handleCompanyNameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userId) {
+      try {
+        const result = await updateProfileAction(userId, {
+          companyName: companyName
+        });
+
+        if (result.status === 'success') {
+          setIsCompanyNameSaved(true);
+        } else {
+          throw new Error('Failed to update company name');
+        }
+      } catch (error) {
+        console.error('Error updating company name:', error);
+        alert('Failed to save company name');
+      }
+    }
+  };
+
   // Component render structure
   return (
     <>
@@ -193,7 +251,10 @@ export default function CompanyDetailsCard() {
             {/* URL input section */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold">Website</h3>
+                <h3 className="text-sm font-semibold flex items-center">
+                  Website
+                  <StatusDot status={isUrlSaved ? 'complete' : 'pending'} />
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   This will be used for context by the interview agent, so it's important it's correct.
                 </p>
@@ -264,7 +325,10 @@ export default function CompanyDetailsCard() {
             {isUrlSaved && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-semibold">Company Description</h3>
+                  <h3 className="text-sm font-semibold flex items-center">
+                    Company Description
+                    <StatusDot status={isDescriptionSaved ? 'complete' : 'pending'} />
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     This company description will be used for context by the interview agent, please review and edit as needed.
                   </p>
@@ -298,6 +362,66 @@ export default function CompanyDetailsCard() {
                         size="sm" 
                         variant="outline" 
                         onClick={handleDescriptionEdit}
+                        className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
+                      >
+                        <Edit className="w-3 h-3 mr-0.5" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {isUrlSaved && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center">
+                    Company or Product Name
+                    <StatusDot status={isCompanyNameSaved ? 'complete' : 'pending'} />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    This should be your company name or a specific product that you want to be the focus of the churn interview.
+                  </p>
+                </div>
+                <form onSubmit={handleCompanyNameSubmit} className="space-y-4">
+                  <div className="relative">
+                    <Label htmlFor="companyName" className="sr-only">Company Name</Label>
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Enter company or product name"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className={`transition-all duration-300 ease-in-out ${isCompanyNameSaved ? "bg-gray-100/50" : ""}`}
+                      disabled={isCompanyNameSaved}
+                    />
+                  </div>
+                  <div className="space-x-2">
+                    <Button 
+                      type="submit" 
+                      size="sm" 
+                      disabled={isCompanyNameSaved || !companyName.trim()}
+                      className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
+                    >
+                      {isCompanyNameSaved ? (
+                        <>
+                          <Save className="w-3 h-3 mr-0.5" />
+                          Saved
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3 mr-0.5" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                    {isCompanyNameSaved && (
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setIsCompanyNameSaved(false)}
                         className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                       >
                         <Edit className="w-3 h-3 mr-0.5" />

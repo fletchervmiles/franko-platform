@@ -9,7 +9,7 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="text-right mb-8">
         <button
-          onClick={() => router.push('/sign-in')}
+          onClick={() => router.push('/login')}
           className="text-blue-500 hover:text-blue-700"
         >
           Login
