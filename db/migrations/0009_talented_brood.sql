@@ -1,0 +1,1 @@
+ALTER TYPE "public"."membership" ADD VALUE 'starter' BEFORE 'pro';

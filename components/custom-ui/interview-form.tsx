@@ -28,16 +28,59 @@ interface FormData {
 }
 
 const countryCodes = [
-  { code: '+1', name: 'US' },
-  { code: '+61', name: 'AU' },
-  { code: '+44', name: 'UK' },
-  { code: '+81', name: 'JP' },
-  { code: '+86', name: 'CN' },
-  { code: '+91', name: 'IN' },
-  { code: '+49', name: 'DE' },
-  { code: '+33', name: 'FR' },
-  { code: '+39', name: 'IT' },
-  { code: '+7', name: 'RU' },
+  // North America
+  { code: '+1', name: 'US/CA' },  // United States & Canada
+  
+  // Other Common
+  { code: '+61', name: 'AU' },    // Australia
+  { code: '+44', name: 'UK' },    // United Kingdom
+  { code: '+66', name: 'TH' },    // Thailand
+
+  // Asia & Oceania
+  { code: '+81', name: 'JP' },    // Japan
+  { code: '+86', name: 'CN' },    // China
+  { code: '+91', name: 'IN' },    // India
+  { code: '+65', name: 'SG' },    // Singapore
+  { code: '+82', name: 'KR' },    // South Korea
+  { code: '+84', name: 'VN' },    // Vietnam
+  { code: '+60', name: 'MY' },    // Malaysia
+  { code: '+63', name: 'PH' },    // Philippines
+  { code: '+852', name: 'HK' },   // Hong Kong
+  { code: '+64', name: 'NZ' },    // New Zealand
+  { code: '+886', name: 'TW' },   // Taiwan (New)
+  { code: '+855', name: 'KH' },   // Cambodia (New)
+  { code: '+95', name: 'MM' },    // Myanmar (New)
+  { code: '+62', name: 'ID' },    // Indonesia (New)
+  
+  // Europe
+  { code: '+49', name: 'DE' },    // Germany
+  { code: '+33', name: 'FR' },    // France
+  { code: '+39', name: 'IT' },    // Italy
+  { code: '+34', name: 'ES' },    // Spain
+  { code: '+31', name: 'NL' },    // Netherlands
+  { code: '+46', name: 'SE' },    // Sweden
+  { code: '+47', name: 'NO' },    // Norway
+  { code: '+45', name: 'DK' },    // Denmark
+  { code: '+41', name: 'CH' },    // Switzerland
+  { code: '+353', name: 'IE' },   // Ireland
+  { code: '+358', name: 'FI' },   // Finland (New)
+  { code: '+48', name: 'PL' },    // Poland (New)
+  { code: '+43', name: 'AT' },    // Austria (New)
+  { code: '+32', name: 'BE' },    // Belgium (New)
+  { code: '+351', name: 'PT' },   // Portugal (New)
+  
+  // Middle East
+  { code: '+971', name: 'AE' },   // UAE
+  { code: '+966', name: 'SA' },   // Saudi Arabia
+  { code: '+972', name: 'IL' },   // Israel (New)
+  { code: '+974', name: 'QA' },   // Qatar (New)
+  { code: '+973', name: 'BH' },   // Bahrain (New)
+  
+  // Others
+  { code: '+7', name: 'RU' },     // Russia
+  { code: '+55', name: 'BR' },    // Brazil
+  { code: '+52', name: 'MX' },    // Mexico
+  { code: '+27', name: 'ZA' },    // South Africa
 ]
 
 interface InterviewFormProps {
@@ -123,8 +166,8 @@ export default function InterviewForm({
         interviewee_email: formData.email,
         interviewee_number: formattedPhoneNumber,
         client_company_description: clientProfile.companyDescription,
-        agent_name: clientProfile.agentInterviewerName,
-        voice_id: clientProfile.voiceId,
+        agent_name: clientProfile.agentInterviewerName || 'Brittany',
+        voice_id: clientProfile.voiceId || 'kPzsL2i3teMYv0FxEYQ6',
         unique_customer_identifier: clientProfile.userId,
         use_case: useCase
       }

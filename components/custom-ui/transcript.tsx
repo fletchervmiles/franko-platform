@@ -28,6 +28,20 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
     )
   }
 
+  // Function to format the transcript text
+  const formatTranscript = (text: string) => {
+    // Add line breaks after timestamps
+    text = text.replace(/\*\*\[\d{2}:\d{2}\]\*\*/g, match => `${match}\n\n`);
+    
+    // Add line breaks before speaker names
+    text = text.replace(/([^.!?])\s*([A-Za-z]+:)/g, '$1\n\n$2');
+    
+    // Bold speaker names
+    text = text.replace(/([A-Za-z]+):/g, '**$1:**');
+    
+    return text;
+  };
+
   return (
     <div className="w-full bg-white relative">
       <h2 className="text-sm font-semibold px-6 pt-4 flex items-center gap-2">
@@ -40,19 +54,35 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
             <ReactMarkdown
               components={{
                 strong: ({ children }) => {
-                  if (Array.isArray(children) && typeof children[0] === 'string' && children[0].includes('[')) {
-                    return <span className="text-muted-foreground text-xs">{children}</span>
+                  if (!Array.isArray(children) || typeof children[0] !== 'string') {
+                    return <strong>{children}</strong>;
                   }
-                  return <strong>{children}</strong>
+
+                  const text = children[0].trim();
+                  
+                  // Handle timestamps
+                  if (text.match(/^\[\d{2}:\d{2}\]$/)) {
+                    return <span className="text-muted-foreground text-xs ml-2">{text}</span>;
+                  }
+                  
+                  // Handle speaker names
+                  if (text.endsWith(':')) {
+                    return <span className="font-bold text-primary block mt-4">{text}</span>;
+                  }
+
+                  return <strong>{children}</strong>;
+                },
+                p: ({ children }) => {
+                  return <p className="leading-relaxed mb-2">{children}</p>;
                 }
               }}
             >
-              {conversationHistory}
+              {formatTranscript(conversationHistory)}
             </ReactMarkdown>
           </div>
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px bg-border"></div>
     </div>
-  )
+  );
 }

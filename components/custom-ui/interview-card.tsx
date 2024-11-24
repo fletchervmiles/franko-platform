@@ -79,7 +79,7 @@ export default function InterviewCard({
             <span className={`w-2 h-2 rounded-full mr-1.5 inline-block ${
               status === 'reviewed' ? 'bg-green-500' : 'bg-yellow-500'
             }`}></span>
-            {status}
+            {status === 'ready for review' ? 'Ready for review' : 'Reviewed'}
           </span>
         </div>
       </CardContent>

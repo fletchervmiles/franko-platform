@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -11,9 +11,16 @@ interface StatusChangeProps {
 }
 
 export default function InterviewStatus({ interviewId, initialStatus }: StatusChangeProps) {
-  const [status, setStatus] = useState<string>(initialStatus)
+  const defaultStatus = initialStatus?.toLowerCase() === 'reviewed' ? 'reviewed' : 'ready for review'
+  const [status, setStatus] = useState<string>(defaultStatus)
   const [isSaving, setIsSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
+
+  useEffect(() => {
+    if (initialStatus) {
+      setStatus(initialStatus)
+    }
+  }, [initialStatus])
 
   const handleStatusChange = async (newStatus: string) => {
     setIsSaving(true)
@@ -26,7 +33,6 @@ export default function InterviewStatus({ interviewId, initialStatus }: StatusCh
 
     if (error) {
       console.error('Error updating status:', error)
-      // You might want to add error handling UI here
       setIsSaving(false)
       return
     }
@@ -39,9 +45,15 @@ export default function InterviewStatus({ interviewId, initialStatus }: StatusCh
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={status} onValueChange={handleStatusChange} disabled={isSaving}>
+      <Select 
+        value={status}
+        onValueChange={handleStatusChange} 
+        disabled={isSaving}
+      >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select status" />
+          <SelectValue>
+            {status === 'ready for review' ? 'Ready for review' : 'Reviewed'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="ready for review">Ready for review</SelectItem>

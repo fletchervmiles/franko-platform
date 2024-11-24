@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "monthly_minutes" integer DEFAULT 0;

@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, boolean, integer, uuid } from "drizzle-orm/pg-core";
 
-export const membershipEnum = pgEnum("membership", ["free", "pro"]);
+export const membershipEnum = pgEnum("membership", ["free", "starter", "pro"]);
 
 export const profilesTable = pgTable("profiles", {
   id: uuid("id").defaultRandom().notNull(),
@@ -18,6 +18,7 @@ export const profilesTable = pgTable("profiles", {
   minutesTotalUsed: integer("minutes_total_used").default(0),
   minutesUsedThisMonth: integer("minutes_used_this_month").default(0),
   minutesAvailable: integer("minutes_available").default(0),
+  monthlyMinutes: integer("monthly_minutes").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

@@ -112,7 +112,7 @@ const transformInterviewData = (rawData: RawInterview): Interview => {
     analysisPart04: rawData.analysis_part04,
     analysisPart05: rawData.analysis_part05,
     analysisPart06: rawData.analysis_part06,
-    status: rawData.status,
+    status: rawData.status?.toLowerCase() === 'reviewed' ? 'reviewed' : 'ready for review',
     analysisOutput: rawData.analysis_output || null,
   }
 }
@@ -189,7 +189,10 @@ export default function InterviewContainer({ interviewId }: { interviewId: strin
               Interviewee: {`${interview.intervieweeFirstName} ${interview.intervieweeLastName}`}
             </h1>
           </div>
-          <InterviewStatus interviewId={interview.id} initialStatus={interview.status} />
+          <InterviewStatus 
+            interviewId={interview.id} 
+            initialStatus={interview.status} 
+          />
         </div>
         <div className="flex flex-1">
           {/* Desktop Layout */}

@@ -25,6 +25,26 @@ export default clerkMiddleware(async (auth, req) => {
   }
 });
 
-export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"]
-};
+// export const config = {
+//   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"]
+// };
+// import { clerkMiddleware } from "@clerk/nextjs/server";
+// import { NextResponse } from "next/server";
+
+// export default clerkMiddleware(async (auth, req) => {
+//   const { userId, redirectToSignIn } = await auth();
+  
+//   // If no user and not on home page, redirect to sign in
+//   if (!userId) {
+//     return redirectToSignIn();
+//   }
+  
+//   return NextResponse.next();
+// });
+
+// export const config = {
+//   matcher: [
+//     // Skip home page and static files
+//     "/((?!api|_next/static|_next/image|favicon.ico|$).*)",
+//   ]
+// };

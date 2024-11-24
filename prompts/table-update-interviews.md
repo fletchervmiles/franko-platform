@@ -22,7 +22,7 @@ Below is an example of the existing table. The following fields should be added:
 
 **Fields to be added**
 
-- status
+- monthly_minutes
 
 
 ```typescript
