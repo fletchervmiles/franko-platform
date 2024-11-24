@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createStripePortalSession } from "@/actions/stripe-actions"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { useClerk } from "@clerk/nextjs"
 
 interface AccountSectionProps {
   stripeCustomerId?: string | null
@@ -13,6 +14,7 @@ interface AccountSectionProps {
 export default function AccountSection({ stripeCustomerId }: AccountSectionProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { openUserProfile } = useClerk()
 
   console.log('Subscription component:', {
     hasStripeId: !!stripeCustomerId,
@@ -42,13 +44,21 @@ export default function AccountSection({ stripeCustomerId }: AccountSectionProps
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Button 
-            className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors h-8 text-xs px-3"
-            onClick={handleManageSubscription}
-            disabled={isPending || !stripeCustomerId}
-          >
-            {isPending ? "Loading..." : "Manage Subscription"}
-          </Button>
+          <div className="flex space-x-4">
+            <Button 
+              className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors h-8 text-xs px-3"
+              onClick={handleManageSubscription}
+              disabled={isPending || !stripeCustomerId}
+            >
+              {isPending ? "Loading..." : "Manage Subscription"}
+            </Button>
+            <Button 
+              className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors h-8 text-xs px-3"
+              onClick={() => openUserProfile()}
+            >
+              Manage Account
+            </Button>
+          </div>
           {!stripeCustomerId && (
             <p className="text-sm text-muted-foreground">
               No subscription found. Visit the pricing page to subscribe.
