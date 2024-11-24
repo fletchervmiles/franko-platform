@@ -53,7 +53,7 @@ export default function AccountSection({ stripeCustomerId }: AccountSectionProps
               {isPending ? "Loading..." : "Manage Subscription"}
             </Button>
             <Button 
-              className="bg-[#0000FF] text-white hover:bg-[#0000FF]/90 transition-colors h-8 text-xs px-3"
+              className="bg-[#475569] text-white hover:bg-[#475569]/90 transition-colors h-8 text-xs px-3"
               onClick={() => openUserProfile()}
             >
               Manage Account
