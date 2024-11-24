@@ -1,7 +1,7 @@
 "use server";
 
 import { stripe, PLAN_MINUTES } from "@/lib/stripe";
-import { db } from "@/db";
+import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
 

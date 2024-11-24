@@ -63,6 +63,9 @@ export async function POST(req: Request) {
         
         // Get the userId from the customer metadata
         const customer = await stripe.customers.retrieve(customerId);
+        if ('deleted' in customer) {
+          throw new Error("Customer has been deleted");
+        }
         const userId = customer.metadata.userId;
         
         if (!userId) {
@@ -89,6 +92,9 @@ export async function POST(req: Request) {
         
         // Get the userId from the customer metadata
         const customer = await stripe.customers.retrieve(customerId);
+        if ('deleted' in customer) {
+          throw new Error("Customer has been deleted");
+        }
         const userId = customer.metadata.userId;
         
         if (!userId) {
