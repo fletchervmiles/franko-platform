@@ -2,10 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 export default function PricingPage() {
   const router = useRouter();
-  const { userId } = useAuth();
+  const { userId, isLoaded } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    // If not authenticated, redirect to sign-up
+    if (!userId) {
+      router.push('/sign-up');
+      return;
+    }
+
+    setIsLoading(false);
+  }, [userId, isLoaded, router]);
 
   const handlePlanSelect = async (plan: "starter" | "pro") => {
     if (!userId) {
@@ -15,6 +29,14 @@ export default function PricingPage() {
 
     router.push(`/payment?plan=${plan}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
