@@ -54,3 +54,29 @@ export async function createCheckoutSession(
     throw error;
   }
 }
+
+/**
+ * Creates a Stripe portal session for a user
+ * @param stripeCustomerId - The Stripe customer ID of the user
+ * @returns The URL of the portal session
+ */
+export async function createStripePortalSession(stripeCustomerId: string) {
+  try {
+    if (!stripeCustomerId) {
+      throw new Error("No Stripe customer ID provided");
+    }
+    if (!stripe) {
+      throw new Error("Stripe is not properly initialized");
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/account`,
+    });
+
+    return session.url;
+  } catch (error) {
+    console.error("Error creating portal session:", error);
+    throw error instanceof Error ? error : new Error("Failed to create portal session");
+  }
+}
