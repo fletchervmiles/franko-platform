@@ -6,14 +6,13 @@ import type Stripe from "stripe";
 
 export async function POST(req: Request) {
   try {
-    if (!stripe) {
-      throw new Error("Stripe is not properly initialized");
-    }
-
     const body = await req.text();
     const signature = headers().get("Stripe-Signature");
     
+    console.log("Received webhook to correct endpoint");
+    
     if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+      console.error("Missing signature or webhook secret");
       return new Response("Missing signature or webhook secret", { status: 400 });
     }
 
@@ -23,39 +22,43 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
 
-    console.log("Received webhook event:", event.type);
+    console.log("Webhook event type:", event.type);
 
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        
+        console.log("Full webhook session data:", JSON.stringify({
+          id: session.id,
+          customer: session.customer,
+          subscription: session.subscription,
+          metadata: session.metadata,
+        }, null, 2));
+
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan as MembershipTier;
         
-        console.log("Webhook received session:", {
-          userId,
-          plan,
-          customer: session.customer,
-          subscription: session.subscription,
-        });
-
-        if (!userId || !plan) {
-          console.error("Missing userId or plan in session metadata:", session);
-          throw new Error("Missing userId or plan in session metadata");
+        if (!userId) {
+          console.error("No userId found in session metadata:", session.id);
+          throw new Error("No userId in session metadata");
         }
 
         if (!session.subscription) {
-          console.error("No subscription ID in session");
-          throw new Error("No subscription ID found in session");
+          console.error("No subscription found in session:", session.id);
+          throw new Error("No subscription ID in session");
         }
 
+        // Get full subscription details
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
         
-        console.log("Retrieved subscription:", {
-          id: subscription.id,
+        console.log("Retrieved subscription details:", {
+          subscriptionId: subscription.id,
           status: subscription.status,
+          customerId: subscription.customer,
+          plan: subscription.items.data[0]?.price.id
         });
 
-        await updateProfile(userId, {
+        const updatedProfile = await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
           stripeSubscriptionId: subscription.id,
           membership: plan,
@@ -63,7 +66,8 @@ export async function POST(req: Request) {
           minutesAvailable: PLAN_MINUTES[plan],
         });
 
-        console.log("Profile updated successfully with subscription ID:", subscription.id);
+        console.log("Updated profile result:", updatedProfile);
+
         break;
       }
 
