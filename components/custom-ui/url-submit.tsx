@@ -274,8 +274,8 @@ export default function CompanyDetailsCard() {
                   />
                   {/* Helper text for empty URL field */}
                   {!isUrlSaved && url.length === 0 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 text-sm animate-pulse">
-                      Step 1. Get started by submitting your company URL!
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
+                      ✨ Step 1. Get started by submitting your company URL!
                     </div>
                   )}
                 </div>
@@ -321,117 +321,113 @@ export default function CompanyDetailsCard() {
               </form>
             </div>
 
-            {/* Company description section (shown only after URL is saved) */}
-            {isUrlSaved && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold flex items-center">
-                    Company Description
-                    <StatusDot status={isDescriptionSaved ? 'complete' : 'pending'} />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    This company description will be used for context by the interview agent, please review and edit as needed.
-                  </p>
+            {/* Company Name section - no longer conditional */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold flex items-center">
+                  Company or Product Name
+                  <StatusDot status={isCompanyNameSaved ? 'complete' : 'pending'} />
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This should be your company name or a specific product that you want to be the focus of the churn interview.
+                </p>
+              </div>
+              <form onSubmit={handleCompanyNameSubmit} className="space-y-4">
+                <div className="relative">
+                  <Label htmlFor="companyName" className="sr-only">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    type="text"
+                    placeholder="Enter company or product name"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className={`transition-all duration-300 ease-in-out ${isCompanyNameSaved ? "bg-gray-100/50" : ""}`}
+                    disabled={isCompanyNameSaved}
+                  />
                 </div>
-                {/* Description input form */}
-                <form onSubmit={handleDescriptionSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="description" className="sr-only">Company Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="If your company description has not generated, please add it here."
-                      value={companyDescription}
-                      onChange={handleDescriptionChange}
-                      className="min-h-[100px]"
-                      disabled={isDescriptionSaved}
-                    />
-                  </div>
-                  <div className="space-x-2">
+                <div className="space-x-2">
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    disabled={isCompanyNameSaved || !companyName.trim()}
+                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
+                  >
+                    {isCompanyNameSaved ? (
+                      <>
+                        <Save className="w-3 h-3 mr-0.5" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3 h-3 mr-0.5" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                  {isCompanyNameSaved && (
                     <Button 
-                      type="submit" 
+                      type="button" 
                       size="sm" 
-                      disabled={isDescriptionSaved || companyDescription.trim() === ""}
+                      variant="outline" 
+                      onClick={() => setIsCompanyNameSaved(false)}
                       className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                     >
-                      <Save className="w-3 h-3 mr-0.5" />
-                      Saved
+                      <Edit className="w-3 h-3 mr-0.5" />
+                      Edit
                     </Button>
-                    {isDescriptionSaved && (
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={handleDescriptionEdit}
-                        className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                      >
-                        <Edit className="w-3 h-3 mr-0.5" />
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            )}
+                  )}
+                </div>
+              </form>
+            </div>
 
-            {isUrlSaved && (
-              <div className="space-y-4">
+            {/* Company Description section - no longer conditional */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold flex items-center">
+                  Company Description
+                  <StatusDot status={isDescriptionSaved ? 'complete' : 'pending'} />
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This company description will be used for context by the interview agent, please review and edit as needed.
+                </p>
+              </div>
+              <form onSubmit={handleDescriptionSubmit} className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-semibold flex items-center">
-                    Company or Product Name
-                    <StatusDot status={isCompanyNameSaved ? 'complete' : 'pending'} />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    This should be your company name or a specific product that you want to be the focus of the churn interview.
-                  </p>
+                  <Label htmlFor="description" className="sr-only">Company Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="If your company description has not generated, please add it here."
+                    value={companyDescription}
+                    onChange={handleDescriptionChange}
+                    className="min-h-[100px]"
+                    disabled={isDescriptionSaved}
+                  />
                 </div>
-                <form onSubmit={handleCompanyNameSubmit} className="space-y-4">
-                  <div className="relative">
-                    <Label htmlFor="companyName" className="sr-only">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Enter company or product name"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className={`transition-all duration-300 ease-in-out ${isCompanyNameSaved ? "bg-gray-100/50" : ""}`}
-                      disabled={isCompanyNameSaved}
-                    />
-                  </div>
-                  <div className="space-x-2">
+                <div className="space-x-2">
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    disabled={isDescriptionSaved || companyDescription.trim() === ""}
+                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
+                  >
+                    <Save className="w-3 h-3 mr-0.5" />
+                    Saved
+                  </Button>
+                  {isDescriptionSaved && (
                     <Button 
-                      type="submit" 
+                      type="button" 
                       size="sm" 
-                      disabled={isCompanyNameSaved || !companyName.trim()}
+                      variant="outline" 
+                      onClick={handleDescriptionEdit}
                       className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
                     >
-                      {isCompanyNameSaved ? (
-                        <>
-                          <Save className="w-3 h-3 mr-0.5" />
-                          Saved
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-3 h-3 mr-0.5" />
-                          Save
-                        </>
-                      )}
+                      <Edit className="w-3 h-3 mr-0.5" />
+                      Edit
                     </Button>
-                    {isCompanyNameSaved && (
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setIsCompanyNameSaved(false)}
-                        className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                      >
-                        <Edit className="w-3 h-3 mr-0.5" />
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            )}
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -11,6 +11,14 @@ interface ShareableLinkChurnProps {
   profile: SelectProfile
 }
 
+const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
+  <span 
+    className={`inline-block w-2 h-2 rounded-full ml-2 ${
+      status === 'complete' ? 'bg-green-500' : 'bg-yellow-500'
+    }`}
+  />
+)
+
 export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps) {
   const [copied, setCopied] = React.useState(false)
   
@@ -52,7 +60,10 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
         <div className="space-y-8">
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold">Customer Churn Use Case</h3>
+              <h3 className="text-sm font-semibold flex items-center">
+                Customer Churn Use Case
+                <StatusDot status={isReadyToShow ? 'complete' : 'pending'} />
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Share this link with your customers who have churned. Upon submitting the form, 
                 they'll immediately receive a call from our AI interviewer.
