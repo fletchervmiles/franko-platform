@@ -1,3 +1,5 @@
+'use client'
+
 import { Clock, HourglassIcon, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from 'react'
