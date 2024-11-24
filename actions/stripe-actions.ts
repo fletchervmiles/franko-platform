@@ -26,19 +26,9 @@ export async function createCheckoutSession(
       ? process.env.STRIPE_PRO_PRICE_ID 
       : process.env.STRIPE_STARTER_PRICE_ID;
 
-    if (!priceId || !priceId.startsWith('price_')) {
+    if (!priceId) {
       throw new Error(`Invalid price ID for plan: ${plan}`);
     }
-
-    // Create initial profile record
-    await db.insert(profilesTable).values({
-      userId,
-      email: customerEmail,
-      stripeCustomerId: customer.id,
-      membership: plan,
-      monthlyMinutes: PLAN_MINUTES[plan],
-      minutesAvailable: PLAN_MINUTES[plan],
-    });
 
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -54,6 +44,24 @@ export async function createCheckoutSession(
       }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+    });
+
+    // Create initial profile record
+    await db.insert(profilesTable).values({
+      userId,
+      email: customerEmail,
+      stripeCustomerId: customer.id,
+      membership: plan,
+      monthlyMinutes: PLAN_MINUTES[plan],
+      minutesAvailable: PLAN_MINUTES[plan],
+    }).onConflictDoUpdate({
+      target: profilesTable.userId,
+      set: {
+        stripeCustomerId: customer.id,
+        membership: plan,
+        monthlyMinutes: PLAN_MINUTES[plan],
+        minutesAvailable: PLAN_MINUTES[plan],
+      }
     });
 
     return session;
