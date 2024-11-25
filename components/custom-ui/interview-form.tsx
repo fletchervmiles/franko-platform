@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Phone } from "lucide-react"
 import { SelectProfile } from "@/db/schema"
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js'
 
 interface FormData {
   firstName: string
@@ -132,9 +133,17 @@ export default function InterviewForm({
   }
 
   const formatPhoneNumber = (countryCode: string, phoneNumber: string) => {
-    const digits = phoneNumber.replace(/\D/g, '')
-    const formattedNumber = digits.startsWith('0') ? digits.slice(1) : digits
-    return `${countryCode}${formattedNumber}`
+    try {
+      const numberWithCode = `${countryCode}${phoneNumber}`
+      if (!isValidPhoneNumber(numberWithCode)) {
+        throw new Error('Invalid phone number')
+      }
+      const parsed = parsePhoneNumber(numberWithCode)
+      return parsed.format('E.164')
+    } catch (error) {
+      console.error('Phone number formatting error:', error)
+      return `${countryCode}${phoneNumber}`
+    }
   }
 
   const validateForm = () => {
@@ -158,6 +167,11 @@ export default function InterviewForm({
     if (validateForm()) {
       setIsSubmitting(true)
       const formattedPhoneNumber = formatPhoneNumber(formData.countryCode, formData.phoneNumber)
+      
+      // Debug logging
+      console.log('Country Code:', formData.countryCode)
+      console.log('Original Number:', formData.phoneNumber)
+      console.log('Formatted Number:', formattedPhoneNumber)
       
       const payload = {
         client_name: clientProfile.companyName,
