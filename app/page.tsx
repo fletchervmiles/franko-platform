@@ -1,31 +1,39 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Nav from '@/components/lp-components/nav';
+import Hero from '@/components/lp-components/hero';
+import Container from '@/components/lp-components/container';
+import HowItWorks from '@/components/lp-components/how-it-works';
+import Demo from '@/components/lp-components/demo';
+import Pricing from '@/components/lp-components/pricing';
 
 export default function HomePage() {
-  const router = useRouter();
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-right mb-8">
-        <button
-          onClick={() => router.push('/login')}
-          className="text-blue-500 hover:text-blue-700"
-        >
-          Login
-        </button>
-      </div>
-
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Customer Research</h1>
-        <p className="text-xl mb-8">Conduct AI-powered customer interviews</p>
-        <button
-          onClick={() => router.push('/sign-up')}
-          className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition"
-        >
-          Get Started
-        </button>
-      </div>
-    </div>
+    <>
+      <Nav />
+      <Hero />
+      <Container>
+        {/* How it Works Section */}
+        <section id="how-it-works" className="py-24">
+          <HowItWorks />
+        </section>
+      </Container>
+      {/* Divider */}
+      <div className="border-t border-gray-200" />
+      <Container>
+        {/* Demo Section */}
+        <section id="demo" className="py-24">
+          <Demo />
+        </section>
+      </Container>
+      {/* Divider */}
+      <div className="border-t border-gray-200" />
+      <Container>
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24">
+          <Pricing />
+        </section>
+      </Container>
+    </>
   );
 }

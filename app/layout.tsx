@@ -11,8 +11,6 @@ import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
 import { Analytics } from "@vercel/analytics/react"
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: {
     template: '%s | Customer Research',
@@ -45,14 +43,14 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth();
-
-  if (userId) {
-    const profile = await getProfileByUserId(userId);
-    if (!profile) {
-      await createProfile({ userId });
-    }
-  }
+  // Comment out or remove the Clerk authentication check for now
+  // const { userId } = await auth();
+  // if (userId) {
+  //   const profile = await getProfileByUserId(userId);
+  //   if (!profile) {
+  //     await createProfile({ userId });
+  //   }
+  // }
 
   return (
     <ClerkProvider
@@ -63,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
         <body 
-          className={`${inter.className} bg-background text-foreground`}
+          className="bg-background text-foreground"
           suppressHydrationWarning
         >
           <Providers
