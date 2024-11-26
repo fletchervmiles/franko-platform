@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <SignUp
       appearance={{ baseTheme: theme === "dark" ? dark : undefined }}
-      signInUrl="/sign-in"
+      signInUrl="/sign-up"
       redirectUrl="/pricing"
     />
   );

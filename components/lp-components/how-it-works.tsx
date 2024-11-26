@@ -11,35 +11,35 @@ const steps = [
     number: '01',
     title: 'Submit Your Interview Details',
     description: 'The interview will focus on churn, but you can center it on your company as a whole or a specific product. These details enrich the AI agent with your business context.',
-    image: '/placeholder.svg?height=600&width=800'
+    image: '/assets/franko-logo-icon.png'
   },
   {
     id: '2',
     number: '02',
     title: 'Get Your Shareable Link',
     description: 'Your unique link is live! Share it with customers to start churn-focused interviews tailored to your business context.',
-    image: '/placeholder.svg?height=600&width=800'
+    image: '/assets/franko-logo-icon.png'
   },
   {
     id: '3',
     number: '03',
     title: 'A Simple Page for Your Customers',
     description: 'Your customers can fill out the form to receive a call instantly. When sharing the link, remember to offer an incentive, like a voucher or credit.',
-    image: '/placeholder.svg?height=600&width=800'
+    image: '/assets/franko-logo-icon.png'
   },
   {
     id: '4',
     number: '04',
     title: 'Ready for Review',
     description: 'Find all your interviews here—ready for your review.',
-    image: '/placeholder.svg?height=600&width=800'
+    image: '/assets/franko-logo-icon.png'
   },
   {
     id: '5',
     number: '05',
     title: 'Deep Dive into Call Analysis',
     description: 'Review cancellation reasons, desired benefits, feedback, win-back opportunities, and action steps—plus listen to the call or read the interview transcript.',
-    image: '/placeholder.svg?height=600&width=800'
+    image: '/assets/franko-logo-icon.png'
   }
 ]
 

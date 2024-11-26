@@ -6,6 +6,12 @@ import Link from 'next/link'
 import { Menu } from '@headlessui/react'
 import { MenuIcon, X } from 'lucide-react'
 
+const navigation = [
+  { name: 'How it Works', href: '#how-it-works' },
+  { name: 'Demo', href: '#demo' },
+  { name: 'Pricing', href: '#pricing' },
+]
+
 export default function Nav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -70,13 +76,13 @@ export default function Nav() {
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
             <Link
-              href="/login/[[...login]]"
+              href="/login"
               className="flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-gray-100 transition-colors duration-200"
             >
               Log In
             </Link>
             <Link
-              href="/sign-up/[[...sign-up]]"
+              href="/sign-up"
               className="flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800 transition-all duration-200 ease-in-out"
             >
               Sign Up
@@ -126,13 +132,13 @@ export default function Nav() {
                 </div>
                 <div className="py-6 space-y-2">
                   <Link
-                    href="/login/[[...login]]"
+                    href="/sign-in"
                     className="flex w-full items-center justify-center rounded-md border border-black px-3 py-2 text-base font-medium text-black hover:bg-gray-100 transition-colors duration-200"
                   >
                     Log In
                   </Link>
                   <Link
-                    href="/sign-up/[[...sign-up]]"
+                    href="/sign-up"
                     className="flex w-full items-center justify-center rounded-md bg-black px-3 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-800 transition-all duration-200 ease-in-out"
                   >
                     Sign Up
@@ -146,10 +152,4 @@ export default function Nav() {
     </header>
   )
 }
-
-const navigation = [
-  { name: 'How it Works', href: '#how-it-works' },
-  { name: 'Demo', href: '#demo' },
-  { name: 'Pricing', href: '#pricing' },
-]
 
