@@ -56,7 +56,7 @@ export default function InterviewDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="w-full p-4">
       <h2 className="text-xl font-semibold mb-6">Your Customer Interviews</h2>
       {interviews.length === 0 ? (
         <div className="rounded-lg border border-gray-200 p-6 bg-white max-w-2xl">

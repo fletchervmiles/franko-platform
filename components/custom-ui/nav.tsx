@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, LogOut, User, LayoutDashboard, Settings } from "lucide-react"
+import { Search, LogOut, User, LayoutDashboard, Settings, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useClerk } from "@clerk/nextjs"
@@ -49,6 +49,11 @@ const data = {
           icon: <Settings className="mr-0.5 h-4 w-4" />,
         },
         {
+          title: "Support",
+          url: "/support",
+          icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
           title: "Account",
           url: "/account",
           icon: <User className="mr-0.5 h-4 w-4" />,
@@ -81,6 +86,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         return "Your Account"
       case "/setup":
         return "Setup"
+      case "/support":
+        return "Support"
       default:
         return "franko"
     }

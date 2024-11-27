@@ -11,10 +11,11 @@ const steps = [
     number: '01',
     title: 'Submit Your Interview Details',
     description: 'The interview will focus on churn, but you can center it on your company as a whole or a specific product. These details enrich the AI agent with your business context.',
-    image: '/assets/franko-logo-icon.png'
+    mobileImage: '/assets/image01-mob.svg',
+    desktopImage: '/assets/image01-desk.svg'
   },
   {
-    id: '2',
+    id: '2',  
     number: '02',
     title: 'Get Your Shareable Link',
     description: 'Your unique link is live! Share it with customers to start churn-focused interviews tailored to your business context.',
@@ -104,7 +105,7 @@ export default function HowItWorks() {
                         </p>
                         <div className="mt-4 lg:hidden w-full">
                           <Image
-                            src={step.image}
+                            src={step.mobileImage || step.image || ''}
                             alt={step.title}
                             width={800}
                             height={600}
@@ -130,7 +131,7 @@ export default function HowItWorks() {
                       transition={{ duration: 0.3 }}
                     >
                       <Image
-                        src={step.image}
+                        src={step.desktopImage || step.image || ''}
                         alt={step.title}
                         fill
                         className="object-cover"

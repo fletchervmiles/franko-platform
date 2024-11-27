@@ -17,7 +17,7 @@ export default function SetupPage() {
         const fetchProfile = async () => {
             if (!user?.id) return
 
-            try {
+            try {   
                 console.log('Fetching profile for user:', user.id)
                 const response = await fetch(`/api/clients/${user.id}`)
                 

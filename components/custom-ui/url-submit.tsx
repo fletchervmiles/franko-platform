@@ -333,7 +333,7 @@ export default function CompanyDetailsCard() {
                   <StatusDot status={isCompanyNameSaved ? 'complete' : 'pending'} />
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  This should be your company name or a specific product that you want to be the focus of the churn interview.
+                Choose whether you want the interview to focus on your company as a whole or a specific product. Provide the name you'd like to use for the interview.
                 </p>
               </div>
               <form onSubmit={handleCompanyNameSubmit} className="space-y-4">
@@ -388,11 +388,11 @@ export default function CompanyDetailsCard() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-semibold flex items-center">
-                  Company Description
+                  Company or Product Description
                   <StatusDot status={isDescriptionSaved ? 'complete' : 'pending'} />
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  This company description will be used for context by the interview agent, please review and edit as needed.
+                This description will help the interview agent understand your company or product for better context during the interview. Please review and edit it to ensure it’s accurate and relevant.
                 </p>
               </div>
               <form onSubmit={handleDescriptionSubmit} className="space-y-4">
