@@ -11,6 +11,9 @@ export default function LoginPage() {
     <SignIn
       forceRedirectUrl="/dashboard"
       appearance={{ baseTheme: theme === "dark" ? dark : undefined }}
+      path="/login"
+      routing="path"
+      signUpUrl="/sign-up"
     />
   );
 }
