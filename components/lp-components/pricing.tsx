@@ -3,6 +3,7 @@
 import { Check, Zap, Rocket } from 'lucide-react'
 
 const features = [
+  '10-minute AI-powered phone interviews to understand customer churn',
   'Interview Agent with Exploratory, Narrative-Driven Approach',
   'Dedicated and Contextualized to Your Business',
   'Unique URL to Invite Customers',

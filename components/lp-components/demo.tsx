@@ -10,7 +10,8 @@ const researchTopics = [
   'Winback Opportunities',
   'Exploratory',
   'Narrative-Driven',
-  'Uncover the WHY'
+  'Uncover the WHY',
+  '10 minute interviews'
 ]
 
 export default function Demo() {

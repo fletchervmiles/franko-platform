@@ -19,6 +19,10 @@ const faqItems = (companyName: string): FAQItem[] => [
     answer: "Our agent is designed to conduct exploratory, narrative-driven interviews focused on understanding customer churn. It uses advanced interviewing techniques to engage customers in open, meaningful conversations. The agent is contextualized to your business, ensuring that each interview is centered on your specific needs."
   },
   {
+    question: "How long does each interview last?",
+    answer: "Each interview will go for approximately 10 minutes."
+  },
+  {
     question: "What kind of insights can I expect from the per-interview analysis?",
     answer: "Each interview comes with an analysis that includes: reasons for cancellation or potential cancellation, unmet expectations, areas for product/service improvement, customer suggestions, identification of win-back opportunities, and recommended next steps to reduce churn."
   },

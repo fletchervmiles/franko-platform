@@ -18,7 +18,7 @@ const benefits = [
   },
   {
     title: 'Actionable Growth Insights',
-    description: 'Obtain interviews structured to extract insights aimed at reducing churn and promoting growth, including in-depth analysis, customer feedback, win-back opportunities, and actionable recommendations.',
+    description: 'Insights aimed at reducing churn and promoting growth, including in-depth analysis, customer feedback, win-back opportunities, and actionable recommendations.',
     icon: LineChartIcon
   },
   {
@@ -28,7 +28,7 @@ const benefits = [
   },
   {
     title: 'Cost-Effective',
-    description: 'At just $297 per month, it\'s significantly more affordable than hiring employees or agencies, offering comprehensive insights at a fraction of the cost.',
+    description: 'Significantly more affordable than hiring employees or agencies, offering comprehensive insights at a fraction of the cost.',
     icon: CreditCardIcon
   }
 ]

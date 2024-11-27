@@ -124,6 +124,7 @@ export default function Nav() {
                     <Link
                       key={item.name}
                       href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
                       className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                     >
                       {item.name}
@@ -132,13 +133,15 @@ export default function Nav() {
                 </div>
                 <div className="py-6 space-y-2">
                   <Link
-                    href="/sign-in"
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex w-full items-center justify-center rounded-md border border-black px-3 py-2 text-base font-medium text-black hover:bg-gray-100 transition-colors duration-200"
                   >
                     Log In
                   </Link>
                   <Link
                     href="/sign-up"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex w-full items-center justify-center rounded-md bg-black px-3 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-800 transition-all duration-200 ease-in-out"
                   >
                     Sign Up
