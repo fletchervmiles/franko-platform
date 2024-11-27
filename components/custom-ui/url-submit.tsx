@@ -21,6 +21,7 @@ import {
 // Import necessary libraries
 import { useAuth } from "@clerk/nextjs";
 import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
+import { useRouter } from "next/navigation"
 
 // Add this component at the top of your file
 const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
@@ -44,6 +45,7 @@ export default function CompanyDetailsCard() {
   const { userId } = useAuth();
   const [companyName, setCompanyName] = React.useState("")
   const [isCompanyNameSaved, setIsCompanyNameSaved] = React.useState(false)
+  const router = useRouter()
 
   // Set mounted state when component mounts
   React.useEffect(() => {
@@ -52,7 +54,7 @@ export default function CompanyDetailsCard() {
 
   // Validates URL format using regex
   const validateURL = (input: string) => {
-    const urlPattern = /^(https?:\/\/)?(www\.)?[a-z0-9-]+(\.[a-z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/
+    const urlPattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/i
     return urlPattern.test(input)
   }
 
@@ -143,6 +145,9 @@ export default function CompanyDetailsCard() {
           setIsDescriptionSaved(true);
           setCompanyName(finalCompanyName);
           setIsCompanyNameSaved(true);
+          
+          // Add this line to refresh the page components
+          router.refresh();
         } else {
           throw new Error('Failed to update profile');
         }
@@ -179,6 +184,7 @@ export default function CompanyDetailsCard() {
 
         if (result.status === 'success') {
           setIsDescriptionSaved(true);
+          router.refresh();
         } else {
           throw new Error('Failed to update description');
         }
@@ -232,6 +238,7 @@ export default function CompanyDetailsCard() {
 
         if (result.status === 'success') {
           setIsCompanyNameSaved(true);
+          router.refresh();
         } else {
           throw new Error('Failed to update company name');
         }
