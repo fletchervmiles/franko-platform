@@ -11,8 +11,8 @@ const steps = [
     number: '01',
     title: 'Submit Your Interview Details',
     description: 'The interview will focus on churn, but you can center it on your company as a whole or a specific product. These details enrich the AI agent with your business context.',
-    mobileImage: '/assets/image01-mob.svg',
-    desktopImage: '/assets/image01-desk.svg'
+    mobileImage: '/assets/image01-mob.png',
+    desktopImage: '/assets/image01.png'
   },
   {
     id: '2',  
