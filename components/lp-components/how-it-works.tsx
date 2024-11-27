@@ -12,35 +12,47 @@ const steps = [
     title: 'Submit Your Interview Details',
     description: 'The interview will focus on churn, but you can center it on your company as a whole or a specific product. These details enrich the AI agent with your business context.',
     mobileImage: '/assets/image01-mob.png',
-    desktopImage: '/assets/image01.png'
+    desktopImage: '/assets/image01-desk.png'
   },
   {
-    id: '2',  
+    id: '2',
     number: '02',
     title: 'Get Your Shareable Link',
     description: 'Your unique link is live! Share it with customers to start churn-focused interviews tailored to your business context.',
-    image: '/assets/franko-logo-icon.png'
+    mobileImage: '/assets/image02-mob.png',
+    desktopImage: '/assets/image02-desk.png'
   },
   {
     id: '3',
     number: '03',
     title: 'A Simple Page for Your Customers',
     description: 'Your customers can fill out the form to receive a call instantly. When sharing the link, remember to offer an incentive, like a voucher or credit.',
-    image: '/assets/franko-logo-icon.png'
+    mobileImage: '/assets/image03-mob.png',
+    desktopImage: '/assets/image03-desk.png'
   },
   {
     id: '4',
     number: '04',
     title: 'Ready for Review',
     description: 'Find all your interviews here—ready for your review.',
-    image: '/assets/franko-logo-icon.png'
+    mobileImage: '/assets/image04-mob.png',
+    desktopImage: '/assets/image04-desk.png'
   },
   {
     id: '5',
     number: '05',
+    title: 'Access Interview Assets',
+    description: 'Listen to the audio, read the transcript, see the interview details.',
+    mobileImage: '/assets/image05-mob.png',
+    desktopImage: '/assets/image05-desk.png'
+  },
+  {
+    id: '6',
+    number: '06',
     title: 'Deep Dive into Call Analysis',
-    description: 'Review cancellation reasons, desired benefits, feedback, win-back opportunities, and action steps—plus listen to the call or read the interview transcript.',
-    image: '/assets/franko-logo-icon.png'
+    description: 'Review cancellation reasons, desired benefits, feedback, win-back opportunities, and action steps.',
+    mobileImage: '/assets/image06-mob.png',
+    desktopImage: '/assets/image06-desk.png'
   }
 ]
 
@@ -105,7 +117,7 @@ export default function HowItWorks() {
                         </p>
                         <div className="mt-4 lg:hidden w-full">
                           <Image
-                            src={step.mobileImage || step.image || ''}
+                            src={step.mobileImage || ''}
                             alt={step.title}
                             width={800}
                             height={600}
@@ -131,7 +143,7 @@ export default function HowItWorks() {
                       transition={{ duration: 0.3 }}
                     >
                       <Image
-                        src={step.desktopImage || step.image || ''}
+                        src={step.desktopImage || ''}
                         alt={step.title}
                         fill
                         className="object-cover"
