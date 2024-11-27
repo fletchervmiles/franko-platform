@@ -23,7 +23,7 @@ export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps)
   const [copied, setCopied] = React.useState(false)
   const [isReady, setIsReady] = React.useState(false)
   
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.franko.ai'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://franko.ai'
   const shareableUrl = profile?.userId 
     ? `${baseUrl}/start-interview?clientId=${profile.userId}&company=${encodeURIComponent(profile.companyName || '')}`
     : ''
