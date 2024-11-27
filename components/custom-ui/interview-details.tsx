@@ -33,6 +33,10 @@ export default function InterviewDetails({ interview }: InterviewDetailsProps) {
     }).replace(/\d+/, day + suffix)
   }
 
+  const statusColor = interview.status?.toLowerCase() === 'reviewed' 
+    ? 'bg-green-500' 
+    : 'bg-yellow-500'
+
   return (
     <div className="w-full bg-white relative">
       <h2 className="text-sm font-semibold px-6 pt-4 flex items-center gap-2">
@@ -86,6 +90,16 @@ export default function InterviewDetails({ interview }: InterviewDetailsProps) {
             <span>Duration</span>
           </div>
           <span className="text-sm">{`${interview.totalInterviewMinutes || 0} minutes`}</span>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <span>Status</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${statusColor}`}></span>
+            <span className="text-sm capitalize">{interview.status || 'ready for review'}</span>
+          </div>
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px bg-border"></div>

@@ -22,6 +22,7 @@ export default function InterviewDashboard() {
         const formattedData = data
           .map(interview => ({
             ...interview,
+            status: interview.status?.toLowerCase() || 'ready for review',
             dateCompleted: interview.dateCompleted?.toISOString(),
             updatedAt: interview.updatedAt.toISOString(),
             createdAt: interview.createdAt.toISOString(),
@@ -29,7 +30,6 @@ export default function InterviewDashboard() {
             interviewEndTime: interview.interviewEndTime?.toISOString()
           }))
           .sort((a, b) => {
-            // Sort by dateCompleted in descending order (most recent first)
             const dateA = a.dateCompleted ? new Date(a.dateCompleted).getTime() : 0
             const dateB = b.dateCompleted ? new Date(b.dateCompleted).getTime() : 0
             return dateB - dateA

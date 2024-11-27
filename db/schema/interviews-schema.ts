@@ -11,7 +11,7 @@ export const interviewsTable = pgTable("interviews", {
   intervieweeEmail: text("interviewee_email").notNull(),
   intervieweeNumber: text("interviewee_number"),
   callId: text("call_id").notNull(),
-  status: text("status").notNull().default("ready_for_review"),
+  status: text("status").notNull().default("ready for review"),
   dateCompleted: timestamp("date_completed").notNull(),
   interviewStartTime: timestamp("interview_start_time").notNull(),
   interviewEndTime: timestamp("interview_end_time").notNull(),

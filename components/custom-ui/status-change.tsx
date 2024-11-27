@@ -43,6 +43,8 @@ export default function InterviewStatus({ interviewId, initialStatus }: StatusCh
     setTimeout(() => setShowSaved(false), 2000)
   }
 
+  const statusColor = status === 'reviewed' ? 'bg-green-500' : 'bg-yellow-500'
+
   return (
     <div className="flex items-center gap-2">
       <Select 
@@ -60,9 +62,7 @@ export default function InterviewStatus({ interviewId, initialStatus }: StatusCh
           <SelectItem value="reviewed">Reviewed</SelectItem>
         </SelectContent>
       </Select>
-      <span className={`w-2 h-2 rounded-full ${
-        status === 'reviewed' ? 'bg-green-500' : 'bg-yellow-500'
-      }`}></span>
+      <span className={`w-2 h-2 rounded-full ${statusColor}`}></span>
       {isSaving && (
         <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></span>
       )}

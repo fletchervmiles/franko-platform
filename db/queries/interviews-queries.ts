@@ -19,6 +19,14 @@ export const getInterviewById = async (id: string) => {
     const interview = await db.query.interviews.findFirst({
       where: eq(interviewsTable.id, id),
     });
+    
+    if (interview) {
+      // Normalize status value
+      return {
+        ...interview,
+        status: interview.status?.toLowerCase() === 'reviewed' ? 'reviewed' : 'ready for review'
+      };
+    }
     return interview;
   } catch (error) {
     console.error("Error getting interview:", error);
@@ -32,7 +40,12 @@ export const getInterviewsByUserId = async (userId: string): Promise<SelectInter
       .select()
       .from(interviewsTable)
       .where(eq(interviewsTable.userId, userId));
-    return interviews;
+    
+    // Normalize status values
+    return interviews.map(interview => ({
+      ...interview,
+      status: interview.status?.toLowerCase() === 'reviewed' ? 'reviewed' : 'ready for review'
+    }));
   } catch (error) {
     console.error("Error getting interviews:", error);
     throw new Error("Failed to get interviews");

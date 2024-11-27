@@ -31,7 +31,7 @@ export default function SummaryCard({ title, content, icon: Icon, isDefaultOpen 
         )}
       </div>
       {isOpen && (
-        <div className="p-6 pt-0">
+        <div className="p-6 pt-2">
           <div className="rounded-lg bg-gray-50 p-4">
             <div className="text-sm space-y-4 markdown-content">
               <ReactMarkdown
