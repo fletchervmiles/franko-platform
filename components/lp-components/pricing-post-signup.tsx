@@ -32,8 +32,7 @@ export default function Pricing() {
           </span>
         </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
-          Figure out the WHY behind<br />
-          your churn, fast!
+            Select your preferred plan
         </h2>
       </div>
 
