@@ -61,8 +61,7 @@ export default function StartInterviewPage() {
             Help {clientProfile.companyName || 'us'} Improve: Share Your Feedback
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Submit your details below to receive a quick 5-10 minute call from our AI interviewer. 
-            We'll ask a few simple questions about your experience with us and decision to end your subscription.
+          Complete the form below to receive a quick 5-10 minute call from our AI interviewer. We’ll ask a few simple questions about your experience and why you decided to cancel your subscription.
           </p>
         </div>
         <InterviewForm 

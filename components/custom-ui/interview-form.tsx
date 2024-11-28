@@ -285,7 +285,7 @@ export default function InterviewForm({
               />
               <div className="grid gap-1.5 leading-none">
                 <Label htmlFor="acknowledgment" className="font-normal text-muted-foreground">
-                  Note: The interviewer will pause for 2-3 seconds after your response to ensure you&apos;ve finished.
+                  Note: The interviewer will pause for 2-3 seconds after your response to ensure you&apos;ve finished speaking.
                 </Label>
                 {errors.acknowledgment && <p className="text-sm text-red-500">This field is required</p>}
               </div>
