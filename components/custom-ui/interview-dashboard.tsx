@@ -20,45 +20,37 @@ export default function InterviewDashboard() {
       if (user?.id) {
         const data = await getInterviewsByUserId(user.id)
         const formattedData = data
-          .map(interview => {
-            const endTimeStr = interview.interviewEndTime 
-              ? interview.interviewEndTime.toISOString().replace('T', ' ').split('.')[0]
-              : null
-
-            return {
-              ...interview,
-              status: interview.status?.toLowerCase() || 'ready for review',
-              dateCompleted: interview.dateCompleted?.toISOString(),
-              updatedAt: interview.updatedAt.toISOString(),
-              createdAt: interview.createdAt.toISOString(),
-              interviewStartTime: interview.interviewStartTime?.toISOString(),
-              interviewEndTime: endTimeStr
-            }
-          })
+          .map(interview => ({
+            ...interview,
+            status: interview.status?.toLowerCase() || 'ready for review',
+            dateCompleted: interview.dateCompleted?.toISOString(),
+            updatedAt: interview.updatedAt.toISOString(),
+            createdAt: interview.createdAt.toISOString(),
+            interviewStartTime: interview.interviewStartTime?.toISOString(),
+            interviewEndTime: interview.interviewEndTime?.toISOString()
+          }))
           .sort((a, b) => {
-            const timeA = a.interviewEndTime ? new Date(a.interviewEndTime.replace(' ', 'T')).getTime() : 0
-            const timeB = b.interviewEndTime ? new Date(b.interviewEndTime.replace(' ', 'T')).getTime() : 0
+            const timeA = a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0
+            const timeB = b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
             
             console.log('Comparing:', {
-              a: a.interviewEndTime,
-              b: b.interviewEndTime,
-              timeA,
-              timeB,
-              diff: timeB - timeA
+              nameA: `${a.intervieweeFirstName} ${a.intervieweeLastName}`,
+              nameB: `${b.intervieweeFirstName} ${b.intervieweeLastName}`,
+              timeA: new Date(timeA).toISOString(),
+              timeB: new Date(timeB).toISOString()
             })
             
             return timeB - timeA
           })
 
-        console.log('First few entries after sorting:', 
-          formattedData.slice(0, 3).map(i => ({
+        console.log('Sorted order:', 
+          formattedData.map(i => ({
             name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`,
-            endTime: i.interviewEndTime,
-            parsed: i.interviewEndTime ? new Date(i.interviewEndTime.replace(' ', 'T')).getTime() : 0
+            time: i.interviewEndTime
           }))
         )
 
-        setInterviews(formattedData as unknown as Interview[])
+        setInterviews(formattedData)
       }
     }
 
