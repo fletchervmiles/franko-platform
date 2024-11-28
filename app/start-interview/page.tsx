@@ -25,9 +25,17 @@ export default function StartInterviewPage() {
     }
 
     try {
-      const response = await fetch(`/api/clients/${clientId}`)
+      console.log('Fetching profile for clientId:', clientId)
+      const response = await fetch(`/api/clients/${clientId}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
       if (!response.ok) throw new Error('Failed to fetch client profile')
       const data = await response.json()
+      console.log('Received profile data:', data)
       setClientProfile(data)
     } catch (error) {
       console.error('Error fetching client profile:', error)

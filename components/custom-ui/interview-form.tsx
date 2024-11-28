@@ -168,10 +168,8 @@ export default function InterviewForm({
       setIsSubmitting(true)
       const formattedPhoneNumber = formatPhoneNumber(formData.countryCode, formData.phoneNumber)
       
-      // Debug logging
-      console.log('Country Code:', formData.countryCode)
-      console.log('Original Number:', formData.phoneNumber)
-      console.log('Formatted Number:', formattedPhoneNumber)
+      // Add detailed logging
+      console.log('Form Submission - Client Profile:', clientProfile)
       
       const payload = {
         client_name: clientProfile.companyName,
@@ -186,11 +184,16 @@ export default function InterviewForm({
         use_case: useCase
       }
 
+      console.log('Form Submission - Payload being sent:', payload)
+
       try {
         const response = await fetch('/api/proxy/call', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           body: JSON.stringify(payload),
         })
@@ -201,7 +204,7 @@ export default function InterviewForm({
         }
 
         const responseData = await response.json()
-        console.log('Response data:', responseData)
+        console.log('Form Submission - API Response:', responseData)
 
         onSubmitSuccess?.()
       } catch (error) {

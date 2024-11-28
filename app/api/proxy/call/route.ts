@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -14,7 +17,8 @@ export async function POST(request: Request) {
       agent_name: body.agent_name,
       voice_id: body.voice_id,
       unique_customer_identifier: body.unique_customer_identifier,
-      use_case: body.use_case
+      use_case: body.use_case,
+      timestamp: new Date().toISOString(),
     }
     
     console.log('Sending formatted payload:', formattedPayload)
@@ -23,7 +27,11 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       },
+      cache: 'no-store',
       body: JSON.stringify(formattedPayload),
     })
 
@@ -34,12 +42,25 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   } catch (error) {
     console.error('Error proxying call request:', error)
     return NextResponse.json(
       { error: 'Failed to initiate call' }, 
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
     )
   }
 }
