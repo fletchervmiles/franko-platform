@@ -34,6 +34,10 @@ export default function InterviewDashboard() {
             const timeB = b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
             return timeB - timeA
           })
+        console.log('Sorted interviews:', formattedData.map(i => ({ 
+          endTime: i.interviewEndTime,
+          name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`
+        })))
         setInterviews(formattedData)
       }
     }
@@ -76,7 +80,7 @@ export default function InterviewDashboard() {
             <InterviewCard
               key={interview.id}
               intervieweeName={`${interview.intervieweeFirstName} ${interview.intervieweeLastName}`}
-              date={formatDate(interview.dateCompleted as string)}
+              date={formatDate(interview.interviewEndTime as string)}
               duration={interview.totalInterviewMinutes}
               status={interview.status as 'ready for review' | 'reviewed'}
               interviewType={interview.useCase}
