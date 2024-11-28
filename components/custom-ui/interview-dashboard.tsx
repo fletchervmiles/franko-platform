@@ -20,25 +20,33 @@ export default function InterviewDashboard() {
       if (user?.id) {
         const data = await getInterviewsByUserId(user.id)
         const formattedData = data
-          .map(interview => ({
-            ...interview,
-            status: interview.status?.toLowerCase() || 'ready for review',
-            dateCompleted: interview.dateCompleted?.toISOString(),
-            updatedAt: interview.updatedAt.toISOString(),
-            createdAt: interview.createdAt.toISOString(),
-            interviewStartTime: interview.interviewStartTime?.toISOString(),
-            interviewEndTime: interview.interviewEndTime?.toString() || null
-          }))
+          .map(interview => {
+            const endTimeStr = interview.interviewEndTime 
+              ? interview.interviewEndTime.toISOString().replace('T', ' ').split('.')[0]
+              : null
+
+            return {
+              ...interview,
+              status: interview.status?.toLowerCase() || 'ready for review',
+              dateCompleted: interview.dateCompleted?.toISOString(),
+              updatedAt: interview.updatedAt.toISOString(),
+              createdAt: interview.createdAt.toISOString(),
+              interviewStartTime: interview.interviewStartTime?.toISOString(),
+              interviewEndTime: endTimeStr
+            }
+          })
           .sort((a, b) => {
-            console.log('Comparing times:', {
+            const timeA = a.interviewEndTime ? new Date(a.interviewEndTime.replace(' ', 'T')).getTime() : 0
+            const timeB = b.interviewEndTime ? new Date(b.interviewEndTime.replace(' ', 'T')).getTime() : 0
+            
+            console.log('Comparing:', {
               a: a.interviewEndTime,
               b: b.interviewEndTime,
-              aTime: a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0,
-              bTime: b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
+              timeA,
+              timeB,
+              diff: timeB - timeA
             })
             
-            const timeA = a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0
-            const timeB = b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
             return timeB - timeA
           })
 
@@ -46,11 +54,11 @@ export default function InterviewDashboard() {
           formattedData.slice(0, 3).map(i => ({
             name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`,
             endTime: i.interviewEndTime,
-            timestamp: i.interviewEndTime ? new Date(i.interviewEndTime).getTime() : 0
+            parsed: i.interviewEndTime ? new Date(i.interviewEndTime.replace(' ', 'T')).getTime() : 0
           }))
         )
 
-        setInterviews(formattedData as Interview[])
+        setInterviews(formattedData as unknown as Interview[])
       }
     }
 
