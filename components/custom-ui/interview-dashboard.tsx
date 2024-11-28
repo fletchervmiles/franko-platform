@@ -30,9 +30,9 @@ export default function InterviewDashboard() {
             interviewEndTime: interview.interviewEndTime?.toISOString()
           }))
           .sort((a, b) => {
-            const dateA = a.dateCompleted ? new Date(a.dateCompleted).getTime() : 0
-            const dateB = b.dateCompleted ? new Date(b.dateCompleted).getTime() : 0
-            return dateB - dateA
+            const timeA = a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0
+            const timeB = b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
+            return timeB - timeA
           })
         setInterviews(formattedData)
       }
