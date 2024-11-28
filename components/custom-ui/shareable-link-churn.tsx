@@ -22,11 +22,14 @@ const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
 export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps) {
   const [copied, setCopied] = React.useState(false)
   const [isReady, setIsReady] = React.useState(false)
+  const [shareableUrl, setShareableUrl] = React.useState('')
   
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://franko.ai'
-  const shareableUrl = profile?.userId 
-    ? `${baseUrl}/start-interview?clientId=${profile.userId}&company=${encodeURIComponent(profile.companyName || '')}`
-    : ''
+  React.useEffect(() => {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://franko.ai'
+    if (profile?.userId) {
+      setShareableUrl(`${baseUrl}/start-interview?clientId=${profile.userId}&company=${encodeURIComponent(profile.companyName || '')}`)
+    }
+  }, [profile?.userId, profile?.companyName])
 
   React.useEffect(() => {
     if (profile?.companyUrl && profile?.companyName && profile?.companyDescription) {

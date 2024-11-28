@@ -32,8 +32,13 @@ const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
   />
 )
 
+// Add this interface near the top of the file, after imports
+interface CompanyDetailsCardProps {
+  onProfileUpdate?: () => void;
+}
+
 // Main component for handling company details input
-export default function CompanyDetailsCard() {
+export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCardProps) {
   // State variables for managing form data and UI states
   const [url, setUrl] = React.useState("") // Stores the company URL
   const [isUrlValid, setIsUrlValid] = React.useState(false) // Tracks URL validation status
@@ -104,9 +109,11 @@ export default function CompanyDetailsCard() {
       setIsLoading(true);
 
       try {
-        // Extract company name from URL if not already set
+        // Extract company name from URL regardless of existing value
         const extractedName = extractCompanyName(formattedURL)
-        const finalCompanyName = companyName || extractedName
+        
+        // Always use the extracted name from URL
+        setCompanyName(extractedName);
 
         // First API call - Tavily
         const tavilyResponse = await fetch('/api/tavily', {
@@ -136,18 +143,18 @@ export default function CompanyDetailsCard() {
         const result = await updateProfileAction(userId, {
           companyUrl: formattedURL,
           companyDescription: openaiData.description,
-          companyName: finalCompanyName
+          companyName: extractedName
         });
 
         if (result.status === 'success') {
           setCompanyDescription(openaiData.description);
           setIsUrlSaved(true);
           setIsDescriptionSaved(true);
-          setCompanyName(finalCompanyName);
+          setCompanyName(extractedName);
           setIsCompanyNameSaved(true);
           
-          // Add this line to refresh the page components
-          router.refresh();
+          // Call the onProfileUpdate callback if it exists
+          onProfileUpdate?.();
         } else {
           throw new Error('Failed to update profile');
         }
@@ -238,7 +245,8 @@ export default function CompanyDetailsCard() {
 
         if (result.status === 'success') {
           setIsCompanyNameSaved(true);
-          router.refresh();
+          // Call the onProfileUpdate callback if it exists
+          onProfileUpdate?.();
         } else {
           throw new Error('Failed to update company name');
         }
