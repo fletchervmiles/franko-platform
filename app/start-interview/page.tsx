@@ -18,30 +18,31 @@ export default function StartInterviewPage() {
   const [clientProfile, setClientProfile] = useState<SelectProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchClientProfile = async () => {
-      if (!clientId) {
-        router.push('/404') // Redirect to 404 if no clientId
-        return
-      }
-
-      try {
-        const response = await fetch(`/api/clients/${clientId}`)
-        if (!response.ok) throw new Error('Failed to fetch client profile')
-        const data = await response.json()
-        setClientProfile(data)
-      } catch (error) {
-        console.error('Error fetching client profile:', error)
-        router.push('/404') // Redirect to 404 if client not found
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchClientProfile = async () => {
+    if (!clientId) {
+      router.push('/404')
+      return
     }
 
+    try {
+      const response = await fetch(`/api/clients/${clientId}`)
+      if (!response.ok) throw new Error('Failed to fetch client profile')
+      const data = await response.json()
+      setClientProfile(data)
+    } catch (error) {
+      console.error('Error fetching client profile:', error)
+      router.push('/404')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchClientProfile()
   }, [clientId, router])
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
+    await fetchClientProfile()
     setIsModalOpen(true)
   }
 
@@ -68,6 +69,7 @@ export default function StartInterviewPage() {
           onSubmitSuccess={handleFormSubmit}
           clientProfile={clientProfile}
           useCase="churn"
+          key={JSON.stringify(clientProfile)}
         />
         <FAQSection companyName={clientProfile.companyName || ''} />
       </div>
