@@ -36,8 +36,10 @@ export default function InterviewDashboard() {
             console.log('Comparing:', {
               nameA: `${a.intervieweeFirstName} ${a.intervieweeLastName}`,
               nameB: `${b.intervieweeFirstName} ${b.intervieweeLastName}`,
-              timeA: new Date(timeA).toISOString(),
-              timeB: new Date(timeB).toISOString()
+              timeA: a.interviewEndTime,
+              timeB: b.interviewEndTime,
+              timeAms: timeA,
+              timeBms: timeB
             })
             
             return timeB - timeA
@@ -46,7 +48,8 @@ export default function InterviewDashboard() {
         console.log('Sorted order:', 
           formattedData.map(i => ({
             name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`,
-            time: i.interviewEndTime
+            time: i.interviewEndTime,
+            timestamp: i.interviewEndTime ? new Date(i.interviewEndTime).getTime() : 0
           }))
         )
 

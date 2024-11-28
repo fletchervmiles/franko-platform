@@ -7,6 +7,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
+    console.log('POST request received at:', new Date().toISOString(), {
+      interviewee_name: body.interviewee_name,
+      interviewee_email: body.interviewee_email,
+      trace: new Error().stack
+    })
+    
     const formattedPayload = {
       client_name: body.client_name,
       interviewee_name: body.interviewee_name,
@@ -49,18 +55,18 @@ export async function POST(request: Request) {
         'Expires': '0'
       }
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error proxying call request:', error)
+    
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack)
+    } else {
+      console.error('Unknown error type:', error)
+    }
+
     return NextResponse.json(
       { error: 'Failed to initiate call' }, 
-      { 
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }
+      { status: 500 }
     )
   }
 }
