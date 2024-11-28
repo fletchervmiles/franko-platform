@@ -27,18 +27,30 @@ export default function InterviewDashboard() {
             updatedAt: interview.updatedAt.toISOString(),
             createdAt: interview.createdAt.toISOString(),
             interviewStartTime: interview.interviewStartTime?.toISOString(),
-            interviewEndTime: interview.interviewEndTime?.toISOString()
+            interviewEndTime: interview.interviewEndTime?.toString() || null
           }))
           .sort((a, b) => {
+            console.log('Comparing times:', {
+              a: a.interviewEndTime,
+              b: b.interviewEndTime,
+              aTime: a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0,
+              bTime: b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
+            })
+            
             const timeA = a.interviewEndTime ? new Date(a.interviewEndTime).getTime() : 0
             const timeB = b.interviewEndTime ? new Date(b.interviewEndTime).getTime() : 0
             return timeB - timeA
           })
-        console.log('Sorted interviews:', formattedData.map(i => ({ 
-          endTime: i.interviewEndTime,
-          name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`
-        })))
-        setInterviews(formattedData)
+
+        console.log('First few entries after sorting:', 
+          formattedData.slice(0, 3).map(i => ({
+            name: `${i.intervieweeFirstName} ${i.intervieweeLastName}`,
+            endTime: i.interviewEndTime,
+            timestamp: i.interviewEndTime ? new Date(i.interviewEndTime).getTime() : 0
+          }))
+        )
+
+        setInterviews(formattedData as Interview[])
       }
     }
 
