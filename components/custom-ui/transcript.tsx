@@ -36,12 +36,11 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
     // Add line breaks after timestamps
     text = text.replace(/\*\*\[\d{2}:\d{2}\]\*\*/g, match => `${match}\n\n`);
     
-    // Modified regex to prevent unwanted line breaks
-    // Only add line breaks before speaker names if they're not at the start of the text
-    text = text.replace(/(?!^)([^.!?])\s*([A-Za-z]+:)/g, '$1\n\n$2');
-    
-    // Bold speaker names
+    // Handle speaker names without adding extra line breaks
     text = text.replace(/([A-Za-z]+):/g, '**$1:**');
+    
+    // Join consecutive lines properly
+    text = text.split('\n').map(line => line.trim()).join('\n\n');
     
     return text;
   };
@@ -54,7 +53,7 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
       </h2>
       <div className="p-6 pt-4">
         <div className="rounded-lg bg-gray-50 p-4">
-          <div className="text-sm space-y-4">
+          <div className="text-sm">
             <ReactMarkdown
               components={{
                 strong: ({ children }) => {
@@ -71,7 +70,7 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
                   
                   // Handle speaker names
                   if (text.endsWith(':')) {
-                    return <span className="font-bold text-primary block mt-4">{text}</span>;
+                    return <span className="font-bold text-primary">{text}</span>;
                   }
 
                   return <strong>{children}</strong>;
