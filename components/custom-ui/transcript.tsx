@@ -30,41 +30,16 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
 
   // Function to format the transcript text
   const formatTranscript = (text: string) => {
-    // First, clean up any potential leading/trailing whitespace
-    text = text.trim();
-    
     // Add line breaks after timestamps
     text = text.replace(/\*\*\[\d{2}:\d{2}\]\*\*/g, match => `${match}\n\n`);
     
-    // Split into lines and process
-    const lines = text.split('\n');
+    // Add line breaks before speaker names
+    text = text.replace(/([^.!?])\s*([A-Za-z]+:)/g, '$1\n\n$2');
     
-    // Process each line
-    const formattedLines = lines.map(line => {
-      line = line.trim();
-      
-      // Format speaker names
-      return line.replace(/([A-Za-z]+):/, '**$1:**');
-    });
+    // Bold speaker names
+    text = text.replace(/([A-Za-z]+):/g, '**$1:**');
     
-    // Join lines with proper spacing
-    return formattedLines.reduce<string>((acc: string, line: string, index: number): string => {
-      // First line
-      if (index === 0) return line;
-      
-      // If this line starts with a speaker name
-      if (line.match(/^\*\*[A-Za-z]+:\*\*/)) {
-        return `${acc}\n\n${line}`;
-      }
-      
-      // If previous line had a speaker name, add single line break
-      if (acc.match(/\*\*[A-Za-z]+:\*\*$/)) {
-        return `${acc}\n${line}`;
-      }
-      
-      // Otherwise just add a space
-      return `${acc} ${line}`;
-    }, '');
+    return text;
   };
 
   return (
@@ -75,7 +50,7 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
       </h2>
       <div className="p-6 pt-4">
         <div className="rounded-lg bg-gray-50 p-4">
-          <div className="text-sm">
+          <div className="text-sm space-y-4">
             <ReactMarkdown
               components={{
                 strong: ({ children }) => {
@@ -92,7 +67,7 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
                   
                   // Handle speaker names
                   if (text.endsWith(':')) {
-                    return <span className="font-bold text-primary">{text}</span>;
+                    return <span className="font-bold text-primary block mt-4">{text}</span>;
                   }
 
                   return <strong>{children}</strong>;
