@@ -59,7 +59,7 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
 
   // Validates URL format using regex
   const validateURL = (input: string) => {
-    const urlPattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/i
+    const urlPattern = /^(https?:\/\/)?([\w-]+\.)*[\w-]+\.[a-zA-Z]{2,}(\/.*)?$/i
     return urlPattern.test(input)
   }
 
@@ -67,9 +67,6 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   const formatURL = (input: string) => {
     if (!input.startsWith('http://') && !input.startsWith('https://')) {
       input = 'https://' + input
-    }
-    if (!input.startsWith('https://www.') && !input.startsWith('http://www.')) {
-      input = input.replace(/^(https?:\/\/)/, '$1www.')
     }
     return input
   }
