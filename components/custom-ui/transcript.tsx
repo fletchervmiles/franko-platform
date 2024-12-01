@@ -30,14 +30,15 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
 
   // Function to format the transcript text
   const formatTranscript = (text: string) => {
-    // Add line breaks after timestamps
-    text = text.replace(/\*\*\[\d{2}:\d{2}\]\*\*/g, match => `${match}\n\n`);
+    // First, clean up any potential leading/trailing whitespace
+    text = text.trim();
     
-    // Add line breaks before speaker names
-    text = text.replace(/([^.!?])\s*([A-Za-z]+:)/g, '$1\n\n$2');
+    // First, handle the timestamps to create proper breaks between messages
+    text = text.replace(/\[(\d{2}:\d{2})\]/g, '**[$1]**\n\n');
     
-    // Bold speaker names
-    text = text.replace(/([A-Za-z]+):/g, '**$1:**');
+    // Handle speaker names - but protect against splitting the first name
+    text = text.replace(/(?<!^)([A-Za-z]+):/g, '\n\n**$1:**');  // For subsequent names
+    text = text.replace(/^([A-Za-z]+):/, '**$1:**');  // Special case for first name
     
     return text;
   };
