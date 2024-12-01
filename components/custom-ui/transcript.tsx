@@ -36,18 +36,30 @@ export default function FullTranscript({ conversationHistory }: TranscriptProps)
     // Add line breaks after timestamps
     text = text.replace(/\*\*\[\d{2}:\d{2}\]\*\*/g, match => `${match}\n\n`);
     
-    // Bold speaker names
-    text = text.replace(/([A-Za-z]+):/g, '**$1:**');
-    
     // Split into lines and process
     const lines = text.split('\n');
-    return lines.reduce((acc, line, index) => {
+    
+    // Process each line
+    const formattedLines = lines.map(line => {
       line = line.trim();
+      
+      // Format speaker names
+      return line.replace(/([A-Za-z]+):/, '**$1:**');
+    });
+    
+    // Join lines with proper spacing
+    return formattedLines.reduce<string>((acc: string, line: string, index: number): string => {
+      // First line
       if (index === 0) return line;
       
-      // Add double line break before new speaker names
-      if (line.match(/\*\*[A-Za-z]+:\*\*/)) {
+      // If this line starts with a speaker name
+      if (line.match(/^\*\*[A-Za-z]+:\*\*/)) {
         return `${acc}\n\n${line}`;
+      }
+      
+      // If previous line had a speaker name, add single line break
+      if (acc.match(/\*\*[A-Za-z]+:\*\*$/)) {
+        return `${acc}\n${line}`;
       }
       
       // Otherwise just add a space
