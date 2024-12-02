@@ -54,17 +54,6 @@ export default function Pricing() {
               <p className="text-black text-sm">Ideal for businesses starting to dive into customer churn analysis.</p>
             </div>
 
-            <div className="mb-8">
-              <TestimonialCard 
-                name="Ben Goodman"
-                role="Co-Founder and CEO"
-                company="AgeMate"
-                testimonial="Instrumental in improving our retention and understanding churn customer segments."
-                avatarUrl="/assets/ben-agemate.png"
-                avatarFallback="BG"
-              />
-            </div>
-
             <Link 
               href="/sign-up" 
               className="block w-full bg-black text-white rounded-full py-3 px-4 font-medium hover:bg-gray-800 transition-colors mb-8 text-center"

@@ -20,7 +20,7 @@ export default function TestimonialCard({
 }: TestimonialProps) {
   return (
     <Card className="p-6 w-full max-w-md flex items-start gap-5 relative">
-      <Avatar className="h-12 w-12">
+      <Avatar className="h-12 w-12 bg-gray-200">
         <AvatarImage src={avatarUrl} alt={`${name}'s avatar`} />
         <AvatarFallback>{avatarFallback}</AvatarFallback>
       </Avatar>

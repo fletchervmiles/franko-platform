@@ -2,6 +2,7 @@
 
 import { Check, Zap, Rocket } from 'lucide-react'
 import Link from 'next/link'
+import TestimonialCard from './pricing-testimonial'
 
 const features = [
   '5-minute AI-powered phone interviews to understand customer churn',
@@ -96,6 +97,17 @@ export default function Pricing() {
               </div>
               <p className="text-white mb-2 text-sm">500 mins | ≈ 100 interviews</p>
               <p className="text-white text-sm">Designed for companies committed to minimizing churn through extensive customer feedback.</p>
+            </div>
+
+            <div className="mb-8">
+              <TestimonialCard 
+                name="Ben Goodman"
+                role="Co-Founder and CEO"
+                company="AgeMate"
+                testimonial="Instrumental in improving our retention and understanding churn customer segments."
+                avatarUrl="/assets/ben-agemate.png"
+                avatarFallback="BG"
+              />
             </div>
 
             <Link 
