@@ -57,8 +57,8 @@ export default function Demo() {
         </div>
         
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Video Timestamps</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+          <h4 className="text-sm font-bold text-gray-900 mb-3">Timestamps</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 [&>*]:md:nth-child(odd):col-start-1 [&>*]:md:nth-child(even):col-start-2">
             {[
               { time: "0:00", label: "Account Setup" },
               { time: "02:36", label: "Call starts" },
