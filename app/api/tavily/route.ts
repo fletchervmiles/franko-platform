@@ -1,16 +1,14 @@
 import { tavily } from "@tavily/core";
 
-export const maxDuration = 60; // Configure to maximum 60 seconds
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
     const { url } = await request.json();
     
-    // Initialize Tavily client
     const tvly = tavily({ apiKey: process.env.TAVILY_KEY });
     
-    // Execute the extract request
     const response = await tvly.extract([url]);
     
     if (response.results && response.results.length > 0) {
@@ -21,7 +19,7 @@ export async function POST(request: Request) {
     } else {
       return Response.json({ 
         success: false, 
-        error: "No content extracted" 
+        error: "Unfortunately this URL is incompatible with our search engine. Please enter your details manually or ask ChatGPT to generate a description for you. Apologies for the inconvenience."
       });
     }
 
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
     console.error('Tavily API Error:', error);
     return Response.json({ 
       success: false, 
-      error: "Failed to extract content" 
+      error: "Unfortunately this URL is incompatible with our search engine. Please enter your details manually or ask ChatGPT to generate a description for you. Apologies for the inconvenience."
     });
   }
 } 

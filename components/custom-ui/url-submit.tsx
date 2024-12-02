@@ -121,7 +121,7 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
         const tavilyData = await tavilyResponse.json();
 
         if (!tavilyData.success) {
-          throw new Error('Failed to extract content');
+          throw new Error(tavilyData.error || 'Failed to extract content');
         }
 
         // Second API call - OpenAI
@@ -158,7 +158,13 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
 
       } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred while processing your request');
+        alert(error instanceof Error ? error.message : 'An error occurred while processing your request');
+        
+        // Set URL as saved anyway so user can proceed with manual entry
+        setIsUrlSaved(true);
+        setCompanyName(extractCompanyName(formattedURL));
+        setIsCompanyNameSaved(false);
+        setIsDescriptionSaved(false);
       } finally {
         setIsLoading(false);
       }
