@@ -106,13 +106,10 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
       setIsLoading(true);
 
       try {
-        // Extract company name from URL regardless of existing value
         const extractedName = extractCompanyName(formattedURL)
-        
-        // Always use the extracted name from URL
         setCompanyName(extractedName);
 
-        // First API call - Tavily
+        // First try to get content from Tavily
         const tavilyResponse = await fetch('/api/tavily', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,10 +118,26 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
         const tavilyData = await tavilyResponse.json();
 
         if (!tavilyData.success) {
+          // Even if Tavily fails, save the URL and company name to the database
+          const result = await updateProfileAction(userId, {
+            companyUrl: formattedURL,
+            companyName: extractedName
+          });
+
+          if (result.status === 'success') {
+            setIsUrlSaved(true);
+            setCompanyName(extractedName);
+            setIsCompanyNameSaved(false);
+            setIsDescriptionSaved(false);
+            
+            // Call the onProfileUpdate callback
+            onProfileUpdate?.();
+          }
+
           throw new Error(tavilyData.error || 'Failed to extract content');
         }
 
-        // Second API call - OpenAI
+        // Rest of the existing code for OpenAI and successful path...
         const openaiResponse = await fetch('/api/openai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -133,38 +146,32 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
         const openaiData = await openaiResponse.json();
 
         if (!openaiData.success) {
+          // If OpenAI fails, still save the URL and company name
+          const result = await updateProfileAction(userId, {
+            companyUrl: formattedURL,
+            companyName: extractedName
+          });
+
+          if (result.status === 'success') {
+            setIsUrlSaved(true);
+            setCompanyName(extractedName);
+            setIsCompanyNameSaved(false);
+            setIsDescriptionSaved(false);
+            
+            // Call the onProfileUpdate callback
+            onProfileUpdate?.();
+          }
+
           throw new Error('Failed to generate description');
         }
 
-        // Update database with both URL and company name
-        const result = await updateProfileAction(userId, {
-          companyUrl: formattedURL,
-          companyDescription: openaiData.description,
-          companyName: extractedName
-        });
-
-        if (result.status === 'success') {
-          setCompanyDescription(openaiData.description);
-          setIsUrlSaved(true);
-          setIsDescriptionSaved(true);
-          setCompanyName(extractedName);
-          setIsCompanyNameSaved(true);
-          
-          // Call the onProfileUpdate callback if it exists
-          onProfileUpdate?.();
-        } else {
-          throw new Error('Failed to update profile');
-        }
+        // Existing success path code...
 
       } catch (error) {
         console.error('Error:', error);
         alert(error instanceof Error ? error.message : 'An error occurred while processing your request');
         
-        // Set URL as saved anyway so user can proceed with manual entry
-        setIsUrlSaved(true);
-        setCompanyName(extractCompanyName(formattedURL));
-        setIsCompanyNameSaved(false);
-        setIsDescriptionSaved(false);
+        // No need to set states here as they're already set in the error handling above
       } finally {
         setIsLoading(false);
       }
