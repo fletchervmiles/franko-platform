@@ -11,7 +11,7 @@ const researchTopics = [
   'Exploratory',
   'Narrative-Driven',
   'Uncover the WHY',
-  '10 minute interviews'
+  '5 minute interviews'
 ]
 
 export default function Demo() {
@@ -28,7 +28,7 @@ export default function Demo() {
           we ask your churned customers about it.
         </h2>
         <p className="text-gray-600 max-w-3xl mx-auto text-lg">
-          Each interview agent is uniquely configured and will typically explore 3-5 research objectives through concise, exploratory conversations lasting around 10 minutes.
+          Each interview agent is uniquely configured and will typically explore 3-5 research objectives through concise, exploratory conversations lasting around 5 minutes.
         </p>
       </div>
 

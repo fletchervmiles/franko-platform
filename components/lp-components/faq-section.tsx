@@ -20,7 +20,7 @@ const faqItems = (companyName: string): FAQItem[] => [
   },
   {
     question: "How long does each interview last?",
-    answer: "Each interview will go for approximately 10 minutes."
+    answer: "Each interview will go for approximately 5-7 minutes."
   },
   {
     question: "What kind of insights can I expect from the per-interview analysis?",

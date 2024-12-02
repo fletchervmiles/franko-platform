@@ -2,9 +2,10 @@
 
 import { Check, Zap, Rocket } from 'lucide-react'
 import Link from 'next/link'
+import TestimonialCard from './pricing-testimonial'
 
 const features = [
-  '10-minute AI-powered phone interviews to understand customer churn',
+  '5-minute AI-powered phone interviews to understand customer churn',
   'Interview Agent with Exploratory, Narrative-Driven Approach',
   'Dedicated and Contextualized to Your Business',
   'Unique URL to Invite Customers',
@@ -47,10 +48,21 @@ export default function Pricing() {
               </span>
               <div className="flex items-center mb-4">
                 <Zap className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$147</div>
+                <div className="text-4xl font-bold">$97</div>
               </div>
-              <p className="text-gray-600 mb-2 text-sm">180 mins | ≈ 18 interviews</p>
+              <p className="text-gray-600 mb-2 text-sm">200 mins | ≈ 40 interviews</p>
               <p className="text-black text-sm">Ideal for businesses starting to dive into customer churn analysis.</p>
+            </div>
+
+            <div className="mb-8">
+              <TestimonialCard 
+                name="Ben Goodman"
+                role="Co-Founder and CEO"
+                company="AgeMate"
+                testimonial="Instrumental in improving our retention and understanding churn customer segments."
+                avatarUrl="/assets/ben-agemate.png"
+                avatarFallback="BG"
+              />
             </div>
 
             <Link 
@@ -93,10 +105,21 @@ export default function Pricing() {
               </span>
               <div className="flex items-center mb-4">
                 <Rocket className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$247</div>
+                <div className="text-4xl font-bold">$197</div>
               </div>
-              <p className="text-white mb-2 text-sm">480 mins | ≈ 48 interviews</p>
+              <p className="text-white mb-2 text-sm">500 mins | ≈ 100 interviews</p>
               <p className="text-white text-sm">Designed for companies committed to minimizing churn through extensive customer feedback.</p>
+            </div>
+
+            <div className="mb-8">
+              <TestimonialCard 
+                name="Ben Goodman"
+                role="Co-Founder and CEO"
+                company="AgeMate"
+                testimonial="Instrumental in improving our retention and understanding churn customer segments."
+                avatarUrl="/assets/ben-agemate.png"
+                avatarFallback="BG"
+              />
             </div>
 
             <Link 
