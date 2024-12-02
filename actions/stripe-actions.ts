@@ -34,6 +34,7 @@ export async function createCheckoutSession(
       customer: customer.id,
       mode: "subscription",
       payment_method_types: ["card"],
+      allow_promotion_codes: true,
       metadata: {
         userId,
         plan,
