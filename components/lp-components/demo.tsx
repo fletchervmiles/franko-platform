@@ -46,10 +46,14 @@ export default function Demo() {
       </div>
 
       <div className="max-w-4xl mx-auto">
-        <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <PlayCircle className="w-16 h-16 text-black" />
-          </div>
+        <div className="relative w-full aspect-video">
+          <iframe 
+            className="absolute top-0 left-0 w-full h-full rounded-lg"
+            src="https://www.tella.tv/video/cm46t2n30000t03kx7qrq3gl7/embed?b=0&title=0&a=0&loop=0&t=0&muted=0&wt=0"
+            style={{ border: 0 }}
+            allowFullScreen 
+            allowTransparency
+          />
         </div>
       </div>
     </div>
