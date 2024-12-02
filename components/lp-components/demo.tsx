@@ -55,6 +55,27 @@ export default function Demo() {
             allowTransparency
           />
         </div>
+        
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">Video Timestamps</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            {[
+              { time: "0:00", label: "Account Setup" },
+              { time: "02:36", label: "Call starts" },
+              { time: "03:02", label: "Call Section 01: Cancellation Reasons" },
+              { time: "04:20", label: "Call Section 02: Initial Expectations" },
+              { time: "05:59", label: "Call Section 03: Improvements" },
+              { time: "07:57", label: "Call Section 04: Potential Win Back" },
+              { time: "08:40", label: "Call Ends" },
+              { time: "09:00", label: "Overview of interview Analysis" },
+            ].map((timestamp, index) => (
+              <div key={index} className="flex items-center text-sm">
+                <span className="font-mono text-gray-500 w-12">{timestamp.time}</span>
+                <span className="text-gray-700">{timestamp.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
