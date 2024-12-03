@@ -32,7 +32,7 @@ const faqItems = (companyName: string): FAQItem[] => [
   },
   {
     question: "How long will the interview take?",
-    answer: "The interview will last 5–10 minutes. You'll receive a call immediately after submitting your contact details."
+    answer: "The interview will last 5–7 minutes. You'll receive a call immediately after submitting your contact details."
   },
   {
     question: "How will my information be used?",

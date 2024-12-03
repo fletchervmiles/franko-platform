@@ -3,6 +3,7 @@
 import { Check, Zap, Rocket } from 'lucide-react'
 import Link from 'next/link'
 import TestimonialCard from './pricing-testimonial'
+import Container from './container'
 
 const features = [
   '5-minute AI-powered phone interviews to understand customer churn',
@@ -25,20 +26,20 @@ const analysisFeatures = [
 
 export default function Pricing() {
   return (
-    <div className="py-16 sm:py-24">
-      <div className="text-center mb-12">
-        <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">
-            Pricing
-          </span>
+    <Container>
+      <div className="py-16 sm:py-24">
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-6">
+            <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">
+              Pricing
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
+            Figure out the WHY behind<br />
+            your churn, fast!
+          </h2>
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
-          Figure out the WHY behind<br />
-          your churn, fast!
-        </h2>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
           {/* Starter Plan */}
           <div className="relative rounded-2xl border border-gray-200 bg-white p-8 transition-shadow hover:shadow-lg grid-background03">
@@ -144,7 +145,7 @@ export default function Pricing() {
           </div>
         </div>
       </div>
-    </div>
+    </Container>
   )
 }
 
