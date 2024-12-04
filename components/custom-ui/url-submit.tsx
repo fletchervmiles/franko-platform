@@ -122,10 +122,14 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
       setIsLoading(true);
 
       try {
+        // Extract company name from URL
+        const extractedName = extractCompanyName(formattedURL);
+        setCompanyName(extractedName);
+
         // First update the basic information in the database
         const updateResult = await updateProfileAction(userId, {
           companyUrl: formattedURL,
-          companyName: companyName
+          companyName: extractedName
         });
 
         if (updateResult.status !== 'success') {
