@@ -51,10 +51,13 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   const [companyName, setCompanyName] = React.useState("")
   const [isCompanyNameSaved, setIsCompanyNameSaved] = React.useState(false)
   const router = useRouter()
+  const [isClient, setIsClient] = React.useState(false)
+  const [isFocused, setIsFocused] = React.useState(false)
 
   // Set mounted state when component mounts
   React.useEffect(() => {
     setIsMounted(true)
+    setIsClient(true)
   }, [])
 
   // Validates URL format using regex
@@ -298,11 +301,12 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
                     placeholder="https://www."
                     value={url}
                     onChange={handleUrlChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     className={`transition-all duration-300 ease-in-out ${isUrlSaved ? "bg-gray-100/50" : ""}`}
                     disabled={isUrlSaved}
                   />
-                  {/* Helper text for empty URL field */}
-                  {!isUrlSaved && url.length === 0 && !document.activeElement?.matches('#url') && (
+                  {!isUrlSaved && url.length === 0 && !isFocused && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full pointer-events-none">
                       ✨ Step 1. Get started by submitting your company URL!
                     </div>
