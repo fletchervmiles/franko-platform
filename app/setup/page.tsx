@@ -7,11 +7,13 @@ import VoiceSelectionCard from "@/components/custom-ui/voice-selector"
 import ShareableLinkChurn from "@/components/custom-ui/shareable-link-churn"
 import { SelectProfile } from "@/db/schema/profiles-schema"
 import { useUser } from "@clerk/nextjs"
+import { useRouter } from 'next/navigation'
 
 export default function SetupPage() {
     const { user } = useUser()
     const [profile, setProfile] = useState<SelectProfile | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const router = useRouter()
 
     const fetchProfile = async () => {
         if (!user?.id) return
@@ -39,9 +41,17 @@ export default function SetupPage() {
         fetchProfile()
     }, [user?.id])
 
-    const refreshProfile = () => {
-        fetchProfile()
-    }
+    const refreshProfile = async () => {
+        setIsLoading(true);
+        try {
+            await fetchProfile();
+            router.refresh();
+        } catch (error) {
+            console.error('Error refreshing profile:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
       <RootLayout>

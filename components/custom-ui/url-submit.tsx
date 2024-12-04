@@ -37,6 +37,19 @@ interface CompanyDetailsCardProps {
   onProfileUpdate?: () => void;
 }
 
+// Add these interfaces at the top of the file
+interface TavilyResponse {
+  success: boolean;
+  content?: string;
+  error?: string;
+}
+
+interface OpenAIResponse {
+  success: boolean;
+  description?: string;
+  error?: string;
+}
+
 // Main component for handling company details input
 export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCardProps) {
   // State variables for managing form data and UI states
@@ -109,72 +122,61 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
       setIsLoading(true);
 
       try {
-        const extractedName = extractCompanyName(formattedURL)
-        setCompanyName(extractedName);
+        // First update the basic information in the database
+        const updateResult = await updateProfileAction(userId, {
+          companyUrl: formattedURL,
+          companyName: companyName
+        });
 
-        // First try to get content from Tavily
+        if (updateResult.status !== 'success') {
+          throw new Error('Failed to update profile');
+        }
+
+        // Try to get content from Tavily
         const tavilyResponse = await fetch('/api/tavily', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: formattedURL })
         });
-        const tavilyData = await tavilyResponse.json();
+        const tavilyData = await tavilyResponse.json() as TavilyResponse;
 
-        if (!tavilyData.success) {
-          // Even if Tavily fails, save the URL and company name to the database
-          const result = await updateProfileAction(userId, {
-            companyUrl: formattedURL,
-            companyName: extractedName
+        if (tavilyData.success && tavilyData.content) {
+          // If Tavily succeeds, try OpenAI
+          const openaiResponse = await fetch('/api/openai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: tavilyData.content })
           });
+          const openaiData = await openaiResponse.json() as OpenAIResponse;
 
-          if (result.status === 'success') {
-            setIsUrlSaved(true);
-            setCompanyName(extractedName);
-            setIsCompanyNameSaved(false);
-            setIsDescriptionSaved(false);
-            
-            // Call the onProfileUpdate callback
-            onProfileUpdate?.();
+          if (openaiData.success && openaiData.description) {
+            // Update profile with the generated description
+            const descriptionResult = await updateProfileAction(userId, {
+              companyDescription: openaiData.description
+            });
+
+            if (descriptionResult.status === 'success') {
+              setCompanyDescription(openaiData.description);
+              setIsDescriptionSaved(true);
+            }
           }
-
-          throw new Error(tavilyData.error || 'Failed to extract content');
         }
 
-        // Rest of the existing code for OpenAI and successful path...
-        const openaiResponse = await fetch('/api/openai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: tavilyData.content })
-        });
-        const openaiData = await openaiResponse.json();
-
-        if (!openaiData.success) {
-          // If OpenAI fails, still save the URL and company name
-          const result = await updateProfileAction(userId, {
-            companyUrl: formattedURL,
-            companyName: extractedName
-          });
-
-          if (result.status === 'success') {
-            setIsUrlSaved(true);
-            setCompanyName(extractedName);
-            setIsCompanyNameSaved(false);
-            setIsDescriptionSaved(false);
-            
-            // Call the onProfileUpdate callback
-            onProfileUpdate?.();
-          }
-
-          throw new Error('Failed to generate description');
+        // Set states to reflect successful update
+        setIsUrlSaved(true);
+        setIsCompanyNameSaved(true);
+        
+        // Call the onProfileUpdate callback to refresh parent components
+        if (onProfileUpdate) {
+          onProfileUpdate();
         }
 
-        // Existing success path code...
+        // Refresh the router to ensure new data is displayed
+        router.refresh();
 
       } catch (error) {
         console.error('Error:', error);
         alert(error instanceof Error ? error.message : 'An error occurred while processing your request');
-        
-        // No need to set states here as they're already set in the error handling above
       } finally {
         setIsLoading(false);
       }
@@ -224,22 +226,29 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   React.useEffect(() => {
     const loadProfileData = async () => {
       if (userId) {
-        const result = await getProfileByUserIdAction(userId);
-        if (result.status === 'success' && result.data) {
-          const profile = result.data;
-          if (profile.companyUrl) {
-            setUrl(profile.companyUrl);
-            setIsUrlValid(true);
-            setIsUrlSaved(true);
+        try {
+          const result = await getProfileByUserIdAction(userId);
+          if (result.status === 'success' && result.data) {
+            const profile = result.data;
+            
+            if (profile.companyUrl) {
+              setUrl(profile.companyUrl);
+              setIsUrlValid(true);
+              setIsUrlSaved(true);
+            }
+            
+            if (profile.companyDescription) {
+              setCompanyDescription(profile.companyDescription);
+              setIsDescriptionSaved(true);
+            }
+            
+            if (profile.companyName) {
+              setCompanyName(profile.companyName);
+              setIsCompanyNameSaved(true);
+            }
           }
-          if (profile.companyDescription) {
-            setCompanyDescription(profile.companyDescription);
-            setIsDescriptionSaved(true);
-          }
-          if (profile.companyName) {
-            setCompanyName(profile.companyName);
-            setIsCompanyNameSaved(true);
-          }
+        } catch (error) {
+          console.error('Error loading profile:', error);
         }
       }
     };
