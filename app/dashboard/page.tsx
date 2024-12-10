@@ -1,12 +1,19 @@
 import RootLayout from "@/components/custom-ui/nav"
 import InterviewDashboard from "@/components/custom-ui/interview-dashboard"
+import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 
+export default async function DashboardPage() {
+  const { userId } = await auth()
 
-export default function DashboardPage() {
+  if (!userId) {
+    redirect("/sign-in")
+  }
+
   return (
     <RootLayout>
       <div className="min-h-screen bg-background">
-        <InterviewDashboard />
+        <InterviewDashboard userId={userId} />
       </div>
     </RootLayout>
   )

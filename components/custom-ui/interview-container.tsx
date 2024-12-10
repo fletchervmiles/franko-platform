@@ -129,7 +129,12 @@ type InterviewDetailsProps = Pick<Interview,
   | 'status'
 >
 
-export default function InterviewContainer({ interviewId }: { interviewId: string }) {
+interface InterviewContainerProps {
+  interviewId: string;
+  userId: string;
+}
+
+export default function InterviewContainer({ interviewId, userId }: InterviewContainerProps) {
   const [interview, setInterview] = useState<Interview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -191,7 +196,8 @@ export default function InterviewContainer({ interviewId }: { interviewId: strin
           </div>
           <InterviewStatus 
             interviewId={interview.id} 
-            initialStatus={interview.status} 
+            initialStatus={interview.status}
+            userId={userId}
           />
         </div>
         <div className="flex flex-1">

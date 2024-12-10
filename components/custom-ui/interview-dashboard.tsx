@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import InterviewCard from './interview-card'
 import { getInterviewsByUserId } from '@/db/queries/interviews-queries'
@@ -10,15 +9,22 @@ import { Info } from 'lucide-react'
 
 type Interview = Database['public']['Tables']['interviews']['Row']
 
-export default function InterviewDashboard() {
-  const { user } = useUser()
+interface InterviewDashboardProps {
+  userId: string;
+  isDemoRoute?: boolean;
+}
+
+export default function InterviewDashboard({ 
+  userId, 
+  isDemoRoute = false 
+}: InterviewDashboardProps) {
   const router = useRouter()
   const [interviews, setInterviews] = useState<Interview[]>([])
 
   useEffect(() => {
     async function fetchInterviews() {
-      if (user?.id) {
-        const data = await getInterviewsByUserId(user.id)
+      if (userId) {
+        const data = await getInterviewsByUserId(userId)
         const formattedData = data
           .map(interview => ({
             ...interview,
@@ -58,10 +64,11 @@ export default function InterviewDashboard() {
     }
 
     fetchInterviews()
-  }, [user?.id])
+  }, [userId])
 
   const handleInterviewClick = (interviewId: string) => {
-    router.push(`/interview/${interviewId}`)
+    const basePath = isDemoRoute ? '/demo/interview' : '/interview'
+    router.push(`${basePath}/${interviewId}`)
   }
 
   const formatDate = (dateString: string) => {

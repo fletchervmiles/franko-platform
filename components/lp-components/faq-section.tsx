@@ -63,6 +63,9 @@ export function FAQSection({ companyName }: FAQSectionProps) {
             FAQs
           </span>
         </div>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-center mb-6">
+          Questions? Answers.
+        </h2>
       </CardHeader>
       <CardContent>
         <div className="space-y-8">

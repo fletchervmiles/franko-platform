@@ -18,7 +18,11 @@ function formatMinutes(minutes: number): string {
   return `${hours} hours, ${remainingMinutes} minutes`
 }
 
-export default function UsageOverview() {
+interface PlanUsageProps {
+  userId: string;
+}
+
+export default function UsageOverview({ userId }: PlanUsageProps) {
   const [metrics, setMetrics] = useState<UsageMetrics>({
     totalLifetimeMinutes: 0,
     minutesUsedThisMonth: 0,
@@ -31,7 +35,7 @@ export default function UsageOverview() {
   useEffect(() => {
     async function loadMetrics() {
       try {
-        const data = await fetchUsageMetrics();
+        const data = await fetchUsageMetrics(userId);
         setMetrics(data);
       } catch (error) {
         console.error('Failed to load usage metrics:', error);
@@ -41,7 +45,7 @@ export default function UsageOverview() {
     }
 
     loadMetrics();
-  }, []);
+  }, [userId]);
 
   if (loading) {
     return <div>Loading usage metrics...</div>;

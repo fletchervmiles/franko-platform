@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input"
 import { SelectProfile } from "@/db/schema"
 
 interface ShareableLinkChurnProps {
-  profile: SelectProfile
+  profile: SelectProfile;
+  userId?: string;
+  isDemoRoute?: boolean;
 }
 
 const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
@@ -19,17 +21,22 @@ const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
   />
 )
 
-export default function ShareableLinkChurn({ profile }: ShareableLinkChurnProps) {
+export default function ShareableLinkChurn({ 
+  profile,
+  userId = profile.userId,
+  isDemoRoute = false
+}: ShareableLinkChurnProps) {
   const [copied, setCopied] = React.useState(false)
   const [isReady, setIsReady] = React.useState(false)
   const [shareableUrl, setShareableUrl] = React.useState('')
   
   React.useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://franko.ai'
-    if (profile?.userId) {
-      setShareableUrl(`${baseUrl}/start-interview?clientId=${profile.userId}&company=${encodeURIComponent(profile.companyName || '')}`)
+    if (userId) {
+      const path = isDemoRoute ? '/demo/start-interview' : '/start-interview'
+      setShareableUrl(`${baseUrl}${path}?clientId=${userId}&company=${encodeURIComponent(profile.companyName || '')}`)
     }
-  }, [profile?.userId, profile?.companyName])
+  }, [userId, profile.companyName, isDemoRoute])
 
   React.useEffect(() => {
     if (profile?.companyUrl && profile?.companyName && profile?.companyDescription) {

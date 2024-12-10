@@ -3,12 +3,13 @@
 import { calculateUsageMetrics } from "@/lib/account-management";
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 
-export async function fetchUsageMetrics() {
-  const user = await currentUser();
-  
-  if (!user) {
-    throw new Error("Not authenticated");
-  }
+interface UsageMetrics {
+  totalLifetimeMinutes: number;
+  minutesUsedThisMonth: number;
+  remainingMinutes: number;
+  monthlyQuota: number;
+}
 
-  return calculateUsageMetrics(user.id);
+export async function fetchUsageMetrics(userId: string): Promise<UsageMetrics> {
+  return calculateUsageMetrics(userId);
 } 

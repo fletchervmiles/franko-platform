@@ -88,12 +88,14 @@ interface InterviewFormProps {
   clientProfile: SelectProfile;
   useCase: string;
   onSubmitSuccess?: () => void;
+  userId?: string;
 }
 
 export default function InterviewForm({ 
   clientProfile,
   useCase,
-  onSubmitSuccess
+  onSubmitSuccess,
+  userId = clientProfile.userId
 }: InterviewFormProps) {
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -168,9 +170,6 @@ export default function InterviewForm({
       setIsSubmitting(true)
       const formattedPhoneNumber = formatPhoneNumber(formData.countryCode, formData.phoneNumber)
       
-      // Add detailed logging
-      console.log('Form Submission - Client Profile:', clientProfile)
-      
       const payload = {
         client_name: clientProfile.companyName,
         interviewee_name: formData.firstName,
@@ -180,7 +179,7 @@ export default function InterviewForm({
         client_company_description: clientProfile.companyDescription,
         agent_name: clientProfile.agentInterviewerName || 'Brittany',
         voice_id: clientProfile.voiceId || 'kPzsL2i3teMYv0FxEYQ6',
-        unique_customer_identifier: clientProfile.userId,
+        unique_customer_identifier: userId,
         use_case: useCase
       }
 

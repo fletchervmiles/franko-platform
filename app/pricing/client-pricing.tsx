@@ -6,6 +6,8 @@ import { createCheckoutSession } from "@/actions/stripe-actions";
 import { useState } from "react";
 import { Check, Zap, Rocket } from 'lucide-react';
 import TestimonialCard from '@/components/lp-components/pricing-testimonial'
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ClientPricingProps {
   userId: string;
@@ -70,9 +72,9 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
 
       <div className="text-center mb-12">
         <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">
+          <Badge variant="outline" className="px-4 py-1.5">
             Pricing
-          </span>
+          </Badge>
         </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
           Select your preferred plan
@@ -82,79 +84,141 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
           {/* Starter Plan */}
-          <div className="relative rounded-2xl border border-gray-200 bg-white p-8 transition-shadow hover:shadow-lg grid-background03">
-            <div className="mb-6">
-              <span className="inline-flex items-center rounded-full bg-[#0070f3] px-2.5 py-0.5 text-xs font-medium text-white mb-4">
-                Starter
-              </span>
-              <div className="flex items-center mb-4">
-                <Zap className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$97</div>
+          <Card className="w-full p-6 grid-background03">
+            <CardHeader className="space-y-8">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-blue-400">Starter</Badge>
+                <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
               </div>
-              <p className="text-gray-600 mb-2 text-sm">200 mins | ≈ 40 interviews</p>
-              <p className="text-black text-sm">Ideal for businesses starting to dive into customer churn analysis.</p>
-            </div>
+              
+              <div className="flex items-baseline gap-2">
+                <Zap className="h-5 w-5 text-blue-500" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold">$48.50</span>
+                  <span className="text-sm text-muted-foreground">/one-time payment</span>
+                </div>
+                <div className="text-base font-semibold text-gray-600">
+                  <span className="line-through">$97</span>
+                </div>
+              </div>
+            </CardHeader>
 
-            <button
-              onClick={() => handlePlanSelect("starter")}
-              disabled={!!isLoading}
-              className={`block w-full ${
-                isLoading === "starter"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-black hover:bg-gray-800"
-              } text-white rounded-full py-3 px-4 font-medium transition-colors mb-8 text-center`}
-            >
-              {isLoading === "starter" ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full" />
-                  Processing...
-                </span>
-              ) : (
-                "Get your churn AI researcher →"
-              )}
-            </button>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-base font-semibold mb-1">
+                  <span className="text-sm">≈</span>
+                  20 customer interviews
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  100 minutes of customer interview time plus detailed analysis
+                </p>
+              </div>
 
-            {/* Features section remains the same as pricing-post-signup */}
-            <div>
-              <div className="font-medium mb-4 text-sm">Features:</div>
-              <ul className="space-y-3">
-                {features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600 text-sm">
-                      {feature}
-                      {feature === 'Comprehensive Per-Interview Analysis including:' && (
-                        <ul className="mt-2 space-y-2 pl-4">
-                          {analysisFeatures.map((subFeature, subIndex) => (
-                            <li key={subIndex} className="flex items-start gap-3">
-                              <span className="text-gray-600 text-sm before:content-['-'] before:mr-2">{subFeature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
-          </div>
+              <button
+                onClick={() => handlePlanSelect("starter")}
+                disabled={!!isLoading}
+                className={`w-full ${
+                  isLoading === "starter"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-black hover:bg-gray-800"
+                } text-white rounded-md py-3 px-4 font-medium transition-colors text-center h-11`}
+              >
+                {isLoading === "starter" ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full" />
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    Get 100 mins of customer interview credits
+                    <span aria-hidden="true" className="ml-2">→</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-sm text-muted-foreground">
+                Ideal for businesses starting to dive into customer churn analysis.
+              </p>
+
+              <div>
+                <div className="font-bold mb-4 text-sm">Benefits</div>
+                <ul className="space-y-3">
+                  {features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-600 text-sm">
+                        {feature}
+                        {feature === 'Comprehensive Per-Interview Analysis including:' && (
+                          <ul className="mt-2 space-y-2 pl-4">
+                            {analysisFeatures.map((subFeature, subIndex) => (
+                              <li key={subIndex} className="flex items-start gap-3">
+                                <span className="text-gray-600 text-sm before:content-['-'] before:mr-2">{subFeature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
+            </CardContent>
+          </Card>
 
           {/* Pro Plan */}
-          <div className="relative rounded-2xl bg-black p-8 text-white transition-shadow hover:shadow-lg grid-background03-dark">
-            <div className="mb-6">
-              <span className="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-black mb-4">
-                Pro
-              </span>
-              <div className="flex items-center mb-4">
-                <Rocket className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$197</div>
+          <Card className="w-full p-6 bg-black text-white grid-background03-dark">
+            <CardHeader className="space-y-8">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-blue-400">Pro</Badge>
+                <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
               </div>
-              <p className="text-white mb-2 text-sm">500 mins | ≈ 100 interviews</p>
-              <p className="text-white text-sm">Designed for companies committed to minimizing churn through extensive customer feedback.</p>
-            </div>
+              
+              <div className="flex items-baseline gap-2">
+                <Rocket className="h-5 w-5 text-blue-500" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-white">$98.50</span>
+                  <span className="text-sm text-gray-400">/one-time payment</span>
+                </div>
+                <div className="text-base font-semibold text-gray-400">
+                  <span className="line-through">$197</span>
+                </div>
+              </div>
+            </CardHeader>
 
-            <div className="mb-8">
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-base font-semibold mb-1 text-white">
+                  <span className="text-sm">≈</span>
+                  50 customer interviews
+                </h3>
+                <p className="text-sm text-gray-400">
+                  250 minutes of customer interview time plus detailed analysis
+                </p>
+              </div>
+
+              <button
+                onClick={() => handlePlanSelect("pro")}
+                disabled={!!isLoading}
+                className={`w-full ${
+                  isLoading === "pro"
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-100"
+                } text-black rounded-md py-3 px-4 font-medium transition-colors text-center h-11`}
+              >
+                {isLoading === "pro" ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin h-5 w-5 mr-3 border-2 border-black border-t-transparent rounded-full" />
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    Get 250 mins of customer interview credits
+                    <span aria-hidden="true" className="ml-2">→</span>
+                  </>
+                )}
+              </button>
+
               <TestimonialCard 
                 name="Ben Goodman"
                 role="Co-Founder and CEO"
@@ -163,54 +227,38 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
                 avatarUrl="/assets/ben-agemate.png"
                 avatarFallback="BG"
               />
-            </div>
 
-            <button
-              onClick={() => handlePlanSelect("pro")}
-              disabled={!!isLoading}
-              className={`block w-full ${
-                isLoading === "pro"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-white hover:bg-gray-100"
-              } text-black rounded-full py-3 px-4 font-medium transition-colors mb-8 text-center`}
-            >
-              {isLoading === "pro" ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin h-5 w-5 mr-3 border-2 border-black border-t-transparent rounded-full" />
-                  Processing...
-                </span>
-              ) : (
-                "Get your churn AI researcher →"
-              )}
-            </button>
+              <p className="text-sm text-gray-400">
+                Designed for companies committed to minimizing churn through extensive customer feedback.
+              </p>
 
-            {/* Features section remains the same as pricing-post-signup */}
-            <div>
-              <div className="font-medium mb-4 text-sm">Features:</div>
-              <ul className="space-y-3">
-                {features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
-                    <span className="text-white text-sm">
-                      {feature}
-                      {feature === 'Comprehensive Per-Interview Analysis including:' && (
-                        <ul className="mt-2 space-y-2 pl-4">
-                          {analysisFeatures.map((subFeature, subIndex) => (
-                            <li key={subIndex} className="flex items-start gap-3">
-                              <span className="text-white text-sm before:content-['-'] before:mr-2">{subFeature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
-          </div>
+              <div>
+                <div className="font-bold mb-4 text-sm text-white">Benefits</div>
+                <ul className="space-y-3">
+                  {features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
+                      <span className="text-white text-sm">
+                        {feature}
+                        {feature === 'Comprehensive Per-Interview Analysis including:' && (
+                          <ul className="mt-2 space-y-2 pl-4">
+                            {analysisFeatures.map((subFeature, subIndex) => (
+                              <li key={subIndex} className="flex items-start gap-3">
+                                <span className="text-white text-sm before:content-['-'] before:mr-2">{subFeature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
-} 
+}

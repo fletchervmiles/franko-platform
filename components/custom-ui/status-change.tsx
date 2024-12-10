@@ -8,9 +8,10 @@ import { createClient } from '@/lib/supabase/client'
 interface StatusChangeProps {
   interviewId: string;
   initialStatus: string;
+  userId: string;
 }
 
-export default function InterviewStatus({ interviewId, initialStatus }: StatusChangeProps) {
+export default function InterviewStatus({ interviewId, initialStatus, userId }: StatusChangeProps) {
   const defaultStatus = initialStatus?.toLowerCase() === 'reviewed' ? 'reviewed' : 'ready for review'
   const [status, setStatus] = useState<string>(defaultStatus)
   const [isSaving, setIsSaving] = useState(false)
@@ -28,8 +29,12 @@ export default function InterviewStatus({ interviewId, initialStatus }: StatusCh
 
     const { error } = await supabase
       .from('interviews')
-      .update({ status: newStatus })
+      .update({ 
+        status: newStatus,
+        user_id: userId
+      })
       .eq('id', interviewId)
+      .eq('user_id', userId)
 
     if (error) {
       console.error('Error updating status:', error)

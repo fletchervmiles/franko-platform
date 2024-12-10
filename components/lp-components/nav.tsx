@@ -53,7 +53,13 @@ export default function Nav() {
               />
             </Link>
           </div>
-          <div className="flex lg:hidden">
+          <div className="flex items-center gap-4 lg:hidden">
+            <Link
+              href="/demo/dashboard"
+              className="flex items-center justify-center rounded-md border border-yellow-500 px-3 py-1.5 text-sm font-medium text-yellow-600 hover:bg-yellow-50 transition-colors duration-200"
+            >
+              Open Demo Dashboard
+            </Link>
             <button
               type="button"
               className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
@@ -74,7 +80,13 @@ export default function Nav() {
               </Link>
             ))}
           </div>
-          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
+          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+            <Link
+              href="/demo/dashboard"
+              className="flex items-center justify-center rounded-md border border-yellow-500 px-4 py-2 text-sm font-medium text-yellow-600 hover:bg-yellow-50 transition-colors duration-200"
+            >
+              Open Demo Dashboard
+            </Link>
             <Link
               href="/login"
               className="flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-gray-100 transition-colors duration-200"

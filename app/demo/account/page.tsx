@@ -1,17 +1,10 @@
-import RootLayout from "@/components/custom-ui/nav"
+import RootLayout from "@/components/custom-ui/demoNav"
 import AccountSection from "@/components/custom-ui/subscription"
 import UsageOverview from "@/components/custom-ui/plan-usage"
-import { auth } from "@clerk/nextjs/server"
 import { getProfile } from "@/db/queries/profiles-queries"
-import { redirect } from "next/navigation"
 
-export default async function AccountPage() {
-    const { userId } = await auth()
-    
-    if (!userId) {
-        redirect("/sign-in")
-    }
-
+export default async function DemoAccountPage() {
+    const userId = "user_demo_account"
     const profile = await getProfile(userId)
     
     return (
@@ -26,4 +19,3 @@ export default async function AccountPage() {
       </RootLayout>
     )
 }
-

@@ -35,7 +35,7 @@ const benefits = [
 
 export default function Benefits() {
   return (
-    <div className="py-16 sm:py-24">
+    <div>
       <div className="text-center mb-12">
         <div className="flex justify-center mb-6">
           <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">

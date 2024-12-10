@@ -1,8 +1,7 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
-import { auth } from "@clerk/nextjs/server"
 import InterviewContainer from "@/components/custom-ui/interview-container"
-import Nav from "@/components/custom-ui/nav"
+import Nav from "@/components/custom-ui/demoNav"
 import { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
@@ -17,17 +16,13 @@ export const metadata: Metadata = {
   description: 'View interview details and analysis',
 }
 
-export default async function InterviewPage({ params }: Props) {
-  const { userId } = await auth()
-  
-  if (!userId) {
-    redirect('/sign-in')
-  }
+export default async function DemoInterviewPage({ params }: Props) {
+  const userId = "user_demo_account"
 
   // Create Supabase client
   const supabase = createClient()
 
-  // Verify this interview belongs to the authenticated user
+  // Verify this interview belongs to the demo account
   const { data: interview, error } = await supabase
     .from('interviews')
     .select('user_id')
@@ -36,19 +31,16 @@ export default async function InterviewPage({ params }: Props) {
 
   if (error || !interview) {
     console.error('Error fetching interview:', error)
-    redirect('/dashboard') // Interview not found
+    redirect('/demo/dashboard')
   }
 
   if (interview.user_id !== userId) {
-    redirect('/dashboard') // Not authorized to view this interview
+    redirect('/demo/dashboard')
   }
 
   return (
     <Nav>
-      <InterviewContainer 
-        interviewId={params.id} 
-        userId={userId}  // Add userId prop
-      />
+      <InterviewContainer interviewId={params.id} userId={userId} />
     </Nav>
   )
 } 

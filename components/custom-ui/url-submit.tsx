@@ -19,9 +19,8 @@ import {
 } from "@/components/ui/dialog"
 
 // Import necessary libraries
-import { useAuth } from "@clerk/nextjs";
-import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
 import { useRouter } from "next/navigation"
+import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
 
 // Add this component at the top of your file
 const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
@@ -35,6 +34,7 @@ const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
 // Add this interface near the top of the file, after imports
 interface CompanyDetailsCardProps {
   onProfileUpdate?: () => void;
+  userId: string;
 }
 
 // Add these interfaces at the top of the file
@@ -51,7 +51,10 @@ interface OpenAIResponse {
 }
 
 // Main component for handling company details input
-export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCardProps) {
+export default function CompanyDetailsCard({ 
+  onProfileUpdate,
+  userId
+}: CompanyDetailsCardProps) {
   // State variables for managing form data and UI states
   const [url, setUrl] = React.useState("") // Stores the company URL
   const [isUrlValid, setIsUrlValid] = React.useState(false) // Tracks URL validation status
@@ -60,7 +63,6 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   const [companyDescription, setCompanyDescription] = React.useState("") // Stores company description
   const [isDescriptionSaved, setIsDescriptionSaved] = React.useState(false) // Tracks if description is saved
   const [isMounted, setIsMounted] = React.useState(false) // Tracks component mount state for dialog
-  const { userId } = useAuth();
   const [companyName, setCompanyName] = React.useState("")
   const [isCompanyNameSaved, setIsCompanyNameSaved] = React.useState(false)
   const router = useRouter()
@@ -116,7 +118,7 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   // Handles URL form submission
   const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isUrlValid && userId) {
+    if (isUrlValid) {
       const formattedURL = formatURL(url);
       setUrl(formattedURL);
       setIsLoading(true);
@@ -229,31 +231,29 @@ export default function CompanyDetailsCard({ onProfileUpdate }: CompanyDetailsCa
   // Add this useEffect to load initial data
   React.useEffect(() => {
     const loadProfileData = async () => {
-      if (userId) {
-        try {
-          const result = await getProfileByUserIdAction(userId);
-          if (result.status === 'success' && result.data) {
-            const profile = result.data;
-            
-            if (profile.companyUrl) {
-              setUrl(profile.companyUrl);
-              setIsUrlValid(true);
-              setIsUrlSaved(true);
-            }
-            
-            if (profile.companyDescription) {
-              setCompanyDescription(profile.companyDescription);
-              setIsDescriptionSaved(true);
-            }
-            
-            if (profile.companyName) {
-              setCompanyName(profile.companyName);
-              setIsCompanyNameSaved(true);
-            }
+      try {
+        const result = await getProfileByUserIdAction(userId);
+        if (result.status === 'success' && result.data) {
+          const profile = result.data;
+          
+          if (profile.companyUrl) {
+            setUrl(profile.companyUrl);
+            setIsUrlValid(true);
+            setIsUrlSaved(true);
           }
-        } catch (error) {
-          console.error('Error loading profile:', error);
+          
+          if (profile.companyDescription) {
+            setCompanyDescription(profile.companyDescription);
+            setIsDescriptionSaved(true);
+          }
+          
+          if (profile.companyName) {
+            setCompanyName(profile.companyName);
+            setIsCompanyNameSaved(true);
+          }
         }
+      } catch (error) {
+        console.error('Error loading profile:', error);
       }
     };
 

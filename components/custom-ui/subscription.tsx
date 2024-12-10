@@ -9,9 +9,13 @@ import { useClerk } from "@clerk/nextjs"
 
 interface AccountSectionProps {
   stripeCustomerId?: string | null
+  userId: string
 }
 
-export default function AccountSection({ stripeCustomerId }: AccountSectionProps) {
+export default function AccountSection({ 
+  stripeCustomerId, 
+  userId
+}: AccountSectionProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const { openUserProfile } = useClerk()

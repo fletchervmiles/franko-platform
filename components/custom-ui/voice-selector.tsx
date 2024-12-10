@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { Play, Pause, Save, Edit } from "lucide-react"
-import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -41,8 +40,11 @@ const voiceOptions = [
   },
 ]
 
-export default function VoiceSelectionCard() {
-  const { user } = useUser()
+interface VoiceSelectionProps {
+  userId: string;
+}
+
+export default function VoiceSelectionCard({ userId }: VoiceSelectionProps) {
   const [selectedVoice, setSelectedVoice] = React.useState("american-female")
   const [isSaved, setIsSaved] = React.useState(false)
   const [currentlyPlaying, setCurrentlyPlaying] = React.useState<string | null>(null)
@@ -50,22 +52,19 @@ export default function VoiceSelectionCard() {
 
   const audioRefs = React.useRef<{ [key: string]: HTMLAudioElement | null }>({})
 
-  // Load saved voice preference
   React.useEffect(() => {
     const loadSavedVoice = async () => {
-      if (user?.id) {
-        const profile = await getProfile(user.id)
-        if (profile?.agentInterviewerName) {
-          const voice = voiceOptions.find(v => v.agentName === profile.agentInterviewerName)
-          if (voice) {
-            setSelectedVoice(voice.id)
-            setIsSaved(true)
-          }
+      const profile = await getProfile(userId)
+      if (profile?.agentInterviewerName) {
+        const voice = voiceOptions.find(v => v.agentName === profile.agentInterviewerName)
+        if (voice) {
+          setSelectedVoice(voice.id)
+          setIsSaved(true)
         }
       }
     }
     loadSavedVoice()
-  }, [user?.id])
+  }, [userId])
 
   const handleVoiceSelect = (voiceId: string) => {
     setSelectedVoice(voiceId)
@@ -73,14 +72,14 @@ export default function VoiceSelectionCard() {
   }
 
   const handleSave = async () => {
-    if (!user?.id || !selectedVoice) return
+    if (!selectedVoice) return
 
     setIsSaving(true)
     try {
       const selectedOption = voiceOptions.find(v => v.id === selectedVoice)
       if (!selectedOption) return
 
-      await updateProfileAction(user.id, {
+      await updateProfileAction(userId, {
         agentInterviewerName: selectedOption.agentName,
         voiceId: selectedOption.voiceId
       })

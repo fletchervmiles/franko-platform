@@ -1,9 +1,11 @@
 'use client'
 
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Check, Zap, Rocket } from 'lucide-react'
 import Link from 'next/link'
 import TestimonialCard from './pricing-testimonial'
-import Container from './container'
 
 const features = [
   '5-minute AI-powered phone interviews to understand customer churn',
@@ -26,12 +28,12 @@ const analysisFeatures = [
 
 export default function Pricing() {
   return (
-    <div className="py-16 sm:py-24">
+    <div>
       <div className="text-center mb-12">
         <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">
+          <Badge variant="outline" className="px-4 py-1.5">
             Pricing
-          </span>
+          </Badge>
         </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
           Figure out the WHY behind<br />
@@ -40,29 +42,49 @@ export default function Pricing() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-        <div className="relative group">
-          <div className="relative rounded-2xl border border-gray-200 bg-white p-8 transition-shadow hover:shadow-lg grid-background03">
-            <div className="mb-6">
-              <span className="inline-flex items-center rounded-full bg-[#0070f3] px-2.5 py-0.5 text-xs font-medium text-white mb-4">
-                Starter
-              </span>
-              <div className="flex items-center mb-4">
-                <Zap className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$97</div>
+        <Card className="w-full p-6 grid-background03">
+          <CardHeader className="space-y-8">
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="bg-blue-400">Starter</Badge>
+              <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
+            </div>
+            
+            <div className="flex items-baseline gap-2">
+              <Zap className="h-5 w-5 text-blue-500" />
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold">$48.50</span>
+                <span className="text-sm text-muted-foreground">/one-time payment</span>
               </div>
-              <p className="text-gray-600 mb-2 text-sm">200 mins | ≈ 40 interviews</p>
-              <p className="text-black text-sm">Ideal for businesses starting to dive into customer churn analysis.</p>
+              <div className="text-base font-semibold text-gray-600">
+                <span className="line-through">$97</span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-base font-semibold mb-1">
+                <span className="text-sm">≈</span>
+                20 customer interviews
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                100 minutes of customer interview time plus detailed analysis
+              </p>
             </div>
 
-            <Link 
-              href="/sign-up" 
-              className="block w-full bg-black text-white rounded-full py-3 px-4 font-medium hover:bg-gray-800 transition-colors mb-8 text-center"
-            >
-              Get your churn AI researcher →
+            <Link href="/sign-up" className="w-full block">
+              <Button className="w-full bg-black text-white hover:bg-gray-800" size="lg">
+                Get 100 mins of customer interview credits
+                <span aria-hidden="true" className="ml-2">→</span>
+              </Button>
             </Link>
 
+            <p className="text-sm text-muted-foreground">
+              Ideal for businesses starting to dive into customer churn analysis.
+            </p>
+
             <div>
-              <div className="font-medium mb-4 text-sm">Features:</div>
+              <div className="font-bold mb-4 text-sm">Benefits</div>
               <ul className="space-y-3">
                 {features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
@@ -82,56 +104,74 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
+              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
             </div>
-            <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="relative group">
-          <div className="relative rounded-2xl bg-black p-8 text-white transition-shadow hover:shadow-lg grid-background03-dark">
-            <div className="mb-6">
-              <span className="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-black mb-4">
-                Pro
-              </span>
-              <div className="flex items-center mb-4">
-                <Rocket className="w-6 h-6 text-[#0070f3] mr-2" />
-                <div className="text-4xl font-bold">$197</div>
+        <Card className="w-full p-6 bg-black text-white grid-background03-dark">
+          <CardHeader className="space-y-8">
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="bg-blue-400">Pro</Badge>
+              <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
+            </div>
+            
+            <div className="flex items-baseline gap-2">
+              <Rocket className="h-5 w-5 text-blue-500" />
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-white">$98.50</span>
+                <span className="text-sm text-gray-400">/one-time payment</span>
               </div>
-              <p className="text-white mb-2 text-sm">500 mins | ≈ 100 interviews</p>
-              <p className="text-white text-sm">Designed for companies committed to minimizing churn through extensive customer feedback.</p>
+              <div className="text-base font-semibold text-gray-400">
+                <span className="line-through">$197</span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-base font-semibold mb-1 text-white">
+                <span className="text-sm">≈</span>
+                50 customer interviews
+              </h3>
+              <p className="text-sm text-gray-400">
+                250 minutes of customer interview time plus detailed analysis
+              </p>
             </div>
 
-            <div className="mb-8">
-              <TestimonialCard 
-                name="Ben Goodman"
-                role="Co-Founder and CEO"
-                company="AgeMate"
-                testimonial="Instrumental in improving our retention and understanding churn customer segments."
-                avatarUrl="/assets/ben-agemate.png"
-                avatarFallback="BG"
-              />
-            </div>
-
-            <Link 
-              href="/sign-up" 
-              className="block w-full bg-white text-black rounded-full py-3 px-4 font-medium hover:bg-gray-100 transition-colors mb-8 text-center"
-            >
-              Get your churn AI researcher →
+            <Link href="/sign-up" className="w-full block">
+              <Button className="w-full bg-white text-black hover:bg-gray-100" size="lg">
+                Get 250 mins of customer interview credits
+                <span aria-hidden="true" className="ml-2">→</span>
+              </Button>
             </Link>
 
+            <TestimonialCard 
+              name="Ben Goodman"
+              role="Co-Founder and CEO"
+              company="AgeMate"
+              testimonial="Instrumental in improving our retention and understanding churn customer segments."
+              avatarUrl="/assets/ben-agemate.png"
+              avatarFallback="BG"
+            />
+
+            <p className="text-sm text-gray-400">
+              Designed for companies committed to minimizing churn through extensive customer feedback.
+            </p>
+
             <div>
-              <div className="font-medium mb-4 text-sm">Features:</div>
+              <div className="font-bold mb-4 text-sm text-white">Benefits</div>
               <ul className="space-y-3">
                 {features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
-                    <span className="text-white text-sm">
+                    <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300 text-sm">
                       {feature}
                       {feature === 'Comprehensive Per-Interview Analysis including:' && (
                         <ul className="mt-2 space-y-2 pl-4">
                           {analysisFeatures.map((subFeature, subIndex) => (
                             <li key={subIndex} className="flex items-start gap-3">
-                              <span className="text-white text-sm before:content-['-'] before:mr-2">{subFeature}</span>
+                              <span className="text-gray-300 text-sm before:content-['-'] before:mr-2">{subFeature}</span>
                             </li>
                           ))}
                         </ul>
@@ -140,10 +180,10 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
+              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
             </div>
-            <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
