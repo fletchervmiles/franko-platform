@@ -32,8 +32,8 @@ export async function POST(req: Request) {
         console.log("Full webhook session data:", JSON.stringify({
           id: session.id,
           customer: session.customer,
-          subscription: session.subscription,
           metadata: session.metadata,
+          payment_status: session.payment_status,
         }, null, 2));
 
         const userId = session.metadata?.userId;
@@ -44,29 +44,14 @@ export async function POST(req: Request) {
           throw new Error("No userId found in session metadata");
         }
 
-        if (!session.subscription) {
-          console.error("No subscription found in session:", session.id);
-          throw new Error("No subscription ID in session");
-        }
-
-        // Get full subscription details
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-        
-        console.log("Retrieved subscription details:", {
-          subscriptionId: subscription.id,
-          status: subscription.status,
-          customerId: subscription.customer,
-          plan: subscription.items.data[0]?.price.id
-        });
-
-        // Ensure plan is valid and get correct minutes
-        if (!plan || !(plan in PLAN_MINUTES)) {
-          throw new Error(`Invalid plan type: ${plan}`);
+        // Only proceed if payment was successful
+        if (session.payment_status !== 'paid') {
+          console.log("Payment not completed:", session.payment_status);
+          break;
         }
 
         const updatedProfile = await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
-          stripeSubscriptionId: subscription.id,
           membership: dbMembership,
           monthlyMinutes: PLAN_MINUTES[plan],
           minutesAvailable: PLAN_MINUTES[plan],

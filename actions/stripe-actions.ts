@@ -26,6 +26,9 @@ export async function createCheckoutSession(
       ? process.env.STRIPE_PRO_2024_PRICE_ID 
       : process.env.STRIPE_STARTER_2024_PRICE_ID;
 
+    console.log("Selected plan:", plan);
+    console.log("Price ID being used:", priceId);
+
     if (!priceId) {
       throw new Error(`Invalid price ID for plan: ${plan}`);
     }
@@ -36,7 +39,7 @@ export async function createCheckoutSession(
 
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
-      mode: "subscription",
+      mode: "payment",
       payment_method_types: ["card"],
       allow_promotion_codes: true,
       metadata: {
