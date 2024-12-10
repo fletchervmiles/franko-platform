@@ -17,28 +17,24 @@ export default function HomePage() {
       <Nav />
       <Hero />
       <Container>
-        {/* Video Section */}
         <section className="py-24">
           <VideoSection />
         </section>
       </Container>
-      {/* Divider */}
       <div className="border-t border-gray-200" />
       <Container>
         {/* How it Works Section */}
-        <section className="py-24">
+        <section id="how-it-works" className="py-24">
           <HowItWorks />
         </section>
       </Container>
-      {/* Divider */}
       <div className="border-t border-gray-200" />
       <Container>
         {/* Demo Section */}
-        <section className="py-24">
+        <section id="demo" className="py-24">
           <Demo />
         </section>
       </Container>
-      {/* Divider */}
       <div className="border-t border-gray-200" />
       <Container>
         {/* Benefits Section */}
@@ -46,15 +42,13 @@ export default function HomePage() {
           <Benefits />
         </section>
       </Container>
-      {/* Divider */}
       <div className="border-t border-gray-200" />
       <Container>
         {/* Pricing Section */}
-        <section className="py-24">
+        <section id="pricing" className="py-24">
           <Pricing />
         </section>
       </Container>
-      {/* Divider */}
       <div className="border-t border-gray-200" />
       <Container>
         {/* FAQ Section */}

@@ -32,6 +32,17 @@ export default function Nav() {
     }
   }, [])
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('#')) {
+      e.preventDefault()
+      const element = document.getElementById(href.substring(1))
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+        setMobileMenuOpen(false)
+      }
+    }
+  }
+
   return (
     <header className={`sticky top-0 z-50 bg-white transition-shadow duration-300 ${isScrolled ? 'border-b border-gray-200' : ''}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -74,6 +85,7 @@ export default function Nav() {
               <Link 
                 key={item.name} 
                 href={item.href} 
+                onClick={(e) => handleNavClick(e, item.href)}
                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
               >
                 {item.name}
@@ -136,7 +148,7 @@ export default function Nav() {
                     <Link
                       key={item.name}
                       href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={(e) => handleNavClick(e, item.href)}
                       className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                     >
                       {item.name}
