@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
 import { PLAN_MINUTES, type MembershipTier } from "@/lib/stripe";
 import type Stripe from "stripe";
+import { mapToDBMembership } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
 
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan as MembershipTier;
+        const dbMembership = mapToDBMembership(plan);
         
         if (!userId) {
           throw new Error("No userId found in session metadata");
@@ -57,10 +59,15 @@ export async function POST(req: Request) {
           plan: subscription.items.data[0]?.price.id
         });
 
+        // Ensure plan is valid and get correct minutes
+        if (!plan || !(plan in PLAN_MINUTES)) {
+          throw new Error(`Invalid plan type: ${plan}`);
+        }
+
         const updatedProfile = await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
           stripeSubscriptionId: subscription.id,
-          membership: plan,
+          membership: dbMembership,
           monthlyMinutes: PLAN_MINUTES[plan],
           minutesAvailable: PLAN_MINUTES[plan],
         });

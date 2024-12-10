@@ -1,6 +1,6 @@
 "use server";
 
-import { stripe, PLAN_MINUTES } from "@/lib/stripe";
+import { stripe, PLAN_MINUTES, mapToDBMembership } from "@/lib/stripe";
 import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
@@ -21,14 +21,18 @@ export async function createCheckoutSession(
       },
     });
 
-    // Get the correct price ID
+    // Get the correct price ID for 2024 plans
     const priceId = plan === "pro" 
-      ? process.env.STRIPE_PRO_PRICE_ID 
-      : process.env.STRIPE_STARTER_PRICE_ID;
+      ? process.env.STRIPE_PRO_2024_PRICE_ID 
+      : process.env.STRIPE_STARTER_2024_PRICE_ID;
 
     if (!priceId) {
       throw new Error(`Invalid price ID for plan: ${plan}`);
     }
+
+    // Map the UI plan names to our internal plan types
+    const internalPlan = plan === "pro" ? "pro_2024" : "starter_2024";
+    const dbMembership = mapToDBMembership(internalPlan);
 
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -37,7 +41,7 @@ export async function createCheckoutSession(
       allow_promotion_codes: true,
       metadata: {
         userId,
-        plan,
+        plan: internalPlan, // Keep the full plan info in metadata
       },
       line_items: [{
         price: priceId,
@@ -47,21 +51,21 @@ export async function createCheckoutSession(
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
     });
 
-    // Create initial profile record
+    // Create initial profile record with mapped membership type
     await db.insert(profilesTable).values({
       userId,
       email: customerEmail,
       stripeCustomerId: customer.id,
-      membership: plan,
-      monthlyMinutes: PLAN_MINUTES[plan],
-      minutesAvailable: PLAN_MINUTES[plan],
+      membership: dbMembership,
+      monthlyMinutes: PLAN_MINUTES[internalPlan],
+      minutesAvailable: PLAN_MINUTES[internalPlan],
     }).onConflictDoUpdate({
       target: profilesTable.userId,
       set: {
         stripeCustomerId: customer.id,
-        membership: plan,
-        monthlyMinutes: PLAN_MINUTES[plan],
-        minutesAvailable: PLAN_MINUTES[plan],
+        membership: dbMembership,
+        monthlyMinutes: PLAN_MINUTES[internalPlan],
+        minutesAvailable: PLAN_MINUTES[internalPlan],
       }
     });
 
@@ -97,14 +101,18 @@ export async function updateProfileWithSubscription(
   plan: "starter" | "pro"
 ) {
   try {
+    // Map to 2024 plan and then to DB membership
+    const internalPlan = plan === "pro" ? "pro_2024" : "starter_2024";
+    const dbMembership = mapToDBMembership(internalPlan);
+
     await db
       .update(profilesTable)
       .set({
         stripeSubscriptionId: subscriptionId,
         stripeCustomerId: customerId,
-        membership: plan,
-        monthlyMinutes: PLAN_MINUTES[plan],
-        minutesAvailable: PLAN_MINUTES[plan],
+        membership: dbMembership,
+        monthlyMinutes: PLAN_MINUTES[internalPlan],
+        minutesAvailable: PLAN_MINUTES[internalPlan],
       })
       .where(eq(profilesTable.userId, userId));
   } catch (error) {
