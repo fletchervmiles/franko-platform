@@ -119,21 +119,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SidebarHeader className="bg-white dark:bg-white">
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton size="lg">
-                      <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
-                        <Image
-                          src="/assets/franko-logo.svg"
-                          alt="Franko Logo"
-                          width={24}
-                          height={24}
-                          className="object-contain"
-                          priority
-                        />
-                      </div>
-                      <div className="flex flex-col gap-0.5 leading-none">
-                        <span className="font-semibold font-mono">franko</span>
-                      </div>
-                    </SidebarMenuButton>
+                    <Link href="/" className="w-full">
+                      <SidebarMenuButton size="lg">
+                        <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                          <Image
+                            src="/assets/franko-logo.svg"
+                            alt="Franko Logo"
+                            width={24}
+                            height={24}
+                            className="object-contain"
+                            priority
+                          />
+                        </div>
+                        <div className="flex flex-col gap-0.5 leading-none">
+                          <span className="font-semibold font-mono">franko</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </Link>
                   </SidebarMenuItem>
                 </SidebarMenu>
                 <form>

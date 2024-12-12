@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { createCheckoutSession } from "@/actions/stripe-actions";
 import { useState } from "react";
-import { Check, Zap, Rocket } from 'lucide-react';
+import { Check, Zap, Rocket, Clock } from 'lucide-react';
 import TestimonialCard from '@/components/lp-components/pricing-testimonial'
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,32 +88,38 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
             <CardHeader className="space-y-8">
               <div className="flex items-center gap-2">
                 <Badge variant="default" className="bg-blue-400">Starter</Badge>
-                <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
+                <Badge variant="destructive" className="bg-red-400">Early Adopter Pricing</Badge>
               </div>
-              
-              <div className="flex items-baseline gap-2">
-                <Zap className="h-5 w-5 text-blue-500" />
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">$48.50</span>
-                  <span className="text-sm text-muted-foreground">/one-time payment</span>
-                </div>
-                <div className="text-base font-semibold text-gray-600">
-                  <span className="line-through">$97</span>
+
+              <div>
+                <h3 className="text-base font-semibold mb-3">
+                  100 minutes of interview credits
+                  <div className="text-sm text-muted-foreground">
+                    (≈10-20 customer interviews)
+                  </div>
+                </h3>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold">$48.50</span>
+                      <span className="text-base font-semibold text-gray-600">
+                        <span className="line-through">$97</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>50% Off</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>Valid through 2024</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-base font-semibold mb-1">
-                  <span className="text-sm">≈</span>
-                  20 customer interviews
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  100 minutes of customer interview time plus detailed analysis
-                </p>
-              </div>
-
               <button
                 onClick={() => handlePlanSelect("starter")}
                 disabled={!!isLoading}
@@ -121,7 +127,7 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
                   isLoading === "starter"
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-black hover:bg-gray-800"
-                } text-white rounded-md py-3 px-4 font-medium transition-colors text-center h-11`}
+                } text-white rounded-md py-3 px-4 font-bold transition-colors text-center h-11`}
               >
                 {isLoading === "starter" ? (
                   <span className="flex items-center justify-center">
@@ -130,7 +136,7 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
                   </span>
                 ) : (
                   <>
-                    Get 100 mins of customer interview credits
+                    Reduce Churn - Pay As You Go
                     <span aria-hidden="true" className="ml-2">→</span>
                   </>
                 )}
@@ -171,32 +177,38 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
             <CardHeader className="space-y-8">
               <div className="flex items-center gap-2">
                 <Badge variant="default" className="bg-blue-400">Pro</Badge>
-                <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
+                <Badge variant="destructive" className="bg-red-400">Early Adopter Pricing</Badge>
               </div>
-              
-              <div className="flex items-baseline gap-2">
-                <Rocket className="h-5 w-5 text-blue-500" />
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">$98.50</span>
-                  <span className="text-sm text-gray-400">/one-time payment</span>
-                </div>
-                <div className="text-base font-semibold text-gray-400">
-                  <span className="line-through">$197</span>
+
+              <div>
+                <h3 className="text-base font-semibold mb-3 text-white">
+                  250 minutes of interview credits
+                  <div className="text-sm text-gray-400">
+                    (≈25-50 customer interviews)
+                  </div>
+                </h3>
+
+                <div className="bg-gray-900 p-4 rounded-lg">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-white">$98.50</span>
+                      <span className="text-base font-semibold text-gray-400">
+                        <span className="line-through">$197</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <span>50% Off</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                      <Clock className="h-4 w-4" />
+                      <span>Valid through 2024</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-base font-semibold mb-1 text-white">
-                  <span className="text-sm">≈</span>
-                  50 customer interviews
-                </h3>
-                <p className="text-sm text-gray-400">
-                  250 minutes of customer interview time plus detailed analysis
-                </p>
-              </div>
-
               <button
                 onClick={() => handlePlanSelect("pro")}
                 disabled={!!isLoading}
@@ -204,7 +216,7 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
                   isLoading === "pro"
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-white hover:bg-gray-100"
-                } text-black rounded-md py-3 px-4 font-medium transition-colors text-center h-11`}
+                } text-black rounded-md py-3 px-4 font-bold transition-colors text-center h-11`}
               >
                 {isLoading === "pro" ? (
                   <span className="flex items-center justify-center">
@@ -213,7 +225,7 @@ export default function ClientPricing({ userId }: ClientPricingProps) {
                   </span>
                 ) : (
                   <>
-                    Get 250 mins of customer interview credits
+                    Reduce Churn - Pay As You Go
                     <span aria-hidden="true" className="ml-2">→</span>
                   </>
                 )}
