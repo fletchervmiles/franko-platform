@@ -1,13 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+// Lazy load the carousel styles
+import dynamic from 'next/dynamic'
+const CarouselStyles = dynamic(() => import('./carousel.styles'), { ssr: true })
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -112,11 +115,12 @@ const Carousel = React.forwardRef<
       }
 
       onSelect(api)
-      api.on("reInit", onSelect)
       api.on("select", onSelect)
+      api.on("reInit", onSelect)
 
       return () => {
-        api?.off("select", onSelect)
+        api.off("select", onSelect)
+        api.off("reInit", onSelect)
       }
     }, [api, onSelect])
 

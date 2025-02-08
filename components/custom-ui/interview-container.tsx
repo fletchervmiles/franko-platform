@@ -1,18 +1,39 @@
 "use client"
 
 import { User } from 'lucide-react'
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, Suspense } from "react"
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/supabase/database.types'
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import InterviewDetails from "./interview-details"
-import InterviewStatus from "./status-change"
-import AudioPlayer from "./audio-player"
-import FullTranscript from "./transcript"
-import SummaryCard from "./summary"
-import { SUMMARY_SECTIONS } from '@/constants/summaryContent'
 import { Separator } from "@/components/ui/separator"
+import { SUMMARY_SECTIONS } from '@/constants/summaryContent'
+import dynamic from 'next/dynamic'
+
+// Dynamic imports for heavy components
+const InterviewDetails = dynamic(() => import('./interview-details'), {
+  loading: () => <div>Loading details...</div>
+})
+const InterviewStatus = dynamic(() => import('./status-change'), {
+  loading: () => <div>Loading status...</div>
+})
+const AudioPlayer = dynamic(() => import('./audio-player'), {
+  loading: () => <div>Loading audio player...</div>
+})
+const FullTranscript = dynamic(() => import('./transcript'), {
+  loading: () => <div>Loading transcript...</div>
+})
+const SummaryCard = dynamic(() => import('./summary'), {
+  loading: () => <div>Loading summary...</div>
+})
+
+const DesktopLayout = dynamic(() => import('./interview-layouts/desktop'), {
+  loading: () => <div>Loading desktop view...</div>
+})
+
+const MobileLayout = dynamic(() => import('./interview-layouts/mobile'), {
+  loading: () => <div>Loading mobile view...</div>
+})
 
 // Define the raw data structure from Supabase
 interface RawInterview {
@@ -48,8 +69,7 @@ interface RawInterview {
   analysis_output: string | null;
 }
 
-// Define the transformed data structure
-interface Interview {
+export interface Interview {
   id: string;
   userId: string;
   clientName: string;
@@ -136,16 +156,11 @@ interface InterviewContainerProps {
 
 export default function InterviewContainer({ interviewId, userId }: InterviewContainerProps) {
   const [interview, setInterview] = useState<Interview | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchInterview() {
-      setLoading(true)
-      setError(null)
-      
       const supabase = createClient()
-      const { data: rawData, error } = await supabase
+      const { data: rawInterview, error } = await supabase
         .from('interviews')
         .select('*')
         .eq('id', interviewId)
@@ -153,30 +168,16 @@ export default function InterviewContainer({ interviewId, userId }: InterviewCon
 
       if (error) {
         console.error('Error fetching interview:', error)
-        setError(error.message)
-        setLoading(false)
         return
       }
 
-      // Transform the data before setting it in state
-      const transformedData = transformInterviewData(rawData as RawInterview)
-      console.log('Transformed data:', transformedData) // Debug log
-      setInterview(transformedData)
-      setLoading(false)
+      if (rawInterview) {
+        setInterview(transformInterviewData(rawInterview as RawInterview))
+      }
     }
 
-    if (interviewId) {
-      fetchInterview()
-    }
+    fetchInterview()
   }, [interviewId])
-
-  if (loading) {
-    return <div>Loading interview data...</div>
-  }
-
-  if (error) {
-    return <div>Error loading interview: {error}</div>
-  }
 
   if (!interview) {
     return <div>No interview data found</div>
@@ -200,90 +201,15 @@ export default function InterviewContainer({ interviewId, userId }: InterviewCon
             userId={userId}
           />
         </div>
-        <div className="flex flex-1">
-          {/* Desktop Layout */}
-          <div className="hidden w-full flex-1 flex-col xl:flex">
-            <div className="flex flex-1">
-              <div className="flex w-1/2 flex-col border-r">
-                <div className="flex-1">
-                  {SUMMARY_SECTIONS && Object.values(SUMMARY_SECTIONS).map((section) => (
-                    <SummaryCard 
-                      key={section.title}
-                      title={section.title}
-                      content={interview[section.field as keyof typeof interview] as string}
-                      icon={section.icon}
-                      isDefaultOpen={section.isDefaultOpen}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex w-1/2 flex-col">
-                <div className="flex-1">
-                  <InterviewDetails 
-                    interview={{
-                      intervieweeFirstName: interview.intervieweeFirstName,
-                      intervieweeLastName: interview.intervieweeLastName,
-                      intervieweeEmail: interview.intervieweeEmail,
-                      intervieweeNumber: interview.intervieweeNumber,
-                      useCase: interview.useCase,
-                      dateCompleted: interview.dateCompleted,
-                      totalInterviewMinutes: interview.totalInterviewMinutes,
-                      status: interview.status
-                    }} 
-                  />
-                  <AudioPlayer audioUrl={interview.interviewAudioLink} />
-                  <FullTranscript conversationHistory={interview.conversationHistoryRaw} />
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Mobile/Tablet Layout */}
-          <Tabs defaultValue="analysis" className="w-full xl:hidden">
-            <div className="px-6">
-              <TabsList className="w-full justify-start rounded-none bg-transparent p-0">
-                <TabsTrigger
-                  value="analysis"
-                  className="relative rounded-lg px-6 py-2 font-medium text-muted-foreground data-[state=active]:bg-accent data-[state=active]:text-black"
-                >
-                  Analysis
-                </TabsTrigger>
-                <TabsTrigger
-                  value="details"
-                  className="relative rounded-lg px-4 py-2 font-medium text-muted-foreground data-[state=active]:bg-accent data-[state=active]:text-black"
-                >
-                  Details
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <Separator className="mt-2" />
-            <TabsContent value="analysis" className="flex-1">
-              {SUMMARY_SECTIONS && Object.values(SUMMARY_SECTIONS).map((section) => (
-                <SummaryCard 
-                  key={section.title}
-                  title={section.title}
-                  content={interview[section.field as keyof typeof interview] as string}
-                  icon={section.icon}
-                  isDefaultOpen={section.isDefaultOpen}
-                />
-              ))}
-            </TabsContent>
-            <TabsContent value="details" className="flex-1">
-              <InterviewDetails 
-                interview={{
-                  intervieweeFirstName: interview.intervieweeFirstName,
-                  intervieweeLastName: interview.intervieweeLastName,
-                  intervieweeEmail: interview.intervieweeEmail,
-                  intervieweeNumber: interview.intervieweeNumber,
-                  useCase: interview.useCase,
-                  dateCompleted: interview.dateCompleted,
-                  totalInterviewMinutes: interview.totalInterviewMinutes,
-                  status: interview.status
-                }} 
-              />
-              <AudioPlayer audioUrl={interview.interviewAudioLink} />
-              <FullTranscript conversationHistory={interview.conversationHistoryRaw} />
-            </TabsContent>
-          </Tabs>
+        
+        {/* Desktop Layout */}
+        <div className="hidden xl:block">
+          <DesktopLayout interview={interview} />
+        </div>
+
+        {/* Mobile/Tablet Layout */}
+        <div className="block xl:hidden">
+          <MobileLayout interview={interview} />
         </div>
       </Card>
     </div>

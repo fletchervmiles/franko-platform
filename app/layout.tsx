@@ -14,7 +14,7 @@ import { Analytics } from "@vercel/analytics/react"
 export const metadata: Metadata = {
   title: {
     template: '%s | Customer Research',
-    default: 'Customer Research Platform'
+    default: 'Franko'
   },
   description: 'Participate in our customer research interviews',
   manifest: '/favicon/site.webmanifest',

@@ -1,0 +1,1 @@
+ALTER TABLE "creator_conversations" ALTER COLUMN "messages" SET DEFAULT '[]'::jsonb;

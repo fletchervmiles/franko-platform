@@ -44,6 +44,21 @@ const data = {
           icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
         },
         {
+          title: "Conversations",
+          url: "/conversations",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Interviews",
+          url: "/interview",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Todos",
+          url: "/todos",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
           title: "Setup",
           url: "/setup",
           icon: <Settings className="mr-0.5 h-4 w-4" />,
@@ -87,7 +102,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       case "/setup":
         return "Setup"
       case "/support":
-        return "Support"
+        return "Support"  
+      case "/create-conversation":
+      case "/create-conversation-chat":
+        return "Create Conversation"
       default:
         return "franko"
     }
@@ -103,8 +121,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data-variant="sidebar" 
           data-side="left"
         >
-          <div className="duration-200 relative h-svh w-[--sidebar-width] bg-white transition-[width] ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180 group-data-[collapsible=icon]:w-[--sidebar-width-icon] border-r border-gray-200"></div>
-          <div className="duration-200 fixed inset-y-0 z-10 h-svh transition-[left,right,width] ease-linear md:flex left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l bg-white dark:bg-white w-[240px]">
+          <div className="duration-200 relative h-full w-[--sidebar-width] bg-white transition-[width] ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180 group-data-[collapsible=icon]:w-[--sidebar-width-icon]"></div>
+          <div className="duration-200 fixed inset-y-0 z-10 h-full transition-[left,right,width] ease-linear md:flex left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l bg-white dark:bg-white w-[240px] border-r border-gray-200">
             <div className="flex h-full w-full flex-col bg-white">
               <SidebarHeader className="bg-white dark:bg-white">
                 <SidebarMenu>
@@ -193,7 +211,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </Sidebar>
-      <SidebarInset className="shadow-none">
+      <SidebarInset className="shadow-none border-l border-gray-200">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
@@ -205,10 +223,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 bg-gray-100/75 min-h-screen shadow-none">
+        <div className="flex flex-col gap-4 p-4 bg-gray-100/75 h-[calc(100vh-4rem)] shadow-none overflow-auto">
           {children}
         </div>
       </SidebarInset>
     </SidebarProvider>
   )
 }
+
+

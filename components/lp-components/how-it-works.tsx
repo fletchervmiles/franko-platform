@@ -1,9 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import { ChevronRightIcon } from '@heroicons/react/20/solid'
+import { ChevronRight } from 'lucide-react'
+import type { HTMLMotionProps } from 'framer-motion'
+
+// Dynamically import Framer Motion components
+const MotionDiv = dynamic<HTMLMotionProps<"div">>(
+  () => import('framer-motion').then((mod) => mod.motion.div),
+  { ssr: true }
+)
+
+const AnimatePresence = dynamic(
+  () => import('framer-motion').then((mod) => mod.AnimatePresence),
+  { ssr: true }
+)
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="animate-pulse bg-gray-200 rounded-lg h-full w-full" />
+)
 
 const steps = [
   {
@@ -57,99 +74,110 @@ const steps = [
 ]
 
 export default function HowItWorks() {
-  const [activeStep, setActiveStep] = useState<string | null>(steps[0].id)
+  const [activeStep, setActiveStep] = useState('1')
+  const [isAnimating, setIsAnimating] = useState(false)
 
-  const toggleStep = (id: string) => {
-    setActiveStep(prevStep => prevStep === id ? null : id)
+  const handleStepChange = (stepId: string) => {
+    if (isAnimating) return
+    setIsAnimating(true)
+    setActiveStep(stepId)
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="bg-black text-white rounded-3xl overflow-hidden relative">
-        <div className="absolute inset-0 grid-background03-dark"></div>
-        <div className="relative z-10 p-8 lg:p-12">
-          <div className="flex justify-center mb-12">
-            <span className="inline-flex items-center rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white border border-gray-800 shadow-[0_0_15px_rgba(255,255,255,0.08)]">
-              How It Works
-            </span>
-          </div>
-          <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-            <div className="space-y-4">
+    <Suspense fallback={<LoadingFallback />}>
+      <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            How It Works
+          </h2>
+          <p className="mt-6 text-lg leading-8 text-gray-600">
+            Get started in minutes and start understanding why your customers churn
+          </p>
+        </div>
+
+        <div className="mt-16 sm:mt-20 lg:mt-24">
+          <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:items-center lg:gap-x-8">
+            {/* Steps */}
+            <div className="lg:col-span-4">
               {steps.map((step) => (
-                <div key={step.id} className="border-b border-gray-700 pb-4">
-                  <button
-                    onClick={() => toggleStep(step.id)}
-                    className="w-full text-left focus:outline-none"
-                  >
-                    <div className="flex items-start justify-between w-full">
-                      <div className="flex-grow flex items-start">
-                        <div className="w-full pr-4">
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-lg font-semibold text-gray-400">
-                              {step.number}
-                            </span>
-                            <ChevronRightIcon 
-                              className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${activeStep === step.id ? 'transform rotate-90' : ''}`}
-                            />
-                          </div>
-                          <h3 className="text-xl font-semibold text-white mt-2">
-                            {step.title}
-                          </h3>
-                        </div>
+                <div
+                  key={step.id}
+                  className="relative"
+                  onClick={() => handleStepChange(step.id)}
+                >
+                  <div className={`cursor-pointer rounded-2xl px-4 py-3 ${activeStep === step.id ? 'bg-gray-50' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-x-3">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${activeStep === step.id ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {step.number}
+                        </span>
+                        <span className={`text-sm font-semibold ${activeStep === step.id ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {step.title}
+                        </span>
                       </div>
+                      <ChevronRight 
+                        className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${activeStep === step.id ? 'transform rotate-90' : ''}`}
+                      />
                     </div>
-                  </button>
-                  <AnimatePresence initial={false}>
                     {activeStep === step.id && (
-                      <motion.div
-                        initial="collapsed"
-                        animate="open"
-                        exit="collapsed"
-                        variants={{
-                          open: { opacity: 1, height: "auto" },
-                          collapsed: { opacity: 0, height: 0 }
-                        }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="w-full mt-4"
+                      <MotionDiv
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onAnimationComplete={() => setIsAnimating(false)}
+                        className="mt-2 pr-8"
                       >
-                        <p className="text-gray-300 leading-relaxed">
-                          {step.description}
-                        </p>
-                        <div className="mt-4 lg:hidden w-full">
-                          <Image
-                            src={step.mobileImage || ''}
-                            alt={step.title}
-                            width={800}
-                            height={600}
-                            className="rounded-lg object-cover w-full"
-                          />
-                        </div>
-                      </motion.div>
+                        <p className="text-sm text-gray-600">{step.description}</p>
+                      </MotionDiv>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </div>
               ))}
             </div>
-            <div className="hidden lg:block relative h-[600px] bg-gray-800 rounded-2xl overflow-hidden">
-              <AnimatePresence mode="wait">
+
+            {/* Image */}
+            <div className="lg:col-span-8">
+              <AnimatePresence mode="sync">
                 {steps.map((step) => (
                   activeStep === step.id && (
-                    <motion.div
+                    <MotionDiv
                       key={step.id}
-                      className="absolute inset-0"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ 
+                        duration: 0.2,
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20
+                      }}
+                      onAnimationComplete={() => setIsAnimating(false)}
+                      className="relative"
                     >
-                      <Image
-                        src={step.desktopImage || ''}
-                        alt={step.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 800px"
-                      />
-                    </motion.div>
+                      <div className="relative hidden lg:block">
+                        <Image
+                          src={step.desktopImage}
+                          alt={step.title}
+                          width={800}
+                          height={450}
+                          className="rounded-2xl shadow-xl"
+                          priority={step.id === '1'}
+                          loading={step.id === '1' ? 'eager' : 'lazy'}
+                        />
+                      </div>
+                      <div className="relative lg:hidden">
+                        <Image
+                          src={step.mobileImage}
+                          alt={step.title}
+                          width={400}
+                          height={300}
+                          className="rounded-2xl shadow-xl"
+                          priority={step.id === '1'}
+                          loading={step.id === '1' ? 'eager' : 'lazy'}
+                        />
+                      </div>
+                    </MotionDiv>
                   )
                 ))}
               </AnimatePresence>
@@ -157,7 +185,7 @@ export default function HowItWorks() {
           </div>
         </div>
       </div>
-    </div>
+    </Suspense>
   )
 }
 

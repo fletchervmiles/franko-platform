@@ -1,11 +1,12 @@
-import OpenAI from 'openai';
-
 export const maxDuration = 60; // Configure to maximum 60 seconds
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
     const { content } = await request.json();
+    
+    // Dynamically import OpenAI
+    const { default: OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const response = await client.chat.completions.create({

@@ -1,3 +1,30 @@
+/**
+ * Alert Dialog Component
+ * 
+ * Purpose:
+ * - Provides an accessible modal dialog for important messages and confirmations
+ * - Implements WAI-ARIA alert dialog pattern
+ * - Offers customizable content, actions, and styling
+ * - Handles keyboard interactions and focus management
+ * 
+ * Technical Features:
+ * - Built on Radix UI's AlertDialog primitive
+ * - Client-side only functionality (marked with "use client")
+ * - Implements React's forwardRef pattern
+ * - Uses Tailwind CSS for styling
+ * 
+ * Data Flow:
+ * - Accepts props for content, actions, and styling
+ * - Manages internal state for open/closed status
+ * - Handles user interactions and keyboard events
+ * 
+ * Architecture Notes:
+ * - Composed of multiple sub-components for flexibility
+ * - Uses compound component pattern
+ * - Implements accessibility best practices
+ * - Provides consistent styling through utility classes
+ */
+
 "use client"
 
 import * as React from "react"
@@ -6,19 +33,23 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
+// Base AlertDialog component
 const AlertDialog = AlertDialogPrimitive.Root
 
+// Trigger component that opens the dialog
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 
+// Portal component for rendering dialog outside current DOM hierarchy
 const AlertDialogPortal = AlertDialogPrimitive.Portal
 
+// Overlay component that dims the background
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -27,6 +58,7 @@ const AlertDialogOverlay = React.forwardRef<
 ))
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 
+// Main content container for the alert dialog
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
@@ -45,6 +77,7 @@ const AlertDialogContent = React.forwardRef<
 ))
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
 
+// Header section of the dialog
 const AlertDialogHeader = ({
   className,
   ...props
@@ -59,6 +92,7 @@ const AlertDialogHeader = ({
 )
 AlertDialogHeader.displayName = "AlertDialogHeader"
 
+// Footer section containing action buttons
 const AlertDialogFooter = ({
   className,
   ...props
@@ -73,6 +107,7 @@ const AlertDialogFooter = ({
 )
 AlertDialogFooter.displayName = "AlertDialogFooter"
 
+// Title component for the dialog
 const AlertDialogTitle = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
@@ -85,6 +120,7 @@ const AlertDialogTitle = React.forwardRef<
 ))
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName
 
+// Description component for dialog content
 const AlertDialogDescription = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
@@ -95,9 +131,9 @@ const AlertDialogDescription = React.forwardRef<
     {...props}
   />
 ))
-AlertDialogDescription.displayName =
-  AlertDialogPrimitive.Description.displayName
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName
 
+// Action button component (e.g., Confirm, Submit)
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
@@ -110,6 +146,7 @@ const AlertDialogAction = React.forwardRef<
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
 
+// Cancel button component
 const AlertDialogCancel = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
@@ -126,6 +163,7 @@ const AlertDialogCancel = React.forwardRef<
 ))
 AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName
 
+// Export all components
 export {
   AlertDialog,
   AlertDialogPortal,

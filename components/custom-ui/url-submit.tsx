@@ -23,13 +23,14 @@ import { useRouter } from "next/navigation"
 import { updateProfileAction, getProfileByUserIdAction } from "@/actions/profiles-actions";
 
 // Add this component at the top of your file
-const StatusDot = ({ status }: { status: 'pending' | 'complete' }) => (
+const StatusDot = React.memo(({ status }: { status: 'pending' | 'complete' }) => (
   <span 
     className={`inline-block w-2 h-2 rounded-full ml-2 ${
       status === 'complete' ? 'bg-green-500' : 'bg-yellow-500'
     }`}
   />
-)
+))
+StatusDot.displayName = 'StatusDot'
 
 // Add this interface near the top of the file, after imports
 interface CompanyDetailsCardProps {
@@ -50,6 +51,113 @@ interface OpenAIResponse {
   error?: string;
 }
 
+// Reusable Components
+const LoadingSpinner = () => (
+  <Loader2 className="h-4 w-4 animate-spin" />
+)
+
+// URL Validation and Formatting Utils
+const validateURL = (input: string): boolean => {
+  try {
+    new URL(input)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const formatURL = (input: string): string => {
+  if (!input.startsWith('http://') && !input.startsWith('https://')) {
+    return `https://${input}`
+  }
+  return input
+}
+
+const extractCompanyName = (url: string): string => {
+  try {
+    const hostname = new URL(url).hostname
+    const parts = hostname.split('.')
+    // Remove common TLDs and 'www'
+    const filteredParts = parts.filter(part => 
+      !['com', 'org', 'net', 'www'].includes(part)
+    )
+    return filteredParts[0] || ''
+  } catch {
+    return ''
+  }
+}
+
+// Form Components
+const URLInput = React.memo(({ 
+  url, 
+  isEditing, 
+  onChange, 
+  onSubmit 
+}: { 
+  url: string
+  isEditing: boolean
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onSubmit: (e: React.FormEvent) => Promise<void>
+}) => (
+  <form onSubmit={onSubmit} className="space-y-2">
+    <Label htmlFor="url">Company Website URL</Label>
+    {isEditing ? (
+      <div className="flex gap-2">
+        <Input
+          id="url"
+          value={url}
+          onChange={onChange}
+          placeholder="Enter company website URL"
+          className="flex-1"
+        />
+        <Button type="submit" size="sm">
+          <Save className="h-4 w-4" />
+        </Button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">{url}</span>
+      </div>
+    )}
+  </form>
+))
+URLInput.displayName = 'URLInput'
+
+const DescriptionInput = React.memo(({ 
+  description, 
+  isEditing, 
+  onChange, 
+  onSubmit 
+}: { 
+  description: string
+  isEditing: boolean
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  onSubmit: (e: React.FormEvent) => Promise<void>
+}) => (
+  <form onSubmit={onSubmit} className="space-y-2">
+    <Label htmlFor="description">Company Description</Label>
+    {isEditing ? (
+      <div className="space-y-2">
+        <Textarea
+          id="description"
+          value={description}
+          onChange={onChange}
+          placeholder="Enter company description"
+          className="min-h-[100px]"
+        />
+        <Button type="submit" size="sm">
+          <Save className="h-4 w-4" />
+        </Button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">{description}</span>
+      </div>
+    )}
+  </form>
+))
+DescriptionInput.displayName = 'DescriptionInput'
+
 // Main component for handling company details input
 export default function CompanyDetailsCard({ 
   onProfileUpdate,
@@ -68,6 +176,8 @@ export default function CompanyDetailsCard({
   const router = useRouter()
   const [isClient, setIsClient] = React.useState(false)
   const [isFocused, setIsFocused] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [showDialog, setShowDialog] = React.useState(false)
 
   // Set mounted state when component mounts
   React.useEffect(() => {
@@ -76,120 +186,84 @@ export default function CompanyDetailsCard({
   }, [])
 
   // Validates URL format using regex
-  const validateURL = (input: string) => {
-    const urlPattern = /^(https?:\/\/)?([\w-]+\.)*[\w-]+\.[a-zA-Z]{2,}(\/.*)?$/i
-    return urlPattern.test(input)
-  }
-
-  // Formats URL to ensure proper structure (adds https:// and www. if missing)
-  const formatURL = (input: string) => {
-    if (!input.startsWith('http://') && !input.startsWith('https://')) {
-      input = 'https://' + input
-    }
-    return input
-  }
-
-  // Handles URL input changes and validates input
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value
     setUrl(input)
     setIsUrlValid(validateURL(input))
-  }
+  }, [])
 
   // Add this function to extract company name from domain
-  const extractCompanyName = (url: string) => {
-    try {
-      const domain = new URL(url).hostname
-      const name = domain
-        .replace('www.', '')
-        .split('.')[0]
-        // Convert kebab-case or snake_case to space separated
-        .replace(/[-_]/g, ' ')
-        // Capitalize first letter of each word
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-      return name
-    } catch {
-      return ''
-    }
-  }
-
-  // Handles URL form submission
-  const handleUrlSubmit = async (e: React.FormEvent) => {
+  const handleCompanyNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isUrlValid) {
-      const formattedURL = formatURL(url);
-      setUrl(formattedURL);
-      setIsLoading(true);
-
+    if (userId) {
       try {
-        // Extract company name from URL
-        const extractedName = extractCompanyName(formattedURL);
-        setCompanyName(extractedName);
-
-        // First update the basic information in the database
-        const updateResult = await updateProfileAction(userId, {
-          companyUrl: formattedURL,
-          companyName: extractedName
+        const result = await updateProfileAction(userId, {
+          companyName: companyName
         });
 
-        if (updateResult.status !== 'success') {
-          throw new Error('Failed to update profile');
+        if (result.status === 'success') {
+          setIsCompanyNameSaved(true);
+          // Call the onProfileUpdate callback if it exists
+          onProfileUpdate?.();
+        } else {
+          throw new Error('Failed to update company name');
         }
+      } catch (error) {
+        console.error('Error updating company name:', error);
+        alert('Failed to save company name');
+      }
+    }
+  };
 
-        // Try to get content from Tavily
-        const tavilyResponse = await fetch('/api/tavily', {
+  // Handles URL form submission
+  const handleUrlSubmit = React.useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const formattedURL = formatURL(url);
+      if (!validateURL(formattedURL)) {
+        throw new Error('Please enter a valid URL');
+      }
+
+      // Fetch company data
+      const [tavilyResponse, openAIResponse] = await Promise.all([
+        fetch('/api/tavily', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: formattedURL })
-        });
-        const tavilyData = await tavilyResponse.json() as TavilyResponse;
-
-        if (tavilyData.success && tavilyData.content) {
-          // If Tavily succeeds, try OpenAI
-          const openaiResponse = await fetch('/api/openai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: tavilyData.content })
-          });
-          const openaiData = await openaiResponse.json() as OpenAIResponse;
-
-          if (openaiData.success && openaiData.description) {
-            // Update profile with the generated description
-            const descriptionResult = await updateProfileAction(userId, {
-              companyDescription: openaiData.description
-            });
-
-            if (descriptionResult.status === 'success') {
-              setCompanyDescription(openaiData.description);
-              setIsDescriptionSaved(true);
-            }
-          }
-        }
-
-        // Set states to reflect successful update
-        setIsUrlSaved(true);
-        setIsCompanyNameSaved(true);
+        }).then(res => res.json()) as Promise<TavilyResponse>,
         
-        // Call the onProfileUpdate callback to refresh parent components
-        if (onProfileUpdate) {
-          onProfileUpdate();
-        }
+        fetch('/api/openai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: tavilyResponse.content })
+        }).then(res => res.json()) as Promise<OpenAIResponse>
+      ]);
 
-        // Refresh the router to ensure new data is displayed
-        router.refresh();
-
-      } catch (error) {
-        console.error('Error:', error);
-        alert(error instanceof Error ? error.message : 'An error occurred while processing your request');
-      } finally {
-        setIsLoading(false);
+      if (!tavilyResponse.success || !openAIResponse.success) {
+        throw new Error('Failed to fetch company data');
       }
-    } else {
-      alert("Please enter a valid URL");
+
+      setCompanyName(extractCompanyName(formattedURL));
+      setCompanyDescription(openAIResponse.description || '');
+      setIsUrlSaved(true);
+      setIsCompanyNameSaved(true);
+      setIsDescriptionSaved(true);
+      
+      // Call the onProfileUpdate callback to refresh parent components
+      onProfileUpdate?.();
+
+      // Refresh the router to ensure new data is displayed
+      router.refresh();
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [url, onProfileUpdate, router]);
 
   // Enables URL editing by resetting saved state
   const handleUrlEdit = () => {
@@ -197,9 +271,9 @@ export default function CompanyDetailsCard({
   }
 
   // Handles company description changes
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCompanyDescription(e.target.value)
-  }
+  }, [])
 
   // Handles description form submission
   const handleDescriptionSubmit = async (e: React.FormEvent) => {
@@ -260,28 +334,18 @@ export default function CompanyDetailsCard({
     loadProfileData();
   }, [userId]);
 
-  // Add this function after handleDescriptionEdit
-  const handleCompanyNameSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (userId) {
-      try {
-        const result = await updateProfileAction(userId, {
-          companyName: companyName
-        });
-
-        if (result.status === 'success') {
-          setIsCompanyNameSaved(true);
-          // Call the onProfileUpdate callback if it exists
-          onProfileUpdate?.();
-        } else {
-          throw new Error('Failed to update company name');
-        }
-      } catch (error) {
-        console.error('Error updating company name:', error);
-        alert('Failed to save company name');
-      }
-    }
-  };
+  // Error Dialog
+  const ErrorDialog = React.memo(() => (
+    <Dialog open={!!error} onOpenChange={() => setError(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Error</DialogTitle>
+          <DialogDescription>{error}</DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  ))
+  ErrorDialog.displayName = 'ErrorDialog'
 
   // Component render structure
   return (
@@ -305,66 +369,12 @@ export default function CompanyDetailsCard({
                 </p>
               </div>
               {/* URL input form */}
-              <form onSubmit={handleUrlSubmit} className="space-y-4">
-                <div className="relative">
-                  <Label htmlFor="url" className="sr-only">Company URL</Label>
-                  <Input
-                    id="url"
-                    type="text"
-                    placeholder="https://www."
-                    value={url}
-                    onChange={handleUrlChange}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    className={`transition-all duration-300 ease-in-out ${isUrlSaved ? "bg-gray-100/50" : ""}`}
-                    disabled={isUrlSaved}
-                  />
-                  {!isUrlSaved && url.length === 0 && !isFocused && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full pointer-events-none">
-                      ✨ Step 1. Get started by submitting your company URL!
-                    </div>
-                  )}
-                </div>
-                {/* URL form buttons */}
-                <div className="space-x-2">
-                  <Button 
-                    type="submit" 
-                    size="sm" 
-                    disabled={!isUrlValid || isUrlSaved || isLoading}
-                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-3 h-3 mr-0.5" />
-                        Saving...
-                      </>
-                    ) : isUrlSaved ? (
-                      <>
-                        <Save className="w-3 h-3 mr-0.5" />
-                        Saved
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3 h-3 mr-0.5" />
-                        Save
-                      </>
-                    )}
-                  </Button>
-                  {/* Edit button shown only when URL is saved */}
-                  {isUrlSaved && (
-                    <Button 
-                      type="button" 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={handleUrlEdit}
-                      className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                    >
-                      <Edit className="w-3 h-3 mr-0.5" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </form>
+              <URLInput
+                url={url}
+                isEditing={isUrlSaved}
+                onChange={handleUrlChange}
+                onSubmit={handleUrlSubmit}
+              />
             </div>
 
             {/* Company Name section - no longer conditional */}
@@ -434,45 +444,15 @@ export default function CompanyDetailsCard({
                   <StatusDot status={isDescriptionSaved ? 'complete' : 'pending'} />
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                This description will help the interview agent understand your company or product for better context during the interview. Please review and edit it to ensure it’s accurate and relevant.
+                This description will help the interview agent understand your company or product for better context during the interview. Please review and edit it to ensure it's accurate and relevant.
                 </p>
               </div>
-              <form onSubmit={handleDescriptionSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="description" className="sr-only">Company Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="If your company description has not generated, please add it here."
-                    value={companyDescription}
-                    onChange={handleDescriptionChange}
-                    className="min-h-[100px]"
-                    disabled={isDescriptionSaved}
-                  />
-                </div>
-                <div className="space-x-2">
-                  <Button 
-                    type="submit" 
-                    size="sm" 
-                    disabled={isDescriptionSaved || companyDescription.trim() === ""}
-                    className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                  >
-                    <Save className="w-3 h-3 mr-0.5" />
-                    Saved
-                  </Button>
-                  {isDescriptionSaved && (
-                    <Button 
-                      type="button" 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={handleDescriptionEdit}
-                      className="transition-all duration-300 ease-in-out h-8 text-xs px-3"
-                    >
-                      <Edit className="w-3 h-3 mr-0.5" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </form>
+              <DescriptionInput
+                description={companyDescription}
+                isEditing={isDescriptionSaved}
+                onChange={handleDescriptionChange}
+                onSubmit={handleDescriptionSubmit}
+              />
             </div>
           </div>
         </CardContent>
@@ -489,7 +469,7 @@ export default function CompanyDetailsCard({
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center p-4 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <LoadingSpinner />
               <p className="text-sm text-muted-foreground">
                 Please don't close this window...
               </p>
@@ -497,6 +477,8 @@ export default function CompanyDetailsCard({
           </DialogContent>
         </Dialog>
       )}
+
+      <ErrorDialog />
     </>
   )
 }

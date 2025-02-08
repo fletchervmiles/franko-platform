@@ -1,3 +1,3 @@
 export * from "./profiles-schema";
-export * from "./todos-schema";
-export * from "./interviews-schema";
+export * from "./chat-instances-schema";
+export * from "./chat-responses-schema";
