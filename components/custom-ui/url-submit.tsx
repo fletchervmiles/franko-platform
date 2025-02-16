@@ -103,13 +103,20 @@ const URLInput = React.memo(({
     <Label htmlFor="url">Company Website URL</Label>
     {isEditing ? (
       <div className="flex gap-2">
-        <Input
-          id="url"
-          value={url}
-          onChange={onChange}
-          placeholder="Enter company website URL"
-          className="flex-1"
-        />
+        <div className="relative flex-1">
+          <Input
+            id="url"
+            value={url}
+            onChange={onChange}
+            placeholder="https://www."
+            className={`${url.length === 0 ? "pr-72" : ""}`}
+          />
+          {url.length === 0 && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
+              ✨ Step 1. Get started by submitting your company URL!
+            </div>
+          )}
+        </div>
         <Button type="submit" size="sm">
           <Save className="h-4 w-4" />
         </Button>

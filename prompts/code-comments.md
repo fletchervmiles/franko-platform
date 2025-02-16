@@ -17,6 +17,12 @@
   3. Describe the purpose of the file and how it fits into the broader codebase.
   4. Indicate where the file is used in the application or system.
 
+## Important!!! 
+
+Make sure update the file with the comments but WITHOUT changing any of the code. It should be comments only.
+
+**Rewrite the whole file but WITH the comments.**
+
 ## Example XML Comment Block for a TypeScript File
 
 ```xml

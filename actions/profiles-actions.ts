@@ -6,6 +6,7 @@ import { ActionState } from "@/types";
 import console from "console";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { processOrganisationFromEmail } from "@/utils/email-utils";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
@@ -71,18 +72,47 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
       return { status: "error", message: "No user found" };
     }
 
+    const email = user.emailAddresses[0]?.emailAddress;
+    
+    // Get existing profile
+    const existingProfile = await getProfileByUserId(userId);
+    
     const profileData: Partial<InsertProfile> = {
+      userId: user.id,
       firstName: user.firstName || undefined,
       secondName: user.lastName || undefined,
-      email: user.emailAddresses[0]?.emailAddress || undefined,
+      email: email || undefined,
+      membership: existingProfile?.membership || "free",
+      totalResponsesAvailable: existingProfile?.totalResponsesAvailable || 20,
+      monthlyResponsesQuota: existingProfile?.monthlyResponsesQuota || 20,
     };
 
-    const updatedProfile = await updateProfile(user.id, profileData);
+    // Preserve existing organisation data if it exists
+    if (existingProfile?.organisationName && existingProfile?.organisationUrl) {
+      profileData.organisationName = existingProfile.organisationName;
+      profileData.organisationUrl = existingProfile.organisationUrl;
+      profileData.organisationDescription = existingProfile.organisationDescription;
+      profileData.organisationDescriptionCompleted = existingProfile.organisationDescriptionCompleted;
+    } else if (email) {
+      // Only use email-derived org data if we don't have existing data
+      const orgData = processOrganisationFromEmail(email);
+      if (orgData.organisationName && orgData.organisationUrl) {
+        profileData.organisationName = orgData.organisationName;
+        profileData.organisationUrl = orgData.organisationUrl;
+      }
+    }
+
+    let result;
+    if (!existingProfile) {
+      result = await createProfile(profileData as InsertProfile);
+    } else {
+      result = await updateProfile(user.id, profileData);
+    }
     
     return { 
       status: "success", 
-      message: "Profile synced with Clerk", 
-      data: updatedProfile 
+      message: existingProfile ? "Profile synced with Clerk" : "Profile created and synced with Clerk", 
+      data: result 
     };
   } catch (error) {
     console.error("Error syncing profile:", error);

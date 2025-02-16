@@ -81,7 +81,7 @@ export default function CreateConversation() {
             No conversations yet.
           </h2>
           <p className="text-sm text-gray-500">
-            Let's get started! Begin a quick and simple chat to create a personalized conversational AI to share with your recipients.
+            Let's get started! Begin a quick and simple chat to create a personalized conversational AI to share with your customers.
           </p>
         </div>
         <Button 

@@ -1,0 +1,224 @@
+"use client"
+
+import type * as React from "react"
+import {
+  LayoutDashboard,
+  MessageSquare,
+  FileText,
+  CreditCard,
+  BarChart,
+  HelpCircle,
+  MessageCircle,
+  User,
+  LogOut,
+  PlusCircle,
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+
+const sidebarStyles = {
+  "--sidebar-width": "16rem",
+} as React.CSSProperties
+
+const data = {
+  navMain: [
+    {
+      title: "Product",
+      items: [
+        {
+          title: "Workspace",
+          url: "/",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Onboarding",
+          url: "/onboarding",
+          icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Response Q&A",
+          url: "/response-qa",
+          icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Context Setup",
+          url: "/context-setup",
+          icon: <FileText className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Account",
+      items: [
+        {
+          title: "Update Plan",
+          url: "/account/update-plan",
+          icon: <CreditCard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Usage",
+          url: "/account/usage",
+          icon: <BarChart className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Support",
+          url: "/account/support",
+          icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Feedback",
+          url: "/account/feedback",
+          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "User Profile",
+          url: "/account/profile",
+          icon: <User className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Sign Out",
+          url: "/account/signout",
+          icon: <LogOut className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+  ],
+}
+
+export function NavSidebar({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const getPageTitle = () => {
+    if (pathname === "/create") return "Create"
+    for (const section of data.navMain) {
+      const matchingItem = section.items.find((item) => {
+        if (pathname === "/" && item.url === "/") return true
+        if (pathname !== "/" && item.url !== "/" && pathname.startsWith(item.url)) return true
+        return false
+      })
+      if (matchingItem) {
+        return matchingItem.title
+      }
+    }
+    return "Workspace"
+  }
+
+  if (!isMounted) {
+    return null
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <SidebarProvider>
+        <Sidebar
+          className="bg-[#FAFAFA] dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700"
+          style={sidebarStyles}
+        >
+          <div
+            className="fixed inset-y-0 z-10 h-full transition-[left,right,width] duration-200 ease-linear md:flex left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l bg-[#FAFAFA] dark:bg-gray-800 w-[var(--sidebar-width)] border-r border-gray-200 dark:border-gray-700"
+            data-state="expanded"
+            data-collapsible="offcanvas"
+            data-variant="sidebar"
+            data-side="left"
+          >
+            <div
+              className="flex h-full w-full flex-col bg-[#FAFAFA] dark:bg-gray-800 group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow"
+              data-sidebar="sidebar"
+            >
+              <SidebarHeader className="bg-[#FAFAFA] dark:bg-gray-800">
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <div className="flex items-center px-3 py-2">
+                      <img
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/favicon-96x96-EfO2cfAnyLgYAtFmWJqcJSvnpZlMgh.png"
+                        alt="Franko logo"
+                        className="h-6 w-6"
+                      />
+                    </div>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarHeader>
+              <SidebarContent className="bg-[#FAFAFA] dark:bg-gray-800">
+                <div className="space-y-4">
+                  {data.navMain.map((item, index) => (
+                    <div key={item.title}>
+                      {index > 0 && (
+                        <div className="mx-3 my-4 border-t border-dotted border-gray-200 dark:border-gray-700" />
+                      )}
+                      <SidebarGroup>
+                        <SidebarGroupLabel className="text-sm font-semibold tracking-tight mb-2 px-3">
+                          {item.title}
+                        </SidebarGroupLabel>
+                        {item.items.length > 0 && (
+                          <SidebarGroupContent>
+                            <SidebarMenu>
+                              {item.items.map((subItem) => (
+                                <SidebarMenuItem key={subItem.title}>
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+                                  >
+                                    <Link href={subItem.url} className="flex items-center">
+                                      <span
+                                        className={`${item.title === "Account" ? "text-gray-500" : "text-gray-800"}`}
+                                      >
+                                        {subItem.icon}
+                                      </span>
+                                      <span className="ml-2 font-medium">{subItem.title}</span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              ))}
+                            </SidebarMenu>
+                          </SidebarGroupContent>
+                        )}
+                      </SidebarGroup>
+                    </div>
+                  ))}
+                </div>
+              </SidebarContent>
+            </div>
+          </div>
+        </Sidebar>
+        <SidebarInset className="flex-1 overflow-hidden">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-l-0 pr-4 pl-0 bg-white dark:bg-gray-800">
+            <SidebarTrigger className="ml-2" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{getPageTitle()}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          <main className="h-[calc(100vh-3.5rem)] overflow-auto">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
+  )
+}
+

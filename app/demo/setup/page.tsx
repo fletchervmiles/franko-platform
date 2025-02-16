@@ -6,7 +6,7 @@ import URLSubmissionForm from "@/components/custom-ui/url-submit"
 import VoiceSelectionCard from "@/components/custom-ui/voice-selector"
 import ShareableLinkChurn from "@/components/custom-ui/shareable-link-churn"
 import { SelectProfile } from "@/db/schema/profiles-schema"
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation's
 
 export default function DemoSetupPage() {
     const userId = "user_demo_account"

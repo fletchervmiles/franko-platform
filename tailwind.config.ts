@@ -7,6 +7,7 @@ const config = {
     './components/**/*.{ts,tsx,mdx}',
     './app/**/*.{ts,tsx,mdx}',
     './src/**/*.{ts,tsx,mdx}',
+    '*.{js,ts,jsx,tsx,mdx}',
   ],
   prefix: "",
   theme: {
@@ -58,9 +59,34 @@ const config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-edge": {
+          "0%": { boxShadow: "0 0 0 0 rgba(59, 130, 246, 0.4)" },
+          "25%": { boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.3)" },
+          "50%": { boxShadow: "0 0 0 8px rgba(59, 130, 246, 0.15)" },
+          "75%": { boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.3)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(59, 130, 246, 0.4)" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-edge": "pulse-edge 1.5s ease-in-out infinite",
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography")
+  ],
 } satisfies Config;
 
 export default config;

@@ -32,11 +32,7 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
-  // If the user is logged in and the route is protected, let them view
-  if (userId && (isProtectedRoute(req) || isApiRoute)) {
-    return NextResponse.next();
-  }
-
+  // If authenticated, allow access to all routes
   return NextResponse.next();
 });
 

@@ -17,7 +17,8 @@ export const createProfile = async (data: InsertProfile) => {
 export const getProfileByUserId = async (userId: string) => {
   try {
     const profile = await db.query.profiles.findFirst({
-      where: eq(profilesTable.userId, userId)
+      where: eq(profilesTable.userId, userId),
+      orderBy: profilesTable.updatedAt
     });
 
     return profile;
@@ -33,6 +34,8 @@ export const getAllProfiles = async (): Promise<SelectProfile[]> => {
 
 export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
   try {
+    console.log("Starting profile update for userId:", userId, "with data:", data);
+    
     const [updatedProfile] = await db
       .update(profilesTable)
       .set({
@@ -42,10 +45,19 @@ export const updateProfile = async (userId: string, data: Partial<InsertProfile>
       .where(eq(profilesTable.userId, userId))
       .returning();
     
-    console.log("Profile update result:", updatedProfile);
+    if (!updatedProfile) {
+      console.error("No profile was updated for userId:", userId);
+      throw new Error("Profile update failed - no rows updated");
+    }
+    
+    console.log("Profile successfully updated:", updatedProfile);
     return updatedProfile;
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("Error updating profile:", {
+      userId,
+      data,
+      error: error instanceof Error ? error.message : error
+    });
     throw new Error("Failed to update profile");
   }
 };

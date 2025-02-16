@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <SignIn
       signUpUrl="/sign-up"
-      redirectUrl="/chat"
+      redirectUrl="/create"
       path="/sign-in"
       routing="path"
     />

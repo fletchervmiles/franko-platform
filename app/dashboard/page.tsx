@@ -1,5 +1,5 @@
-import RootLayout from "@/components/custom-ui/nav"
-import InterviewDashboard from "@/components/custom-ui/interview-dashboard"
+import { NavSidebar } from "@/components/nav-sidebar"
+import { WorkspaceList } from "@/components/workspace-list"
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 
@@ -11,10 +11,10 @@ export default async function DashboardPage() {
   }
 
   return (
-    <RootLayout>
-      <div className="min-h-screen bg-background">
-        <InterviewDashboard userId={userId} />
+    <NavSidebar>
+      <div className="h-full">
+        <WorkspaceList />
       </div>
-    </RootLayout>
+    </NavSidebar>
   )
 }

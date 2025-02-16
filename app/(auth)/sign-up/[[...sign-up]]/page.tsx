@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <SignUp
       signInUrl="/sign-in"
-      redirectUrl="/chat"
+      redirectUrl="/context-setup"
       path="/sign-up"
       routing="path"
     />

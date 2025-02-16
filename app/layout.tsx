@@ -1,15 +1,12 @@
 import { Toaster } from "@/components/ui/toaster";
-import Header from "@/components/header";
 import { Providers } from "@/components/utilities/providers";
-import { createProfile, getProfileByUserId } from "@/db/queries/profiles-queries";
 import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: {
@@ -43,21 +40,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Comment out or remove the Clerk authentication check for now
-  // const { userId } = await auth();
-  // if (userId) {
-  //   const profile = await getProfileByUserId(userId);
-  //   if (!profile) {
-  //     await createProfile({ userId });
-  //   }
-  // }
-
   return (
     <ClerkProvider
       appearance={{
         baseTheme: undefined
       }}
-      dynamic={true}
     >
       <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
         <body 
@@ -75,6 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
             <Toaster />
             <Analytics />
+            <SpeedInsights />
           </Providers>
         </body>
       </html>
