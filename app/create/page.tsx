@@ -7,8 +7,8 @@ export default function CreatePage() {
 
   return (
     <NavSidebar>
-      <div className="w-full p-4 md:p-8 lg:p-12">
-        <div className="h-[calc(100vh-12rem)]">
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-hidden">
           <Chat conversationId={conversationId} />
         </div>
       </div>

@@ -13,7 +13,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({ steps, className }: ProgressBarProps) {
   return (
-    <div className={cn("w-full max-w-2xl mx-auto px-12 py-4", className)}>
+    <div className={cn("w-full max-w-2xl mx-auto px-12 py-2", className)}>
       <div className="relative flex justify-between">
         {/* Line connecting the circles */}
         <div className="absolute inset-0 flex" style={{ top: "9px" }}>
@@ -22,7 +22,7 @@ export function ProgressBar({ steps, className }: ProgressBarProps) {
 
         {/* Steps */}
         {steps.map((step, index) => (
-          <div key={index} className="relative flex flex-col items-center gap-2">
+          <div key={index} className="relative flex items-center">
             <div
               className={cn(
                 "relative w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white z-10 transition-all duration-300 ease-in-out",
@@ -36,14 +36,6 @@ export function ProgressBar({ steps, className }: ProgressBarProps) {
                 <Circle className="h-1.5 w-1.5 fill-[#0070f3] text-[#0070f3] animate-pulse" />
               )}
             </div>
-            <span
-              className={cn(
-                "text-xs transition-all duration-300 ease-in-out",
-                step.status === "in-review" ? "text-gray-900 font-medium" : "text-gray-500",
-              )}
-            >
-              {step.label}
-            </span>
           </div>
         ))}
       </div>

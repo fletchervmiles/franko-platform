@@ -238,8 +238,10 @@ export default function ContextSetupPage() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             Context Setup
-            {/* TODO: Implement logic to determine dot color */}
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            <span className={cn(
+              "w-2 h-2 rounded-full",
+              hasDescription ? "bg-green-500" : "bg-yellow-500"
+            )}></span>
           </h1>
         </div>
 

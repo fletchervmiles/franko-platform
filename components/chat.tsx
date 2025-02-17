@@ -1,6 +1,6 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Message } from "./message"
 import { ChatInput } from "./input"
 import { ProgressBar, type Step } from "./progress-bar"
@@ -22,6 +22,7 @@ const initialSteps: Step[] = [
 ]
 
 export function Chat({ conversationId }: ChatProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       content: "Hello! How can I assist you today? 😊",
@@ -31,6 +32,14 @@ export function Chat({ conversationId }: ChatProps) {
   const [inputValue, setInputValue] = useState("")
   const [showProgressBar, setShowProgressBar] = useState(false)
   const [steps, setSteps] = useState(initialSteps)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, showProgressBar]) // Scroll on new messages or progress bar changes
 
   useEffect(() => {
     if (messages.length > 1 && !showProgressBar) {
@@ -72,33 +81,31 @@ export function Chat({ conversationId }: ChatProps) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
-      <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 py-8">
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12">
+        <div className="mx-auto max-w-3xl space-y-6 py-8">
           {messages.map((message, index) => (
             <Message key={index} {...message} />
           ))}
+          <div ref={messagesEndRef} className="h-px" />
         </div>
       </div>
-      <ChatInput
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (inputValue.trim()) {
-            handleSendMessage(inputValue)
-            setInputValue("")
-          }
-        }}
-        disabled={false}
-      />
-      <div
-        className={cn(
-          "overflow-hidden transition-all duration-500 ease-in-out",
-          showProgressBar ? "max-h-24 opacity-100" : "max-h-0 opacity-0",
-        )}
-      >
-        <ProgressBar steps={steps} />
+      
+      <div className="flex-none w-full bg-white">
+        <ChatInput
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (inputValue.trim()) {
+              handleSendMessage(inputValue)
+              setInputValue("")
+            }
+          }}
+          disabled={false}
+          showProgressBar={showProgressBar}
+          steps={steps}
+        />
       </div>
     </div>
   )
