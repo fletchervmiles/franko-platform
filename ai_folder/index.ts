@@ -9,15 +9,19 @@ async function createModels() {
   // Dynamically import the Google AI model provider
   const { google } = await import("@ai-sdk/google");
 
+
+// gemini-2.0-flash
+// gemini-2.0-pro-exp-02-05
+
   // Create a wrapped version of the Gemini Pro model with our custom middleware
   const geminiProModel = wrapLanguageModel({
-    model: google("gemini-2.0-pro-exp-02-05"),
+    model: google("gemini-2.0-flash"),
     middleware: customMiddleware,
   });
 
   // Similarly wrap the Gemini Flash model with the same middleware
   const geminiFlashModel = wrapLanguageModel({
-    model: google("gemini-2.0-pro-exp-02-05"),
+    model: google("gemini-2.0-flash"),
     middleware: customMiddleware,
   });
 

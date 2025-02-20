@@ -11,6 +11,7 @@ import "server-only";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type SelectChatInstance } from "../schema/chat-instances-schema";
+import { profilesTable } from "../schema/profiles-schema";
 
 // Chat Management Functions
 
@@ -99,6 +100,26 @@ export async function getChatById({ id }: { id: string }): Promise<SelectChatIns
     };
   } catch (error) {
     console.error("Failed to get chat by id from database");
+    throw error;
+  }
+}
+
+// User Profile Functions
+export async function getUserProfile({ userId }: { userId: string }) {
+  try {
+    const profile = await db
+      .select({
+        firstName: profilesTable.firstName,
+        organisationName: profilesTable.organisationName,
+        organisationDescription: profilesTable.organisationDescription,
+      })
+      .from(profilesTable)
+      .where(eq(profilesTable.userId, userId))
+      .limit(1);
+
+    return profile[0];
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
     throw error;
   }
 }

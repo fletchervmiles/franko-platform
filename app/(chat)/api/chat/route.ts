@@ -71,6 +71,7 @@ import {
   import * as console from 'console';
   import fs from 'fs';
   import path from 'path';
+  import { LRUCache } from 'lru-cache';
   
   // Import custom modules and functions
   import { geminiProModel } from "@/ai_folder";  // AI model configuration
@@ -78,15 +79,44 @@ import {
     performWebSearch,
     generateConversationPlan,
     generateDisplayOptions,
+    thinkingHelp,
+    objectiveUpdate,
+    invalidateConversationPlanPromptCache,
   } from "@/ai_folder/actions";  // Flight-related utility functions
   import { auth } from "@clerk/nextjs/server";  // Authentication utilities
   import {
-    deleteChatById,
-    getChatById,
-    saveChat,
-  } from "@/db/queries/queries";  // Database operations
+    deleteChatInstance,
+    getChatInstanceById,
+    updateChatInstance,
+  } from "@/db/queries/chat-instances-queries";
+  import { getProfile } from "@/db/queries/profiles-queries";
   import { generateUUID } from "@/lib/utils";  // Utility functions
   import { logger } from '@/lib/logger';
+  
+  // Cache for populated prompts, keyed by userId
+  const promptCache = new LRUCache<string, string>({
+    max: 500, // Maximum number of items to store
+    ttl: 1000 * 60 * 60, // Items expire after 1 hour
+  });
+  
+  /**
+   * Invalidates the cached prompt for a specific user
+   * Call this whenever a user's profile is updated
+   */
+  export function invalidatePromptCache(userId: string) {
+    logger.debug('Invalidating prompt caches for user:', { userId });
+    promptCache.delete(userId);
+    invalidateConversationPlanPromptCache(userId);
+  }
+  
+  /**
+   * Invalidates the entire prompt cache
+   * Use this for global updates or migrations
+   */
+  export function invalidateAllPromptCaches() {
+    logger.debug('Invalidating all prompt caches');
+    promptCache.clear();
+  }
   
   // Add this function near the top of your file
   function loadPrompt(filename: string): string {
@@ -98,6 +128,41 @@ import {
     } catch (error) {
       console.error(`Error loading prompt file: ${filename}`, error);
       throw new Error(`Failed to load prompt file: ${filename}`);
+    }
+  }
+  
+  // Add this function to populate the prompt template
+  async function getPopulatedPrompt(userId: string): Promise<string> {
+    try {
+      const cachedPrompt = promptCache.get(userId);
+      if (cachedPrompt) {
+        logger.debug('Using cached prompt for user:', { userId });
+        return cachedPrompt;
+      }
+
+      logger.debug('Cache miss, loading prompt for user:', { userId });
+      
+      const promptTemplate = fs.readFileSync(
+        path.join(process.cwd(), 'agent_prompts', 'user_assistant_prompt.md'),
+        'utf-8'
+      );
+
+      const profile = await getProfile(userId);
+      if (!profile) {
+        throw new Error('User profile not found');
+      }
+
+      const populatedPrompt = promptTemplate
+        .replace('{first_name}', profile.firstName || '')
+        .replace('{organisation_name}', profile.organisationName || '')
+        .replace('{organisation_description}', profile.organisationDescription || '');
+
+      promptCache.set(userId, populatedPrompt);
+      
+      return populatedPrompt;
+    } catch (error) {
+      logger.error('Error populating prompt:', error);
+      throw error;
     }
   }
   
@@ -196,7 +261,7 @@ import {
         messages: messages.map((m: Message) => ({
           role: m.role,
           contentLength: m.content.length,
-          content: m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '')
+          content: m.content
         }))
       });
   
@@ -240,7 +305,7 @@ import {
         messages: coreMessages.map(m => ({
           role: m.role,
           contentLength: typeof m.content === 'string' ? m.content.length : 0,
-          content: typeof m.content === 'string' ? m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') : ''
+          content: typeof m.content === 'string' ? m.content : ''
         }))
       });
   
@@ -253,29 +318,43 @@ import {
        * - Available tools for AI to use
        * - Response streaming settings
        */
+      const systemPrompt = await getPopulatedPrompt(userId);
+      
+      // Log the full request configuration
+      logger.ai('Gemini Request Configuration:', {
+        model: geminiProModel.toString(),
+        systemPromptLength: systemPrompt.length,
+        systemPrompt,
+        messageCount: coreMessages.length,
+        messages: coreMessages.map(m => ({
+          role: m.role,
+          content: m.content
+        }))
+      });
+
       const result = await streamText({
         model: geminiProModel,
-        system: loadPrompt('creator_prompt.md'),
+        system: systemPrompt,
         messages: coreMessages,
 
 
         tools: {
           endConversation: {
-            description: "A tool that ends the conversation by redirecting the Creator back to their dashboard, where they can review and edit the final Interview Guide and access additional details like the shareable link. Use this tool immediately after the interview wrap-up when all objectives have been met or when the Creator indicates no further input is needed.",
+            description: "A tool that ends the conversation by redirecting the user back to their dashboard, where they can review and edit the final conversation plan and access additional details like the shareable link. **When to use:** Use this tool immediately after the conversation has finished, when all objectives have been met or when the user indicates no further input is needed.",
             parameters: z.object({
               // Required dummy parameter to satisfy Gemini's schema requirements
               _dummy: z.string().optional().describe("Placeholder parameter")
             }),
             execute: async () => ({
-              message: "Thank you for using our flight booking service. Have a great day!",
-              redirectUrl: "https://www.google.com",
+              message: "Thank you for your time. Have a great day!",
+              redirectUrl: "/dashboard",
               delayMs: 3000
             }),
           },
   
           
           searchWeb: {
-            description: "A tool that performs a web search to gather factual context from publicly available sources (such as product descriptions, documentation, or feature specs) when key details are missing from the Creator's input, when automating context retrieval is desired, or when external, verifiable data is needed to inform an Interview Guide. Avoid using it if all necessary information is already provided, if the data is private or sensitive, or if the request is purely subjective.",
+            description: "A tool that performs a web search to gather factual context from publicly available sources (such as product descriptions, documentation, or feature specs). **When to use:** Use tool when key details are missing from the user's input, when automating context retrieval is desired, or when external, verifiable data is needed to inform the conversation. Avoid using it if all necessary information is already provided, if the data is private or sensitive, or if the request is purely subjective.",
             parameters: z.object({
               query: z.string().describe("The search query to find information about"),
               searchDepth: z
@@ -301,20 +380,51 @@ import {
   
 
           generateConversationPlan: {
-            description: "A tool that creates an Interview Guide tailored to the Creator's specific needs and context by outlining objectives, suggesting questions, and structuring the interview flow. Use this tool once sufficient details have been gathered (such as conversation type and duration) or when the Creator explicitly requests a structured plan for their interview process.",
+            description: "This is the most important tool in the workflow. It generates and displays the conversation plan in the UI once all relevant information has been gathered. The plan can be regenerated multiple times based on new insights or user feedback. **When to use:** Use this tool when you have gathered enough details about the user requirements to generate the first draft of the Conversation Plan.",
             parameters: z.object({
-              _dummy: z.string().optional().describe("Placeholder parameter")
+              _dummy: z.string().optional().describe("Placeholder parameter - not used")
             }),
             execute: async () => {
-              // We have access to coreMessages here from the outer scope
-              const plan = await generateConversationPlan({ messages: coreMessages });
-              return plan;
+              try {
+                // We have access to coreMessages and userId from the outer scope
+                logger.ai('Generating conversation plan:', { 
+                  messageCount: coreMessages.length,
+                  userId 
+                });
+                
+                const plan = await generateConversationPlan({ 
+                  messages: coreMessages,
+                  userId
+                });
+
+                logger.ai('Generated conversation plan:', {
+                  title: plan.title,
+                  duration: plan.duration,
+                  objectiveCount: plan.objectives.length
+                });
+
+                const result = {
+                  type: 'conversation-plan',
+                  display: {
+                    title: plan.title,
+                    duration: plan.duration,
+                    summary: plan.summary,
+                    objectives: plan.objectives
+                  },
+                  plan // Include full plan for reference
+                };
+
+                return result;
+              } catch (error) {
+                logger.error('Failed to generate conversation plan:', error);
+                throw error;
+              }
             },
           },
   
 
           displayOptions: {
-            description: "Display clickable options for the user to choose from",
+            description: "Display clickable options for the user to choose from. This tool generates a user interface with clickable, multiple-choice options. It enhances the user experience by presenting choices in an organized, interactive format instead of plain text. **When to use:** Use only when there is multiple options to present and showing in UI would enhance the user experience.",
             parameters: z.object({
               text: z.string().describe("Text to display above the options"),
             }),
@@ -324,6 +434,23 @@ import {
                 type: "options",
                 display: result.options,
                 text: result.text
+              };
+            },
+          },
+
+          thinkingHelp: {
+            description: "This tool helps you pause and gather your thoughts when conducting the conversation. Instead of immediately asking the next question that comes to mind, you can take a moment to reflect and jot down ideas. By doing so, you'll clarify any confusion about the next step, weigh different approaches, and ultimately choose the most effective question or statement. **When to use:** Use this tool whenever you're uncertain about how to proceed, and it will offer guidance and direction towards the optimal path for your conversation.",
+            parameters: z.object({
+              _dummy: z.string().optional().describe("Placeholder parameter - not used")
+            }),
+            execute: async () => {
+              const result = await thinkingHelp({ 
+                messages: coreMessages,
+                userId
+              });
+              return {
+                type: 'internal-guidance',
+                text: result
               };
             },
           },
@@ -341,176 +468,84 @@ import {
         onFinish: async ({ responseMessages }) => {
           if (userId) {
             try {
-              // Log message details for debugging
-              // Shows both existing messages and new AI responses
-              logger.debug('Processing messages for save:', {
-                coreMessages: coreMessages.map(m => ({
-                  role: m.role,
-                  contentType: typeof m.content,
-                  preview: typeof m.content === 'string' ? m.content.substring(0, 50) : 'complex content'
-                })),
-                responseMessages: responseMessages.map(m => ({
-                  role: m.role,
-                  contentType: typeof m.content,
-                  preview: typeof m.content === 'string' ? m.content.substring(0, 50) : 'complex content'
-                }))
-              });
-  
-              // Combine previous messages with new responses and format them
-              const formattedMessages = [...coreMessages, ...responseMessages]
-                // First filter: Remove empty string messages but keep complex objects
-                .filter(m => {
-                  if (typeof m.content === 'string') {
-                    return m.content.trim().length > 0;
-                  }
-                  return true;
-                })
-                // Transform each message into a consistent format
-                .map((m): FormattedMessage | null => {
-                  try {
-                    // Validate message has acceptable role
-                    if (!['user', 'assistant', 'tool', 'system'].includes(m.role)) {
-                      return null;
-                    }
-  
-                    // Generate a unique ID for each message
-                    const messageId = generateUUID();
-  
-                    // Fast path for simple user messages
-                    if (m.role === 'user' && typeof m.content === 'string') {
-                      return {
-                        id: messageId,
-                        role: 'user',
-                        content: m.content.trim()
-                      };
-                    }
-  
-                    let content: string | null = null;
-  
-                    // Handle different content types (array, string, object)
-                    if (Array.isArray(m.content)) {
-                      const parts: string[] = [];
-  
-                      for (const item of m.content) {
-                        // Handle string items directly
-                        if (typeof item === 'string') {
-                          parts.push(item);
-                          continue;
-                        }
-  
-                        // Skip invalid items
-                        if (!item || typeof item !== 'object') continue;
-  
-                        // Extract text content if available
-                        if ('text' in item && item.text?.trim()) {
-                          parts.push(item.text);
-                        }
-  
-                        // Handle special content types
-                        if ('type' in item) {
-                          // Skip raw tool calls
-                          if (item.type === 'tool-call') continue;
-  
-                          // Process tool results
-                          if (item.type === 'tool-result' && item.result) {
-                            if (item.toolName === 'displayOptions') {
-                              // Special handling for displayOptions tool
-                              const result = item.result as { display: string[], text: string };
-                              parts.push(result.text);
-                              parts.push(result.display.map(opt => `- ${opt}`).join('\n'));
-                            } else {
-                              // Default tool result handling
-                              parts.push(JSON.stringify(item.result));
-                            }
-                          }
-                        }
-                      }
-  
-                      // Join all parts with newlines
-                      content = parts
-                        .filter(part => part && part.trim().length > 0)
-                        .join('\n');
-  
-                      // Fallback if no valid content was extracted
-                      if (!content || content.trim().length === 0) {
-                        content = JSON.stringify(m.content);
-                      }
-                    } else if (typeof m.content === 'string') {
-                      // Handle simple string content
-                      content = m.content.trim();
-                    } else if (m.content && typeof m.content === 'object') {
-                      // Handle object content by stringifying
-                      content = JSON.stringify(m.content);
-                    }
-  
-                    // Last resort fallback
-                    if (!content || content.trim().length === 0) {
-                      content = JSON.stringify(m);
-                    }
-  
-                    // Skip if still no valid content
-                    if (!content || content.trim().length === 0) return null;
-  
-                    return {
-                      id: messageId,
-                      role: m.role as MessageRole,
-                      content
-                    };
-                  } catch (error) {
-                    // Log formatting errors but don't break processing
-                    logger.error('Error formatting message:', { error, message: m });
-                    return null;
-                  }
-                })
-                // Final filter: Ensure all messages are valid and properly formatted
-                .filter((m): m is FormattedMessage => {
-                  return m !== null && 
-                         ['user', 'assistant', 'tool', 'system'].includes(m.role) &&
-                         typeof m.content === 'string' && 
-                         m.content.trim().length > 0;
-                });
-  
-              // Log the final formatted messages for debugging
-              logger.debug('Pre-save message format:', {
-                messageCount: formattedMessages.length,
-                messages: formattedMessages.map(m => ({
-                  role: m.role,
-                  contentPreview: m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '')
-                }))
-              });
-  
-              // Additional logging before save
-              logger.debug('Final formatted messages:', {
-                messageCount: formattedMessages.length,
-                messages: formattedMessages.map(m => ({
-                  role: m.role,
-                  contentPreview: m.content.substring(0, 100),
-                  contentLength: m.content.length,
-                  isUserMessage: m.role === 'user'
-                }))
-              });
-  
-              // Save to database if we have valid messages
-              if (formattedMessages.length > 0) {
-                logger.debug('Saving chat with messages:', {
-                  id,
-                  userId,
-                  messageCount: formattedMessages.length,
-                  lastMessage: formattedMessages[formattedMessages.length - 1]
-                });
+              // Process new messages
+              const newProcessedMessages = responseMessages.map(m => {
+                let content = m.content;
                 
-                await saveChat({
-                  id,
-                  messages: formattedMessages,
-                  userId,
-                });
-                logger.info('Chat saved successfully:', { id });
-              } else {
-                logger.info('No valid messages to save:', { id });
-              }
+                // If it's a string, it might be wrapped in markdown and JSON
+                if (typeof content === 'string') {
+                  // First remove markdown wrapping if present
+                  if (content.startsWith('```json\n') && content.endsWith('\n```')) {
+                    content = content.slice(8, -4); // Remove ```json\n and \n```
+                  }
+                  
+                  try {
+                    // Then parse the JSON content
+                    const parsed = JSON.parse(content);
+                    // Use the parsed content directly - this is the actual message
+                    return { ...m, content: parsed.content };
+                  } catch (e) {
+                    // If JSON parsing fail, use content as is
+                    console.debug('Failed to parse message content as JSON:', e);
+                    return { ...m, content };
+                  }
+                }
+                
+                // If it's not a string (e.g., already an array), use as is
+                return { ...m, content };
+              }).filter(m => {
+                // Filter out objective updates from UI display
+                const metadata = m.experimental_providerMetadata?.metadata;
+                return !(metadata && metadata.type === 'objective-update' && metadata.isVisible === false);
+              });
+
+              // Get existing chat instance
+              const existingChat = await getChatInstanceById(id);
+              const existingMessages = existingChat ? JSON.parse(existingChat.messages || '[]') : [];
+              
+              // Combine existing and new messages
+              const allMessages = [...existingMessages, ...newProcessedMessages];
+
+              // Immediately update chat with current messages
+              await updateChatInstance(id, {
+                messages: JSON.stringify(allMessages),
+              });
+
+              // Non-blocking objective update
+              Promise.resolve().then(async () => {
+                try {
+                  const objectiveResult = await objectiveUpdate({
+                    messages: coreMessages,
+                    userId
+                  });
+
+                  // Create objective update message
+                  const objectiveMessage = {
+                    role: 'tool' as const,
+                    content: objectiveResult,
+                    experimental_providerMetadata: {
+                      metadata: {
+                        type: 'objective-update',
+                        isVisible: false
+                      }
+                    }
+                  };
+
+                  // Add objective update to all messages
+                  allMessages.push(objectiveMessage);
+
+                  // Update chat instance with all messages including objective update
+                  await updateChatInstance(id, {
+                    messages: JSON.stringify(allMessages),
+                  });
+                } catch (error) {
+                  logger.error('Failed to process objective update:', error);
+                }
+              });
+
+              logger.info('Chat updated successfully:', { id });
             } catch (error) {
-              // Log error but don't throw to prevent breaking the stream
-              logger.error('Failed to save chat:', { error, messages: coreMessages });
+              logger.error('Failed to update chat:', { error, messages: coreMessages });
             }
           }
         },
@@ -556,14 +591,6 @@ import {
     logger.debug('Incoming delete request');
   
     try {
-      // Extract chat ID from URL parameters
-          /**
-       * Step 1: Extract Chat ID
-       * 
-       * Example URL: /api/chat?id=123
-       * Parses URL parameters to get chat ID
-       * Returns 404 if ID is missing
-       */
       const { searchParams } = new URL(request.url);
       const id = searchParams.get("id");
   
@@ -571,30 +598,19 @@ import {
         return new Response("Not Found", { status: 404 });
       }
   
-      /**
-       * Step 2: Authentication Check
-       * 
-       * Verifies user is logged in
-       * Returns 401 if not authenticated
-       */
-  
-      // Verify user authentication
       const { userId } = await auth();
       if (!userId) {
         return new Response("Unauthorized", { status: 401 });
       }
   
       try {
-        // Verify chat ownership and delete
-              /**
-         * Step 3: Ownership Verification
-         * 
-         * 1. Fetch chat details from database
-         * 2. Compare chat's userId with current user
-         * 3. Return 401 if user doesn't own chat
-         */
+        const chat = await getChatInstanceById(id);
+        
+        // Return 404 if chat doesn't exist
+        if (!chat) {
+          return new Response("Chat not found", { status: 404 });
+        }
   
-        const chat = await getChatById({ id });
         logger.info('Found chat to delete:', { id, userId: chat.userId });
         
         if (chat.userId !== userId) {
@@ -605,14 +621,7 @@ import {
           return new Response("Unauthorized", { status: 401 });
         }
   
-          /**
-         * Step 4: Delete Chat
-         * 
-         * Removes chat from database
-         * Returns success response
-         */
-  
-        await deleteChatById({ id });
+        await deleteChatInstance(id);
         logger.info('Chat deleted successfully:', { id });
         
         return new Response("Chat deleted", { status: 200 });

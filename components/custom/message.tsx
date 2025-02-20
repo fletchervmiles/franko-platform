@@ -56,14 +56,10 @@ export const Message = ({
    */
   const getDisplayContent = (content: string) => {
     try {
-      if (content.includes('```json') && content.includes('```')) {
-        const jsonStr = content.split('```json\n')[1].split('\n```')[0];
-        const parsed = JSON.parse(jsonStr);
-        return parsed.response;
-      }
+      // Content is already processed in route.ts, just return it
       return content;
     } catch (error) {
-      console.error('Error parsing JSON:', error);
+      console.error('Error processing content:', error);
       return content;
     }
   };

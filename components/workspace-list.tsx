@@ -1,11 +1,13 @@
 "use client"
 
-import { Trash2, Edit2, Plus } from "lucide-react"
+import { Trash2, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import InterviewStatus from "./interview-status"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { CreateChatButton } from "./create-chat-button"
+import Image from "next/image"
 
 interface Workspace {
   id: string
@@ -17,35 +19,57 @@ interface Workspace {
 }
 
 // Sample data - replace with actual data fetching
-const workspaces: Workspace[] = [
-  {
-    id: "4wffc6nnh",
-    guideName: "InterviewGuide01 - Churn",
-    status: "new responses",
-    lastEdited: "2023-05-15",
-    responses: 10,
-    customerWords: 133,
-  },
-  {
-    id: "chb1oqiqv",
-    guideName: "InterviewGuide02 - Product Feedback",
-    status: "reviewed",
-    lastEdited: "2023-04-01",
-    responses: 102,
-    customerWords: 3944,
-  },
-  {
-    id: "pz7khu6p9",
-    guideName: "InterviewGuide03 - Churn",
-    status: "new responses",
-    lastEdited: "2023-03-10",
-    responses: 2342,
-    customerWords: 39439,
-  },
-]
+// const workspaces: Workspace[] = [
+//   {
+//     id: "4wffc6nnh",
+//     guideName: "InterviewGuide01 - Churn",
+//     status: "new responses",
+//     lastEdited: "2023-05-15",
+//     responses: 10,
+//     customerWords: 133,
+//   },
+//   {
+//     id: "chb1oqiqv",
+//     guideName: "InterviewGuide02 - Product Feedback",
+//     status: "reviewed",
+//     lastEdited: "2023-04-01",
+//     responses: 102,
+//     customerWords: 3944,
+//   },
+//   {
+//     id: "pz7khu6p9",
+//     guideName: "InterviewGuide03 - Churn",
+//     status: "new responses",
+//     lastEdited: "2023-03-10",
+//     responses: 2342,
+//     customerWords: 39439,
+//   },
+// ]
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
+      <div className="mb-6">
+        <Image
+          src="/assets/user_avatar.svg"
+          alt="Franko logo"
+          width={64}
+          height={64}
+        />
+      </div>
+      <h1 className="text-2xl font-semibold mb-3">Create Conversation</h1>
+      <p className="text-sm text-gray-600 mb-6 max-w-md">
+        Quick chat to set context and learning objectives for your customer conversations. This plan guides the
+        Conversation Agent.
+      </p>
+      <CreateChatButton />
+    </div>
+  )
+}
 
 export function WorkspaceList() {
   const [isMounted, setIsMounted] = useState(false)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -69,18 +93,18 @@ export function WorkspaceList() {
     return null // or a loading placeholder
   }
 
+  // If no workspaces, show empty state
+  if (workspaces.length === 0) {
+    return <EmptyState />
+  }
+
   return (
     <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-black">Workspace</h1>
           <div className="flex items-center gap-2">
-            <Link href="/create">
-              <Button size="sm" className="bg-black text-white hover:bg-gray-800">
-                <Plus className="mr-1 h-3 w-3" />
-                Create Conversation
-              </Button>
-            </Link>
+            <CreateChatButton />
           </div>
         </div>
       </div>

@@ -1,10 +1,11 @@
 "use client"
 
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, StopCircle } from "lucide-react"
 import { useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { ProgressBar } from "./progress-bar"
+import { toast } from "sonner"
 
 interface ChatInputProps {
   value: string
@@ -13,6 +14,7 @@ interface ChatInputProps {
   disabled?: boolean
   showProgressBar?: boolean
   steps?: any[]
+  stop?: () => void
 }
 
 export function ChatInput({ 
@@ -21,7 +23,8 @@ export function ChatInput({
   onSubmit, 
   disabled,
   showProgressBar = false,
-  steps = []
+  steps = [],
+  stop
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -33,9 +36,20 @@ export function ChatInput({
     }
   }, [value])
 
+  // Add effect to focus textarea when enabled
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [disabled])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
+      if (disabled) {
+        toast.error("Please wait for the model to finish its response!")
+        return
+      }
       const form = e.currentTarget.form
       if (form) {
         onSubmit(new Event("submit") as unknown as React.FormEvent<HTMLFormElement>)
@@ -56,7 +70,7 @@ export function ChatInput({
               onChange={onChange}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder=""
+              placeholder="Send a message..."
               className={cn(
                 "w-full resize-none px-3 py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-base leading-relaxed",
                 disabled && "bg-gray-50 cursor-not-allowed",
@@ -68,17 +82,33 @@ export function ChatInput({
               }}
               disabled={disabled}
             />
-            <button
-              type="submit"
-              disabled={!hasContent || disabled}
-              className={cn(
-                "p-2 rounded-lg transition-colors self-end mb-1",
-                hasContent ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-100 text-gray-400",
-                disabled && "opacity-50 cursor-not-allowed",
-              )}
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
+            {disabled && stop ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  stop()
+                }}
+                className={cn(
+                  "p-2 rounded-lg transition-colors self-end mb-1",
+                  "bg-gray-900 text-white hover:bg-gray-800"
+                )}
+              >
+                <StopCircle className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!hasContent || disabled}
+                className={cn(
+                  "p-2 rounded-lg transition-colors self-end mb-1",
+                  hasContent ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-100 text-gray-400",
+                  disabled && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            )}
           </form>
           
           <div

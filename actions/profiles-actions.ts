@@ -7,10 +7,12 @@ import console from "console";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
+import { invalidatePromptCache } from "@/app/(chat)/api/chat/route";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
     const newProfile = await createProfile(data);
+    invalidatePromptCache(data.userId);
     revalidatePath("/profile");
     return { status: "success", message: "Profile created successfully", data: newProfile };
   } catch (error) {
@@ -39,6 +41,7 @@ export async function getAllProfilesAction(): Promise<ActionState> {
 export async function updateProfileAction(userId: string, data: Partial<InsertProfile>): Promise<ActionState> {
   try {
     const updatedProfile = await updateProfile(userId, data);
+    invalidatePromptCache(userId);
     revalidatePath("/profile");
     return { status: "success", message: "Profile updated successfully", data: updatedProfile };
   } catch (error) {
@@ -108,6 +111,9 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
     } else {
       result = await updateProfile(user.id, profileData);
     }
+    
+    // Invalidate cache after sync
+    invalidatePromptCache(userId);
     
     return { 
       status: "success", 

@@ -61,6 +61,33 @@ import { Overview } from "./overview";      // Welcome screen component
  * - Streams responses back to useChat
  * - Saves chat history to database
  */
+
+// Helper function to handle tool calls from model response
+const handleModelResponse = (
+  message: Message, 
+  experimental_toolCall: (name: string, args: any) => void
+) => {
+  if (typeof message.content === 'string') {
+    try {
+      const parsed = JSON.parse(message.content);
+      
+      // If it's a chat response with moves
+      if (parsed.content?.responseType === 'chat' && parsed.content.moves) {
+        // Check for specific moves that should trigger tools
+        if (parsed.content.moves.includes('generateConversationPlan')) {
+          experimental_toolCall('generateConversationPlan', {});
+        }
+        
+        // Update message content to just show the response
+        message.content = parsed.content.response;
+      }
+      
+    } catch (e) {
+      console.debug('Error processing message:', e);
+    }
+  }
+};
+
 export function Chat({
   id,
   initialMessages,
@@ -79,7 +106,8 @@ export function Chat({
     setInput,      // Input setter
     append,        // Add new messages locally
     isLoading,     // Loading state during processing
-    stop          // Stop message generation
+    stop,          // Stop message generation
+    experimental_addToolResult
   } = useChat({
     id,                // Chat session identifier
     body: { id },      // Additional data sent to route.ts
@@ -88,7 +116,12 @@ export function Chat({
     onFinish: (message) => {  // Callback when message stream completes
       window.history.replaceState({}, "", `/chat/${id}`);
       
-      // Check for COMPLETED end conversation calls
+      // Use our helper function to handle tool calls
+      if (experimental_addToolResult) {
+        handleModelResponse(message, experimental_addToolResult);
+      }
+      
+      // Check for end conversation calls
       const completedCalls = message.toolInvocations?.filter((call) => 
         'result' in call && 
         call.toolName === 'endConversation'

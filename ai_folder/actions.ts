@@ -59,21 +59,199 @@ import { tavily } from "@tavily/core";
 import { CoreMessage } from "ai";
 import path from 'path';
 import fs from 'fs';
+import { LRUCache } from 'lru-cache';
+import { getUserProfile } from "@/db/queries/queries";
 
 // Import the AI model configuration
 import { geminiFlashModel } from ".";
 
+// Cache for populated conversation plan prompts
+const conversationPlanPromptCache = new LRUCache<string, string>({
+  max: 100, // Smaller cache since it's used less frequently
+  ttl: 1000 * 60 * 60, // 1 hour TTL, same as main prompt
+});
 
-function loadPrompt(filename: string): string {
-  const promptPath = path.join(process.cwd(), 'agent_prompts', filename);
+// Cache for thinking help prompts
+const thinkingHelpPromptCache = new LRUCache<string, string>({
+  max: 100,
+  ttl: 1000 * 60 * 60, // 1 hour TTL
+});
+
+// Cache for objective update prompts
+const objectiveUpdatePromptCache = new LRUCache<string, string>({
+  max: 100,
+  ttl: 1000 * 60 * 60, // 1 hour TTL
+});
+
+// Function to get populated conversation plan prompt
+async function getPopulatedConversationPlanPrompt(userId: string): Promise<string> {
   try {
-    return fs.readFileSync(promptPath, 'utf-8');
+    // Check cache first
+    const cachedPrompt = conversationPlanPromptCache.get(userId);
+    if (cachedPrompt) {
+      return cachedPrompt;
+    }
+
+    // Load the prompt template
+    const promptTemplate = fs.readFileSync(
+      path.join(process.cwd(), 'agent_prompts', 'conversation_plan_agent_prompt.md'),
+      'utf-8'
+    );
+
+    // Get user profile data
+    const profile = await getUserProfile({ userId });
+    if (!profile) {
+      throw new Error('User profile not found');
+    }
+
+    // Replace template variables with actual values
+    const populatedPrompt = promptTemplate
+      .replace('{organisation_name}', profile.organisationName || '')
+      .replace('{organisation_description}', profile.organisationDescription || '');
+
+    // Cache the result
+    conversationPlanPromptCache.set(userId, populatedPrompt);
+    
+    return populatedPrompt;
   } catch (error) {
-    console.error(`Error loading prompt file: ${filename}`, error);
-    throw new Error(`Failed to load prompt file: ${filename}`);
+    console.error('Error populating conversation plan prompt:', error);
+    throw error;
   }
 }
 
+// Function to get populated thinking help prompt
+async function getPopulatedThinkingHelpPrompt(userId: string): Promise<string> {
+  try {
+    // Check cache first
+    const cachedPrompt = thinkingHelpPromptCache.get(userId);
+    if (cachedPrompt) {
+      return cachedPrompt;
+    }
+
+    // Load the prompt template
+    const promptTemplate = fs.readFileSync(
+      path.join(process.cwd(), 'agent_prompts', 'thinking_help_prompt.md'),
+      'utf-8'
+    );
+
+    // Get user profile data
+    const profile = await getUserProfile({ userId });
+    if (!profile) {
+      throw new Error('User profile not found');
+    }
+
+    // Replace template variables with actual values
+    const populatedPrompt = promptTemplate
+      .replace('{organisation_name}', profile.organisationName || '')
+      .replace('{organisation_description}', profile.organisationDescription || '');
+
+    // Cache the result
+    thinkingHelpPromptCache.set(userId, populatedPrompt);
+    
+    return populatedPrompt;
+  } catch (error) {
+    console.error('Error populating thinking help prompt:', error);
+    throw error;
+  }
+}
+
+// Function to get populated objective update prompt
+async function getPopulatedObjectiveUpdatePrompt(userId: string): Promise<string> {
+  try {
+    // Check cache first
+    const cachedPrompt = objectiveUpdatePromptCache.get(userId);
+    if (cachedPrompt) {
+      return cachedPrompt;
+    }
+
+    // Load the prompt template
+    const promptTemplate = fs.readFileSync(
+      path.join(process.cwd(), 'agent_prompts', 'objective_update_prompt.md'),
+      'utf-8'
+    );
+
+    // Get user profile data
+    const profile = await getUserProfile({ userId });
+    if (!profile) {
+      throw new Error('User profile not found');
+    }
+
+    // Replace template variables with actual values
+    const populatedPrompt = promptTemplate
+      .replace('{organisation_name}', profile.organisationName || '')
+      .replace('{organisation_description}', profile.organisationDescription || '');
+
+    // Cache the result
+    objectiveUpdatePromptCache.set(userId, populatedPrompt);
+    
+    return populatedPrompt;
+  } catch (error) {
+    console.error('Error populating objective update prompt:', error);
+    throw error;
+  }
+}
+
+// Export function to invalidate conversation plan prompt cache
+export function invalidateConversationPlanPromptCache(userId: string) {
+  conversationPlanPromptCache.delete(userId);
+}
+
+// Export function to invalidate thinking help prompt cache
+export function invalidateThinkingHelpPromptCache(userId: string) {
+  thinkingHelpPromptCache.delete(userId);
+}
+
+// Export function to invalidate objective update prompt cache
+export function invalidateObjectiveUpdatePromptCache(userId: string) {
+  objectiveUpdatePromptCache.delete(userId);
+}
+
+export async function generateConversationPlan({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+  const systemPrompt = await getPopulatedConversationPlanPrompt(userId);
+  
+  console.log('\n=== CONVERSATION PLAN GENERATION REQUEST ===');
+  console.log('System Prompt:', systemPrompt);
+  console.log('Messages:', messages.map(m => ({
+    role: m.role,
+    content: m.content
+  })));
+  console.log('==========================================\n');
+
+  const { object: plan } = await generateObject({
+    model: geminiFlashModel,
+    system: systemPrompt,
+    prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+    schema: z.object({
+      title: z.string().describe("Jargon-free title with key context"),
+      duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
+      summary: z.string().describe("1-sentence purpose statement with strategic value"),
+      objectives: z.array(
+        z.object({
+          objective: z.string().describe("Active-verb focus area").optional(),
+          obj1: z.string().describe("Active-verb focus area").optional(),
+          obj2: z.string().describe("Active-verb focus area").optional(),
+          obj3: z.string().describe("Active-verb focus area").optional(),
+          keyLearningOutcome: z.string().describe("Decision-driving insight"),
+          focusPoints: z.array(z.string())
+            .optional()
+            .describe("List of focus points for the objective"),
+          expectedConversationTurns: z.string()
+            .optional()
+            .describe("Expected number of conversation turns (e.g., '3', '4-6')")
+        }).refine(
+          data => data.objective || data.obj1 || data.obj2 || data.obj3,
+          "At least one objective format must be present"
+        )
+      ).describe("Time-aware objectives sorted by priority")
+    }),
+  });
+
+  console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
+  console.log('Generated Plan:', JSON.stringify(plan, null, 2));
+  console.log('============================================\n');
+
+  return plan;
+}
 
 export async function performWebSearch({ query }: { query: string }) {
   try {
@@ -103,27 +281,6 @@ export async function performWebSearch({ query }: { query: string }) {
   }
 }
 
-export async function generateConversationPlan({ messages }: { messages: CoreMessage[] }) {
-  const { object: plan } = await generateObject({
-    model: geminiFlashModel,
-    system: loadPrompt("interview_guide_creator.md"),
-    prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-    schema: z.object({
-      title: z.string().describe("Engaging title reflecting the conversation topics"),
-      duration: z.string().describe("Estimated duration e.g. '3 minutes'"),
-      summary: z.string().describe("Brief overview of key discussion points"),
-      objectives: z.array(
-        z.object({
-          objective: z.string().describe("Specific learning objective based on the conversation"),
-          keyLearningOutcome: z.string().describe("Expected outcome from this objective")
-        })
-      ).describe("Array of learning objectives with their outcomes")
-    }),
-  });
-
-  return plan;
-}
-
 export async function generateDisplayOptions({ text }: { text: string }) {
   const { object: options } = await generateObject({
     model: geminiFlashModel,
@@ -140,4 +297,44 @@ export async function generateDisplayOptions({ text }: { text: string }) {
     options: options.options,
     type: "options" as const
   };
+}
+
+export async function thinkingHelp({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+  try {
+    const systemPrompt = await getPopulatedThinkingHelpPrompt(userId);
+    
+    const { object: { text } } = await generateObject({
+      model: geminiFlashModel,
+      system: systemPrompt,
+      prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+      schema: z.object({
+        text: z.string().describe("The thinking help guidance text")
+      }),
+    });
+
+    return text;
+  } catch (error) {
+    console.error('Error in thinking help:', error);
+    return "Unable to provide thinking guidance.";
+  }
+}
+
+export async function objectiveUpdate({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+  try {
+    const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId);
+    
+    const { object: { text } } = await generateObject({
+      model: geminiFlashModel,
+      system: systemPrompt,
+      prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+      schema: z.object({
+        text: z.string().describe("The objective update status text")
+      }),
+    });
+
+    return text;
+  } catch (error) {
+    console.error('Error in objective update:', error);
+    return "Unable to update objectives progress.";
+  }
 }
