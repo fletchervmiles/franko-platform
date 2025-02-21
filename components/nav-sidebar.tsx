@@ -45,7 +45,7 @@ const data = {
       items: [
         {
           title: "Workspace",
-          url: "/",
+          url: "/workspace  ",
           icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
         },
         {

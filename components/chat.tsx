@@ -7,6 +7,7 @@ import { Message as ChatMessage } from "./message"
 import { ChatInput } from "./input"
 import { ProgressBar, type Step } from "./progress-bar"
 import { Loader2 } from "lucide-react"
+import { TopicGrid } from "./TopicGrid"
 
 const initialSteps: Step[] = [
   { label: "Intro", status: "in-review" },
@@ -22,9 +23,10 @@ interface ChatProps {
 
 export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [showProgressBar, setShowProgressBar] = useState(true)
+  const [showProgressBar, setShowProgressBar] = useState(false)
   const [steps, setSteps] = useState(initialSteps)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [hasSelectedTopic, setHasSelectedTopic] = useState(false)
 
   // Initialize chat with AI SDK's useChat hook
   const { 
@@ -33,7 +35,8 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     input,         // Current input value
     setInput,      // Input setter
     isLoading,     // Loading state during processing
-    stop          // Stop message generation
+    stop,          // Stop message generation
+    setMessages    // Set messages directly
   } = useChat({
     id: conversationId,
     body: { id: conversationId },
@@ -59,6 +62,11 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
       }
     }
   })
+
+  const handleTopicSelect = (prompt: string) => {
+    setHasSelectedTopic(true)
+    setShowProgressBar(true)
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -94,6 +102,26 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     )
   }
 
+  // Show centered layout with topic grid if no topic has been selected and no messages
+  if (!hasSelectedTopic && messages.length === 0) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 flex items-center">
+          <div className="mx-auto max-w-3xl w-full">
+            <TopicGrid 
+              onTopicSelect={handleTopicSelect}
+              input={input}
+              setInput={setInput}
+              handleSubmit={handleSubmit}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show chat layout after topic selection
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12">

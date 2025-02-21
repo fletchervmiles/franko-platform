@@ -74,7 +74,7 @@ import {
   import { LRUCache } from 'lru-cache';
   
   // Import custom modules and functions
-  import { geminiProModel } from "@/ai_folder";  // AI model configuration
+  import { geminiFlashModel } from "@/ai_folder";  // AI model configuration
   import {
     performWebSearch,
     generateConversationPlan,
@@ -322,7 +322,7 @@ import {
       
       // Log the full request configuration
       logger.ai('Gemini Request Configuration:', {
-        model: geminiProModel.toString(),
+        model: geminiFlashModel.toString(),
         systemPromptLength: systemPrompt.length,
         systemPrompt,
         messageCount: coreMessages.length,
@@ -333,7 +333,7 @@ import {
       });
 
       const result = await streamText({
-        model: geminiProModel,
+        model: geminiFlashModel,
         system: systemPrompt,
         messages: coreMessages,
 
@@ -346,8 +346,8 @@ import {
               _dummy: z.string().optional().describe("Placeholder parameter")
             }),
             execute: async () => ({
-              message: "Thank you for your time. Have a great day!",
-              redirectUrl: "/dashboard",
+              message: "It's been awesome working together - redirecting you now!",
+              redirectUrl: `/conversations/${id}`,
               delayMs: 3000
             }),
           },
@@ -386,15 +386,17 @@ import {
             }),
             execute: async () => {
               try {
-                // We have access to coreMessages and userId from the outer scope
+                // We have access to coreMessages, userId, and id from the outer scope
                 logger.ai('Generating conversation plan:', { 
                   messageCount: coreMessages.length,
-                  userId 
+                  userId,
+                  chatId: id
                 });
                 
                 const plan = await generateConversationPlan({ 
                   messages: coreMessages,
-                  userId
+                  userId,
+                  chatId: id
                 });
 
                 logger.ai('Generated conversation plan:', {

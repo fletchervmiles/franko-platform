@@ -15,7 +15,7 @@ async function createModels() {
 
   // Create a wrapped version of the Gemini Pro model with our custom middleware
   const geminiProModel = wrapLanguageModel({
-    model: google("gemini-2.0-flash"),
+    model: google("gemini-2.0-pro-exp-02-05"),
     middleware: customMiddleware,
   });
 

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 
 export const chatInstancesTable = pgTable("chat_instances", {
@@ -7,7 +7,8 @@ export const chatInstancesTable = pgTable("chat_instances", {
     .notNull()
     .references(() => profilesTable.userId, { onDelete: "cascade" }),
   messages: text("messages"),
-  interviewGuide: text("interview_guide"),
+  conversationPlan: jsonb("conversation_plan"),
+  conversationPlanLastEdited: timestamp("conversation_plan_last_edited").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

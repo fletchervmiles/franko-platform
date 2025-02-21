@@ -61,9 +61,10 @@ import path from 'path';
 import fs from 'fs';
 import { LRUCache } from 'lru-cache';
 import { getUserProfile } from "@/db/queries/queries";
+import { updateChatInstanceConversationPlan } from "@/db/queries/chat-instances-queries";
 
 // Import the AI model configuration
-import { geminiFlashModel } from ".";
+import { geminiFlashModel, geminiProModel } from ".";
 
 // Cache for populated conversation plan prompts
 const conversationPlanPromptCache = new LRUCache<string, string>({
@@ -206,7 +207,9 @@ export function invalidateObjectiveUpdatePromptCache(userId: string) {
   objectiveUpdatePromptCache.delete(userId);
 }
 
-export async function generateConversationPlan({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+import type { ConversationPlan } from "@/components/conversationPlanSchema";
+
+export async function generateConversationPlan({ messages, userId, chatId }: { messages: CoreMessage[], userId: string, chatId: string }) {
   const systemPrompt = await getPopulatedConversationPlanPrompt(userId);
   
   console.log('\n=== CONVERSATION PLAN GENERATION REQUEST ===');
@@ -217,8 +220,8 @@ export async function generateConversationPlan({ messages, userId }: { messages:
   })));
   console.log('==========================================\n');
 
-  const { object: plan } = await generateObject({
-    model: geminiFlashModel,
+  const { object: rawPlan } = await generateObject({
+    model: geminiProModel,
     system: systemPrompt,
     prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
     schema: z.object({
@@ -227,17 +230,13 @@ export async function generateConversationPlan({ messages, userId }: { messages:
       summary: z.string().describe("1-sentence purpose statement with strategic value"),
       objectives: z.array(
         z.object({
-          objective: z.string().describe("Active-verb focus area").optional(),
-          obj1: z.string().describe("Active-verb focus area").optional(),
-          obj2: z.string().describe("Active-verb focus area").optional(),
-          obj3: z.string().describe("Active-verb focus area").optional(),
+          objective: z.string().optional().describe("Active-verb focus area"),
+          obj1: z.string().optional().describe("Alternative objective format 1"),
+          obj2: z.string().optional().describe("Alternative objective format 2"),
+          obj3: z.string().optional().describe("Alternative objective format 3"),
           keyLearningOutcome: z.string().describe("Decision-driving insight"),
-          focusPoints: z.array(z.string())
-            .optional()
-            .describe("List of focus points for the objective"),
-          expectedConversationTurns: z.string()
-            .optional()
-            .describe("Expected number of conversation turns (e.g., '3', '4-6')")
+          focusPoints: z.array(z.string()).optional().describe("List of focus points for the objective"),
+          expectedConversationTurns: z.string().optional().describe("Expected number of conversation turns")
         }).refine(
           data => data.objective || data.obj1 || data.obj2 || data.obj3,
           "At least one objective format must be present"
@@ -245,6 +244,27 @@ export async function generateConversationPlan({ messages, userId }: { messages:
       ).describe("Time-aware objectives sorted by priority")
     }),
   });
+
+  // Transform the raw plan to match our schema
+  const plan: ConversationPlan = {
+    title: rawPlan.title,
+    duration: rawPlan.duration,
+    summary: rawPlan.summary,
+    objectives: rawPlan.objectives.map(obj => ({
+      objective: obj.objective || obj.obj1 || obj.obj2 || obj.obj3 || "Untitled Objective",
+      keyLearningOutcome: obj.keyLearningOutcome,
+      focusPoints: obj.focusPoints || [],
+      expectedConversationTurns: obj.expectedConversationTurns || "1"
+    }))
+  };
+
+  // Save the plan to the database
+  try {
+    await updateChatInstanceConversationPlan(chatId, plan);
+  } catch (error) {
+    console.error('Failed to save conversation plan:', error);
+    // Continue even if save fails - don't block the response
+  }
 
   console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
   console.log('Generated Plan:', JSON.stringify(plan, null, 2));

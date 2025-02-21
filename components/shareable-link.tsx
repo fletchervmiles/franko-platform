@@ -6,16 +6,20 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
+interface ShareableLinkProps {
+  guideName: string;
+}
+
 const StatusDot = () => <span className="inline-block w-2 h-2 rounded-full ml-2 bg-green-500" />
 
-export function ShareableLink() {
+export function ShareableLink({ guideName }: ShareableLinkProps) {
   const [copied, setCopied] = React.useState(false)
   const [shareableUrl, setShareableUrl] = React.useState("")
 
   React.useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://example.com"
-    setShareableUrl(`${baseUrl}/interview`)
-  }, [])
+    setShareableUrl(`${baseUrl}/interview/${guideName}`)
+  }, [guideName])
 
   const handleCopy = async () => {
     if (!shareableUrl) return

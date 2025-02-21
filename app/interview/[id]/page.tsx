@@ -36,11 +36,11 @@ export default async function InterviewPage({ params }: Props) {
 
   if (error || !interview) {
     console.error('Error fetching interview:', error)
-    redirect('/dashboard') // Interview not found
+    redirect('/workspace') // Interview not found
   }
 
   if (interview.user_id !== userId) {
-    redirect('/dashboard') // Not authorized to view this interview
+    redirect('/workspace') // Not authorized to view this interview
   }
 
   return (

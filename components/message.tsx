@@ -88,10 +88,10 @@ export function Message({ content, isUser = false, timestamp, toolInvocations, c
             : "bg-gray-100 text-gray-900"
         )}>
           {!isUser && showLoading && (
-            <div className="flex gap-1 h-6 items-center">
-              <span className="w-1 h-1 rounded-full bg-gray-400 animate-[bounce_1.4s_infinite_0.2s]" />
-              <span className="w-1 h-1 rounded-full bg-gray-400 animate-[bounce_1.4s_infinite_0.4s]" />
-              <span className="w-1 h-1 rounded-full bg-gray-400 animate-[bounce_1.4s_infinite_0.6s]" />
+            <div className="flex gap-2 h-6 items-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[messageLoading_1.4s_infinite_0.2s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[messageLoading_1.4s_infinite_0.4s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[messageLoading_1.4s_infinite_0.6s]" />
             </div>
           )}
           

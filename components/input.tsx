@@ -2,7 +2,7 @@
 
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowUp, StopCircle } from "lucide-react"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, forwardRef, type ForwardedRef } from "react"
 import { cn } from "@/lib/utils"
 import { ProgressBar } from "./progress-bar"
 import { toast } from "sonner"
@@ -17,7 +17,7 @@ interface ChatInputProps {
   stop?: () => void
 }
 
-export function ChatInput({ 
+function ChatInputComponent({ 
   value, 
   onChange, 
   onSubmit, 
@@ -25,8 +25,10 @@ export function ChatInput({
   showProgressBar = false,
   steps = [],
   stop
-}: ChatInputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+}: ChatInputProps,
+ref: ForwardedRef<HTMLTextAreaElement>) {
+  const localRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = (ref || localRef) as React.RefObject<HTMLTextAreaElement>
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -127,4 +129,6 @@ export function ChatInput({
     </div>
   )
 }
+
+export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(ChatInputComponent)
 

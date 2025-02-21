@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance } from "../schema/chat-instances-schema";
+import type { ConversationPlan } from "@/components/conversationPlanSchema";
 
 export async function createChatInstance(chat: InsertChatInstance): Promise<SelectChatInstance> {
   try {
@@ -66,14 +67,32 @@ export async function updateChatInstanceMessages(
   return updatedChatInstance;
 }
 
-export async function updateChatInstanceInterviewGuide(
+export async function updateChatInstanceConversationPlan(
   id: string,
-  interviewGuide: string
+  conversationPlan: ConversationPlan
 ): Promise<SelectChatInstance | undefined> {
-  const [updatedChatInstance] = await db
-    .update(chatInstancesTable)
-    .set({ interviewGuide })
-    .where(eq(chatInstancesTable.id, id))
-    .returning();
-  return updatedChatInstance;
+  try {
+    const [result] = await db
+      .update(chatInstancesTable)
+      .set({ 
+        conversationPlan,
+        conversationPlanLastEdited: new Date()
+      })
+      .where(eq(chatInstancesTable.id, id))
+      .returning();
+    return result;
+  } catch (error) {
+    console.error("Error updating chat instance conversation plan:", error);
+    throw error;
+  }
+}
+
+export async function getConversationPlan(id: string): Promise<ConversationPlan | null> {
+  try {
+    const chatInstance = await getChatInstanceById(id);
+    return chatInstance?.conversationPlan as ConversationPlan || null;
+  } catch (error) {
+    console.error("Error getting conversation plan:", error);
+    throw error;
+  }
 } 

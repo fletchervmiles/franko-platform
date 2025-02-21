@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Edit2, Trash2 } from "lucide-react"
@@ -35,6 +35,22 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
 
+  useEffect(() => {
+    async function loadConversationPlan() {
+      try {
+        const response = await fetch(`/api/conversation-plan?chatId=${params.guideName}`);
+        if (!response.ok) throw new Error('Failed to load plan');
+        const plan = await response.json();
+        if (plan) {
+          setConversationPlan(plan);
+        }
+      } catch (error) {
+        console.error("Error loading conversation plan:", error);
+      }
+    }
+    loadConversationPlan();
+  }, [params.guideName]);
+
   const handleDelete = () => {
     console.log("Deleting guide:", params.guideName)
     setShowDeleteDialog(false)
@@ -46,7 +62,6 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
 
   const handleConversationPlanSubmit = async (data: ConversationPlan) => {
     console.log("Saving conversation plan:", data)
-    // TODO: Implement API call to save the conversation plan
     setConversationPlan(data)
   }
 
@@ -180,7 +195,9 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
       <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
         {/* Header Section */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-black">{decodeURIComponent(params.guideName)}</h1>
+          <h1 className="text-2xl font-semibold text-black">
+            {conversationPlan?.title || "Untitled Conversation"}
+          </h1>
           <div className="flex items-center gap-2">
             <img
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
@@ -264,7 +281,11 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
                   This is where you can view and edit your conversation plan. Use this to structure your interview and
                   ensure you cover all necessary points.
                 </p>
-                <ConversationPlanForm onSubmit={handleConversationPlanSubmit} initialData={conversationPlan} />
+                <ConversationPlanForm 
+                  chatId={params.guideName} 
+                  onSubmit={handleConversationPlanSubmit} 
+                  initialData={conversationPlan} 
+                />
               </div>
             </Card>
           </TabsContent>

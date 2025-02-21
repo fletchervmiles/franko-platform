@@ -3,7 +3,7 @@ import { WorkspaceList } from "@/components/workspace-list"
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 
-export default async function DashboardPage() {
+export default async function WorkspacePage() {
   const { userId } = await auth()
 
   if (!userId) {

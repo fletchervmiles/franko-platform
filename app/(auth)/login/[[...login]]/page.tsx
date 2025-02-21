@@ -9,11 +9,12 @@ export default function LoginPage() {
 
   return (
     <SignIn
-      forceRedirectUrl="/dashboard"
-      appearance={{ baseTheme: theme === "dark" ? dark : undefined }}
-      path="/login"
-      routing="path"
-      signUpUrl="/sign-up"
+      appearance={{
+        elements: {
+          formButtonPrimary: 'bg-black hover:bg-gray-800',
+        },
+      }}
+      forceRedirectUrl="/workspace"
     />
   );
 }
