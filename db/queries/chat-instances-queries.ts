@@ -1,6 +1,8 @@
+'use server'
+
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
-import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance } from "../schema/chat-instances-schema";
+import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
 
 export async function createChatInstance(chat: InsertChatInstance): Promise<SelectChatInstance> {
@@ -95,4 +97,32 @@ export async function getConversationPlan(id: string): Promise<ConversationPlan 
     console.error("Error getting conversation plan:", error);
     throw error;
   }
+}
+
+export async function updateChatInstanceProgress(
+  chatId: string,
+  progress: ObjectiveProgress
+) {
+  await db
+    .update(chatInstancesTable)
+    .set({ objectiveProgress: progress })
+    .where(eq(chatInstancesTable.id, chatId));
+  
+  console.log('Updated objective progress:', {
+    chatId,
+    progress,
+    timestamp: new Date().toISOString()
+  });
+}
+
+export async function getChatInstanceProgress(
+  chatId: string
+): Promise<ObjectiveProgress | null> {
+  const result = await db
+    .select({ objectiveProgress: chatInstancesTable.objectiveProgress })
+    .from(chatInstancesTable)
+    .where(eq(chatInstancesTable.id, chatId))
+    .limit(1);
+
+  return result[0]?.objectiveProgress as ObjectiveProgress | null;
 } 

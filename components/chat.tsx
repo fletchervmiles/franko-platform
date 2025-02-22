@@ -5,16 +5,9 @@ import { Message } from "ai"
 import { useChat } from "ai/react"
 import { Message as ChatMessage } from "./message"
 import { ChatInput } from "./input"
-import { ProgressBar, type Step } from "./progress-bar"
 import { Loader2 } from "lucide-react"
 import { TopicGrid } from "./TopicGrid"
-
-const initialSteps: Step[] = [
-  { label: "Intro", status: "in-review" },
-  { label: "Discovery", status: "pending" },
-  { label: "Review", status: "pending" },
-  { label: "Finish", status: "pending" },
-]
+import { ConversationProgress } from "./conversation-progress"
 
 interface ChatProps {
   conversationId: string
@@ -24,28 +17,26 @@ interface ChatProps {
 export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showProgressBar, setShowProgressBar] = useState(false)
-  const [steps, setSteps] = useState(initialSteps)
   const [isInitializing, setIsInitializing] = useState(true)
   const [hasSelectedTopic, setHasSelectedTopic] = useState(false)
 
   // Initialize chat with AI SDK's useChat hook
   const { 
-    messages,      // Current messages (updated in real-time)
-    handleSubmit,  // Handles form submission to route.ts
-    input,         // Current input value
-    setInput,      // Input setter
-    isLoading,     // Loading state during processing
-    stop,          // Stop message generation
-    setMessages    // Set messages directly
+    messages,
+    handleSubmit,
+    input,
+    setInput,
+    isLoading,
+    stop,
+    setMessages
   } = useChat({
     id: conversationId,
     body: { id: conversationId },
     initialMessages,
-    maxSteps: 10,  // Add maxSteps to enable multi-step tool calls
+    maxSteps: 10,
     onFinish: (message) => {
       window.history.replaceState({}, "", `/chat/${conversationId}`);
       
-      // Check for COMPLETED end conversation calls
       const completedCalls = message.toolInvocations?.filter((call) => 
         'result' in call && 
         call.toolName === 'endConversation'
@@ -155,9 +146,13 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
           onSubmit={handleSubmit}
           disabled={isLoading}
           showProgressBar={showProgressBar}
-          steps={steps}
           stop={stop}
         />
+        {showProgressBar && (
+          <div className="px-4 md:px-8 lg:px-12 pb-4">
+            <ConversationProgress conversationId={conversationId} />
+          </div>
+        )}
       </div>
     </div>
   )

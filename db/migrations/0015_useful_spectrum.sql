@@ -1,0 +1,1 @@
+ALTER TABLE "chat_instances" ADD COLUMN "objective_progress" jsonb;

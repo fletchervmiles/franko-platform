@@ -518,7 +518,8 @@ import {
                 try {
                   const objectiveResult = await objectiveUpdate({
                     messages: coreMessages,
-                    userId
+                    userId,
+                    chatId: id
                   });
 
                   // Create objective update message

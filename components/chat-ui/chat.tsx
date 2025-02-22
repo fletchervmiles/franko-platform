@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { Message } from "./message"
 import { ChatInput } from "./input"
-import { ProgressBar, type Step } from "./progress-bar"
+import { ConversationProgress } from "../conversation-progress"
+import { updateChatInstanceProgress } from "@/db/queries/chat-instances-queries"
+import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema"
+import { queryClient } from "@/components/providers"
 
 interface ChatMessage {
   content: string
@@ -36,13 +39,6 @@ const Card = React.forwardRef<
 ))
 Card.displayName = "Card"
 
-const initialSteps: Step[] = [
-  { label: "Intro", status: "in-review" },
-  { label: "Discovery", status: "pending" },
-  { label: "Review", status: "pending" },
-  { label: "Finish", status: "pending" },
-]
-
 export function Chat({ conversationId }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -52,16 +48,8 @@ export function Chat({ conversationId }: ChatProps) {
     },
   ])
   const [inputValue, setInputValue] = useState("")
-  const [showProgressBar, setShowProgressBar] = useState(false)
-  const [steps, setSteps] = useState(initialSteps)
 
-  useEffect(() => {
-    if (messages.length > 1 && !showProgressBar) {
-      setShowProgressBar(true)
-    }
-  }, [messages, showProgressBar])
-
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     console.log('Sending message:', content);
     setMessages((prev) => [
       ...prev,
@@ -71,6 +59,21 @@ export function Chat({ conversationId }: ChatProps) {
         timestamp: new Date().toISOString(),
       },
     ]);
+
+    // Initialize progress after first message exchange
+    if (messages.length === 2) {
+      const initialProgress: ObjectiveProgress = {
+        objectives: {
+          "obj1": { status: "current", comments: [] },
+          "obj2": { status: "tbc", comments: [] },
+          "obj3": { status: "tbc", comments: [] }
+        }
+      };
+      
+      await updateChatInstanceProgress(conversationId, initialProgress);
+      // Invalidate after initial progress
+      queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
+    }
 
     // Make API call to get AI response
     fetch('/api/chat', {
@@ -87,21 +90,12 @@ export function Chat({ conversationId }: ChatProps) {
       .then(aiMessage => {
         console.log('Received AI response:', aiMessage);
         setMessages(prev => [...prev, aiMessage]);
+        // Invalidate after AI response to refresh progress
+        queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
       })
       .catch(error => {
         console.error('Error getting AI response:', error);
       });
-
-    // Simulate progress after user sends a message
-    if (steps[0].status === "in-review") {
-      setTimeout(() => {
-        setSteps((prevSteps) => [
-          { ...prevSteps[0], status: "completed" },
-          { ...prevSteps[1], status: "in-review" },
-          ...prevSteps.slice(2),
-        ])
-      }, 1000)
-    }
   }
 
   return (
@@ -128,11 +122,11 @@ export function Chat({ conversationId }: ChatProps) {
         <div 
           className={cn(
             "overflow-hidden transition-all duration-500 ease-in-out",
-            showProgressBar ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
+            messages.length > 1 ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
           )}
         >
           <div className="py-4">
-            <ProgressBar steps={steps} />
+            <ConversationProgress conversationId={conversationId} />
           </div>
         </div>
       </Card>

@@ -61,7 +61,8 @@ import path from 'path';
 import fs from 'fs';
 import { LRUCache } from 'lru-cache';
 import { getUserProfile } from "@/db/queries/queries";
-import { updateChatInstanceConversationPlan } from "@/db/queries/chat-instances-queries";
+import { updateChatInstanceConversationPlan, getChatInstanceProgress, updateChatInstanceProgress } from "@/db/queries/chat-instances-queries";
+import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 
 // Import the AI model configuration
 import { geminiFlashModel, geminiProModel } from ".";
@@ -339,22 +340,63 @@ export async function thinkingHelp({ messages, userId }: { messages: CoreMessage
   }
 }
 
-export async function objectiveUpdate({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+export async function objectiveUpdate({ messages, userId, chatId }: { 
+  messages: CoreMessage[], 
+  userId: string,
+  chatId: string
+}) {
   try {
     const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId);
     
-    const { object: { text } } = await generateObject({
+    // Get current progress
+    const currentProgress = await getChatInstanceProgress(chatId);
+    
+    const promptMessages = [
+      ...messages,
+      {
+        role: 'system' as const,
+        content: `Current objectives state:
+${JSON.stringify(currentProgress, null, 2)}
+
+Update the status of objectives based on the conversation. Mark objectives as:
+- "done" if completed
+- "current" for the active objective
+- "tbc" for not yet started objectives
+
+If two questions have been asked, treat that as done.
+
+Add brief comments about progress made.`
+      }
+    ];
+
+    const { object: progressUpdate } = await generateObject({
       model: geminiFlashModel,
       system: systemPrompt,
-      prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+      prompt: promptMessages.map(m => `${m.role}: ${m.content}`).join('\n'),
       schema: z.object({
-        text: z.string().describe("The objective update status text")
-      }),
+        objectives: z.object({
+          obj1: z.object({
+            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
+            comments: z.array(z.string()).describe("List of progress comments")
+          }).describe("First objective tracking"),
+          obj2: z.object({
+            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
+            comments: z.array(z.string()).describe("List of progress comments")
+          }).describe("Second objective tracking"),
+          obj3: z.object({
+            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
+            comments: z.array(z.string()).describe("List of progress comments")
+          }).describe("Third objective tracking")
+        }).describe("Collection of objectives and their progress")
+      })
     });
 
-    return text;
+    // Update progress in database
+    await updateChatInstanceProgress(chatId, progressUpdate as ObjectiveProgress);
+
+    return progressUpdate as ObjectiveProgress;
   } catch (error) {
     console.error('Error in objective update:', error);
-    return "Unable to update objectives progress.";
+    throw error;
   }
 }
