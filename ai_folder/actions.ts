@@ -63,6 +63,8 @@ import { LRUCache } from 'lru-cache';
 import { getUserProfile } from "@/db/queries/queries";
 import { updateChatInstanceConversationPlan, getChatInstanceProgress, updateChatInstanceProgress } from "@/db/queries/chat-instances-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
+import { QueryClient } from "@tanstack/react-query";
+import { queryClient } from "@/components/utilities/query-provider";
 
 // Import the AI model configuration
 import { geminiFlashModel, geminiProModel } from ".";
@@ -259,8 +261,8 @@ export async function generateConversationPlan({ messages, userId, chatId }: { m
     }))
   };
 
-  // Save the plan to the database
   try {
+    // Save the conversation plan
     await updateChatInstanceConversationPlan(chatId, plan);
   } catch (error) {
     console.error('Failed to save conversation plan:', error);
@@ -349,7 +351,18 @@ export async function objectiveUpdate({ messages, userId, chatId }: {
     const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId);
     
     // Get current progress
-    const currentProgress = await getChatInstanceProgress(chatId);
+    let currentProgress = await getChatInstanceProgress(chatId);
+    
+    // If no progress exists, initialize it
+    if (!currentProgress) {
+      currentProgress = {
+        objectives: {
+          obj1: { status: "current", comments: [] },
+          obj2: { status: "tbc", comments: [] },
+          obj3: { status: "tbc", comments: [] }
+        }
+      };
+    }
     
     const promptMessages = [
       ...messages,

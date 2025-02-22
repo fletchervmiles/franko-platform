@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
+import { revalidatePath } from "next/cache";
 
 export async function createChatInstance(chat: InsertChatInstance): Promise<SelectChatInstance> {
   try {

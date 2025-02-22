@@ -68,10 +68,18 @@ export default async function Page({ params }: { params: { id: string } }) {
     } else {
       // Create new chat instance
       const emptyMessages = JSON.stringify([]);
+      const initialProgress = {
+        objectives: {
+          obj1: { status: "current", comments: [] },
+          obj2: { status: "tbc", comments: [] },
+          obj3: { status: "tbc", comments: [] }
+        }
+      };
       const newChat = await createChatInstance({
         id,
         userId,
         messages: emptyMessages,
+        objectiveProgress: initialProgress
       });
 
       chat = {

@@ -4,7 +4,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowUp, StopCircle } from "lucide-react"
 import { useRef, useEffect, forwardRef, type ForwardedRef } from "react"
 import { cn } from "@/lib/utils"
-import { ProgressBar } from "./progress-bar"
 import { toast } from "sonner"
 
 interface ChatInputProps {
@@ -13,7 +12,7 @@ interface ChatInputProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   disabled?: boolean
   showProgressBar?: boolean
-  steps?: any[]
+  progressBar?: React.ReactNode
   stop?: () => void
 }
 
@@ -23,7 +22,7 @@ function ChatInputComponent({
   onSubmit, 
   disabled,
   showProgressBar = false,
-  steps = [],
+  progressBar,
   stop
 }: ChatInputProps,
 ref: ForwardedRef<HTMLTextAreaElement>) {
@@ -113,17 +112,19 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
             )}
           </form>
           
-          <div
-            className={cn(
-              "overflow-hidden transition-all duration-500 ease-in-out border-t",
-              showProgressBar ? "max-h-16 opacity-100" : "max-h-0 opacity-0",
-              "bg-gray-50/50"
-            )}
-          >
-            <div className="px-4 py-2">
-              <ProgressBar steps={steps} />
+          {showProgressBar && (
+            <div
+              className={cn(
+                "overflow-hidden transition-all duration-500 ease-in-out border-t",
+                "max-h-16 opacity-100",
+                "bg-gray-50/50"
+              )}
+            >
+              <div className="px-4 py-2">
+                {progressBar}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

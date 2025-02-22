@@ -11,14 +11,23 @@ export async function POST() {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    // Create a new chat instance with empty messages
+    // Create a new chat instance with empty messages and initial progress
     const chatId = generateUUID()
     const emptyMessages = JSON.stringify([])
+    
+    const initialProgress = {
+      objectives: {
+        obj1: { status: "current", comments: [] },
+        obj2: { status: "tbc", comments: [] },
+        obj3: { status: "tbc", comments: [] }
+      }
+    }
     
     const chat = await createChatInstance({
       id: chatId,
       userId,
       messages: emptyMessages,
+      objectiveProgress: initialProgress
     })
 
     return NextResponse.json({ id: chat.id })
