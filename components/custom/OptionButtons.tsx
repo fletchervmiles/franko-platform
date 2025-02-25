@@ -73,12 +73,17 @@ export function OptionButtons({ options = [], chatId, text }: OptionButtonsProps
             key={index}
             onClick={() => handleOptionClick(option)}
             className={`
-              px-4 py-2 
+              px-4 py-3 
               text-sm 
               text-left 
-              border rounded 
-              hover:bg-gray-100 dark:hover:bg-gray-800
-              transition-colors
+              border
+              rounded-lg
+              bg-white dark:bg-gray-900
+              shadow-sm
+              hover:bg-gray-50 dark:hover:bg-gray-800
+              hover:shadow-md
+              hover:border-gray-300 dark:hover:border-gray-600
+              transition-all duration-200
               ${hasLongOptions 
                 ? 'whitespace-normal break-words min-h-[4rem]' 
                 : 'truncate'

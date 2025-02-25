@@ -4,23 +4,41 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
-    "/account(.*)",
-    "/workspace(.*)",
-    "/interview(.*)",
-    "/pricing(.*)",
-    "/payment(.*)",
-    "/chat",
-    "/chat/(.*)"  // This will match all chat routes
+  "/account(.*)",
+  "/workspace(.*)",
+  "/interview(.*)",
+  "/pricing(.*)",
+  "/payment(.*)",
+  "/chat",
+  "/chat/(.*)"  // This will match all chat routes
 ]);
 
 const isProtectedApiRoute = createRouteMatcher([
-    "/api/chat(.*)",      // Protect chat API endpoints
-    "/api/history(.*)",   // Protect history API endpoints
+  "/api/chat(.*)",      // Protect chat API endpoints
+  "/api/history(.*)",   // Protect history API endpoints
+]);
+
+const isPublicRoute = createRouteMatcher([
+  "/external-chat/(.*)",
+  "/interview-complete/(.*)"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = await auth();
   const isApiRoute = isProtectedApiRoute(req);
+
+  // Check if the route is public
+  if (isPublicRoute(req)) {
+    // Validate UUID format for public routes
+    const pathParts = req.nextUrl.pathname.split('/');
+    const uuid = pathParts[2];
+    const isValidUUID = uuid && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+    
+    if (!isValidUUID) {
+      return NextResponse.redirect(new URL('/404', req.url));
+    }
+    return NextResponse.next();
+  }
 
   // For API routes, return 401 if not authenticated
   if (!userId && isApiRoute) {
@@ -37,5 +55,9 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    '/((?!.+\\.[\\w]+$|_next).*)',
+    '/',
+    '/(api|trpc)(.*)'
+  ]
 };

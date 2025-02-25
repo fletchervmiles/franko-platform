@@ -1,26 +1,30 @@
 "use client"
+
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef } from "react"
 import { Message } from "ai"
 import { useChat } from "ai/react"
 import { Message as ChatMessage } from "./message"
 import { ChatInput } from "./input"
-import { Loader2 } from "lucide-react"
-import { TopicGrid } from "./TopicGrid"
-import { ConversationProgress } from "./conversation-progress"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { ExternalChatProgress } from "./external-chat-progress"
 
-interface ChatProps {
-  conversationId: string
-  initialMessages?: Message[]
+interface ExternalChatProps {
+  chatInstanceId: string
+  chatResponseId: string
+  initialMessages: Message[]
+  organizationName: string
+  organizationContext: string
 }
 
-export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
-  const router = useRouter()
+export function ExternalChat({
+  chatInstanceId,
+  chatResponseId,
+  initialMessages = [],
+  organizationName,
+  organizationContext
+}: ExternalChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showProgressBar, setShowProgressBar] = useState(false)
-  const [hasSelectedTopic, setHasSelectedTopic] = useState(false)
 
   // Initialize chat with AI SDK's useChat hook
   const { 
@@ -32,13 +36,16 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     stop,
     setMessages
   } = useChat({
-    id: conversationId,
-    body: { id: conversationId },
+    api: "/api/external-chat",
+    id: chatResponseId,
+    body: { 
+      chatInstanceId,
+      chatResponseId,
+      organizationName,
+      organizationContext
+    },
     initialMessages,
-    maxSteps: 10,
     onFinish: (message) => {
-      window.history.replaceState({}, "", `/chat/${conversationId}`);
-      
       const completedCalls = message.toolInvocations?.filter((call) => 
         'result' in call && 
         call.toolName === 'endConversation'
@@ -60,9 +67,8 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (messages.length > 0) {
-        // Show warning dialog
         e.preventDefault()
-        e.returnValue = 'Changes you made may not be saved.'
+        e.returnValue = 'Your progress will be lost if you leave.'
         return e.returnValue
       }
     }
@@ -70,10 +76,6 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [messages.length])
-
-  const handleTopicSelect = (prompt: string) => {
-    setHasSelectedTopic(true)
-  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -84,32 +86,11 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
   }, [messages, showProgressBar])
 
   useEffect(() => {
-    // Show progress bar as soon as there's at least one message
     if (messages.length > 0 && !showProgressBar) {
       setShowProgressBar(true)
     }
   }, [messages.length, showProgressBar])
 
-  // Show centered layout with topic grid if no topic has been selected and no messages
-  if (!hasSelectedTopic && messages.length === 0) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 flex items-center">
-          <div className="mx-auto max-w-3xl w-full">
-            <TopicGrid 
-              onTopicSelect={handleTopicSelect}
-              input={input}
-              setInput={setInput}
-              handleSubmit={handleSubmit}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show chat layout after topic selection
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12">
@@ -120,7 +101,7 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
               content={message.content}
               isUser={message.role === "user"}
               toolInvocations={message.toolInvocations}
-              chatId={conversationId}
+              chatId={chatResponseId}
               isLoading={isLoading && index === messages.length - 1 && message.role !== "user"}
             />
           ))}
@@ -128,7 +109,7 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
             <ChatMessage
               content=""
               isUser={false}
-              chatId={conversationId}
+              chatId={chatResponseId}
               isLoading={true}
             />
           )}
@@ -144,8 +125,8 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
           disabled={isLoading}
           showProgressBar={showProgressBar}
           progressBar={
-            <ConversationProgress 
-              conversationId={conversationId}
+            <ExternalChatProgress 
+              chatResponseId={chatResponseId}
               messageCount={messages.length}
             />
           }
@@ -154,5 +135,4 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
       </div>
     </div>
   )
-}
-
+} 

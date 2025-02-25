@@ -127,7 +127,36 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
   }
 
   if (!isMounted) {
-    return null
+    return (
+      <div className="flex h-screen overflow-hidden">
+        <div className="w-64 bg-[#FAFAFA] border-r border-gray-200">
+          <div className="h-14 border-b border-gray-200 px-3 py-2">
+            <div className="h-6 w-6 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="p-3 space-y-4">
+            {data.navMain.map((section, index) => (
+              <div key={section.title}>
+                {index > 0 && <div className="my-4 border-t border-dotted border-gray-200" />}
+                <div className="space-y-2">
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  {section.items.map((item) => (
+                    <div key={item.title} className="h-8 bg-gray-200 rounded animate-pulse mt-2" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <header className="h-14 border-b border-gray-200 bg-white">
+            <div className="h-full px-4 flex items-center">
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </header>
+          <main className="h-[calc(100vh-3.5rem)] overflow-auto">{children}</main>
+        </div>
+      </div>
+    )
   }
 
   return (

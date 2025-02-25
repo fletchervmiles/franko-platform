@@ -1,13 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../db";
-import { chatResponsesTable, type InsertChatResponse, type SelectChatResponse } from "../schema";
+import { db } from "@/db/db";
+import { chatResponsesTable, type InsertChatResponse, type SelectChatResponse } from "@/db/schema/chat-responses-schema";
 
-export async function createChatResponse(chatResponse: InsertChatResponse): Promise<SelectChatResponse> {
-  const [newChatResponse] = await db
+export async function createChatResponse(data: InsertChatResponse): Promise<SelectChatResponse> {
+  const [chatResponse] = await db
     .insert(chatResponsesTable)
-    .values(chatResponse)
+    .values(data)
     .returning();
-  return newChatResponse;
+  return chatResponse;
 }
 
 export async function getChatResponseById(id: string): Promise<SelectChatResponse | undefined> {
@@ -30,26 +30,26 @@ export async function getChatResponsesByChatInstanceId(chatInstanceId: string): 
   return await db
     .select()
     .from(chatResponsesTable)
-    .where(eq(chatResponsesTable.chatInstanceId, chatInstanceId))
-    .orderBy(desc(chatResponsesTable.createdAt));
+    .where(eq(chatResponsesTable.chatInstanceId, chatInstanceId));
 }
 
 export async function updateChatResponse(
   id: string,
-  updates: Partial<InsertChatResponse>
+  data: Partial<InsertChatResponse>
 ): Promise<SelectChatResponse | undefined> {
   const [updatedChatResponse] = await db
     .update(chatResponsesTable)
-    .set(updates)
+    .set(data)
     .where(eq(chatResponsesTable.id, id))
     .returning();
   return updatedChatResponse;
 }
 
-export async function deleteChatResponse(id: string): Promise<void> {
-  await db
-    .delete(chatResponsesTable)
-    .where(eq(chatResponsesTable.id, id));
+export async function updateChatResponseMessages(
+  id: string,
+  messages: string
+): Promise<SelectChatResponse | undefined> {
+  return await updateChatResponse(id, { messagesJson: messages });
 }
 
 export async function updateChatResponseStatus(
@@ -57,12 +57,36 @@ export async function updateChatResponseStatus(
   status: string,
   completionStatus: string
 ): Promise<SelectChatResponse | undefined> {
-  const [updatedChatResponse] = await db
-    .update(chatResponsesTable)
-    .set({ status, completionStatus })
-    .where(eq(chatResponsesTable.id, id))
-    .returning();
-  return updatedChatResponse;
+  return await updateChatResponse(id, { 
+    status,
+    completionStatus,
+    ...(completionStatus === "completed" ? {
+      interviewEndTime: new Date(),
+      totalInterviewMinutes: Math.round(
+        (new Date().getTime() - (await getChatResponseById(id))?.interviewStartTime?.getTime()!) / 60000
+      )
+    } : {})
+  });
+}
+
+export async function updateChatResponseIntervieweeDetails(
+  id: string,
+  firstName: string,
+  secondName: string,
+  email: string
+): Promise<SelectChatResponse | undefined> {
+  return await updateChatResponse(id, {
+    intervieweeFirstName: firstName,
+    intervieweeSecondName: secondName,
+    intervieweeEmail: email,
+    interviewStartTime: new Date()
+  });
+}
+
+export async function deleteChatResponse(id: string): Promise<void> {
+  await db
+    .delete(chatResponsesTable)
+    .where(eq(chatResponsesTable.id, id));
 }
 
 export async function updateChatResponseTranscript(
@@ -90,24 +114,6 @@ export async function updateChatResponseInterviewTimes(
       interviewStartTime, 
       interviewEndTime,
       totalInterviewMinutes
-    })
-    .where(eq(chatResponsesTable.id, id))
-    .returning();
-  return updatedChatResponse;
-}
-
-export async function updateChatResponseInterviewee(
-  id: string,
-  intervieweeFirstName: string,
-  intervieweeSecondName: string,
-  intervieweeEmail: string
-): Promise<SelectChatResponse | undefined> {
-  const [updatedChatResponse] = await db
-    .update(chatResponsesTable)
-    .set({ 
-      intervieweeFirstName,
-      intervieweeSecondName,
-      intervieweeEmail
     })
     .where(eq(chatResponsesTable.id, id))
     .returning();

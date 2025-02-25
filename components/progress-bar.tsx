@@ -36,6 +36,9 @@ export function ProgressBar({ steps, className }: ProgressBarProps) {
                 <Circle className="h-1.5 w-1.5 fill-[#0070f3] text-[#0070f3] animate-pulse" />
               )}
             </div>
+            <span className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-gray-500">
+              {step.label}
+            </span>
           </div>
         ))}
       </div>

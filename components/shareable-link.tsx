@@ -17,8 +17,8 @@ export function ShareableLink({ guideName }: ShareableLinkProps) {
   const [shareableUrl, setShareableUrl] = React.useState("")
 
   React.useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://example.com"
-    setShareableUrl(`${baseUrl}/interview/${guideName}`)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    setShareableUrl(`${baseUrl}/external-chat/${guideName}`)
   }, [guideName])
 
   const handleCopy = async () => {
@@ -37,11 +37,11 @@ export function ShareableLink({ guideName }: ShareableLinkProps) {
     <Card className="w-full bg-white transition-all duration-300 ease-in-out">
       <div className="p-6">
         <h2 className="text-2xl font-semibold mb-2 flex items-center">
-          Shareable Link
+          External Interview Link
           <StatusDot />
         </h2>
         <p className="text-sm text-gray-500 mb-6">
-          Share this link to allow participants to access the interview guide.
+          Share this link with participants to start the interview. The link is unique and secure.
         </p>
         <div className="relative">
           <Input value={shareableUrl} readOnly className="bg-gray-100/50 pr-20" />

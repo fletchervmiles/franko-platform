@@ -61,10 +61,16 @@ import path from 'path';
 import fs from 'fs';
 import { LRUCache } from 'lru-cache';
 import { getUserProfile } from "@/db/queries/queries";
-import { updateChatInstanceConversationPlan, getChatInstanceProgress, updateChatInstanceProgress } from "@/db/queries/chat-instances-queries";
+import { 
+  getChatInstanceById,
+  updateChatInstanceConversationPlan, 
+  getChatInstanceProgress, 
+  updateChatInstanceProgress 
+} from "@/db/queries/chat-instances-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 import { QueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/components/utilities/query-provider";
+import { getChatResponseById, updateChatResponseStatus } from "@/db/queries/chat-responses-queries";
 
 // Import the AI model configuration
 import { geminiFlashModel, geminiProModel } from ".";
@@ -83,6 +89,12 @@ const thinkingHelpPromptCache = new LRUCache<string, string>({
 
 // Cache for objective update prompts
 const objectiveUpdatePromptCache = new LRUCache<string, string>({
+  max: 100,
+  ttl: 1000 * 60 * 60, // 1 hour TTL
+});
+
+// Cache for progress prompts
+const progressPromptCache = new LRUCache<string, string>({
   max: 100,
   ttl: 1000 * 60 * 60, // 1 hour TTL
 });
@@ -195,6 +207,38 @@ async function getPopulatedObjectiveUpdatePrompt(userId: string): Promise<string
   }
 }
 
+// Function to get populated progress prompt
+async function getPopulatedProgressPrompt(
+  organizationName: string,
+  organizationContext: string,
+  conversationPlan: any
+): Promise<string> {
+  try {
+    const cacheKey = `progress-${organizationName}-${organizationContext}-${JSON.stringify(conversationPlan)}`;
+    const cachedPrompt = progressPromptCache.get(cacheKey);
+    if (cachedPrompt) {
+      return cachedPrompt;
+    }
+
+    const promptTemplate = fs.readFileSync(
+      path.join(process.cwd(), 'agent_prompts', 'external_chat_progress_prompt.md'),
+      'utf-8'
+    );
+
+    const populatedPrompt = promptTemplate
+      .replace('{organization_name}', organizationName)
+      .replace('{organization_context}', organizationContext)
+      .replace('{conversation_plan}', JSON.stringify(conversationPlan, null, 2));
+
+    progressPromptCache.set(cacheKey, populatedPrompt);
+    
+    return populatedPrompt;
+  } catch (error) {
+    console.error('Error populating progress prompt:', error);
+    throw error;
+  }
+}
+
 // Export function to invalidate conversation plan prompt cache
 export function invalidateConversationPlanPromptCache(userId: string) {
   conversationPlanPromptCache.delete(userId);
@@ -208,6 +252,11 @@ export function invalidateThinkingHelpPromptCache(userId: string) {
 // Export function to invalidate objective update prompt cache
 export function invalidateObjectiveUpdatePromptCache(userId: string) {
   objectiveUpdatePromptCache.delete(userId);
+}
+
+// Export function to invalidate progress prompt cache
+export function invalidateProgressPromptCache(key: string) {
+  progressPromptCache.delete(key);
 }
 
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
@@ -410,6 +459,68 @@ Add brief comments about progress made.`
     return progressUpdate as ObjectiveProgress;
   } catch (error) {
     console.error('Error in objective update:', error);
+    throw error;
+  }
+}
+
+export async function updateChatProgress({ 
+  messages, 
+  chatResponseId,
+  chatInstanceId,
+  organizationName,
+  organizationContext
+}: { 
+  messages: any[],
+  chatResponseId: string,
+  chatInstanceId: string,
+  organizationName: string,
+  organizationContext: string
+}) {
+  try {
+    // Get chat instance for conversation plan
+    const chatInstance = await getChatInstanceById(chatInstanceId);
+    if (!chatInstance) {
+      throw new Error('Chat instance not found');
+    }
+
+    // Get current chat response
+    const chatResponse = await getChatResponseById(chatResponseId);
+    if (!chatResponse) {
+      throw new Error('Chat response not found');
+    }
+
+    // Get system prompt for progress evaluation
+    const systemPrompt = await getPopulatedProgressPrompt(
+      organizationName,
+      organizationContext,
+      chatInstance.conversationPlan
+    );
+
+    const { object: progressUpdate } = await generateObject({
+      model: geminiFlashModel,
+      system: systemPrompt,
+      prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+      schema: z.object({
+        status: z.enum(["not_started", "in_progress", "completed"]).describe("Current status of the chat"),
+        completionStatus: z.enum(["not_started", "in_progress", "completed"]).describe("Overall completion status"),
+        progress: z.number().min(0).max(100).describe("Percentage of conversation completed"),
+        currentObjective: z.string().describe("Current objective being discussed"),
+        completedObjectives: z.array(z.string()).describe("List of completed objectives"),
+        nextObjective: z.string().optional().describe("Next objective to discuss"),
+        summary: z.string().describe("Brief summary of progress")
+      })
+    });
+
+    // Update chat response status
+    await updateChatResponseStatus(
+      chatResponseId,
+      progressUpdate.status,
+      progressUpdate.completionStatus
+    );
+
+    return progressUpdate;
+  } catch (error) {
+    console.error('Error updating chat progress:', error);
     throw error;
   }
 }
