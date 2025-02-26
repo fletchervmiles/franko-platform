@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Clock, Target, List, MessageCircle, BookOpen } from "lucide-react";
+import { Clock, Target, List, MessageCircle, BookOpen, HelpCircle, MessageSquare } from "lucide-react";
 
 type Plan = {
   title: string;
@@ -16,6 +16,8 @@ type Plan = {
     obj3?: string;
     keyLearningOutcome: string;
     focusPoints?: string[];
+    guidanceForAgent?: string[];
+    illustrativePrompts?: string[];
     expectedConversationTurns?: string | number;
   }>;
 };
@@ -126,6 +128,40 @@ export function ConversationPlan({ plan }: { plan?: PlanResponse }) {
                                 <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
                                   <span className="text-blue-500">•</span>
                                   <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {item.guidanceForAgent && item.guidanceForAgent.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <HelpCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-900">Guidance for Agent</h4>
+                            <ul className="space-y-2 mt-1">
+                              {item.guidanceForAgent.map((guidance, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{guidance}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {item.illustrativePrompts && item.illustrativePrompts.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="w-5 h-5 text-blue-500 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-900">Illustrative Prompts</h4>
+                            <ul className="space-y-2 mt-1">
+                              {item.illustrativePrompts.map((prompt, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{prompt}</span>
                                 </li>
                               ))}
                             </ul>

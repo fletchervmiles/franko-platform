@@ -78,10 +78,12 @@ import {
   import {
     performWebSearch,
     generateConversationPlan,
-    generateDisplayOptions,
     thinkingHelp,
     objectiveUpdate,
     invalidateConversationPlanPromptCache,
+    progressBarUpdate,
+    collectUserDetails,
+    generateDisplayOptions
   } from "@/ai_folder/actions";  // Flight-related utility functions
   import { auth } from "@clerk/nextjs/server";  // Authentication utilities
   import {
@@ -256,7 +258,8 @@ import {
        */
       const { messages, id = generateUUID() } = await request.json();
       
-      logger.ai('Incoming messages:', {
+      // Use api logger instead of ai logger for API request details
+      logger.api('Incoming messages:', {
         id,
         messages: messages.map((m: Message) => ({
           role: m.role,
@@ -300,7 +303,9 @@ import {
       const coreMessages = convertToCoreMessages(messages).filter(
         (message) => message.content.length > 0,
       );
-      logger.ai('Processed messages:', {
+      
+      // Use api logger for processed messages
+      logger.api('Processed messages:', {
         messageCount: coreMessages.length,
         messages: coreMessages.map(m => ({
           role: m.role,
@@ -320,18 +325,18 @@ import {
        */
       const systemPrompt = await getPopulatedPrompt(userId);
       
-      // Log the full request configuration
-      logger.ai('Gemini Request Configuration:', {
-        model: geminiFlashModel.toString(),
-        systemPromptLength: systemPrompt.length,
-        systemPrompt,
-        messageCount: coreMessages.length,
-        messages: coreMessages.map(m => ({
-          role: m.role,
-          content: m.content
-        }))
-      });
+      // The system prompt already contains the necessary instructions
+      // No need for additional instructions here
 
+      /**
+       * AI Model Configuration
+       * 
+       * Sets up the AI model with:
+       * - System prompt with tool usage instructions
+       * - Core messages from the conversation
+       * - Available tools and their configurations
+       * - Maximum steps for multi-turn interactions
+       */
       const result = await streamText({
         model: geminiFlashModel,
         system: systemPrompt,
@@ -380,8 +385,30 @@ import {
   
 
           generateConversationPlan: {
-            description: "This is the most important tool in the workflow. It generates and displays the conversation plan in the UI once all relevant information has been gathered. The plan can be regenerated multiple times based on new insights or user feedback. **When to use:** Use this tool when you have gathered enough details about the user requirements to generate the first draft of the Conversation Plan.",
-            parameters: z.object({
+            description: `The generateConversationPlan tool is a vital part of the workflow, tasked with creating and displaying the conversation plan in the user interface (UI) once sufficient information has been gathered. 
+            This tool consolidates insights collected during the conversation into a structured plan, which serves as a dynamic blueprint for guiding the interview process. 
+            The plan can be iteratively refined and regenerated based on additional user feedback, new insights, or evolving priorities, ensuring alignment with the user's needs and objectives.
+
+            **Important Implementation Notes**
+            - This tool generates UI elements that are displayed directly to the user
+            - The UI rendering is handled separately from the data generation
+            - After calling this tool, keep your follow-up response extremely brief or omit it entirely
+            - Never repeat the plan details in your text response - the UI will display them automatically
+
+            **When to Use**
+            Use the generateConversationPlan tool in the following scenarios:
+            - **Initial Draft Generation:** When you have gathered enough foundational details about the user's requirements, preferences, or feedback to create the first version of the conversation plan.
+            - **Iterative Updates:** When new insights or feedback from the user necessitate updates to the existing plan, ensuring it remains relevant and aligned with the user's evolving needs.
+            - **User-Driven Regeneration:** When the user explicitly requests to adjust or regenerate the plan based on their input or changing priorities.
+
+            **Best Practices**
+            To ensure effective use of the generateConversationPlan tool, follow these guidelines:
+            - **Timing:** Only generate the conversation plan after collecting sufficient information to create a meaningful and accurate draft. Avoid generating the plan too early, as it may lack depth or relevance.
+            - **User Engagement:** Maintain transparency with the user by informing them when the plan is being generated or updated. For example:
+                - "Based on what you've shared, I've drafted a conversation plan. Let me know if you'd like to make any adjustments."
+            - **Iterative Process:** Be prepared to regenerate the plan multiple times as the conversation progresses. Each iteration should reflect new insights or feedback to keep the plan aligned with the user's needs.
+            - **Avoid Overuse:** While the plan can be updated frequently, avoid excessive regeneration to prevent overwhelming the user or disrupting the flow of the conversation.`,            
+                        parameters: z.object({
               _dummy: z.string().optional().describe("Placeholder parameter - not used")
             }),
             execute: async () => {
@@ -423,36 +450,97 @@ import {
               }
             },
           },
-  
 
-          displayOptions: {
-            description: "Display clickable options for the user to choose from. This tool generates a user interface with clickable, multiple-choice options. It enhances the user experience by presenting choices in an organized, interactive format instead of plain text. **When to use:** Use only when there is multiple options to present and showing in UI would enhance the user experience.",
+          displayOptionsMultipleChoice: {
+            description: `
+          - **Purpose:** Presents the user with contextually relevant, clickable options for selecting one or more choices based on the conversation context.  
+          - **When to Use:** Use it when predefined options would simplify the user's decision-making process, such as for preferences, durations, priorities, or categorical selections. If the question is purely open-ended with no clear categorical options, do not use this tool.
+          - **Context Parameter:** Use the optional context parameter to provide additional information that will help generate more relevant and tailored options.
+          - **Important:** After using this tool, always provide your own follow-up response to accompany the options displayed to the user.
+            `,
             parameters: z.object({
-              text: z.string().describe("Text to display above the options"),
+              text: z.string().describe("The question or statement for which to generate selectable options"),
+              context: z.string().optional().describe("Additional context to help generate more relevant options")
             }),
-            execute: async ({ text }) => {
-              const result = await generateDisplayOptions({ text });
-              return {
-                type: "options",
-                display: result.options,
-                text: result.text
-              };
+            execute: async ({ text, context }) => {
+              try {
+                logger.debug('Executing displayOptionsMultipleChoice tool', { 
+                  text, 
+                  contextProvided: !!context
+                });
+                
+                // Use recent messages from conversation history automatically
+                // This simplifies the API by handling it internally
+                const recentMessages = coreMessages.slice(-5).map(m => ({
+                  role: m.role,
+                  content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+                }));
+                
+                const result = await generateDisplayOptions({ 
+                  text, 
+                  context,
+                  // Use default system prompt
+                  messagesHistory: recentMessages
+                });
+                
+                logger.debug('displayOptionsMultipleChoice result:', { 
+                  options: result.options,
+                  optionsCount: result.options.length
+                });
+                
+                return {
+                  type: "options",
+                  options: result.options
+                };
+              } catch (error) {
+                logger.error('Error in displayOptionsMultipleChoice tool:', error);
+                throw error;
+              }
             },
           },
+  
 
           thinkingHelp: {
-            description: "This tool helps you pause and gather your thoughts when conducting the conversation. Instead of immediately asking the next question that comes to mind, you can take a moment to reflect and jot down ideas. By doing so, you'll clarify any confusion about the next step, weigh different approaches, and ultimately choose the most effective question or statement. **When to use:** Use this tool whenever you're uncertain about how to proceed, and it will offer guidance and direction towards the optimal path for your conversation.",
+            description: `The ThinkPad tool allows Franko to pause and reflect internally when faced with a complex or ambiguous situation in a customer research interview. 
+            It analyzes the current challenge based on the user's last response and the full conversation history, considers multiple conversational moves, and selects the best approach for the next turn. 
+            The output is for Franko's internal use only and is not shared with the user; the main agent handles crafting the actual response. 
+            **When to use:** Franko should use the ThinkPad tool at his discretion in these specific situations:
+
+          - **Vague or unclear user responses:** When the user's answer lacks detail or clarity (e.g., "It's fine," "Maybe," or "I'm not sure").
+          - **Complex user questions:** When the user asks a question with multiple possible interpretations or layers (e.g., "How should I improve my entire workflow?").
+          - **Multiple conversational paths: When the conversation could reasonably go in several directions, and Franko needs to choose the most effective one (e.g., deepening the current topic, shifting focus, or clarifying).
+          - **Critical decision points:** When the next move could significantly impact the conversation's direction or the quality of insights gathered (e.g., transitioning to a new objective or addressing a sensitive topic).
+          - **Uncertainty about the next step:** When Franko feels unsure about the best way to proceed or needs to weigh the pros and cons of different approaches.
+
+          **Usage Notes**
+          - Discretionary Use: Use the ThinkPad sparingly, only when the conversation's complexity or ambiguity warrants deeper reflection.
+          - Internal Only: The analysis is hidden from the user and used within a multi-step turn to inform Franko's decision-making.
+          - Supports Main Agent: The Chosen Path guides the main agent in constructing the final response, leveraging its training in response style.`,
             parameters: z.object({
               _dummy: z.string().optional().describe("Placeholder parameter - not used")
             }),
             execute: async () => {
+              logger.debug('Executing thinking help tool');
+              
               const result = await thinkingHelp({ 
                 messages: coreMessages,
                 userId
               });
+              
+              logger.api('Thinking help tool result:', {
+                resultLength: result.length,
+                result: result.substring(0, 100) + (result.length > 100 ? '...' : '') // Log first 100 chars
+              });
+              
               return {
                 type: 'internal-guidance',
-                text: result
+                text: result,
+                experimental_providerMetadata: {
+                  metadata: {
+                    type: 'internal-guidance',
+                    isVisible: false
+                  }
+                }
               };
             },
           },
@@ -516,10 +604,17 @@ import {
               // Non-blocking objective update
               Promise.resolve().then(async () => {
                 try {
+                  logger.debug('Starting objective update process');
+                  
                   const objectiveResult = await objectiveUpdate({
                     messages: coreMessages,
                     userId,
                     chatId: id
+                  });
+
+                  logger.api('Objective update result in route handler:', {
+                    resultLength: objectiveResult.length,
+                    result: objectiveResult
                   });
 
                   // Create objective update message
@@ -540,6 +635,21 @@ import {
                   // Update chat instance with all messages including objective update
                   await updateChatInstance(id, {
                     messages: JSON.stringify(allMessages),
+                  });
+
+                  logger.debug('Objective update message added to chat history');
+
+                  // After objective update is complete, update progress bar (non-blocking)
+                  Promise.resolve().then(async () => {
+                    try {
+                      // Pass all messages including the new objective update
+                      await progressBarUpdate({
+                        messages: [...coreMessages, objectiveMessage as unknown as CoreMessage],
+                        chatId: id
+                      });
+                    } catch (error) {
+                      logger.error('Failed to update progress bar:', error);
+                    }
                   });
                 } catch (error) {
                   logger.error('Failed to process objective update:', error);

@@ -1,7 +1,7 @@
 'use client';
 
-import { OptionButtons } from '@/components/custom/OptionButtons';
-import { UserDetailsForm } from '@/components/custom/UserDetailsForm';
+import { OptionButtons } from '@/components/OptionButtons';
+import { UserDetailsForm } from '@/components/UserDetailsForm';
 
 export default function TestPage() {
   return (

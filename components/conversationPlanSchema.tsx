@@ -9,7 +9,9 @@ export const conversationPlanSchema = z.object({
       z.object({
         objective: z.string().min(1, { message: "Objective is required" }),
         keyLearningOutcome: z.string().min(1, { message: "Key Learning Outcome is required" }),
-        focusPoints: z.array(z.string()).min(1, { message: "At least one Focus Point is required" }),
+        focusPoints: z.array(z.string()).optional(),
+        guidanceForAgent: z.array(z.string()).min(1, { message: "At least one guidance item is required" }),
+        illustrativePrompts: z.array(z.string()).min(1, { message: "At least one illustrative prompt is required" }),
         expectedConversationTurns: z.string().min(1, { message: "Expected Conversation Turns is required" }),
       }),
     )

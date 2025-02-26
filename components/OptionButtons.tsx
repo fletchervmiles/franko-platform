@@ -2,6 +2,7 @@
 
 // Import useChat hook from Vercel's AI SDK for managing chat state
 import { useChat } from 'ai/react';
+import { ChevronRight } from 'lucide-react';
 
 /*
  * Key Interactions:
@@ -24,16 +25,13 @@ import { useChat } from 'ai/react';
 interface OptionButtonsProps {
   options: string[];    // Array of clickable options to display
   chatId: string;       // Current chat session ID
-  text?: string;        // Optional text to display above options
 }
 
-export function OptionButtons({ options = [], chatId, text }: OptionButtonsProps) {
+export function OptionButtons({ options = [], chatId }: OptionButtonsProps) {
   // Initialize chat hook with current chat session
-  // maxSteps: 5 allows for follow-up interactions after selection
   const { append } = useChat({
     id: chatId,
-    body: { id: chatId },
-    maxSteps: 5
+    body: { id: chatId }
   });
 
   // Handler for when user clicks an option
@@ -47,35 +45,51 @@ export function OptionButtons({ options = [], chatId, text }: OptionButtonsProps
     });
   };
 
-  // Determine layout based on options characteristics
-  const isCompactLayout = options.length > 5 || options.every(opt => opt.length <= 3);
-  const hasLongOptions = options.some(opt => opt.length > 50);
+  // If options array is empty, show loading skeleton
+  if (!options.length) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-template-columns-autofit gap-3 w-full">
+        {[...Array(4)].map((_, index) => (
+          <div 
+            key={index}
+            className="px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse h-12"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Check if we have any long options
+  const hasLongOptions = options.some(opt => opt.length > 30 || opt.includes('('));
+  
+  // Determine the appropriate CSS class for the grid
+  const gridClass = hasLongOptions 
+    ? "grid grid-cols-1 gap-3 w-full" 
+    : "grid grid-cols-1 sm:grid-template-columns-autofit gap-3 w-full";
 
   return (
-    <div className="flex flex-col gap-2 w-full max-w-2xl">
-      {/* Optional descriptive text above options */}
-      {text && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          {text}
-        </p>
-      )}
-      {/* List of option buttons */}
-      <div className={`
-        grid gap-2
-        ${isCompactLayout 
-          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' 
-          : 'grid-cols-1'
+    <div className={gridClass} style={!hasLongOptions ? {"--min-column-width": "180px"} as React.CSSProperties : undefined}>
+      {options.map((option, index) => {
+        // Split option into main text and description (if in parentheses)
+        const hasDescription = option.includes('(');
+        let mainText = option;
+        let description = '';
+        
+        if (hasDescription) {
+          const match = option.match(/(.*?)(\s*\(.*\))/);
+          if (match) {
+            mainText = match[1].trim();
+            description = match[2].trim();
+          }
         }
-        ${hasLongOptions ? 'max-w-full' : 'max-w-lg'}
-      `}>
-        {options.map((option, index) => (
+        
+        return (
           <button
             key={index}
             onClick={() => handleOptionClick(option)}
-            className={`
+            className="
               px-4 py-3 
               text-sm 
-              text-left 
               border
               rounded-lg
               bg-white dark:bg-gray-900
@@ -84,21 +98,22 @@ export function OptionButtons({ options = [], chatId, text }: OptionButtonsProps
               hover:shadow-md
               hover:border-gray-300 dark:hover:border-gray-600
               transition-all duration-200
-              ${hasLongOptions 
-                ? 'whitespace-normal break-words min-h-[4rem]' 
-                : 'truncate'
-              }
-              ${isCompactLayout 
-                ? 'text-center justify-center items-center' 
-                : 'text-left'
-              }
-            `}
-            title={option.length > 50 ? option : undefined}
+              whitespace-normal break-words
+              h-auto min-h-[3rem]
+              text-left
+              flex items-center
+            "
           >
-            {option}
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{mainText}</span>
+              {description && (
+                <span className="text-xs text-gray-500 mt-1">{description}</span>
+              )}
+            </div>
+            <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
           </button>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

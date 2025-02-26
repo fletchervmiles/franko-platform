@@ -3,6 +3,7 @@
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { InsertProfile, profilesTable, SelectProfile } from "../schema";
+import { logger } from '@/lib/logger';
 
 export const createProfile = async (data: InsertProfile) => {
   try {
@@ -34,31 +35,26 @@ export const getAllProfiles = async (): Promise<SelectProfile[]> => {
 
 export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
   try {
-    console.log("Starting profile update for userId:", userId, "with data:", data);
-    
-    const [updatedProfile] = await db
+    const updatedProfile = await db
       .update(profilesTable)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
+      .set(data)
       .where(eq(profilesTable.userId, userId))
       .returning();
     
     if (!updatedProfile) {
-      console.error("No profile was updated for userId:", userId);
+      logger.error("No profile was updated for userId:", userId);
       throw new Error("Profile update failed - no rows updated");
     }
     
-    console.log("Profile successfully updated:", updatedProfile);
+    logger.profile("Profile successfully updated:", updatedProfile);
     return updatedProfile;
   } catch (error) {
-    console.error("Error updating profile:", {
+    logger.error("Error updating profile:", {
       userId,
       data,
       error: error instanceof Error ? error.message : error
     });
-    throw new Error("Failed to update profile");
+    throw error;
   }
 };
 

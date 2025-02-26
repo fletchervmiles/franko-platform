@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Check, Loader2, BookOpen, Target, List, MessageCircle } from "lucide-react"
+import { Check, Loader2, BookOpen, Target, List, MessageCircle, HelpCircle, MessageSquare } from "lucide-react"
 
 type SectionStatus = "view" | "edit" | "saving" | "saved"
 
@@ -427,6 +427,76 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                 <div className="flex-1">
                   <FormField
                     control={control}
+                    name={`objectives.${index}.guidanceForAgent`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-2">
+                          <HelpCircle className="w-4 h-4 text-blue-500" />
+                          <FormLabel className="text-sm font-medium text-gray-700">Guidance for Agent</FormLabel>
+                        </div>
+                        <FormControl>
+                          {objectiveStatuses[index] === "edit" ? (
+                            <Textarea
+                              placeholder="List guidance items for the agent, separated by commas..."
+                              className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900"
+                              value={field.value?.join(", ")}
+                              onChange={(e) => field.onChange(e.target.value.split(",").map((s) => s.trim()))}
+                            />
+                          ) : (
+                            <ul className="space-y-2 mt-1">
+                              {field.value?.map((guidance, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{guidance}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex-1">
+                  <FormField
+                    control={control}
+                    name={`objectives.${index}.illustrativePrompts`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-blue-500" />
+                          <FormLabel className="text-sm font-medium text-gray-700">Illustrative Prompts</FormLabel>
+                        </div>
+                        <FormControl>
+                          {objectiveStatuses[index] === "edit" ? (
+                            <Textarea
+                              placeholder="List example prompts, separated by commas..."
+                              className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900"
+                              value={field.value?.join(", ")}
+                              onChange={(e) => field.onChange(e.target.value.split(",").map((s) => s.trim()))}
+                            />
+                          ) : (
+                            <ul className="space-y-2 mt-1">
+                              {field.value?.map((prompt, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{prompt}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex-1">
+                  <FormField
+                    control={control}
                     name={`objectives.${index}.expectedConversationTurns`}
                     render={({ field }) => (
                       <FormItem>
@@ -469,6 +539,8 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                 objective: "",
                 keyLearningOutcome: "",
                 focusPoints: [""],
+                guidanceForAgent: [""],
+                illustrativePrompts: [""],
                 expectedConversationTurns: "",
               })
               setObjectiveStatuses((prev) => [...prev, "edit"])

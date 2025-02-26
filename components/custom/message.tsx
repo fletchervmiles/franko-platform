@@ -14,8 +14,8 @@ import { ReactNode } from "react";
 import { BotIcon, UserIcon } from "./icons";
 import { Markdown } from "./markdown";
 import { PreviewAttachment } from "./preview-attachment";
-import { ConversationPlan } from "./conversation-plan";
-import { OptionButtons } from "./OptionButtons";
+import { ConversationPlan } from "../conversation-plan";
+import { OptionButtons } from "../OptionButtons";
 
 /*
  * Message Component:

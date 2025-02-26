@@ -53,7 +53,7 @@
  */
 
 // Import required dependencies for object generation and schema validation
-import { generateObject, streamObject } from "ai";
+import { generateObject, streamObject, generateText } from "ai";
 import { z } from "zod";
 import { tavily } from "@tavily/core";
 import { CoreMessage } from "ai";
@@ -65,12 +65,15 @@ import {
   getChatInstanceById,
   updateChatInstanceConversationPlan, 
   getChatInstanceProgress, 
-  updateChatInstanceProgress 
+  updateChatInstanceProgress,
+  updateChatInstance,
+  updateObjectiveProgressProgrammatically
 } from "@/db/queries/chat-instances-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 import { QueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/components/utilities/query-provider";
 import { getChatResponseById, updateChatResponseStatus } from "@/db/queries/chat-responses-queries";
+import { logger } from '@/lib/logger';
 
 // Import the AI model configuration
 import { geminiFlashModel, geminiProModel } from ".";
@@ -262,6 +265,11 @@ export function invalidateProgressPromptCache(key: string) {
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
 
 export async function generateConversationPlan({ messages, userId, chatId }: { messages: CoreMessage[], userId: string, chatId: string }) {
+  // This function follows separation of concerns:
+  // 1. It generates structured data (the conversation plan)
+  // 2. The UI rendering is handled separately by the ConversationPlan component
+  // 3. This prevents duplication between AI text responses and UI elements
+  
   const systemPrompt = await getPopulatedConversationPlanPrompt(userId);
   
   console.log('\n=== CONVERSATION PLAN GENERATION REQUEST ===');
@@ -274,7 +282,10 @@ export async function generateConversationPlan({ messages, userId, chatId }: { m
 
   const { object: rawPlan } = await generateObject({
     model: geminiProModel,
-    system: systemPrompt,
+    system: `${systemPrompt}
+
+IMPORTANT: Generate only the plan data. Do not include any instructions or explanations about the plan in your response.
+The plan will be displayed automatically by the UI.`,
     prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
     schema: z.object({
       title: z.string().describe("Jargon-free title with key context"),
@@ -288,6 +299,8 @@ export async function generateConversationPlan({ messages, userId, chatId }: { m
           obj3: z.string().optional().describe("Alternative objective format 3"),
           keyLearningOutcome: z.string().describe("Decision-driving insight"),
           focusPoints: z.array(z.string()).optional().describe("List of focus points for the objective"),
+          guidanceForAgent: z.array(z.string()).optional().describe("Tips for conducting the conversation, including tool suggestions"),
+          illustrativePrompts: z.array(z.string()).optional().describe("Contextually relevant questions (adapt as needed)"),
           expectedConversationTurns: z.string().optional().describe("Expected number of conversation turns")
         }).refine(
           data => data.objective || data.obj1 || data.obj2 || data.obj3,
@@ -306,6 +319,8 @@ export async function generateConversationPlan({ messages, userId, chatId }: { m
       objective: obj.objective || obj.obj1 || obj.obj2 || obj.obj3 || "Untitled Objective",
       keyLearningOutcome: obj.keyLearningOutcome,
       focusPoints: obj.focusPoints || [],
+      guidanceForAgent: obj.guidanceForAgent || [],
+      illustrativePrompts: obj.illustrativePrompts || [],
       expectedConversationTurns: obj.expectedConversationTurns || "1"
     }))
   };
@@ -353,27 +368,87 @@ export async function performWebSearch({ query }: { query: string }) {
   }
 }
 
-export async function generateDisplayOptions({ text }: { text: string }) {
+export async function generateDisplayOptions({ 
+  text, 
+  context, 
+  systemPrompt, 
+  messagesHistory 
+}: { 
+  text: string; 
+  context?: string; 
+  systemPrompt?: string;
+  messagesHistory?: {role: string; content: string}[];
+}) {
+  // This function follows separation of concerns:
+  // 1. It generates data only (options)
+  // 2. The UI rendering is handled separately by the OptionButtons component
+  // 3. This prevents duplication between AI text responses and UI elements
+
+  // Load the default prompt if not provided
+  if (!systemPrompt) {
+    try {
+      systemPrompt = loadPrompt('multi_choice.md');
+    } catch (error) {
+      logger.error('Failed to load multi_choice prompt, using fallback', error);
+      systemPrompt = "Generate multiple-choice options based on the query. Keep options concise and relevant.";
+    }
+  }
+
+  logger.debug('Generating display options - INPUT:', {
+    text,
+    textLength: text.length,
+    context: context ? `${context.substring(0, 50)}...` : undefined,
+    hasMessagesHistory: !!messagesHistory,
+    messagesCount: messagesHistory?.length || 0
+  });
+
+  // Build the prompt based on available inputs
+  const promptText = [
+    // Add the current query with context
+    `Generate options for: ${text}`,
+    context ? `Context: ${context}` : ''
+  ].filter(Boolean).join('\n');
+
   const { object: options } = await generateObject({
     model: geminiFlashModel,
-    prompt: `Generate display options for: ${text}`,
+    // Use the system prompt for detailed instructions
+    system: systemPrompt,
+    // If message history is provided, use it; otherwise just use the promptText
+    prompt: messagesHistory ? 
+      [...messagesHistory.map(m => `${m.role}: ${m.content}`).join('\n'), '\n---\n', promptText].join('\n') : 
+      promptText,
     schema: z.object({
-      text: z.string().describe("Text to display above the options"),
-      options: z.array(z.string()).describe("Array of clickable options to display"),
+      options: z.array(z.string()).describe("Array of short, clickable options to display"),
       type: z.literal("options").describe("Type of display")
     }),
   });
 
-  return {
-    text: options.text,
+  const result = {
     options: options.options,
     type: "options" as const
   };
+
+  logger.debug('Generating display options - OUTPUT:', {
+    options: result.options,
+    optionsCount: result.options.length,
+    contextProvided: !!context,
+    historyProvided: !!messagesHistory
+  });
+
+  return result;
 }
 
 export async function thinkingHelp({ messages, userId }: { messages: CoreMessage[], userId: string }) {
   try {
+    logger.debug('Starting thinking help generation:', { userId });
+    
     const systemPrompt = await getPopulatedThinkingHelpPrompt(userId);
+    
+    // Log the input to the AI model
+    logger.api('Thinking help input:', {
+      messageCount: messages.length,
+      systemPromptLength: systemPrompt.length
+    });
     
     const { object: { text } } = await generateObject({
       model: geminiFlashModel,
@@ -384,9 +459,15 @@ export async function thinkingHelp({ messages, userId }: { messages: CoreMessage
       }),
     });
 
+    // Log the output from the AI model
+    logger.api('Thinking help output:', {
+      textLength: text.length,
+      text
+    });
+
     return text;
   } catch (error) {
-    console.error('Error in thinking help:', error);
+    logger.error('Error in thinking help:', error);
     return "Unable to provide thinking guidance.";
   }
 }
@@ -397,69 +478,53 @@ export async function objectiveUpdate({ messages, userId, chatId }: {
   chatId: string
 }) {
   try {
+    logger.debug('Starting objective update:', { chatId, userId });
+    
+    // Get the populated prompt which already contains the hardcoded objectives
     const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId);
     
-    // Get current progress
-    let currentProgress = await getChatInstanceProgress(chatId);
+    // Get current progress for context only
+    const chat = await getChatInstanceById(chatId);
+    const currentProgress = chat?.objectiveProgress;
     
-    // If no progress exists, initialize it
-    if (!currentProgress) {
-      currentProgress = {
-        objectives: {
-          obj1: { status: "current", comments: [] },
-          obj2: { status: "tbc", comments: [] },
-          obj3: { status: "tbc", comments: [] }
-        }
-      };
-    }
+    // Add current progress to prompt if available
+    const contextMessage = currentProgress ? 
+      `Current objectives state:\n${JSON.stringify(currentProgress, null, 2)}\n\n` : 
+      '';
     
     const promptMessages = [
       ...messages,
       {
         role: 'system' as const,
-        content: `Current objectives state:
-${JSON.stringify(currentProgress, null, 2)}
-
-Update the status of objectives based on the conversation. Mark objectives as:
-- "done" if completed
-- "current" for the active objective
-- "tbc" for not yet started objectives
-
-If two questions have been asked, treat that as done.
-
-Add brief comments about progress made.`
+        content: `${contextMessage}Please analyze the conversation progress based on the objectives in the prompt and the conversation history.
+Provide a concise update in the format specified in the prompt.`
       }
     ];
 
-    const { object: progressUpdate } = await generateObject({
+    // Log the input to the AI model
+    logger.api('Objective update input:', {
+      messageCount: promptMessages.length,
+      systemPromptLength: systemPrompt.length,
+      currentProgress
+    });
+
+    // Generate text response
+    const { text: progressUpdate } = await generateText({
       model: geminiFlashModel,
       system: systemPrompt,
       prompt: promptMessages.map(m => `${m.role}: ${m.content}`).join('\n'),
-      schema: z.object({
-        objectives: z.object({
-          obj1: z.object({
-            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
-            comments: z.array(z.string()).describe("List of progress comments")
-          }).describe("First objective tracking"),
-          obj2: z.object({
-            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
-            comments: z.array(z.string()).describe("List of progress comments")
-          }).describe("Second objective tracking"),
-          obj3: z.object({
-            status: z.enum(["done", "current", "tbc"]).describe("Current status of the objective"),
-            comments: z.array(z.string()).describe("List of progress comments")
-          }).describe("Third objective tracking")
-        }).describe("Collection of objectives and their progress")
-      })
     });
 
-    // Update progress in database
-    await updateChatInstanceProgress(chatId, progressUpdate as ObjectiveProgress);
+    // Log the output from the AI model
+    logger.api('Objective update output:', {
+      progressUpdateLength: progressUpdate.length,
+      progressUpdate
+    });
 
-    return progressUpdate as ObjectiveProgress;
+    return progressUpdate;
   } catch (error) {
-    console.error('Error in objective update:', error);
-    throw error;
+    logger.error('Error in objective update:', error);
+    return "Error generating objective update.";
   }
 }
 
@@ -522,5 +587,139 @@ export async function updateChatProgress({
   } catch (error) {
     console.error('Error updating chat progress:', error);
     throw error;
+  }
+}
+
+/**
+ * Updates the progress bar based on objective updater outputs
+ * This runs separately from the objective updater to maintain separation of concerns
+ */
+export async function progressBarUpdate({
+  messages,
+  chatId
+}: {
+  messages: CoreMessage[];
+  chatId: string;
+}): Promise<void> {
+  try {
+    logger.debug('Starting progress bar update:', { chatId });
+    
+    // Get current progress from database
+    const chat = await getChatInstanceById(chatId);
+    if (!chat) {
+      logger.error('Chat not found:', { chatId });
+      return;
+    }
+    
+    // Initialize progress if it doesn't exist
+    let objectiveProgress = chat.objectiveProgress as ObjectiveProgress;
+    if (!objectiveProgress) {
+      objectiveProgress = {
+        objectives: {
+          obj1: { status: "current" },
+          obj2: { status: "tbc" },
+          obj3: { status: "tbc" },
+          obj4: { status: "tbc" }
+        }
+      };
+      
+      // Save the initialized progress
+      await updateChatInstance(chatId, { objectiveProgress });
+    }
+    
+    // Extract objective updater outputs from messages
+    const objectiveUpdates = messages
+      .filter(m => {
+        const metadata = m.experimental_providerMetadata?.metadata;
+        return metadata && metadata.type === 'objective-update';
+      })
+      .map(m => typeof m.content === 'string' ? m.content : JSON.stringify(m.content));
+    
+    if (objectiveUpdates.length === 0) {
+      logger.debug('No objective updates found, skipping progress bar update');
+      return;
+    }
+    
+    // Load the progress bar updater prompt
+    const prompt = loadPrompt('progress_bar_updater.md');
+    
+    // Clean up the current progress object to ensure it doesn't have comments
+    const cleanProgress: ObjectiveProgress = {
+      objectives: {}
+    };
+    
+    // Copy only the status field from each objective
+    for (const [key, obj] of Object.entries(objectiveProgress.objectives)) {
+      cleanProgress.objectives[key] = { status: obj.status };
+    }
+    
+    // Prepare input for the AI model
+    const input = {
+      objectiveUpdaterHistory: objectiveUpdates,
+      currentObjectiveProgress: cleanProgress
+    };
+    
+    logger.api('Progress update input:', {
+      objectiveUpdaterHistory: objectiveUpdates,
+      currentObjectiveProgress: cleanProgress
+    });
+    
+    // Generate updates using the AI model
+    const { object: updates } = await generateObject({
+      model: geminiFlashModel,
+      prompt: `${prompt}\n\nInput:\n${JSON.stringify(input, null, 2)}`,
+      schema: z.array(
+        z.object({
+          path: z.string().describe("Path to the field to update"),
+          value: z.string().describe("New value for the field")
+        })
+      ),
+    });
+    
+    logger.api('Generated progress updates:', { updates });
+    
+    // Apply updates to the progress object using the programmatic function
+    if (updates.length > 0) {
+      // Use the new programmatic function to apply updates and handle the "next objective" logic
+      const updatedProgress = await updateObjectiveProgressProgrammatically(chatId, updates);
+      
+      logger.info('Progress bar updated successfully:', { 
+        chatId, 
+        updates,
+        updatedProgress
+      });
+    } else {
+      logger.debug('No progress updates needed');
+    }
+  } catch (error) {
+    console.error('Error in progress bar update:', error);
+    throw error;
+  }
+}
+
+// Add this function to your file
+export async function collectUserDetails({ text }: { text: string }) {
+  try {
+    logger.debug('Collecting user details with prompt:', { text });
+    
+    return {
+      type: "user-details-form",
+      text: text || "Please share your details with us",
+      formType: "name-email"
+    };
+  } catch (error) {
+    logger.error('Error in collectUserDetails:', error);
+    throw error;
+  }
+}
+
+// Add this function to your file
+function loadPrompt(filename: string): string {
+  const promptPath = path.join(process.cwd(), 'agent_prompts', filename);
+  try {
+    return fs.readFileSync(promptPath, 'utf-8');
+  } catch (error) {
+    console.error(`Error loading prompt file: ${filename}`, error);
+    throw new Error(`Failed to load prompt file: ${filename}`);
   }
 }

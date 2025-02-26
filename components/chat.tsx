@@ -35,7 +35,13 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     id: conversationId,
     body: { id: conversationId },
     initialMessages,
-    maxSteps: 10,
+    // maxSteps allows the model to make multiple steps in a single turn
+    // This is essential for tool usage, as it allows the model to:
+    // 1. Call a tool
+    // 2. Receive the tool's result
+    // 3. Generate a brief follow-up response
+    // Setting this to 10 allows complex multi-step interactions
+    maxSteps: 2,
     onFinish: (message) => {
       window.history.replaceState({}, "", `/chat/${conversationId}`);
       
@@ -114,22 +120,35 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12">
         <div className="mx-auto max-w-3xl space-y-6 py-8">
-          {messages.map((message, index) => (
-            <ChatMessage
-              key={message.id}
-              content={message.content}
-              isUser={message.role === "user"}
-              toolInvocations={message.toolInvocations}
-              chatId={conversationId}
-              isLoading={isLoading && index === messages.length - 1 && message.role !== "user"}
-            />
-          ))}
+          {messages.map((message, index) => {
+            // Determine if this message is the first in a turn
+            const isFirstInTurn = index === 0 || 
+              // If previous message was from a different role, this is first in turn
+              messages[index - 1]?.role !== message.role;
+              
+            return (
+              <ChatMessage
+                key={message.id}
+                content={message.content}
+                isUser={message.role === "user"}
+                toolInvocations={message.toolInvocations}
+                chatId={conversationId}
+                isLoading={isLoading && index === messages.length - 1 && message.role !== "user"}
+                messageIndex={index}
+                allMessages={messages}
+                isFirstInTurn={isFirstInTurn}
+              />
+            );
+          })}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
             <ChatMessage
               content=""
               isUser={false}
               chatId={conversationId}
               isLoading={true}
+              messageIndex={-1}
+              allMessages={[]}
+              isFirstInTurn={true}
             />
           )}
           <div ref={messagesEndRef} className="h-px" />
@@ -147,6 +166,7 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
             <ConversationProgress 
               conversationId={conversationId}
               messageCount={messages.length}
+              isLoading={isLoading}
             />
           }
           stop={stop}

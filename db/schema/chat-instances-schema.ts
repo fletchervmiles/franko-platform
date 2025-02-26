@@ -1,11 +1,11 @@
 import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 
-// Add ObjectiveProgress interface
+// Update ObjectiveProgress interface to make comments optional
 export interface ObjectiveProgress {
   objectives: Record<string, {
     status: "done" | "current" | "tbc";
-    comments: string[];
+    comments?: string[]; // Make comments optional with ?
   }>;
 }
 

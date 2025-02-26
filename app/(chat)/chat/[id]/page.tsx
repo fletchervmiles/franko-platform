@@ -70,9 +70,10 @@ export default async function Page({ params }: { params: { id: string } }) {
       const emptyMessages = JSON.stringify([]);
       const initialProgress = {
         objectives: {
-          obj1: { status: "current", comments: [] },
-          obj2: { status: "tbc", comments: [] },
-          obj3: { status: "tbc", comments: [] }
+          obj1: { status: "current" },
+          obj2: { status: "tbc" },
+          obj3: { status: "tbc" },
+          obj4: { status: "tbc" }
         }
       };
       const newChat = await createChatInstance({
