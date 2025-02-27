@@ -505,36 +505,36 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
                       Guidance for Agent
                     </FormLabel>
-                  </div>
-                  
+                </div>
+
                   {expandedSections[`guidance-${index}`] && (
-                    <FormField
-                      control={control}
-                      name={`objectives.${index}.guidanceForAgent`}
-                      render={({ field }) => (
+                  <FormField
+                    control={control}
+                    name={`objectives.${index}.guidanceForAgent`}
+                    render={({ field }) => (
                         <FormItem className="mt-2 ml-6">
-                          <FormControl>
-                            {objectiveStatuses[index] === "edit" ? (
+                        <FormControl>
+                          {objectiveStatuses[index] === "edit" ? (
                               <BulletPointEditor 
                                 items={field.value || []}
                                 onChange={field.onChange}
                                 placeholder="Add guidance item..."
-                              />
-                            ) : (
-                              <ul className="space-y-2 mt-1">
-                                {field.value?.map((guidance, i) => (
-                                  <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                    <span className="text-blue-500">•</span>
-                                    <span>{guidance}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            />
+                          ) : (
+                            <ul className="space-y-2 mt-1">
+                              {field.value?.map((guidance, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{guidance}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   )}
                 </div>
 
@@ -556,30 +556,30 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                   </div>
                   
                   {expandedSections[`prompts-${index}`] && (
-                    <FormField
-                      control={control}
-                      name={`objectives.${index}.illustrativePrompts`}
-                      render={({ field }) => (
+                  <FormField
+                    control={control}
+                    name={`objectives.${index}.illustrativePrompts`}
+                    render={({ field }) => (
                         <FormItem className="mt-2 ml-6">
-                          <FormControl>
-                            {objectiveStatuses[index] === "edit" ? (
+                        <FormControl>
+                          {objectiveStatuses[index] === "edit" ? (
                               <BulletPointEditor 
                                 items={field.value || []}
                                 onChange={field.onChange}
                                 placeholder="Add prompt example..."
-                              />
-                            ) : (
-                              <ul className="space-y-2 mt-1">
-                                {field.value?.map((prompt, i) => (
-                                  <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                    <span className="text-blue-500">•</span>
-                                    <span>{prompt}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </FormControl>
-                          <FormMessage />
+                            />
+                          ) : (
+                            <ul className="space-y-2 mt-1">
+                              {field.value?.map((prompt, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-blue-500">•</span>
+                                  <span>{prompt}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </FormControl>
+                        <FormMessage />
                         </FormItem>
                       )}
                     />

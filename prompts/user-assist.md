@@ -1,22 +1,30 @@
-# User Assist
+Card 1
+Heading: Describe Your Conversation Topic
+Subheading: Help us understand your goal—what do you want to learn from your customers?
 
-Overview:
+Card 2
+Heading: Set the Conversation Duration
+Subheading: 
 
-- Generate Button (already exists on existing plan)
-- Regenerate "Fi
-- Publish
-- Loading window for the whole screen minus nav including text and loading animation
-- 
-
-
-Update the database (chat_instance)
-- Topic (string - multiple lines)
-- Duration (string - single line)
-- Name Collection (boolean)
-- Incentive Status (boolean)
-- Incentive Code (string - single line)
-- Incentive Description (string - multiple line)
-- Additional Details (string - multiple lines)
-- Published (boolean)
+Options:
+1 minute (quick)
+2 minutes (chit-chat)
+3-5 minutes (recommended)
+6-7 minutes (exploratory)
+8-10 minutes (deep dive)
 
 
+Card 3
+Heading: Collect Respondent Details
+Subheading: Want to capture names and emails? We'll ask them at the outset of the chat.
+Options:
+"Yes, capture name and email"
+"No, keep it anonymous"
+
+Card 4
+Heading: Optional: Add an Incentive
+Subheading: Encourage participation with a reward
+
+Text inputs:
+Discount Code (optional): Enter a discount code to share after the chat (e.g., "SAVE10").
+Description (optional): Add a brief message to show at the start (e.g., "Finish this chat and get 10% off your next purchase!").

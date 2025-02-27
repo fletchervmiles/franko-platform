@@ -10,26 +10,15 @@ export function CreateChatButton() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleCreateChat = async () => {
+  const handleCreateChat = () => {
     try {
       setIsLoading(true)
       
-      // Create chat via API
-      const response = await fetch("/api/chats/create", {
-        method: "POST",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to create chat")
-      }
-
-      const { id } = await response.json()
-      
-      // Navigate to the new chat
-      router.push(`/chat/${id}`)
+      // Navigate to the create page
+      router.push(`/create/new`)
     } catch (error) {
-      console.error("Failed to create chat:", error)
-      toast.error("Failed to create chat. Please try again.")
+      console.error("Failed to navigate to create page:", error)
+      toast.error("Failed to create conversation. Please try again.")
       setIsLoading(false)
     }
   }
@@ -44,7 +33,7 @@ export function CreateChatButton() {
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-          Creating...
+          Loading...
         </>
       ) : (
         <>

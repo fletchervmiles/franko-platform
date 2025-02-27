@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 
 // Update ObjectiveProgress interface to make comments optional
@@ -18,6 +18,15 @@ export const chatInstancesTable = pgTable("chat_instances", {
   conversationPlan: jsonb("conversation_plan"),
   objectiveProgress: jsonb("objective_progress"),  // Add new field
   conversationPlanLastEdited: timestamp("conversation_plan_last_edited").defaultNow().notNull(),
+  // New fields
+  topic: text("topic"),
+  duration: text("duration"),
+  respondentContacts: boolean("respondent_contacts"),
+  incentiveStatus: boolean("incentive_status"),
+  incentiveCode: text("incentive_code"),
+  incentiveDescription: text("incentive_description"),
+  additionalDetails: text("additional_details"),
+  published: boolean("published").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

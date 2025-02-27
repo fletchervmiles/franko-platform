@@ -213,4 +213,38 @@ export async function updateObjectiveProgressProgrammatically(
     console.error('Error updating objective progress programmatically:', error);
     throw error;
   }
+}
+
+/**
+ * Updates the chat instance fields related to user assistance
+ * 
+ * @param id The ID of the chat instance
+ * @param updates The fields to update
+ * @returns The updated chat instance
+ */
+export async function updateChatInstanceFields(
+  id: string,
+  updates: {
+    topic?: string;
+    duration?: string;
+    respondentContacts?: boolean;
+    incentiveStatus?: boolean;
+    incentiveCode?: string;
+    incentiveDescription?: string;
+    additionalDetails?: string;
+    published?: boolean;
+  }
+): Promise<SelectChatInstance | undefined> {
+  try {
+    const [updatedChatInstance] = await db
+      .update(chatInstancesTable)
+      .set(updates)
+      .where(eq(chatInstancesTable.id, id))
+      .returning();
+    
+    return updatedChatInstance;
+  } catch (error) {
+    console.error("Error updating chat instance fields:", error);
+    throw new Error("Failed to update chat instance fields");
+  }
 } 
