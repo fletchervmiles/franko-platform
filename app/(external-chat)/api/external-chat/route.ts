@@ -28,7 +28,7 @@ import fs from 'fs';
 import path from 'path';
 import { LRUCache } from 'lru-cache';
 
-import { geminiFlashModel } from "@/ai_folder";
+import { geminiFlashModel, o3MiniModel } from "@/ai_folder";
 import {
   performWebSearch,
   generateDisplayOptions,
@@ -42,6 +42,7 @@ import {
 import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { generateUUID } from "@/lib/utils";
 import { logger } from '@/lib/logger';
+import { createDummyParameterSchema, isOpenAIModel, createCompatibleSchema } from '@/lib/model-utils';
 
 // Cache for populated prompts
 const promptCache = new LRUCache<string, string>({
@@ -119,16 +120,44 @@ export async function POST(request: Request) {
       chatInstance.conversationPlan
     );
 
+    // Choose which model to use - you can switch between models here
+    const model = o3MiniModel; // Change to geminiFlashModel if needed
+    
+    // Create schemas that are compatible with the selected model
+    const dummySchema = createDummyParameterSchema(model);
+    
+    const searchWebSchema = createCompatibleSchema(
+      model,
+      z.object({
+        query: z.string().describe("The search query"),
+        searchDepth: z
+          .enum(["basic", "advanced"])
+          .optional()
+          .describe("How deep to search"),
+        topic: z
+          .enum(["general", "news"])
+          .optional()
+          .describe("Category of search")
+      }),
+      ["query"] // Make query required for OpenAI
+    );
+    
+    const displayOptionsSchema = createCompatibleSchema(
+      model,
+      z.object({
+        text: z.string().describe("Text to display above the options"),
+      }),
+      ["text"] // Make text required for OpenAI
+    );
+    
     const result = await streamText({
-      model: geminiFlashModel,
+      model: model,
       system: systemPrompt,
       messages: coreMessages,
       tools: {
         endConversation: {
           description: "A tool that ends the conversation and redirects to a completion page.",
-          parameters: z.object({
-            _dummy: z.string().optional().describe("Placeholder parameter")
-          }),
+          parameters: dummySchema,
           execute: async () => ({
             message: "Thank you for your time - redirecting you to the completion page...",
             redirectUrl: `/interview-complete/${chatResponseId}`,
@@ -138,17 +167,7 @@ export async function POST(request: Request) {
         
         searchWeb: {
           description: "A tool that performs a web search to gather factual context.",
-          parameters: z.object({
-            query: z.string().describe("The search query"),
-            searchDepth: z
-              .enum(["basic", "advanced"])
-              .optional()
-              .describe("How deep to search"),
-            topic: z
-              .enum(["general", "news"])
-              .optional()
-              .describe("Category of search")
-          }),
+          parameters: searchWebSchema,
           execute: async ({ query, searchDepth = "basic", topic = "general" }) => {
             logger.ai('Web search tool called:', { query, searchDepth, topic });
             const results = await performWebSearch({ query });
@@ -163,24 +182,20 @@ export async function POST(request: Request) {
 
         displayOptions: {
           description: "Display clickable options for the user to choose from.",
-          parameters: z.object({
-            text: z.string().describe("Text to display above the options"),
-          }),
+          parameters: displayOptionsSchema,
           execute: async ({ text }) => {
             const result = await generateDisplayOptions({ text });
             return {
               type: "options",
-              display: result.options,
-              text: result.text
+              options: result.options,
+              text
             };
           },
         },
 
         chatProgress: {
           description: "Update and track the progress of the conversation.",
-          parameters: z.object({
-            _dummy: z.string().optional().describe("Placeholder parameter")
-          }),
+          parameters: dummySchema,
           execute: async () => {
             const progress = await updateChatProgress({
               messages: coreMessages,
@@ -266,7 +281,13 @@ export async function POST(request: Request) {
       duration: `${(endTime - startTime).toFixed(2)}ms`
     });
 
-    return result.toDataStreamResponse({});
+    return result.toDataStreamResponse({
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+      }
+    });
   } catch (error) {
     logger.error('Error processing external chat request:', error);
     throw error;

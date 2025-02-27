@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ProgressBar, type Step } from "./progress-bar";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { queryClient } from './utilities/query-provider';
 
 interface ConversationProgressProps {
@@ -23,10 +23,15 @@ export function ConversationProgress({
   messageCount,
   isLoading = false
 }: ConversationProgressProps) {
-  // Track last update time to avoid excessive polling
-  const [lastUpdateTime, setLastUpdateTime] = useState(0);
   // Track if we're currently fetching progress
   const [isUpdating, setIsUpdating] = useState(false);
+  // Add a new state to track when we expect progress updates
+  const [expectingUpdates, setExpectingUpdates] = useState(false);
+  // Use refs to track polling state
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track previous loading state
+  const prevIsLoadingRef = useRef(isLoading);
 
   const { data: progress, isFetching } = useQuery<ObjectiveProgress | null>({
     queryKey: ['objective-progress', conversationId],
@@ -40,7 +45,7 @@ export function ConversationProgress({
       }
     },
     // Only refetch when the query is stale
-    staleTime: 5000, // Reduced from Infinity to 5 seconds
+    staleTime: 5000, // 5 seconds
     // Don't refetch on window focus
     refetchOnWindowFocus: false,
     // Don't retry on error
@@ -50,25 +55,66 @@ export function ConversationProgress({
   // Refetch progress when message count changes
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
-    setLastUpdateTime(Date.now());
   }, [conversationId, messageCount]);
 
-  // Poll for updates when AI is responding
+  // Handle loading state changes
   useEffect(() => {
-    if (!isLoading) return;
-    
-    // Don't poll too frequently - wait at least 2 seconds between polls
-    const shouldPoll = Date.now() - lastUpdateTime > 2000;
-    
-    if (shouldPoll) {
-      const interval = setInterval(() => {
-        queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
-        setLastUpdateTime(Date.now());
-      }, 2000); // Poll every 2 seconds while loading
-      
-      return () => clearInterval(interval);
+    // When AI starts responding, set expectingUpdates to true
+    if (isLoading) {
+      setExpectingUpdates(true);
     }
-  }, [conversationId, isLoading, lastUpdateTime]);
+    
+    // When loading transitions from true to false, start the extended polling period
+    if (!isLoading && prevIsLoadingRef.current) {
+      // Fetch immediately when AI finishes responding
+      queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
+    }
+    
+    // Update the ref for next comparison
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading, conversationId]);
+
+  // Manage polling lifecycle
+  useEffect(() => {
+    // Clear any existing intervals and timeouts when dependencies change
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+    
+    // Start polling if we're loading or expecting updates
+    if (isLoading || expectingUpdates) {
+      // Set up polling interval
+      pollingIntervalRef.current = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
+      }, 2000);
+      
+      // If we're no longer loading but still expecting updates, set a timeout to stop polling
+      if (!isLoading && expectingUpdates) {
+        pollingTimeoutRef.current = setTimeout(() => {
+          setExpectingUpdates(false);
+        }, 8000);
+      }
+    }
+    
+    // Cleanup function
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
+      }
+    };
+  }, [isLoading, expectingUpdates, conversationId]);
 
   if (!progress?.objectives) {
     return null;

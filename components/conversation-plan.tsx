@@ -10,15 +10,12 @@ type Plan = {
   duration: string | number;
   summary: string;
   objectives: Array<{
-    objective?: string;
-    obj1?: string;
-    obj2?: string;
-    obj3?: string;
+    objective: string;
     keyLearningOutcome: string;
-    focusPoints?: string[];
-    guidanceForAgent?: string[];
-    illustrativePrompts?: string[];
-    expectedConversationTurns?: string | number;
+    focusPoints: string[];
+    guidanceForAgent: string[];
+    illustrativePrompts: string[];
+    expectedConversationTurns: string | number;
   }>;
 };
 
@@ -26,14 +23,20 @@ type PlanResponse = Plan | {
   type: string;
   display?: Plan;
   plan?: Plan;
+  message?: string;
 };
 
 export function ConversationPlan({ plan }: { plan?: PlanResponse }) {
   const [localPlan, setLocalPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(!plan);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (plan) {
+      if ('type' in plan && plan.type === 'conversation-plan-error' && plan.message) {
+        setErrorMessage(plan.message);
+      }
+      
       const actualPlan = 'display' in plan ? plan.display : 
                         'plan' in plan ? plan.plan : 
                         plan as Plan;
@@ -58,7 +61,7 @@ export function ConversationPlan({ plan }: { plan?: PlanResponse }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              Conversation Plan (Draft)
+              {errorMessage ? "Simplified Plan" : "Conversation Plan (Draft)"}
             </span>
             {localPlan && (
               <span className={`text-sm px-2 py-1 rounded-full flex items-center ${getDurationColor(localPlan.duration)}`}>
@@ -68,6 +71,11 @@ export function ConversationPlan({ plan }: { plan?: PlanResponse }) {
             )}
           </div>
         </div>
+        {errorMessage && (
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-700">{errorMessage}</p>
+          </div>
+        )}
         {localPlan && (
           <div className="mt-4 space-y-2">
             <h2 className="text-2xl font-semibold text-gray-900">{localPlan.title}</h2>
@@ -84,104 +92,113 @@ export function ConversationPlan({ plan }: { plan?: PlanResponse }) {
       
       <CardContent className="space-y-4">
         {localPlan ? (
-          <div className="space-y-2">
-            <Accordion type="single" collapsible className="space-y-2">
-              {localPlan.objectives.map((item, index) => (
-                <AccordionItem 
-                  key={index} 
-                  value={`item-${index}`}
-                  className="border border-gray-200 rounded-lg overflow-hidden transition-all duration-200
-                    data-[state=open]:shadow-md"
-                >
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline transition-all duration-200
-                    hover:border-l-2 hover:border-l-blue-200">
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
-                          Step {index + 1}
-                        </span>
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">{localPlan.title}</h3>
+                <p className="text-sm text-gray-600 mt-1">{localPlan.summary}</p>
+              </div>
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
+                <Clock className="w-4 h-4 text-blue-500" />
+                <span className={`text-sm font-medium ${getDurationColor(localPlan.duration)}`}>
+                  {typeof localPlan.duration === 'number' ? `${localPlan.duration} min` : localPlan.duration}
+                </span>
+              </div>
+            </div>
+
+            <Accordion type="single" collapsible className="w-full">
+              {localPlan.objectives && localPlan.objectives.length > 0 ? (
+                localPlan.objectives.map((item, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">
+                          {index + 1}
+                        </div>
+                        <h3 className="text-base font-medium text-gray-900">
+                          {item.objective}
+                        </h3>
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <div className="px-4 py-3">
-                    <p className="text-sm text-gray-700">{item.keyLearningOutcome}</p>
-                  </div>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-2">
-                        <Target className="w-5 h-5 text-blue-500 mt-0.5" />
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">Objective</h4>
-                          <p className="text-sm text-gray-700 mt-1">
-                            {item.objective || item.obj1 || item.obj2 || item.obj3}
-                          </p>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pl-9 space-y-4">
+                        <div className="flex items-start gap-2">
+                          <BookOpen className="w-5 h-5 text-blue-500 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-900">Key Learning Outcome</h4>
+                            <p className="text-sm text-gray-700 mt-1">{item.keyLearningOutcome}</p>
+                          </div>
                         </div>
+
+                        {item.focusPoints && item.focusPoints.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <Target className="w-5 h-5 text-blue-500 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">Focus Points</h4>
+                              <ul className="space-y-2 mt-1">
+                                {item.focusPoints.map((point, i) => (
+                                  <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                    <span className="text-blue-500">•</span>
+                                    <span>{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {item.guidanceForAgent && item.guidanceForAgent.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <HelpCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">Guidance for Agent</h4>
+                              <ul className="space-y-2 mt-1">
+                                {item.guidanceForAgent.map((guidance, i) => (
+                                  <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                    <span className="text-blue-500">•</span>
+                                    <span>{guidance}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {item.illustrativePrompts && item.illustrativePrompts.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <MessageSquare className="w-5 h-5 text-blue-500 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">Illustrative Prompts</h4>
+                              <ul className="space-y-2 mt-1">
+                                {item.illustrativePrompts.map((prompt, i) => (
+                                  <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                    <span className="text-blue-500">•</span>
+                                    <span>{prompt}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {item.expectedConversationTurns && (
+                          <div className="flex items-start gap-2">
+                            <MessageCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">Approx Conversation Turns</h4>
+                              <p className="text-sm text-gray-700 mt-1">{item.expectedConversationTurns}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-
-                      {item.focusPoints && item.focusPoints.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <List className="w-5 h-5 text-blue-500 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900">Focus Points</h4>
-                            <ul className="space-y-2 mt-1">
-                              {item.focusPoints.map((point, i) => (
-                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                  <span className="text-blue-500">•</span>
-                                  <span>{point}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
-
-                      {item.guidanceForAgent && item.guidanceForAgent.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <HelpCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900">Guidance for Agent</h4>
-                            <ul className="space-y-2 mt-1">
-                              {item.guidanceForAgent.map((guidance, i) => (
-                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                  <span className="text-blue-500">•</span>
-                                  <span>{guidance}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
-
-                      {item.illustrativePrompts && item.illustrativePrompts.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <MessageSquare className="w-5 h-5 text-blue-500 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900">Illustrative Prompts</h4>
-                            <ul className="space-y-2 mt-1">
-                              {item.illustrativePrompts.map((prompt, i) => (
-                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                  <span className="text-blue-500">•</span>
-                                  <span>{prompt}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
-
-                      {item.expectedConversationTurns && (
-                        <div className="flex items-start gap-2">
-                          <MessageCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900">Approx Conversation Turns</h4>
-                            <p className="text-sm text-gray-700 mt-1">{item.expectedConversationTurns}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No objectives defined for this plan.
+                </div>
+              )}
             </Accordion>
           </div>
         ) : (

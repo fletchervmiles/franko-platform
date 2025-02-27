@@ -30,7 +30,8 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     setInput,
     isLoading,
     stop,
-    setMessages
+    setMessages,
+    error
   } = useChat({
     id: conversationId,
     body: { id: conversationId },
@@ -59,6 +60,10 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
           }, delayMs);
         }
       }
+    },
+    onError: (error) => {
+      console.error("Chat error:", error);
+      toast.error("Something went wrong. Please try again.");
     }
   })
 
@@ -76,6 +81,14 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [messages.length])
+
+  // Show error message if there's an error
+  useEffect(() => {
+    if (error) {
+      console.error("Chat error:", error);
+      toast.error("Something went wrong. Please try again.");
+    }
+  }, [error]);
 
   const handleTopicSelect = (prompt: string) => {
     setHasSelectedTopic(true)

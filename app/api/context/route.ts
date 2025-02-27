@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Exa from "exa-js";
 import { updateProfile } from "@/db/queries/profiles-queries";
-import { geminiFlashModel } from "@/ai_folder";
+import { o3MiniModel } from "@/ai_folder";
 import fs from 'fs';
 import path from 'path';
 import { generateObject } from "ai";
@@ -171,36 +171,36 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString()
       });
 
-      logger.info('Making Gemini request');
-      // Make the Gemini request
-      const geminiRequest = {
-        model: geminiFlashModel,
+      logger.info('Making OpenAI request');
+      // Make the OpenAI request
+      const aiRequest = {
+        model: o3MiniModel,
         prompt,
         schema: z.object({
           description: z.string()
         })
       };
       
-      logger.info('Gemini request configuration:', {
-        model: geminiRequest.model,
-        promptLength: geminiRequest.prompt.length,
-        schema: geminiRequest.schema,
-        fullPrompt: geminiRequest.prompt,
+      logger.info('OpenAI request configuration:', {
+        model: aiRequest.model,
+        promptLength: aiRequest.prompt.length,
+        schema: aiRequest.schema,
+        fullPrompt: aiRequest.prompt,
         timestamp: new Date().toISOString()
       });
 
-      const { object: response } = await generateObject(geminiRequest);
+      const { object: response } = await generateObject(aiRequest);
       
-      logger.info('Gemini response:', { 
+      logger.info('OpenAI response:', { 
         descriptionLength: response.description.length,
         fullResponse: response.description,
         timestamp: new Date().toISOString()
       });
 
-      // Second update: Update description after Exa/Gemini completes
+      // Second update: Update description after Exa/OpenAI completes
       const descriptionUpdate = {
-        organisationUrl: initialUpdate.organisationUrl,
-        organisationName: initialUpdate.organisationName,
+        organisationUrl: initialUpdate[0].organisationUrl,
+        organisationName: initialUpdate[0].organisationName,
         organisationDescription: response.description,
         organisationDescriptionCompleted: true,
       };
@@ -219,8 +219,8 @@ export async function POST(request: Request) {
 
     } catch (error) {
       clearTimeout(timeoutId);
-      // Even if Exa/Gemini fails, the URL and name update remains
-      logger.error('Error in Exa/Gemini process:', {
+      // Even if Exa/OpenAI fails, the URL and name update remains
+      logger.error('Error in Exa/OpenAI process:', {
         error,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()

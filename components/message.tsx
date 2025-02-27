@@ -97,6 +97,51 @@ export function Message({
     return false;
   }, [content, isUser, isFirstInTurn, messageIndex, allMessages]);
 
+  // Check for duplicate tool calls, particularly displayOptionsMultipleChoice
+  const hasDuplicateToolCalls = useMemo(() => {
+    // Only check for non-user messages with tool invocations that aren't the first in a turn
+    if (isUser || !toolInvocations?.length || isFirstInTurn || messageIndex <= 0 || !allMessages) {
+      return false;
+    }
+
+    // Find the start of the current turn
+    let turnStartIndex = messageIndex;
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (allMessages[i].role !== allMessages[messageIndex].role) {
+        break;
+      }
+      turnStartIndex = i;
+    }
+
+    // Check if any previous message in the same turn has the same tool type
+    for (let i = turnStartIndex; i < messageIndex; i++) {
+      const prevMessage = allMessages[i];
+      if (prevMessage.toolInvocations) {
+        // Check if any tool in the current message matches any tool in the previous message
+        const hasDuplicate = toolInvocations.some(currentTool => 
+          prevMessage.toolInvocations?.some(prevTool => 
+            // Specifically target displayOptionsMultipleChoice tools
+            currentTool.toolName === prevTool.toolName && 
+            (currentTool.toolName === "displayOptionsMultipleChoice" || 
+             currentTool.toolName === "displayOptionsNumbers")
+          )
+        );
+        
+        if (hasDuplicate) {
+          console.log('Duplicate tool call detected in same turn:', { 
+            currentTools: toolInvocations.map(t => t.toolName), 
+            previousTools: prevMessage.toolInvocations.map(t => t.toolName),
+            currentIndex: messageIndex,
+            previousIndex: i
+          });
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }, [isUser, toolInvocations, isFirstInTurn, messageIndex, allMessages]);
+
   // Add debugging for shouldHideContent
   useEffect(() => {
     if (shouldHideContent) {
@@ -108,10 +153,13 @@ export function Message({
     }
   }, [shouldHideContent, content, messageIndex, isFirstInTurn]);
 
-  // Skip rendering completely if this is a duplicate message
+  // Skip rendering completely if this is a duplicate message OR has duplicate tool calls
   // This prevents the empty gap from appearing
-  if (shouldHideContent) {
-    console.log('Skipping rendering of duplicate message:', { messageIndex });
+  if (shouldHideContent || hasDuplicateToolCalls) {
+    console.log('Skipping rendering of duplicate message:', { 
+      messageIndex, 
+      reason: shouldHideContent ? 'duplicate content' : 'duplicate tool calls' 
+    });
     return null;
   }
 

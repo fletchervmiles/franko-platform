@@ -76,7 +76,7 @@ import { getChatResponseById, updateChatResponseStatus } from "@/db/queries/chat
 import { logger } from '@/lib/logger';
 
 // Import the AI model configuration
-import { geminiFlashModel, geminiProModel } from ".";
+import { geminiFlashModel, geminiProModel, o3MiniModel } from ".";
 
 // Cache for populated conversation plan prompts
 const conversationPlanPromptCache = new LRUCache<string, string>({
@@ -280,64 +280,96 @@ export async function generateConversationPlan({ messages, userId, chatId }: { m
   })));
   console.log('==========================================\n');
 
-  const { object: rawPlan } = await generateObject({
-    model: geminiProModel,
-    system: `${systemPrompt}
+  // Add retry logic for the generateObject call
+  const maxRetries = 3;
+  let retryCount = 0;
+  let lastError: any = null;
+
+  while (retryCount < maxRetries) {
+    try {
+      const { object: rawPlan } = await generateObject({
+        model: o3MiniModel,
+        system: `${systemPrompt}
 
 IMPORTANT: Generate only the plan data. Do not include any instructions or explanations about the plan in your response.
-The plan will be displayed automatically by the UI.`,
-    prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-    schema: z.object({
-      title: z.string().describe("Jargon-free title with key context"),
-      duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
-      summary: z.string().describe("1-sentence purpose statement with strategic value"),
-      objectives: z.array(
-        z.object({
-          objective: z.string().optional().describe("Active-verb focus area"),
-          obj1: z.string().optional().describe("Alternative objective format 1"),
-          obj2: z.string().optional().describe("Alternative objective format 2"),
-          obj3: z.string().optional().describe("Alternative objective format 3"),
-          keyLearningOutcome: z.string().describe("Decision-driving insight"),
-          focusPoints: z.array(z.string()).optional().describe("List of focus points for the objective"),
-          guidanceForAgent: z.array(z.string()).optional().describe("Tips for conducting the conversation, including tool suggestions"),
-          illustrativePrompts: z.array(z.string()).optional().describe("Contextually relevant questions (adapt as needed)"),
-          expectedConversationTurns: z.string().optional().describe("Expected number of conversation turns")
-        }).refine(
-          data => data.objective || data.obj1 || data.obj2 || data.obj3,
-          "At least one objective format must be present"
-        )
-      ).describe("Time-aware objectives sorted by priority")
-    }),
-  });
+The plan will be displayed automatically by the UI.
 
-  // Transform the raw plan to match our schema
-  const plan: ConversationPlan = {
-    title: rawPlan.title,
-    duration: rawPlan.duration,
-    summary: rawPlan.summary,
-    objectives: rawPlan.objectives.map(obj => ({
-      objective: obj.objective || obj.obj1 || obj.obj2 || obj.obj3 || "Untitled Objective",
-      keyLearningOutcome: obj.keyLearningOutcome,
-      focusPoints: obj.focusPoints || [],
-      guidanceForAgent: obj.guidanceForAgent || [],
-      illustrativePrompts: obj.illustrativePrompts || [],
-      expectedConversationTurns: obj.expectedConversationTurns || "1"
-    }))
-  };
+CRITICAL CONSTRAINTS:
+1. Keep all objective text fields under 500 characters
+2. Keep all other text fields under 200 characters
+3. Do not include markdown formatting in any field
+4. Do not include explanations or meta-commentary in any field
+5. Ensure all arrays have at least one item
+6. IMPORTANT: You MUST include a 'keyLearningOutcome' for each objective`,
+        prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+        schema: z.object({
+          title: z.string().describe("Jargon-free title with key context"),
+          duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
+          summary: z.string().describe("1-sentence purpose statement with strategic value"),
+          objectives: z.array(
+            z.object({
+              objective: z.string().describe("Active-verb focus area"),
+              keyLearningOutcome: z.string().describe("Decision-driving insight"),
+              focusPoints: z.array(z.string()).describe("List of focus points for the objective"),
+              guidanceForAgent: z.array(z.string()).describe("Tips for conducting the conversation, including tool suggestions"),
+              illustrativePrompts: z.array(z.string()).describe("Contextually relevant questions (adapt as needed)"),
+              expectedConversationTurns: z.string().describe("Expected number of conversation turns")
+            })
+          ).describe("Time-aware objectives sorted by priority")
+        }),
+      });
 
-  try {
-    // Save the conversation plan
-    await updateChatInstanceConversationPlan(chatId, plan);
-  } catch (error) {
-    console.error('Failed to save conversation plan:', error);
-    // Continue even if save fails - don't block the response
+      // Validate that we have at least one objective
+      if (!rawPlan || !rawPlan.objectives || rawPlan.objectives.length === 0) {
+        throw new Error("Generated plan must have at least one objective");
+      }
+
+      // Transform the raw plan to match our schema
+      const plan: ConversationPlan = {
+        title: rawPlan.title,
+        duration: rawPlan.duration,
+        summary: rawPlan.summary,
+        objectives: rawPlan.objectives.map(obj => ({
+          objective: obj.objective || "Untitled Objective",
+          keyLearningOutcome: obj.keyLearningOutcome || "Key insight to be gained",
+          focusPoints: Array.isArray(obj.focusPoints) ? obj.focusPoints : [],
+          guidanceForAgent: Array.isArray(obj.guidanceForAgent) ? obj.guidanceForAgent : ["Guide the conversation naturally"],
+          illustrativePrompts: Array.isArray(obj.illustrativePrompts) ? obj.illustrativePrompts : ["What are your thoughts on this?"],
+          expectedConversationTurns: obj.expectedConversationTurns || "1"
+        }))
+      };
+
+      try {
+        // Save the conversation plan
+        await updateChatInstanceConversationPlan(chatId, plan);
+      } catch (error) {
+        console.error('Failed to save conversation plan:', error);
+        // Continue even if save fails - don't block the response
+      }
+
+      console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
+      console.log('Generated Plan:', JSON.stringify(plan, null, 2));
+      console.log('============================================\n');
+
+      return plan;
+    } catch (error) {
+      lastError = error;
+      console.error(`Conversation plan generation attempt ${retryCount + 1} failed:`, error);
+      retryCount++;
+      
+      // If we've reached max retries, throw the last error
+      if (retryCount >= maxRetries) {
+        logger.error('All conversation plan generation attempts failed:', lastError);
+        throw new Error('Failed to generate conversation plan after multiple attempts');
+      }
+      
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    }
   }
 
-  console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
-  console.log('Generated Plan:', JSON.stringify(plan, null, 2));
-  console.log('============================================\n');
-
-  return plan;
+  // This should never be reached due to the throw in the catch block above
+  throw lastError;
 }
 
 export async function performWebSearch({ query }: { query: string }) {

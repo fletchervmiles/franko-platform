@@ -74,7 +74,7 @@ import {
   import { LRUCache } from 'lru-cache';
   
   // Import custom modules and functions
-  import { geminiFlashModel } from "@/ai_folder";  // AI model configuration
+  import { o3MiniLowModel, geminiFlashModel } from "@/ai_folder";  // AI model configuration
   import {
     performWebSearch,
     generateConversationPlan,
@@ -90,6 +90,7 @@ import {
     deleteChatInstance,
     getChatInstanceById,
     updateChatInstance,
+    updateChatInstanceConversationPlan
   } from "@/db/queries/chat-instances-queries";
   import { getProfile } from "@/db/queries/profiles-queries";
   import { generateUUID } from "@/lib/utils";  // Utility functions
@@ -420,32 +421,73 @@ import {
                   chatId: id
                 });
                 
-                const plan = await generateConversationPlan({ 
-                  messages: coreMessages,
-                  userId,
-                  chatId: id
-                });
+                try {
+                  const plan = await generateConversationPlan({ 
+                    messages: coreMessages,
+                    userId,
+                    chatId: id
+                  });
 
-                logger.ai('Generated conversation plan:', {
-                  title: plan.title,
-                  duration: plan.duration,
-                  objectiveCount: plan.objectives.length
-                });
-
-                const result = {
-                  type: 'conversation-plan',
-                  display: {
+                  logger.ai('Generated conversation plan:', {
                     title: plan.title,
                     duration: plan.duration,
-                    summary: plan.summary,
-                    objectives: plan.objectives
-                  },
-                  plan // Include full plan for reference
-                };
+                    objectiveCount: plan.objectives.length
+                  });
 
-                return result;
+                  const result = {
+                    type: 'conversation-plan',
+                    display: {
+                      title: plan.title,
+                      duration: plan.duration,
+                      summary: plan.summary,
+                      objectives: plan.objectives
+                    },
+                    plan // Include full plan for reference
+                  };
+
+                  return result;
+                } catch (planError) {
+                  // Log the specific error
+                  logger.error('Failed to generate conversation plan:', planError);
+                  
+                  // Create a fallback minimal plan
+                  const fallbackPlan = {
+                    title: "Conversation Plan",
+                    duration: "10-15 minutes",
+                    summary: "We'll discuss your needs and requirements to better understand how we can help.",
+                    objectives: [
+                      {
+                        objective: "Understand your requirements",
+                        keyLearningOutcome: "Identify your key needs and challenges",
+                        focusPoints: ["Current challenges", "Desired outcomes", "Timeline and constraints"],
+                        guidanceForAgent: ["Ask open-ended questions", "Listen actively", "Summarize key points"],
+                        illustrativePrompts: ["What are your main challenges?", "What would success look like for you?"],
+                        expectedConversationTurns: "3-5"
+                      }
+                    ]
+                  };
+                  
+                  // Try to save the fallback plan
+                  try {
+                    await updateChatInstanceConversationPlan(id, fallbackPlan);
+                  } catch (saveError) {
+                    logger.error('Failed to save fallback conversation plan:', saveError);
+                    // Continue even if save fails
+                  }
+                  
+                  // Return a user-friendly error message with the fallback plan
+                  return {
+                    type: 'conversation-plan-error',
+                    display: {
+                      title: "Conversation Plan (Simplified)",
+                      message: "I had trouble creating a detailed plan based on our conversation. Here's a simplified version to get us started.",
+                      plan: fallbackPlan
+                    },
+                    plan: fallbackPlan
+                  };
+                }
               } catch (error) {
-                logger.error('Failed to generate conversation plan:', error);
+                logger.error('Unexpected error in conversation plan generation:', error);
                 throw error;
               }
             },
@@ -454,9 +496,8 @@ import {
           displayOptionsMultipleChoice: {
             description: `
           - **Purpose:** Presents the user with contextually relevant, clickable options for selecting one or more choices based on the conversation context.  
-          - **When to Use:** Use it when predefined options would simplify the user's decision-making process, such as for preferences, durations, priorities, or categorical selections. If the question is purely open-ended with no clear categorical options, do not use this tool.
+          - **When to Use:** DO NOT USE as the first turn in the conversation. Only use if suggested in the current objective.
           - **Context Parameter:** Use the optional context parameter to provide additional information that will help generate more relevant and tailored options.
-          - **Important:** After using this tool, always provide your own follow-up response to accompany the options displayed to the user.
             `,
             parameters: z.object({
               text: z.string().describe("The question or statement for which to generate selectable options"),
@@ -593,8 +634,31 @@ import {
               const existingChat = await getChatInstanceById(id);
               const existingMessages = existingChat ? JSON.parse(existingChat.messages || '[]') : [];
               
-              // Combine existing and new messages
-              const allMessages = [...existingMessages, ...newProcessedMessages];
+              // Find the latest user message from coreMessages
+              const latestUserMessage = [...coreMessages]
+                .filter(m => m.role === 'user')
+                .pop();
+              
+              // Check if this user message is already saved
+              const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
+                m.role === 'user' && 
+                m.content === latestUserMessage?.content
+              );
+              
+              // Create the updated message array
+              const allMessages = [...existingMessages];
+              
+              // Add the user message if it's not already saved
+              if (latestUserMessage && !userMessageExists) {
+                allMessages.push({
+                  id: generateUUID(),
+                  role: latestUserMessage.role,
+                  content: latestUserMessage.content
+                });
+              }
+              
+              // Add the AI response messages
+              allMessages.push(...newProcessedMessages);
 
               // Immediately update chat with current messages
               await updateChatInstance(id, {
@@ -683,7 +747,13 @@ import {
       });
   
       // Return streaming response
-      return result.toDataStreamResponse({});
+      return result.toDataStreamResponse({
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+        }
+      });
     } catch (error) {
       logger.error('Error processing chat request:', error);
       throw error;

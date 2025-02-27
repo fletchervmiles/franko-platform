@@ -48,6 +48,13 @@ This provides details about the user's organisation (e.g., brand, products, audi
     *   For churn topics, reference specific features or pricing tiers in prompts (e.g., "How has **[Feature X]** impacted your workflow?").
     *   For team feedback, mention workflows or team structures (e.g., "How does your team handle code reviews?").
 
+Here is the {organisation_name} organization context:
+
+\`\`\`
+{organisation_description}
+\`\`\`
+
+
 ---
 
 ### Core Instructions
@@ -153,7 +160,7 @@ Output the plan as a JSON object:
     {
       "objective": "string",
       "keyLearningOutcome": "string",
-      "focusPoints": ["string"],  // Optional
+      "focusPoints": ["string"],  // Key things to focus on
       "guidanceForAgent": ["string"],  // Tips for conducting the conversation, including tool suggestions
       "illustrativePrompts": ["string"],  // Contextually relevant questions (adapt as needed)
       "expectedConversationTurns": "string | number"
