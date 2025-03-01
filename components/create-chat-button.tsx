@@ -14,11 +14,12 @@ export function CreateChatButton() {
     try {
       setIsLoading(true)
       
-      // Navigate to the create page
-      router.push(`/create/new`)
+      // Navigate directly to the create form page
+      router.push('/create/new')
     } catch (error) {
       console.error("Failed to navigate to create page:", error)
-      toast.error("Failed to create conversation. Please try again.")
+      toast.error("Failed to navigate to create page. Please try again.")
+    } finally {
       setIsLoading(false)
     }
   }

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray } from "react-hook-form"
-import { conversationPlanSchema, type ConversationPlan } from "./conversationPlanSchema"
+import { conversationPlanSchema, conversationPlanUISchema, type ConversationPlan } from "./conversationPlanSchema"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -241,6 +241,16 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
     }))
   }
 
+  const handleAddObjective = () => {
+    append({
+      objective: "",
+      desiredOutcome: "",
+      agentGuidance: [""],
+      expectedConversationTurns: "",
+    });
+    setObjectiveStatuses((prev) => [...prev, "edit"]);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -453,9 +463,9 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                           <FormLabel className="text-sm font-medium text-gray-700">Objective</FormLabel>
                         </div>
                         <FormControl>
-                          <Input
+                          <Textarea
                             placeholder="E.g. Identify main driver of churn"
-                            className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-black"
+                            className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-black min-h-[60px] resize-y"
                             {...field}
                             disabled={objectiveStatuses[index] !== "edit"}
                           />
@@ -469,17 +479,17 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                 <div className="flex-1">
                   <FormField
                     control={control}
-                    name={`objectives.${index}.keyLearningOutcome`}
+                    name={`objectives.${index}.desiredOutcome`}
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-2">
                           <BookOpen className="w-4 h-4 text-gray-400" />
-                          <FormLabel className="text-sm font-medium text-gray-700">Key Learning Outcome</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700">Desired Outcome</FormLabel>
                         </div>
                         <FormControl>
-                          <Input
-                            placeholder="The most important insight from this objective"
-                            className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-black"
+                          <Textarea
+                            placeholder="The result or importance of this objective"
+                            className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-black min-h-[60px] resize-y"
                             {...field}
                             disabled={objectiveStatuses[index] !== "edit"}
                           />
@@ -490,7 +500,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                   />
                 </div>
 
-                {/* Collapsible section for Guidance for Agent */}
+                {/* Collapsible section for Agent Guidance */}
                 <div className="flex-1">
                   <div 
                     className="flex items-center gap-2 cursor-pointer" 
@@ -503,14 +513,14 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     )}
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                     <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
-                      Guidance for Agent
+                      Agent Guidance
                     </FormLabel>
                 </div>
 
                   {expandedSections[`guidance-${index}`] && (
                   <FormField
                     control={control}
-                    name={`objectives.${index}.guidanceForAgent`}
+                    name={`objectives.${index}.agentGuidance`}
                     render={({ field }) => (
                         <FormItem className="mt-2 ml-6">
                         <FormControl>
@@ -538,77 +548,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                   )}
                 </div>
 
-                {/* Collapsible section for Illustrative Prompts */}
-                <div className="flex-1">
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer" 
-                    onClick={() => toggleSection(`prompts-${index}`)}
-                  >
-                    {expandedSections[`prompts-${index}`] ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    )}
-                    <MessageSquare className="w-4 h-4 text-gray-400" />
-                    <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
-                      Illustrative Prompts
-                    </FormLabel>
-                  </div>
-                  
-                  {expandedSections[`prompts-${index}`] && (
-                  <FormField
-                    control={control}
-                    name={`objectives.${index}.illustrativePrompts`}
-                    render={({ field }) => (
-                        <FormItem className="mt-2 ml-6">
-                        <FormControl>
-                          {objectiveStatuses[index] === "edit" ? (
-                              <BulletPointEditor 
-                                items={field.value || []}
-                                onChange={field.onChange}
-                                placeholder="Add prompt example..."
-                            />
-                          ) : (
-                            <ul className="space-y-2 mt-1">
-                              {field.value?.map((prompt, i) => (
-                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                  <span className="text-blue-500">•</span>
-                                  <span>{prompt}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-
-                {/* Hidden fields - still in the form but not visible in the UI */}
-                <div className="hidden">
-                  <FormField
-                    control={control}
-                    name={`objectives.${index}.focusPoints`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          {objectiveStatuses[index] === "edit" ? (
-                            <Textarea
-                              placeholder="List your focus points, separated by commas..."
-                              value={field.value?.join(", ")}
-                              onChange={(e) => field.onChange(e.target.value.split(",").map((s) => s.trim()))}
-                            />
-                          ) : (
-                            <div></div>
-                          )}
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                {/* Hidden field for expectedConversationTurns */}
                 <div className="hidden">
                   <FormField
                     control={control}
@@ -634,7 +574,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     className="mt-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 h-8 text-xs px-3 transition-all duration-300 ease-in-out"
                     type="button"
                   >
-                    Remove Objective
+                    Remove
                   </Button>
                 )}
               </CardContent>
@@ -643,17 +583,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
 
           <Button
             variant="outline"
-            onClick={() => {
-              append({
-                objective: "",
-                keyLearningOutcome: "",
-                focusPoints: [""],
-                guidanceForAgent: [""],
-                illustrativePrompts: [""],
-                expectedConversationTurns: "",
-              })
-              setObjectiveStatuses((prev) => [...prev, "edit"])
-            }}
+            onClick={handleAddObjective}
             type="button"
             className="mt-2 h-8 text-xs px-3 transition-all duration-300 ease-in-out"
           >

@@ -3,7 +3,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
-import type { ConversationPlan } from "@/components/conversationPlanSchema";
+import type { ConversationPlan, arrayToNumberedObjectives, numberedObjectivesToArray } from "@/components/conversationPlanSchema";
 import { revalidatePath } from "next/cache";
 
 export async function createChatInstance(chat: InsertChatInstance): Promise<SelectChatInstance> {
@@ -75,10 +75,18 @@ export async function updateChatInstanceConversationPlan(
   conversationPlan: ConversationPlan
 ): Promise<SelectChatInstance | undefined> {
   try {
+    // Convert the array-based objectives to numbered object format for storage
+    const planForStorage = {
+      ...conversationPlan,
+      // Store the numbered objectives in the database
+      // but keep the array for frontend compatibility
+      numberedObjectives: arrayToNumberedObjectives(conversationPlan.objectives)
+    };
+
     const [result] = await db
       .update(chatInstancesTable)
       .set({ 
-        conversationPlan,
+        conversationPlan: planForStorage,
         conversationPlanLastEdited: new Date()
       })
       .where(eq(chatInstancesTable.id, id))
@@ -93,7 +101,14 @@ export async function updateChatInstanceConversationPlan(
 export async function getConversationPlan(id: string): Promise<ConversationPlan | null> {
   try {
     const chatInstance = await getChatInstanceById(id);
-    return chatInstance?.conversationPlan as ConversationPlan || null;
+    
+    if (!chatInstance?.conversationPlan) {
+      return null;
+    }
+    
+    // Return the plan with the array-based objectives for frontend compatibility
+    // The numbered objectives are stored in the database but not exposed to the frontend
+    return chatInstance.conversationPlan as ConversationPlan;
   } catch (error) {
     console.error("Error getting conversation plan:", error);
     throw error;

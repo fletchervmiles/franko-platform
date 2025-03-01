@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,8 +13,12 @@ import {
   UserPlus, 
   MessageSquare, 
   DollarSign,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react"
+import { useRouter, useParams } from "next/navigation"
+import { toast } from "sonner"
+import LoadingScreen from "./loading-screen"
 
 // Status indicator component
 const StatusDot = ({ active }: { active: boolean }) => (
@@ -86,7 +90,32 @@ const supportTemplates: Template[] = [
   }
 ]
 
-export function CreateConversationForm() {
+// Update the component props interface
+interface CreateConversationFormProps {
+  isNew?: boolean;
+  chatId?: string;
+}
+
+export function CreateConversationForm({ isNew = false, chatId: propChatId }: CreateConversationFormProps) {
+  const router = useRouter()
+  const params = useParams()
+  // Use the prop chatId if provided, otherwise try to get it from params
+  const chatId = propChatId || (params?.id as string)
+  
+  // Add refs for each card
+  const cardRefs = {
+    card1: useRef<HTMLDivElement>(null),
+    card2: useRef<HTMLDivElement>(null),
+    card3: useRef<HTMLDivElement>(null),
+    card4: useRef<HTMLDivElement>(null),
+    card5: useRef<HTMLDivElement>(null),
+  }
+  
+  // Log the chat ID for debugging
+  useEffect(() => {
+    console.log('Chat ID:', isNew ? 'Creating new on submit' : chatId)
+  }, [chatId, isNew])
+  
   // State for form values
   const [topic, setTopic] = useState("")
   const [duration, setDuration] = useState("")
@@ -96,8 +125,27 @@ export function CreateConversationForm() {
   const [incentiveDescription, setIncentiveDescription] = useState("")
   const [additionalDetails, setAdditionalDetails] = useState("")
   
+  // State for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
+  
   // State for visible cards
   const [visibleCards, setVisibleCards] = useState(1)
+  
+  // Add effect to scroll to the newly visible card when visibleCards changes
+  useEffect(() => {
+    if (visibleCards > 1) {
+      const cardRef = cardRefs[`card${visibleCards}` as keyof typeof cardRefs]
+      if (cardRef.current) {
+        setTimeout(() => {
+          cardRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          })
+        }, 100)
+      }
+    }
+  }, [visibleCards])
   
   // Function to check if a card has content
   const hasContent = (cardIndex: number) => {
@@ -121,13 +169,6 @@ export function CreateConversationForm() {
   const showNextCard = () => {
     if (visibleCards < 5) {
       setVisibleCards(visibleCards + 1)
-      // Improved scroll to bottom after state update
-      setTimeout(() => {
-        window.scrollTo({
-          top: document.body.scrollHeight,
-          behavior: 'smooth'
-        })
-      }, 300)
     }
   }
   
@@ -177,16 +218,99 @@ export function CreateConversationForm() {
   // Duration options
   const durationOptions = [
     "1 minute (quick)",
-    "2 minutes (chit-chat)",
-    "3-5 minutes (recommended)",
-    "6-7 minutes (exploratory)",
-    "8-10 minutes (deep dive)"
+    "2 minutes (focused)",
+    "3-4 minutes (recommended)",
+    "5-6 minutes (balanced)",
+    "7-8 minutes (exploratory)",
+    "9-10 minutes (deep dive)"
   ]
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!isFormComplete()) return
+    
+    try {
+      setIsSubmitting(true)
+      setShowLoadingScreen(true) // Show loading screen
+      
+      let targetChatId = chatId;
+      
+      // If this is a new conversation, create a chat instance first
+      if (isNew) {
+        const createResponse = await fetch('/api/chats/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('Failed to create chat instance');
+        }
+        
+        const { id } = await createResponse.json();
+        targetChatId = id;
+      }
+      
+      // Now update the chat instance with form data
+      const response = await fetch(`/api/chat-instances/update?chatId=${targetChatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic,
+          duration,
+          respondentContacts,
+          incentiveStatus,
+          incentiveCode,
+          incentiveDescription,
+          additionalDetails,
+        }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save conversation details')
+      }
+      
+      // Generate conversation plan
+      const planResponse = await fetch(`/api/conversation-plan/generate?chatId=${targetChatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic,
+          duration,
+          additionalDetails,
+        }),
+      })
+      
+      if (!planResponse.ok) {
+        console.error('Failed to generate conversation plan, but continuing')
+        // Don't throw error here, we'll still navigate
+        toast.success('Conversation details saved successfully!')
+      } else {
+        toast.success('Conversation plan generated successfully!')
+      }
+      
+      // Navigate to the conversations route with the plan tab active
+      router.push(`/conversations/${targetChatId}?tab=plan`)
+    } catch (error) {
+      console.error('Error saving conversation details:', error)
+      toast.error('Failed to save conversation details. Please try again.')
+      setShowLoadingScreen(false) // Hide loading screen on error
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-8 w-full pb-16">
+      {showLoadingScreen && <LoadingScreen />}
+      
       {/* Card 1: Topic */}
-      <div>
+      <div ref={cardRefs.card1}>
         <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
           <h3 className="text-base font-medium mb-1 flex items-center">
             Describe Your Conversation Topic
@@ -197,7 +321,7 @@ export function CreateConversationForm() {
           <Textarea
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g., I want to understand why customers are canceling their subscriptions"
+            placeholder="e.g., I to understand why customers cancel their subscriptions"
             className="mb-4 min-h-[100px] bg-white"
           />
           
@@ -333,13 +457,13 @@ export function CreateConversationForm() {
       
       {/* Card 2: Duration */}
       {visibleCards >= 2 && (
-        <div>
+        <div ref={cardRefs.card2}>
           <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-1 flex items-center">
               Set the Conversation Duration
               <StatusDot active={hasContent(2)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-4">Approximately how long should this chat conversation last?</p>
+            <p className="text-sm text-gray-500 mb-4">Approximately how long should the agent engage respondents in conversation before wrapping up?</p>
             
             <div className="grid grid-cols-2 gap-3 mb-4 max-w-2xl">
               {durationOptions.map((time) => (
@@ -375,13 +499,13 @@ export function CreateConversationForm() {
       
       {/* Card 3: Respondent Contacts */}
       {visibleCards >= 3 && (
-        <div>
+        <div ref={cardRefs.card3}>
           <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-1 flex items-center">
               Collect Respondent Details
               <StatusDot active={hasContent(3)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-4">Want to capture names and emails? We'll ask them at the outset of the chat.</p>
+            <p className="text-sm text-gray-500 mb-4">Do you want to capture names and emails? We'll ask them at the outset of the chat.</p>
             
             <div className="grid grid-cols-2 gap-3 mb-4 max-w-2xl">
               <button
@@ -426,13 +550,13 @@ export function CreateConversationForm() {
       
       {/* Card 4: Incentive */}
       {visibleCards >= 4 && (
-        <div>
+        <div ref={cardRefs.card4}>
           <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-1 flex items-center">
               Add an Incentive
               <StatusDot active={hasContent(4)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-4">Encourage participation with a reward</p>
+            <p className="text-sm text-gray-500 mb-4">Encourage participation with a reward.</p>
             
             <div className="grid grid-cols-2 gap-3 mb-4 max-w-2xl">
               <button
@@ -507,33 +631,41 @@ export function CreateConversationForm() {
       
       {/* Card 5: Additional Details */}
       {visibleCards >= 5 && (
-        <div>
+        <div ref={cardRefs.card5}>
           <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-1 flex items-center">
-              Optional: Any additional details or instructions?
+              Optional: Additional Context or Guidance
               <StatusDot active={hasContent(5)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-4">Add any specific questions or context that will help shape the conversation</p>
+            <p className="text-sm text-gray-500 mb-4">Provide any context or clarifying guidance you'd like the AI to keep in mind when crafting your conversation plan.</p>
             
             <Textarea
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
-              placeholder="Add any additional context or specific questions you'd like to include"
+              placeholder="I.e. specifically ask about their favourite feature and explore the reasons why."
               className="mb-4 min-h-[100px] max-w-xl bg-white"
             />
           </div>
           
           <div className="flex justify-end mt-6">
             <Button 
+              onClick={handleSubmit}
               className={cn(
                 isFormComplete() 
                   ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700" 
                   : "bg-gray-300 hover:bg-gray-400",
                 "text-white transition-all duration-200"
               )}
-              disabled={!isFormComplete()}
+              disabled={!isFormComplete() || isSubmitting}
             >
-              Generate Plan
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Plan...
+                </>
+              ) : (
+                "Generate Plan"
+              )}
             </Button>
           </div>
         </div>

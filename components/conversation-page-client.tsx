@@ -23,6 +23,7 @@ import type { ConversationPlan } from "@/components/conversationPlanSchema"
 import { EmailNotificationSetting } from "@/components/email-notification-setting"
 import { IncentiveSetting } from "@/components/incentive-setting"
 import { NavSidebar } from "@/components/nav-sidebar"
+import { useSearchParams } from "next/navigation"
 
 interface ConversationPageClientProps {
   params: {
@@ -32,8 +33,18 @@ interface ConversationPageClientProps {
 }
 
 export function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(tabParam || "plan")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam && ['share', 'plan', 'responses', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   useEffect(() => {
     async function loadConversationPlan() {
@@ -240,7 +251,7 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
         </div>
 
         {/* Tabs Section */}
-        <Tabs defaultValue="plan" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
             <TabsTrigger
               value="share"
@@ -278,8 +289,7 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
                   <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
-                  This is where you can view and edit your conversation plan. Use this to structure your interview and
-                  ensure you cover all necessary points.
+                Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
                 </p>
                 <ConversationPlanForm 
                   chatId={params.guideName} 

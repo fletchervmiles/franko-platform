@@ -50,8 +50,30 @@ async function createModels() {
     middleware: customMiddleware,
   });
 
-  return { geminiProModel, geminiFlashModel, o3MiniModel, o3MiniLowModel };
+  // Create a wrapped version of the OpenAI o1 model with medium reasoning effort
+  const o1Model = wrapLanguageModel({
+    model: openai("o1", {
+      reasoningEffort: 'medium'  // Configure with medium reasoning effort for balanced performance
+    }) as unknown as LanguageModelV1,
+    middleware: customMiddleware,
+  });
+
+  // Create a wrapped version of the OpenAI o1 model with high reasoning effort
+  const o1HighModel = wrapLanguageModel({
+    model: openai("o1", {
+      reasoningEffort: 'high'  // Configure with high reasoning effort for complex tasks
+    }) as unknown as LanguageModelV1,
+    middleware: customMiddleware,
+  });
+
+  // Create a wrapped version of the OpenAI o1-mini model
+  const o1MiniModel = wrapLanguageModel({
+    model: openai("o1-mini") as unknown as LanguageModelV1,
+    middleware: customMiddleware,
+  });
+
+  return { geminiProModel, geminiFlashModel, o3MiniModel, o3MiniLowModel, o1Model, o1HighModel, o1MiniModel };
 }
 
 // Export the models
-export const { geminiProModel, geminiFlashModel, o3MiniModel, o3MiniLowModel } = await createModels();
+export const { geminiProModel, geminiFlashModel, o3MiniModel, o3MiniLowModel, o1Model, o1HighModel, o1MiniModel } = await createModels();
