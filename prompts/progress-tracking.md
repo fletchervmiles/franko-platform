@@ -3,7 +3,7 @@
 ## Overview
 
 The goal is to 
-- Create an efficient Progress Bar Updater that updates the objectiveProgress JSON object in the database based on the conversation’s progress. 
+- Create an efficient Progress Bar Updater that updates the objectiveProgress JSON object in the database based on the conversation's progress. 
   - This should run on each turn after the objectiveUpdate function has returned - this is as the response from the most recent objectiveUpdate should be fed into the progress updater prompt - agent_prompts\progress_bar_updater.md
 
 - Update the current objectiveUpdate function to use the following new prompt - agent_prompts\objective_update_prompt.md
@@ -17,11 +17,11 @@ The JSON structure, that should be initalised with each new chat - app\(chat)\ch
 
 {
   "objectives": {
-    "obj1": { "status": "current" },
-    "obj2": { "status": "tbc" },
-    "obj3": { "status": "tbc" },
-    "obj4": { "status": "tbc" },
-    "obj5": { "status": "tbc" }
+    "objective01": { "status": "current" },
+    "objective02": { "status": "tbc" },
+    "objective03": { "status": "tbc" },
+    "objective04": { "status": "tbc" },
+    "objective05": { "status": "tbc" }
   }
 }
 

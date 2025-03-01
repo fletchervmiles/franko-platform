@@ -1,5 +1,18 @@
 import { z } from "zod"
 
+// Type for a single objective
+export type Objective = {
+  objective: string;
+  desiredOutcome: string;
+  agentGuidance: string[];
+  expectedConversationTurns: string;
+}
+
+// Type for numbered objectives (for database storage)
+export type NumberedObjectives = {
+  [key: string]: Objective;
+}
+
 // Complete schema with all fields (for database storage)
 export const conversationPlanSchema = z.object({
   thinking: z.object({
@@ -44,19 +57,6 @@ export const conversationPlanUISchema = z.object({
 
 // Type for the UI-visible conversation plan
 export type ConversationPlanUI = z.infer<typeof conversationPlanUISchema>
-
-// Type for a single objective
-export type Objective = {
-  objective: string;
-  desiredOutcome: string;
-  agentGuidance: string[];
-  expectedConversationTurns: string;
-}
-
-// Type for numbered objectives (for database storage)
-export type NumberedObjectives = {
-  [key: string]: Objective;
-}
 
 // Helper function to convert array-based objectives to numbered object format
 export function arrayToNumberedObjectives(objectives: Objective[]): NumberedObjectives {

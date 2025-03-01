@@ -50,11 +50,11 @@ export async function POST(request: Request) {
     } else {
       // Create default progress
       fixedProgress.objectives = {
-        obj1: { status: "current" },
-        obj2: { status: "tbc" },
-        obj3: { status: "tbc" },
-        obj4: { status: "tbc" },
-        obj5: { status: "tbc" }
+        objective01: { status: "current" },
+        objective02: { status: "tbc" },
+        objective03: { status: "tbc" },
+        objective04: { status: "tbc" },
+        objective05: { status: "tbc" }
       };
     }
 

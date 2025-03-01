@@ -3,7 +3,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
-import type { ConversationPlan, arrayToNumberedObjectives, numberedObjectivesToArray } from "@/components/conversationPlanSchema";
+import { arrayToNumberedObjectives, numberedObjectivesToArray, type ConversationPlan } from "@/components/conversationPlanSchema";
 import { revalidatePath } from "next/cache";
 
 export async function createChatInstance(chat: InsertChatInstance): Promise<SelectChatInstance> {
@@ -75,18 +75,17 @@ export async function updateChatInstanceConversationPlan(
   conversationPlan: ConversationPlan
 ): Promise<SelectChatInstance | undefined> {
   try {
-    // Convert the array-based objectives to numbered object format for storage
-    const planForStorage = {
+    // Convert the objectives array to numbered objects format for database storage
+    const dbPlan = {
       ...conversationPlan,
-      // Store the numbered objectives in the database
-      // but keep the array for frontend compatibility
-      numberedObjectives: arrayToNumberedObjectives(conversationPlan.objectives)
+      // Store the objectives as numbered keys (objective01, objective02, etc.)
+      objectives: arrayToNumberedObjectives(conversationPlan.objectives)
     };
 
     const [result] = await db
       .update(chatInstancesTable)
       .set({ 
-        conversationPlan: planForStorage,
+        conversationPlan: dbPlan,
         conversationPlanLastEdited: new Date()
       })
       .where(eq(chatInstancesTable.id, id))
@@ -106,9 +105,20 @@ export async function getConversationPlan(id: string): Promise<ConversationPlan 
       return null;
     }
     
-    // Return the plan with the array-based objectives for frontend compatibility
-    // The numbered objectives are stored in the database but not exposed to the frontend
-    return chatInstance.conversationPlan as ConversationPlan;
+    const dbPlan = chatInstance.conversationPlan as any;
+    
+    // Check if the objectives are already in array format (for backward compatibility)
+    if (Array.isArray(dbPlan.objectives)) {
+      return dbPlan as ConversationPlan;
+    }
+    
+    // Convert the numbered objectives back to an array for frontend consumption
+    const uiPlan: ConversationPlan = {
+      ...dbPlan,
+      objectives: numberedObjectivesToArray(dbPlan.objectives)
+    };
+    
+    return uiPlan;
   } catch (error) {
     console.error("Error getting conversation plan:", error);
     throw error;

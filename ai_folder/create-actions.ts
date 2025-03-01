@@ -12,7 +12,7 @@ import fs from 'fs';
 import { logger } from '@/lib/logger';
 import { updateChatInstanceConversationPlan, updateChatInstanceProgress } from "@/db/queries/chat-instances-queries";
 import { o1Model } from ".";
-import type { ConversationPlan, Objective, arrayToNumberedObjectives } from "@/components/conversationPlanSchema";
+import { arrayToNumberedObjectives, type ConversationPlan, type Objective } from "@/components/conversationPlanSchema";
 import { getUserProfile } from "@/db/queries/queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 
@@ -160,7 +160,7 @@ export async function generateConversationPlanFromForm({
           objectives: objectivesArray
         };
 
-        // Save the conversation plan
+        // Save the conversation plan (the conversion to numbered objectives happens in the query function)
         await updateChatInstanceConversationPlan(chatId, plan);
 
         logger.debug('Generated conversation plan from form data:', {

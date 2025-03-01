@@ -12,7 +12,19 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Check, Loader2, BookOpen, Target, List, MessageCircle, HelpCircle, MessageSquare, ChevronDown, ChevronRight, Circle, Plus, X } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Check, Loader2, BookOpen, Target, List, MessageCircle, HelpCircle, MessageSquare, ChevronDown, ChevronRight, Circle, Plus, X, Trash2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type SectionStatus = "view" | "edit" | "saving" | "saved"
 
@@ -20,6 +32,7 @@ interface ConversationPlanFormProps {
   chatId: string;
   onSubmit?: (data: ConversationPlan) => Promise<void>;
   initialData?: ConversationPlan | null;
+  startInEditMode?: boolean;
 }
 
 // Custom component for bullet point editing
@@ -104,12 +117,16 @@ function BulletPointEditor({ items, onChange, placeholder = "Add a new item..." 
   );
 }
 
-export default function ConversationPlanForm({ chatId, onSubmit, initialData }: ConversationPlanFormProps) {
-  const [overviewStatus, setOverviewStatus] = useState<SectionStatus>("view")
+export default function ConversationPlanForm({ chatId, onSubmit, initialData, startInEditMode = false }: ConversationPlanFormProps) {
+  const [overviewStatus, setOverviewStatus] = useState<SectionStatus>(startInEditMode ? "edit" : "view")
   const [objectiveStatuses, setObjectiveStatuses] = useState<SectionStatus[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    overview: startInEditMode,
+    objectives: startInEditMode
+  })
   const router = useRouter()
+  const [objectiveToDelete, setObjectiveToDelete] = useState<number | null>(null)
 
   const form = useForm<ConversationPlan>({
     resolver: zodResolver(conversationPlanSchema),
@@ -140,7 +157,8 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
         const plan = await response.json();
         if (plan) {
           form.reset(plan)
-          setObjectiveStatuses(new Array(plan.objectives.length).fill("view"))
+          // Set all objective statuses based on startInEditMode
+          setObjectiveStatuses(new Array(plan.objectives.length).fill(startInEditMode ? "edit" : "view"))
         }
       } catch (error) {
         console.error("Error loading conversation plan:", error)
@@ -150,7 +168,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
       }
     }
     loadConversationPlan()
-  }, [chatId, form])
+  }, [chatId, form, startInEditMode])
 
   const onSubmitHandler: SubmitHandler<ConversationPlan> = async (data) => {
     console.log("Form data", data)
@@ -241,15 +259,12 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
     }))
   }
 
-  const handleAddObjective = () => {
-    append({
-      objective: "",
-      desiredOutcome: "",
-      agentGuidance: [""],
-      expectedConversationTurns: "",
-    });
-    setObjectiveStatuses((prev) => [...prev, "edit"]);
-  };
+  // Add this function to handle objective deletion with confirmation
+  const handleDeleteObjective = (index: number) => {
+    remove(index)
+    setObjectiveToDelete(null)
+    toast.success("Objective removed successfully")
+  }
 
   if (isLoading) {
     return (
@@ -356,7 +371,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                         placeholder="e.g. '≈2 minutes' or '3'"
                         className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-black"
                         {...field}
-                        disabled={overviewStatus !== "edit"}
+                        disabled={true} // Always disabled
                       />
                     </FormControl>
                     <FormMessage />
@@ -402,53 +417,88 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     </div>
                     <span className="text-sm font-medium text-gray-600">Step {index + 1}</span>
                   </div>
-                  {objectiveStatuses[index] === "view" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setObjectiveStatuses((prev) => {
-                          const newStatuses = [...prev]
-                          newStatuses[index] = "edit"
-                          return newStatuses
-                        })
-                      }
-                      className="h-8 text-xs px-4 transition-all duration-300 ease-in-out"
-                    >
-                      Edit
-                    </Button>
-                  )}
-                  {objectiveStatuses[index] === "edit" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSaveObjective(index)}
-                      className="h-8 text-xs px-4 transition-all duration-300 ease-in-out"
-                    >
-                      Save
-                    </Button>
-                  )}
-                  {objectiveStatuses[index] === "saving" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="h-8 text-xs px-3 transition-all duration-300 ease-in-out"
-                    >
-                      <Loader2 className="w-3 h-3 mr-0.5 animate-spin" />
-                      Saving...
-                    </Button>
-                  )}
-                  {objectiveStatuses[index] === "saved" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs px-3 transition-all duration-300 ease-in-out text-green-700"
-                    >
-                      <Check className="w-3 h-3 mr-0.5" />
-                      Saved
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {objectiveStatuses[index] === "view" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setObjectiveStatuses((prev) => {
+                            const newStatuses = [...prev]
+                            newStatuses[index] = "edit"
+                            return newStatuses
+                          })
+                        }
+                        className="h-8 text-xs px-4 transition-all duration-300 ease-in-out"
+                      >
+                        Edit
+                      </Button>
+                    )}
+                    {objectiveStatuses[index] === "edit" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSaveObjective(index)}
+                          className="h-8 text-xs px-4 transition-all duration-300 ease-in-out"
+                        >
+                          Save
+                        </Button>
+                        <AlertDialog open={objectiveToDelete === index} onOpenChange={(open) => !open && setObjectiveToDelete(null)}>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setObjectiveToDelete(index)}
+                              className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-300 ease-in-out"
+                              type="button"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Remove objective</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-white">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete this objective. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteObjective(index)}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                    {objectiveStatuses[index] === "saving" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="h-8 text-xs px-3 transition-all duration-300 ease-in-out"
+                      >
+                        <Loader2 className="w-3 h-3 mr-0.5 animate-spin" />
+                        Saving...
+                      </Button>
+                    )}
+                    {objectiveStatuses[index] === "saved" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs px-3 transition-all duration-300 ease-in-out text-green-700"
+                      >
+                        <Check className="w-3 h-3 mr-0.5" />
+                        Saved
+                      </Button>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -511,11 +561,20 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     ) : (
                       <ChevronRight className="w-4 h-4 text-gray-400" />
                     )}
-                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                    <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-gray-400 cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" align="center" className="bg-black text-white border-black max-w-xs">
+                          <p>Agent guidance provides specific instructions for the AI to follow during this step of the conversation. These instructions help the AI understand how to approach the objective and what techniques to use to achieve the desired outcome.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
                       Agent Guidance
                     </FormLabel>
-                </div>
+                  </div>
 
                   {expandedSections[`guidance-${index}`] && (
                   <FormField
@@ -566,29 +625,9 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData }: 
                     )}
                   />
                 </div>
-
-                {objectiveStatuses[index] === "edit" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => remove(index)}
-                    className="mt-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 h-8 text-xs px-3 transition-all duration-300 ease-in-out"
-                    type="button"
-                  >
-                    Remove
-                  </Button>
-                )}
               </CardContent>
             </Card>
           ))}
-
-          <Button
-            variant="outline"
-            onClick={handleAddObjective}
-            type="button"
-            className="mt-2 h-8 text-xs px-3 transition-all duration-300 ease-in-out"
-          >
-            + Add Objective
-          </Button>
         </div>
       </form>
     </Form>

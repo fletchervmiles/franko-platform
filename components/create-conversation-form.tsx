@@ -94,9 +94,10 @@ const supportTemplates: Template[] = [
 interface CreateConversationFormProps {
   isNew?: boolean;
   chatId?: string;
+  isRegenerating?: boolean;
 }
 
-export function CreateConversationForm({ isNew = false, chatId: propChatId }: CreateConversationFormProps) {
+export function CreateConversationForm({ isNew = false, chatId: propChatId, isRegenerating = false }: CreateConversationFormProps) {
   const router = useRouter()
   const params = useParams()
   // Use the prop chatId if provided, otherwise try to get it from params
@@ -130,11 +131,63 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   
   // State for visible cards
-  const [visibleCards, setVisibleCards] = useState(1)
+  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 5 : 1)
+  
+  // Add effect to load existing data when regenerating
+  useEffect(() => {
+    if (isRegenerating && chatId) {
+      const fetchChatDetails = async () => {
+        try {
+          const response = await fetch(`/api/chat-instances/details?chatId=${chatId}`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch chat details');
+          }
+          
+          const data = await response.json();
+          
+          // Map database duration format to form duration format
+          let formattedDuration = data.duration || "";
+          if (formattedDuration) {
+            // Convert from backend format to frontend display format
+            if (formattedDuration.includes("1 minute")) {
+              formattedDuration = "1 minute (quick)";
+            } else if (formattedDuration.includes("2 minutes")) {
+              formattedDuration = "2 minutes (focused)";
+            } else if (formattedDuration.includes("3-4 minutes")) {
+              formattedDuration = "3-4 minutes (recommended)";
+            } else if (formattedDuration.includes("5-6 minutes")) {
+              formattedDuration = "5-6 minutes (balanced)";
+            } else if (formattedDuration.includes("7-8 minutes")) {
+              formattedDuration = "7-8 minutes (exploratory)";
+            } else if (formattedDuration.includes("9-10 minutes")) {
+              formattedDuration = "9-10 minutes (deep dive)";
+            }
+          }
+          
+          // Populate form fields with existing data
+          setTopic(data.topic || "");
+          setDuration(formattedDuration);
+          setRespondentContacts(data.respondentContacts);
+          setIncentiveStatus(data.incentiveStatus);
+          setIncentiveCode(data.incentiveCode || "");
+          setIncentiveDescription(data.incentiveDescription || "");
+          setAdditionalDetails(data.additionalDetails || "");
+          
+          // Show all cards when regenerating
+          setVisibleCards(5);
+        } catch (error) {
+          console.error('Error fetching chat details:', error);
+          toast.error('Failed to load existing conversation details');
+        }
+      };
+      
+      fetchChatDetails();
+    }
+  }, [isRegenerating, chatId]);
   
   // Add effect to scroll to the newly visible card when visibleCards changes
   useEffect(() => {
-    if (visibleCards > 1) {
+    if (visibleCards > 1 && !isRegenerating) {
       const cardRef = cardRefs[`card${visibleCards}` as keyof typeof cardRefs]
       if (cardRef.current) {
         setTimeout(() => {
@@ -145,7 +198,7 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
         }, 100)
       }
     }
-  }, [visibleCards])
+  }, [visibleCards, isRegenerating])
   
   // Function to check if a card has content
   const hasContent = (cardIndex: number) => {
@@ -291,11 +344,11 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
         // Don't throw error here, we'll still navigate
         toast.success('Conversation details saved successfully!')
       } else {
-        toast.success('Conversation plan generated successfully!')
+        toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!')
       }
       
       // Navigate to the conversations route with the plan tab active
-      router.push(`/conversations/${targetChatId}?tab=plan`)
+      router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`)
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')
@@ -304,6 +357,11 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
       setIsSubmitting(false)
     }
   }
+
+  // Update the button text based on whether we're regenerating
+  const submitButtonText = isSubmitting 
+    ? (isRegenerating ? "Regenerating Plan..." : "Generating Plan...")
+    : (isRegenerating ? "Regenerate Plan" : "Generate Plan");
 
   return (
     <div className="space-y-8 w-full pb-16">
@@ -647,7 +705,15 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
             />
           </div>
           
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end mt-6 space-x-3">
+            {isRegenerating && (
+              <Button 
+                onClick={() => router.push(`/conversations/${chatId}?tab=plan`)}
+                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+              >
+                Back to Plan
+              </Button>
+            )}
             <Button 
               onClick={handleSubmit}
               className={cn(
@@ -661,10 +727,10 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId }: Cr
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Plan...
+                  {submitButtonText}
                 </>
               ) : (
-                "Generate Plan"
+                submitButtonText
               )}
             </Button>
           </div>

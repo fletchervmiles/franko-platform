@@ -17,10 +17,10 @@ export async function POST() {
     
     const initialProgress = {
       objectives: {
-        obj1: { status: "current" },
-        obj2: { status: "tbc" },
-        obj3: { status: "tbc" },
-        obj4: { status: "tbc" }
+        objective01: { status: "current" },
+        objective02: { status: "tbc" },
+        objective03: { status: "tbc" },
+        objective04: { status: "tbc" }
       }
     }
     

@@ -24,6 +24,7 @@ import { EmailNotificationSetting } from "@/components/email-notification-settin
 import { IncentiveSetting } from "@/components/incentive-setting"
 import { NavSidebar } from "@/components/nav-sidebar"
 import { useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 interface ConversationPageClientProps {
   params: {
@@ -35,9 +36,14 @@ interface ConversationPageClientProps {
 export function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
+  const fromParam = searchParams.get('from')
   const [activeTab, setActiveTab] = useState(tabParam || "plan")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
+  const router = useRouter()
+
+  // Check if we're coming from regeneration
+  const isFromRegenerate = fromParam === 'regenerate'
 
   // Update active tab when URL parameter changes
   useEffect(() => {
@@ -206,10 +212,12 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
       <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
         {/* Header Section */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-black">
-            {conversationPlan?.title || "Untitled Conversation"}
-          </h1>
-          <div className="flex items-center gap-2">
+          <div className="overflow-hidden mr-4">
+            <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
+              {conversationPlan?.title || "Untitled Conversation"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <img
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
               alt="User avatar"
@@ -284,17 +292,28 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
           <TabsContent value="plan" className="mt-10">
             <Card className="rounded-[6px] border shadow-sm overflow-hidden bg-[#FAFAFA]">
               <div className="p-6">
-                <h2 className="text-2xl font-semibold mb-2 flex items-center">
-                  Conversation Plan
-                  <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
-                </h2>
-                <p className="text-sm text-gray-500 mb-6">
-                Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
-                </p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                  <div className="w-full md:max-w-[70%] mb-4 md:mb-0">
+                    <h2 className="text-2xl font-semibold mb-2 flex items-center">
+                      Conversation Plan
+                      <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => router.push(`/create/${params.guideName}?regenerate=true`)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto"
+                  >
+                    Regenerate Plan
+                  </Button>
+                </div>
                 <ConversationPlanForm 
                   chatId={params.guideName} 
                   onSubmit={handleConversationPlanSubmit} 
-                  initialData={conversationPlan} 
+                  initialData={conversationPlan}
+                  startInEditMode={isFromRegenerate}
                 />
               </div>
             </Card>
