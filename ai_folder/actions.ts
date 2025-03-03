@@ -635,62 +635,6 @@ export async function updateChatProgress({
         : 'None'
     });
 
-    // Get system prompt for progress evaluation
-    const systemPrompt = await getPopulatedProgressPrompt(
-      organizationName,
-      organizationContext,
-      chatInstance.conversationPlan
-    );
-    
-    logger.debug('Retrieved populated progress prompt', { 
-      promptLength: systemPrompt.length,
-      promptPreview: systemPrompt.substring(0, 100) + '...'
-    });
-
-    // Add initial progress and objective update to the prompt if available
-    let promptWithProgress = systemPrompt;
-    if (initialProgress) {
-      promptWithProgress += `\n\nCurrent progress state:\n${JSON.stringify(initialProgress, null, 2)}`;
-      logger.debug('Added initial progress to prompt');
-    }
-    if (objectiveUpdateText) {
-      promptWithProgress += `\n\nObjective update analysis:\n${objectiveUpdateText}`;
-      logger.debug('Added objective update text to prompt');
-    }
-    
-    logger.debug('Generating progress update with AI model', {
-      finalPromptLength: promptWithProgress.length,
-      messageCount: messages.length
-    });
-
-    const aiStart = performance.now();
-    const { object: progressUpdate } = await generateObject({
-      model: geminiFlashModel,
-      system: promptWithProgress,
-      prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-      schema: z.object({
-        status: z.enum(["not_started", "in_progress", "completed"]).describe("Current status of the chat"),
-        completionStatus: z.enum(["not_started", "in_progress", "completed"]).describe("Overall completion status"),
-        progress: z.number().min(0).max(100).describe("Percentage of conversation completed"),
-        currentObjective: z.string().describe("Current objective being discussed"),
-        completedObjectives: z.array(z.string()).describe("List of completed objectives"),
-        nextObjective: z.string().optional().describe("Next objective to discuss"),
-        summary: z.string().describe("Brief summary of progress")
-      })
-    });
-    const aiEnd = performance.now();
-    
-    logger.info('AI generated progress update', { 
-      duration: `${(aiEnd - aiStart).toFixed(2)}ms`,
-      status: progressUpdate.status,
-      completionStatus: progressUpdate.completionStatus,
-      progress: progressUpdate.progress,
-      currentObjective: progressUpdate.currentObjective,
-      completedObjectivesCount: progressUpdate.completedObjectives.length,
-      completedObjectives: progressUpdate.completedObjectives,
-      summary: progressUpdate.summary
-    });
-
     // Create or update the progress object
     let chatProgress = initialProgress;
     
@@ -747,67 +691,55 @@ export async function updateChatProgress({
       })
     });
     
-    // Update the progress based on completed objectives
-    if (progressUpdate.completedObjectives.length > 0) {
-      logger.debug('Updating objectives based on completedObjectives', {
-        completedObjectives: progressUpdate.completedObjectives
-      });
-      
-      // Mark completed objectives as "done"
-      for (const [key, obj] of Object.entries(chatProgress.objectives)) {
-        // Check if this objective is in the completed list
-        // We're using a simple heuristic: if the objective key (e.g., "objective01") 
-        // is mentioned in any of the completed objectives, mark it as done
-        const isCompleted = progressUpdate.completedObjectives.some(
-          (objective: string) => objective.toLowerCase().includes(key.toLowerCase())
-        );
-        
-        if (isCompleted) {
-          logger.debug(`Marking objective ${key} as done`);
-          chatProgress.objectives[key].status = "done";
-        }
-      }
-      
-      // Find the current objective based on progressUpdate.currentObjective
-      for (const [key, obj] of Object.entries(chatProgress.objectives)) {
-        // If this objective is mentioned in currentObjective, mark it as current
-        if (progressUpdate.currentObjective.toLowerCase().includes(key.toLowerCase())) {
-          logger.debug(`Marking objective ${key} as current`);
-          chatProgress.objectives[key].status = "current";
-        }
-      }
-    } else {
-      logger.debug('No completed objectives to update');
-    }
+    // Derive status fields directly from objective statuses
+    const objectives = chatProgress.objectives;
+    const hasCompletedObjectives = Object.values(objectives).some(obj => (obj as { status: string }).status === "done");
+    const allObjectivesCompleted = Object.values(objectives).every(obj => (obj as { status: string }).status === "done");
     
-    logger.debug('Progress object after updates', {
-      objectiveCount: Object.keys(chatProgress.objectives).length,
-      objectives: Object.entries(chatProgress.objectives).map(([key, objValue]) => {
-        const obj = objValue as { status: string };
-        return {
-          key,
-          status: obj.status
-        };
-      })
+    const status = hasCompletedObjectives ? "in_progress" : "not_started";
+    const completionStatus = allObjectivesCompleted ? "completed" : "in_progress";
+    
+    // Determine current objective and completed objectives for logging
+    const currentObjective = Object.keys(objectives).find(key => objectives[key].status === "current") || "";
+    const completedObjectives = Object.keys(objectives).filter(key => objectives[key].status === "done");
+    
+    logger.info('Derived progress information', {
+      status,
+      completionStatus,
+      currentObjective,
+      completedObjectivesCount: completedObjectives.length,
+      completedObjectives
     });
-
+    
     // Update chat response status and progress
     logger.info('Saving updated progress to database', {
       chatResponseId,
-      status: progressUpdate.status,
-      completionStatus: progressUpdate.completionStatus,
+      status,
+      completionStatus,
       progressJson: JSON.stringify(chatProgress).substring(0, 100) + '...'
     });
     
     await updateChatResponse(chatResponseId, {
-      status: progressUpdate.status,
-      completionStatus: progressUpdate.completionStatus,
+      status,
+      completionStatus,
       chatProgress: JSON.stringify(chatProgress) // Save the updated progress
     });
     
     logger.info('Chat progress updated successfully');
 
-    return progressUpdate;
+    // Return simplified progress update for API compatibility
+    return {
+      status,
+      completionStatus,
+      progress: hasCompletedObjectives ? (allObjectivesCompleted ? 100 : 50) : 0,
+      currentObjective: currentObjective || "Not specified",
+      completedObjectives,
+      summary: allObjectivesCompleted 
+        ? "All objectives completed" 
+        : hasCompletedObjectives 
+          ? "Some objectives completed" 
+          : "No objectives completed yet"
+    };
   } catch (error) {
     logger.error('Error updating chat progress:', error);
     throw error;
