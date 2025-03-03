@@ -563,7 +563,7 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId, isRe
               Collect Respondent Details
               <StatusDot active={hasContent(3)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-4">Do you want to capture names and emails? We'll ask them at the outset of the chat.</p>
+            <p className="text-sm text-gray-500 mb-4">Do you want to capture first name and email? We'll ask them at the outset of the chat.</p>
             
             <div className="grid grid-cols-2 gap-3 mb-4 max-w-2xl">
               <button

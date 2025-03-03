@@ -25,6 +25,7 @@ import { IncentiveSetting } from "@/components/incentive-setting"
 import { NavSidebar } from "@/components/nav-sidebar"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 interface ConversationPageClientProps {
   params: {
@@ -40,7 +41,12 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
   const [activeTab, setActiveTab] = useState(tabParam || "plan")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
+
+  // The guideName param is actually the chat instance ID
+  const chatId = params.guideName
 
   // Check if we're coming from regeneration
   const isFromRegenerate = fromParam === 'regenerate'
@@ -52,34 +58,222 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
     }
   }, [tabParam])
 
+  // Update lastViewed timestamp when the user views the responses tab
+  useEffect(() => {
+    if (activeTab === 'responses') {
+      updateLastViewed();
+    }
+  }, [activeTab]);
+
+  const updateLastViewed = async () => {
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}/last-viewed`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to update last viewed timestamp';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        console.error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error updating last viewed timestamp:', error);
+    }
+  };
+
   useEffect(() => {
     async function loadConversationPlan() {
       try {
-        const response = await fetch(`/api/conversation-plan?chatId=${params.guideName}`);
-        if (!response.ok) throw new Error('Failed to load plan');
+        setIsLoading(true);
+        const response = await fetch(`/api/conversation-plan?chatId=${chatId}`);
+        
+        if (!response.ok) {
+          // Try to get more specific error message from the response
+          let errorMessage = 'Failed to load conversation plan';
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If we can't parse the error, use the default message
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
         const plan = await response.json();
         if (plan) {
           setConversationPlan(plan);
         }
       } catch (error) {
         console.error("Error loading conversation plan:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation plan';
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
     loadConversationPlan();
-  }, [params.guideName]);
+  }, [chatId, toast]);
 
-  const handleDelete = () => {
-    console.log("Deleting guide:", params.guideName)
-    setShowDeleteDialog(false)
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to delete conversation';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Conversation deleted successfully",
+      });
+      
+      // Redirect to workspace page after successful deletion
+      router.push('/workspace');
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete conversation';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      setShowDeleteDialog(false);
+    }
   }
 
-  const handleRename = () => {
-    console.log("Renaming guide:", params.guideName)
+  const handleRename = async () => {
+    // Get the current title
+    const currentTitle = conversationPlan?.title || "Untitled Conversation";
+    
+    // Prompt the user for a new title
+    const newTitle = window.prompt("Enter a new title for this conversation:", currentTitle);
+    
+    // If the user cancels or enters an empty title, do nothing
+    if (!newTitle || newTitle.trim() === '') {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to rename conversation';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Update the conversation plan with the new title
+      if (conversationPlan) {
+        setConversationPlan({
+          ...conversationPlan,
+          title: newTitle,
+        });
+      }
+      
+      toast({
+        title: "Success",
+        description: "Conversation renamed successfully",
+      });
+    } catch (error) {
+      console.error("Error renaming conversation:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to rename conversation';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   }
 
   const handleConversationPlanSubmit = async (data: ConversationPlan) => {
-    console.log("Saving conversation plan:", data)
-    setConversationPlan(data)
+    try {
+      const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to save conversation plan';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      setConversationPlan(data);
+      
+      toast({
+        title: "Success",
+        description: "Conversation plan saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving conversation plan:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save conversation plan';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   }
 
   // Mock data for ResponseCards
@@ -287,7 +481,7 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
             </TabsTrigger>
           </TabsList>
           <TabsContent value="share" className="mt-10">
-            <ShareableLink guideName={params.guideName} />
+            <ShareableLink guideName={chatId} />
           </TabsContent>
           <TabsContent value="plan" className="mt-10">
             <Card className="rounded-[6px] border shadow-sm overflow-hidden bg-[#FAFAFA]">
@@ -303,14 +497,14 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
                     </p>
                   </div>
                   <Button 
-                    onClick={() => router.push(`/create/${params.guideName}?regenerate=true`)}
+                    onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
                     className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto"
                   >
                     Regenerate Plan
                   </Button>
                 </div>
                 <ConversationPlanForm 
-                  chatId={params.guideName} 
+                  chatId={chatId} 
                   onSubmit={handleConversationPlanSubmit} 
                   initialData={conversationPlan}
                   startInEditMode={isFromRegenerate}

@@ -72,7 +72,7 @@ export default function StartInterviewPage() {
       <div className="max-w-[800px] mx-auto w-full space-y-4">
         <div className="text-center pt-6 md:pt-12 mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
-            Help {clientProfile.companyName || 'us'} Improve: Share Your Feedback
+            Help {clientProfile.organisationName || 'us'} Improve: Share Your Feedback
           </h1>
           <p className="mt-2 text-muted-foreground">
             Complete the form below to receive a quick 5-10 minute call from our AI interviewer. We'll ask a few simple questions about your experience and why you decided to cancel your subscription.
@@ -85,7 +85,7 @@ export default function StartInterviewPage() {
           userId={clientId}
           key={JSON.stringify(clientProfile)}
         />
-        <FAQSection companyName={clientProfile.companyName || ''} />
+        <FAQSection companyName={clientProfile.organisationName || ''} />
       </div>
       <Footer />
       <CallProcessingModal 

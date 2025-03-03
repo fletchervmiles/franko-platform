@@ -59,6 +59,11 @@ const config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      transitionDelay: {
+        '0': '0ms',
+        '100': '100ms',
+        '200': '200ms',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -75,11 +80,27 @@ const config = {
           "75%": { boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.3)" },
           "100%": { boxShadow: "0 0 0 0 rgba(59, 130, 246, 0.4)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "bounce": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-4px)" },
+        },
+        "typing": {
+          "0%": { transform: "translateY(0px)" },
+          "28%": { transform: "translateY(-5px)" },
+          "44%": { transform: "translateY(0px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-edge": "pulse-edge 1.5s ease-in-out infinite",
+        "shimmer": "shimmer 2s linear infinite",
+        "bounce": "bounce 0.6s ease-in-out infinite",
+        "typing": "typing 1.2s ease-in-out infinite",
       },
     },
   },

@@ -77,7 +77,6 @@ import {
   import { o3MiniLowModel, geminiFlashModel } from "@/ai_folder";  // AI model configuration
   import {
     performWebSearch,
-    generateConversationPlan,
     thinkingHelp,
     objectiveUpdate,
     invalidateConversationPlanPromptCache,
@@ -92,6 +91,11 @@ import {
     updateChatInstance,
     updateChatInstanceConversationPlan
   } from "@/db/queries/chat-instances-queries";
+  import {
+    getChatResponseById,
+    updateChatResponseMessages,
+    updateChatResponseStatus
+  } from "@/db/queries/chat-responses-queries";
   import { getProfile } from "@/db/queries/profiles-queries";
   import { generateUUID } from "@/lib/utils";  // Utility functions
   import { logger } from '@/lib/logger';
@@ -135,8 +139,22 @@ import {
   }
   
   // Add this function to populate the prompt template
-  async function getPopulatedPrompt(userId: string): Promise<string> {
+  async function getPopulatedPrompt(userId: string | null): Promise<string> {
     try {
+      // For external users, use a default prompt template
+      if (!userId || userId === 'external') {
+        logger.debug('Loading external prompt template');
+        
+        // Load the external chat prompt directly
+        const externalPromptTemplate = fs.readFileSync(
+          path.join(process.cwd(), 'agent_prompts', 'external_chat_prompt.md'),
+          'utf-8'
+        );
+        
+        return externalPromptTemplate;
+      }
+      
+      // For regular users, check the cache first
       const cachedPrompt = promptCache.get(userId);
       if (cachedPrompt) {
         logger.debug('Using cached prompt for user:', { userId });
@@ -146,7 +164,7 @@ import {
       logger.debug('Cache miss, loading prompt for user:', { userId });
       
       const promptTemplate = fs.readFileSync(
-        path.join(process.cwd(), 'agent_prompts', 'user_assistant_prompt.md'),
+        path.join(process.cwd(), 'agent_prompts', 'external_chat_prompt.md'),
         'utf-8'
       );
 
@@ -251,17 +269,19 @@ import {
        * 1. Extract request data:
        *    - id: unique identifier for this chat session
        *    - messages: array of all messages in the conversation
+       *    - chatInstanceId: (optional) ID of the parent chat instance for responses
        * 
        * 2. Log incoming messages:
        *    - Truncates long messages for readability
        *    - Logs message roles and content lengths
        *    - Helps with debugging and monitoring
        */
-      const { messages, id = generateUUID() } = await request.json();
+      const { messages, id = generateUUID(), chatInstanceId } = await request.json();
       
       // Use api logger instead of ai logger for API request details
       logger.api('Incoming messages:', {
         id,
+        chatInstanceId,
         messages: messages.map((m: Message) => ({
           role: m.role,
           contentLength: m.content.length,
@@ -271,20 +291,25 @@ import {
   
       logger.info('Processing chat request:', { id, messageCount: messages.length });
   
-      /**
-       * Authentication Check
-       * 
-       * Verifies that:
-       * - User has valid session
-       * - Request is authorized
-       * - User ID is available for database operations
-       */
-      const { userId } = await auth();
-      if (!userId) {
-        logger.error('Unauthorized request attempt');
-        return new Response("Unauthorized", { status: 401 });
+      // If this is a public chat response (has chatInstanceId), we don't need auth
+      let userId = null;
+      if (!chatInstanceId) {
+        /**
+         * Authentication Check
+         * 
+         * Verifies that:
+         * - User has valid session
+         * - Request is authorized
+         * - User ID is available for database operations
+         */
+        const authResult = await auth();
+        userId = authResult?.userId;
+        if (!userId) {
+          logger.error('Unauthorized request attempt');
+          return new Response("Unauthorized", { status: 401 });
+        }
+        logger.info('User authenticated:', { userId });
       }
-      logger.info('User authenticated:', { userId });
   
       /**
        * Message Format Conversion
@@ -324,55 +349,61 @@ import {
        * - Available tools for AI to use
        * - Response streaming settings
        */
-      const systemPrompt = await getPopulatedPrompt(userId);
+      let systemPrompt;
+      try {
+        systemPrompt = await getPopulatedPrompt(userId || 'external');
+      } catch (error) {
+        logger.error('Error loading system prompt:', error);
+        // Fallback to a simple prompt if loading fails
+        systemPrompt = "You are a helpful AI assistant.";
+      }
       
-      // The system prompt already contains the necessary instructions
-      // No need for additional instructions here
-
-      /**
-       * AI Model Configuration
-       * 
-       * Sets up the AI model with:
-       * - System prompt with tool usage instructions
-       * - Core messages from the conversation
-       * - Available tools and their configurations
-       * - Maximum steps for multi-turn interactions
-       */
-      const result = await streamText({
-        model: geminiFlashModel,
-        system: systemPrompt,
-        messages: coreMessages,
-
-
-        tools: {
-          endConversation: {
-            description: "A tool that ends the conversation by redirecting the user back to their dashboard, where they can review and edit the final conversation plan and access additional details like the shareable link. **When to use:** Use this tool immediately after the conversation has finished, when all objectives have been met or when the user indicates no further input is needed.",
-            parameters: z.object({
-              // Required dummy parameter to satisfy Gemini's schema requirements
-              _dummy: z.string().optional().describe("Placeholder parameter")
-            }),
-            execute: async () => ({
-              message: "It's been awesome working together - redirecting you now!",
-              redirectUrl: `/conversations/${id}`,
-              delayMs: 3000
-            }),
+      // Wrap tool executions in try/catch to prevent streaming errors
+      const safeTools = {
+        endConversation: {
+          description: "A tool that ends the conversation by redirecting the user back to their dashboard, where they can review and edit the final conversation plan and access additional details like the shareable link. **When to use:** Use this tool immediately after the conversation has finished, when all objectives have been met or when the user indicates no further input is needed.",
+          parameters: z.object({
+            // Required dummy parameter to satisfy Gemini's schema requirements
+            _dummy: z.string().optional().describe("Placeholder parameter")
+          }),
+          execute: async () => {
+            try {
+              return {
+                message: "It's been awesome working together - redirecting you now!",
+                redirectUrl: `/conversations/${id}`,
+                delayMs: 3000
+              };
+            } catch (error) {
+              logger.error('Error in endConversation tool:', error);
+              return {
+                message: "Thanks for chatting! Redirecting now.",
+                redirectUrl: `/conversations/${id}`,
+                delayMs: 3000
+              };
+            }
           },
+        },
   
-          
-          searchWeb: {
-            description: "A tool that performs a web search to gather factual context from publicly available sources (such as product descriptions, documentation, or feature specs). **When to use:** Use tool when key details are missing from the user's input, when automating context retrieval is desired, or when external, verifiable data is needed to inform the conversation. Avoid using it if all necessary information is already provided, if the data is private or sensitive, or if the request is purely subjective.",
-            parameters: z.object({
-              query: z.string().describe("The search query to find information about"),
-              searchDepth: z
-                .enum(["basic", "advanced"])
-                .optional()
-                .describe("How deep to search. Use 'advanced' for more thorough results"),
-              topic: z
-                .enum(["general", "news"])
-                .optional()
-                .describe("Category of search, use 'news' for recent events")
-            }),
-            execute: async ({ query, searchDepth = "basic", topic = "general" }) => {
+        
+        searchWeb: {
+          description: "A tool that performs a web search to gather factual context from publicly available sources (such as product descriptions, documentation, or feature specs). **When to use:** Use tool when key details are missing from the user's input, when automating context retrieval is desired, or when external, verifiable data is needed to inform the conversation. Avoid using it if all necessary information is already provided, if the data is private or sensitive, or if the request is purely subjective.",
+          parameters: z.object({
+            query: z.string().describe("The search query to find information about"),
+            searchDepth: z
+              .enum(["basic", "advanced"])
+              .optional()
+              .describe("How deep to search. Use 'advanced' for more thorough results"),
+            topic: z
+              .enum(["general", "news"])
+              .optional()
+              .describe("Category of search, use 'news' for recent events")
+          }),
+          execute: async ({ query, searchDepth = "basic", topic = "general" }: { 
+            query: string; 
+            searchDepth?: "basic" | "advanced"; 
+            topic?: "general" | "news" 
+          }) => {
+            try {
               logger.ai('Web search tool called:', { query, searchDepth, topic });
               const results = await performWebSearch({ query });
               logger.ai('Web search results:', {
@@ -381,191 +412,99 @@ import {
                 responseTime: results.responseTime
               });
               return results;
-            },
+            } catch (error) {
+              logger.error('Error in searchWeb tool:', error);
+              return {
+                answer: "Sorry, I couldn't perform that web search right now.",
+                results: [],
+                responseTime: 0
+              };
+            }
           },
+        },
   
 
-          generateConversationPlan: {
-            description: `The generateConversationPlan tool is a vital part of the workflow, tasked with creating and displaying the conversation plan in the user interface (UI) once sufficient information has been gathered. 
-            This tool consolidates insights collected during the conversation into a structured plan, which serves as a dynamic blueprint for guiding the interview process. 
-            The plan can be iteratively refined and regenerated based on additional user feedback, new insights, or evolving priorities, ensuring alignment with the user's needs and objectives.
-
-            **Important Implementation Notes**
-            - This tool generates UI elements that are displayed directly to the user
-            - The UI rendering is handled separately from the data generation
-            - After calling this tool, keep your follow-up response extremely brief or omit it entirely
-            - Never repeat the plan details in your text response - the UI will display them automatically
-
-            **When to Use**
-            Use the generateConversationPlan tool in the following scenarios:
-            - **Initial Draft Generation:** When you have gathered enough foundational details about the user's requirements, preferences, or feedback to create the first version of the conversation plan.
-            - **Iterative Updates:** When new insights or feedback from the user necessitate updates to the existing plan, ensuring it remains relevant and aligned with the user's evolving needs.
-            - **User-Driven Regeneration:** When the user explicitly requests to adjust or regenerate the plan based on their input or changing priorities.
-
-            **Best Practices**
-            To ensure effective use of the generateConversationPlan tool, follow these guidelines:
-            - **Timing:** Only generate the conversation plan after collecting sufficient information to create a meaningful and accurate draft. Avoid generating the plan too early, as it may lack depth or relevance.
-            - **User Engagement:** Maintain transparency with the user by informing them when the plan is being generated or updated. For example:
-                - "Based on what you've shared, I've drafted a conversation plan. Let me know if you'd like to make any adjustments."
-            - **Iterative Process:** Be prepared to regenerate the plan multiple times as the conversation progresses. Each iteration should reflect new insights or feedback to keep the plan aligned with the user's needs.
-            - **Avoid Overuse:** While the plan can be updated frequently, avoid excessive regeneration to prevent overwhelming the user or disrupting the flow of the conversation.`,            
-                        parameters: z.object({
-              _dummy: z.string().optional().describe("Placeholder parameter - not used")
-            }),
-            execute: async () => {
-              try {
-                // We have access to coreMessages, userId, and id from the outer scope
-                logger.ai('Generating conversation plan:', { 
-                  messageCount: coreMessages.length,
-                  userId,
-                  chatId: id
-                });
-                
-                try {
-                  const plan = await generateConversationPlan({ 
-                    messages: coreMessages,
-                    userId,
-                    chatId: id
-                  });
-
-                  logger.ai('Generated conversation plan:', {
-                    title: plan.title,
-                    duration: plan.duration,
-                    objectiveCount: plan.objectives.length
-                  });
-
-                  const result = {
-                    type: 'conversation-plan',
-                    display: {
-                      title: plan.title,
-                      duration: plan.duration,
-                      summary: plan.summary,
-                      objectives: plan.objectives
-                    },
-                    plan // Include full plan for reference
-                  };
-
-                  return result;
-                } catch (planError) {
-                  // Log the specific error
-                  logger.error('Failed to generate conversation plan:', planError);
-                  
-                  // Create a fallback minimal plan
-                  const fallbackPlan = {
-                    title: "Conversation Plan",
-                    duration: "10-15 minutes",
-                    summary: "We'll discuss your needs and requirements to better understand how we can help.",
-                    objectives: [
-                      {
-                        objective: "Understand your requirements",
-                        keyLearningOutcome: "Identify your key needs and challenges",
-                        focusPoints: ["Current challenges", "Desired outcomes", "Timeline and constraints"],
-                        guidanceForAgent: ["Ask open-ended questions", "Listen actively", "Summarize key points"],
-                        illustrativePrompts: ["What are your main challenges?", "What would success look like for you?"],
-                        expectedConversationTurns: "3-5"
-                      }
-                    ]
-                  };
-                  
-                  // Try to save the fallback plan
-                  try {
-                    await updateChatInstanceConversationPlan(id, fallbackPlan);
-                  } catch (saveError) {
-                    logger.error('Failed to save fallback conversation plan:', saveError);
-                    // Continue even if save fails
-                  }
-                  
-                  // Return a user-friendly error message with the fallback plan
-                  return {
-                    type: 'conversation-plan-error',
-                    display: {
-                      title: "Conversation Plan (Simplified)",
-                      message: "I had trouble creating a detailed plan based on our conversation. Here's a simplified version to get us started.",
-                      plan: fallbackPlan
-                    },
-                    plan: fallbackPlan
-                  };
-                }
-              } catch (error) {
-                logger.error('Unexpected error in conversation plan generation:', error);
-                throw error;
-              }
-            },
+        displayOptionsMultipleChoice: {
+          description: `
+        - **Purpose:** Presents the user with contextually relevant, clickable options for selecting one or more choices based on the conversation context.  
+        - **When to Use:** DO NOT USE as the first turn in the conversation. Only use if suggested in the current objective.
+        - **Context Parameter:** Use the optional context parameter to provide additional information that will help generate more relevant and tailored options.
+          `,
+          parameters: z.object({
+            text: z.string().describe("The question or statement for which to generate selectable options"),
+            context: z.string().optional().describe("Additional context to help generate more relevant options")
+          }),
+          execute: async ({ text, context }: { 
+            text: string; 
+            context?: string 
+          }) => {
+            try {
+              logger.debug('Executing displayOptionsMultipleChoice tool', { 
+                text, 
+                contextProvided: !!context
+              });
+              
+              // Use recent messages from conversation history automatically
+              // This simplifies the API by handling it internally
+              const recentMessages = coreMessages.slice(-5).map(m => ({
+                role: m.role,
+                content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+              }));
+              
+              const result = await generateDisplayOptions({ 
+                text, 
+                context,
+                // Use default system prompt
+                messagesHistory: recentMessages
+              });
+              
+              logger.debug('displayOptionsMultipleChoice result:', { 
+                options: result.options,
+                optionsCount: result.options.length
+              });
+              
+              return {
+                type: "options",
+                options: result.options
+              };
+            } catch (error) {
+              logger.error('Error in displayOptionsMultipleChoice tool:', error);
+              // Return a safe fallback
+              return {
+                type: "options",
+                options: ["Continue the conversation", "Ask a different question"]
+              };
+            }
           },
-
-          displayOptionsMultipleChoice: {
-            description: `
-          - **Purpose:** Presents the user with contextually relevant, clickable options for selecting one or more choices based on the conversation context.  
-          - **When to Use:** DO NOT USE as the first turn in the conversation. Only use if suggested in the current objective.
-          - **Context Parameter:** Use the optional context parameter to provide additional information that will help generate more relevant and tailored options.
-            `,
-            parameters: z.object({
-              text: z.string().describe("The question or statement for which to generate selectable options"),
-              context: z.string().optional().describe("Additional context to help generate more relevant options")
-            }),
-            execute: async ({ text, context }) => {
-              try {
-                logger.debug('Executing displayOptionsMultipleChoice tool', { 
-                  text, 
-                  contextProvided: !!context
-                });
-                
-                // Use recent messages from conversation history automatically
-                // This simplifies the API by handling it internally
-                const recentMessages = coreMessages.slice(-5).map(m => ({
-                  role: m.role,
-                  content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-                }));
-                
-                const result = await generateDisplayOptions({ 
-                  text, 
-                  context,
-                  // Use default system prompt
-                  messagesHistory: recentMessages
-                });
-                
-                logger.debug('displayOptionsMultipleChoice result:', { 
-                  options: result.options,
-                  optionsCount: result.options.length
-                });
-                
-                return {
-                  type: "options",
-                  options: result.options
-                };
-              } catch (error) {
-                logger.error('Error in displayOptionsMultipleChoice tool:', error);
-                throw error;
-              }
-            },
-          },
+        },
   
 
-          thinkingHelp: {
-            description: `The ThinkPad tool allows Franko to pause and reflect internally when faced with a complex or ambiguous situation in a customer research interview. 
-            It analyzes the current challenge based on the user's last response and the full conversation history, considers multiple conversational moves, and selects the best approach for the next turn. 
-            The output is for Franko's internal use only and is not shared with the user; the main agent handles crafting the actual response. 
-            **When to use:** Franko should use the ThinkPad tool at his discretion in these specific situations:
+        thinkingHelp: {
+          description: `The ThinkPad tool allows Franko to pause and reflect internally when faced with a complex or ambiguous situation in a customer research interview. 
+          It analyzes the current challenge based on the user's last response and the full conversation history, considers multiple conversational moves, and selects the best approach for the next turn. 
+          The output is for Franko's internal use only and is not shared with the user; the main agent handles crafting the actual response. 
+          **When to use:** Franko should use the ThinkPad tool at his discretion in these specific situations:
 
-          - **Vague or unclear user responses:** When the user's answer lacks detail or clarity (e.g., "It's fine," "Maybe," or "I'm not sure").
-          - **Complex user questions:** When the user asks a question with multiple possible interpretations or layers (e.g., "How should I improve my entire workflow?").
-          - **Multiple conversational paths: When the conversation could reasonably go in several directions, and Franko needs to choose the most effective one (e.g., deepening the current topic, shifting focus, or clarifying).
-          - **Critical decision points:** When the next move could significantly impact the conversation's direction or the quality of insights gathered (e.g., transitioning to a new objective or addressing a sensitive topic).
-          - **Uncertainty about the next step:** When Franko feels unsure about the best way to proceed or needs to weigh the pros and cons of different approaches.
+        - **Vague or unclear user responses:** When the user's answer lacks detail or clarity (e.g., "It's fine," "Maybe," or "I'm not sure").
+        - **Complex user questions:** When the user asks a question with multiple possible interpretations or layers (e.g., "How should I improve my entire workflow?").
+        - **Multiple conversational paths: When the conversation could reasonably go in several directions, and Franko needs to choose the most effective one (e.g., deepening the current topic, shifting focus, or clarifying).
+        - **Critical decision points:** When the next move could significantly impact the conversation's direction or the quality of insights gathered (e.g., transitioning to a new objective or addressing a sensitive topic).
+        - **Uncertainty about the next step:** When Franko feels unsure about the best way to proceed or needs to weigh the pros and cons of different approaches.
 
-          **Usage Notes**
-          - Discretionary Use: Use the ThinkPad sparingly, only when the conversation's complexity or ambiguity warrants deeper reflection.
-          - Internal Only: The analysis is hidden from the user and used within a multi-step turn to inform Franko's decision-making.
-          - Supports Main Agent: The Chosen Path guides the main agent in constructing the final response, leveraging its training in response style.`,
-            parameters: z.object({
-              _dummy: z.string().optional().describe("Placeholder parameter - not used")
-            }),
-            execute: async () => {
+        **Usage Notes**
+        - Discretionary Use: Use the ThinkPad sparingly, only when the conversation's complexity or ambiguity warrants deeper reflection.
+        - Internal Only: The analysis is hidden from the user and used within a multi-step turn to inform Franko's decision-making.
+        - Supports Main Agent: The Chosen Path guides the main agent in constructing the final response, leveraging its training in response style.`,
+          parameters: z.object({
+            _dummy: z.string().optional().describe("Placeholder parameter - not used")
+          }),
+          execute: async () => {
+            try {
               logger.debug('Executing thinking help tool');
               
               const result = await thinkingHelp({ 
                 messages: coreMessages,
-                userId
+                userId: userId || 'external' // Use 'external' as fallback for public chats
               });
               
               logger.api('Thinking help tool result:', {
@@ -573,6 +512,7 @@ import {
                 result: result.substring(0, 100) + (result.length > 100 ? '...' : '') // Log first 100 chars
               });
               
+              // Ensure we return a properly serializable object
               return {
                 type: 'internal-guidance',
                 text: result,
@@ -583,53 +523,106 @@ import {
                   }
                 }
               };
-            },
-          },
-        },
-  
-        /**
-         * onFinish Callback
-         * 
-         * Purpose: Save the complete chat history after AI responds
-         * Triggers: After AI stream completes and all tools have executed
-         * Input: responseMessages - New messages from current AI response
-         */
-  
-        // Save chat history after completion
-        onFinish: async ({ responseMessages }) => {
-          if (userId) {
-            try {
-              // Process new messages
-              const newProcessedMessages = responseMessages.map(m => {
-                let content = m.content;
-                
-                // If it's a string, it might be wrapped in markdown and JSON
-                if (typeof content === 'string') {
-                  // First remove markdown wrapping if present
-                  if (content.startsWith('```json\n') && content.endsWith('\n```')) {
-                    content = content.slice(8, -4); // Remove ```json\n and \n```
-                  }
-                  
-                  try {
-                    // Then parse the JSON content
-                    const parsed = JSON.parse(content);
-                    // Use the parsed content directly - this is the actual message
-                    return { ...m, content: parsed.content };
-                  } catch (e) {
-                    // If JSON parsing fail, use content as is
-                    console.debug('Failed to parse message content as JSON:', e);
-                    return { ...m, content };
+            } catch (error) {
+              logger.error('Error in thinkingHelp tool:', error);
+              // Return a safe fallback
+              return {
+                type: 'internal-guidance',
+                text: "I should respond to the user's message directly and clearly.",
+                experimental_providerMetadata: {
+                  metadata: {
+                    type: 'internal-guidance',
+                    isVisible: false
                   }
                 }
-                
-                // If it's not a string (e.g., already an array), use as is
+              };
+            }
+          },
+        },
+      };
+  
+      /**
+       * onFinish Callback
+       * 
+       * Purpose: Safe implementation that catches errors during message processing
+       */
+      const safeOnFinish = async ({ responseMessages }: { responseMessages: any[] }) => {
+        try {
+          // Process new messages
+          const newProcessedMessages = responseMessages.map(m => {
+            let content = m.content;
+            
+            // If it's a string, it might be wrapped in markdown and JSON
+            if (typeof content === 'string') {
+              // First remove markdown wrapping if present
+              if (content.startsWith('```json\n') && content.endsWith('\n```')) {
+                content = content.slice(8, -4); // Remove ```json\n and \n```
+              }
+              
+              try {
+                // Then parse the JSON content
+                const parsed = JSON.parse(content);
+                // Use the parsed content directly - this is the actual message
+                return { ...m, content: parsed.content };
+              } catch (e) {
+                // If JSON parsing fail, use content as is
+                logger.debug('Failed to parse message content as JSON:', e);
                 return { ...m, content };
-              }).filter(m => {
-                // Filter out objective updates from UI display
-                const metadata = m.experimental_providerMetadata?.metadata;
-                return !(metadata && metadata.type === 'objective-update' && metadata.isVisible === false);
-              });
-
+              }
+            }
+            
+            // If it's not a string (e.g., already an array), use as is
+            return { ...m, content };
+          }).filter(m => {
+            // Filter out objective updates from UI display
+            const metadata = m.experimental_providerMetadata?.metadata;
+            return !(metadata && metadata.type === 'objective-update' && metadata.isVisible === false);
+          });
+  
+          // Determine if we're saving to a chat instance or chat response
+          if (chatInstanceId) {
+            // This is a public chat response - save to chat response
+            try {
+              // Get existing chat response
+              const existingChatResponse = await getChatResponseById(id);
+              const existingMessages = existingChatResponse?.messagesJson ? JSON.parse(existingChatResponse.messagesJson) : [];
+              
+              // Find the latest user message from coreMessages
+              const latestUserMessage = [...coreMessages]
+                .filter(m => m.role === 'user')
+                .pop();
+              
+              // Check if this user message is already saved
+              const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
+                m.role === 'user' && 
+                m.content === latestUserMessage?.content
+              );
+              
+              // Create the updated message array
+              const allMessages = [...existingMessages];
+              
+              // Add the user message if it's not already saved
+              if (latestUserMessage && !userMessageExists) {
+                allMessages.push({
+                  id: generateUUID(),
+                  role: latestUserMessage.role,
+                  content: latestUserMessage.content
+                });
+              }
+              
+              // Add the AI response messages
+              allMessages.push(...newProcessedMessages);
+  
+              // Immediately update chat response with current messages
+              await updateChatResponseMessages(id, JSON.stringify(allMessages));
+  
+              logger.info('Chat response updated successfully:', { id });
+            } catch (error) {
+              logger.error('Error updating chat response:', error);
+            }
+          } else if (userId) {
+            // This is a regular authenticated chat - save to chat instance
+            try {
               // Get existing chat instance
               const existingChat = await getChatInstanceById(id);
               const existingMessages = existingChat ? JSON.parse(existingChat.messages || '[]') : [];
@@ -659,12 +652,12 @@ import {
               
               // Add the AI response messages
               allMessages.push(...newProcessedMessages);
-
+  
               // Immediately update chat with current messages
               await updateChatInstance(id, {
                 messages: JSON.stringify(allMessages),
               });
-
+  
               // Non-blocking objective update
               Promise.resolve().then(async () => {
                 try {
@@ -675,12 +668,12 @@ import {
                     userId,
                     chatId: id
                   });
-
+  
                   logger.api('Objective update result in route handler:', {
                     resultLength: objectiveResult.length,
                     result: objectiveResult
                   });
-
+  
                   // Create objective update message
                   const objectiveMessage = {
                     role: 'tool' as const,
@@ -692,25 +685,30 @@ import {
                       }
                     }
                   };
-
+  
                   // Add objective update to all messages
                   allMessages.push(objectiveMessage);
-
+  
                   // Update chat instance with all messages including objective update
                   await updateChatInstance(id, {
                     messages: JSON.stringify(allMessages),
                   });
-
+  
                   logger.debug('Objective update message added to chat history');
-
+  
                   // After objective update is complete, update progress bar (non-blocking)
                   Promise.resolve().then(async () => {
                     try {
-                      // Pass all messages including the new objective update
-                      await progressBarUpdate({
-                        messages: [...coreMessages, objectiveMessage as unknown as CoreMessage],
-                        chatId: id
-                      });
+                      // Only call progressBarUpdate for authenticated users (not for external/public chats)
+                      if (userId) {
+                        // Pass all messages including the new objective update
+                        await progressBarUpdate({
+                          messages: [...coreMessages, objectiveMessage as unknown as CoreMessage],
+                          chatId: id
+                        });
+                      } else {
+                        logger.debug('Skipping progress bar update for external user');
+                      }
                     } catch (error) {
                       logger.error('Failed to update progress bar:', error);
                     }
@@ -719,18 +717,41 @@ import {
                   logger.error('Failed to process objective update:', error);
                 }
               });
-
+  
               logger.info('Chat updated successfully:', { id });
             } catch (error) {
-              logger.error('Failed to update chat:', { error, messages: coreMessages });
+              logger.error('Error updating chat instance:', error);
             }
           }
-        },
+        } catch (error) {
+          logger.error('Error in onFinish callback:', error);
+        }
+      };
+  
+      /**
+       * AI Model Configuration
+       * 
+       * Sets up the AI model with:
+       * - System prompt with tool usage instructions
+       * - Core messages from the conversation
+       * - Available tools and their configurations
+       * - Maximum steps for multi-turn interactions
+       */
+      const result = await streamText({
+        model: geminiFlashModel,
+        system: systemPrompt,
+        messages: coreMessages,
+        tools: safeTools,
+        onFinish: safeOnFinish,
         experimental_telemetry: {
           isEnabled: true,
           functionId: "stream-text",
           onTelemetry: (telemetryData: any) => {
-            logger.ai('AI Telemetry:', telemetryData);
+            try {
+              logger.ai('AI Telemetry:', telemetryData);
+            } catch (error) {
+              logger.error('Error logging telemetry:', error);
+            }
           }
         } as any,
       });
@@ -756,7 +777,17 @@ import {
       });
     } catch (error) {
       logger.error('Error processing chat request:', error);
-      throw error;
+      // Return a structured error response instead of throwing
+      return new Response(
+        JSON.stringify({ error: 'An error occurred processing your request' }),
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        }
+      );
     }
   }
   

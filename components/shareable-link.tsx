@@ -18,7 +18,7 @@ export function ShareableLink({ guideName }: ShareableLinkProps) {
 
   React.useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-    setShareableUrl(`${baseUrl}/external-chat/${guideName}`)
+    setShareableUrl(`${baseUrl}/chat/external/${guideName}`)
   }, [guideName])
 
   const handleCopy = async () => {

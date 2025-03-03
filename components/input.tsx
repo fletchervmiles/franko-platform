@@ -45,14 +45,24 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
   }, [disabled])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.log("Key pressed:", e.key);
+    console.log("Shift key pressed:", e.shiftKey);
+    
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
+      console.log("Enter key pressed without shift");
+      
       if (disabled) {
+        console.log("Input is disabled, showing toast");
         toast.error("Please wait for the model to finish its response!")
         return
       }
+      
       const form = e.currentTarget.form
+      console.log("Form found:", !!form);
+      
       if (form) {
+        console.log("Submitting form via Enter key");
         onSubmit(new Event("submit") as unknown as React.FormEvent<HTMLFormElement>)
       }
     }
@@ -64,7 +74,12 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     <div className="w-full bg-gradient-to-t from-white via-white to-white/0 pt-2">
       <div className="mx-auto max-w-3xl px-4 md:px-8 lg:px-12 pb-4">
         <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)]">
-          <form onSubmit={onSubmit} className="flex items-start gap-2 p-2">
+          <form onSubmit={(e) => {
+            console.log("Form submit event triggered in ChatInput");
+            console.log("Form values:", { value });
+            console.log("Is disabled:", disabled);
+            onSubmit(e);
+          }} className="flex items-start gap-2 p-2">
             <Textarea
               ref={textareaRef}
               value={value}

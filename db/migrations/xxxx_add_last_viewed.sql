@@ -1,0 +1,1 @@
+ALTER TABLE "chat_instances" ADD COLUMN IF NOT EXISTS "last_viewed" timestamp; 

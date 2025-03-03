@@ -8,6 +8,17 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { CreateChatButton } from "./create-chat-button"
 import Image from "next/image"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Workspace {
   id: string
@@ -70,6 +81,11 @@ function EmptyState() {
 export function WorkspaceList() {
   const [isMounted, setIsMounted] = useState(false)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -79,18 +95,190 @@ export function WorkspaceList() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleDelete = (id: string) => {
-    console.log(`Delete workspace with id: ${id}`)
-    // Implement delete logic here
+  useEffect(() => {
+    if (isMounted) {
+      fetchWorkspaces()
+    }
+  }, [isMounted])
+
+  const fetchWorkspaces = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/chat-instances')
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to fetch workspaces. Please try again later.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
+      const data = await response.json()
+      setWorkspaces(data)
+    } catch (error) {
+      console.error('Error fetching workspaces:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load workspaces. Please try again later.'
+      setError(errorMessage)
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleRename = (id: string) => {
-    console.log(`Rename workspace with id: ${id}`)
-    // Implement rename logic here
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.preventDefault() // Prevent navigation
+    e.stopPropagation() // Prevent event bubbling
+    setWorkspaceToDelete(id)
+    setShowDeleteDialog(true)
+  }
+
+  const handleDelete = async () => {
+    if (!workspaceToDelete) return
+
+    try {
+      const response = await fetch(`/api/chat-instances/${workspaceToDelete}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to delete workspace. Please try again later.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      // Remove the deleted workspace from the state
+      setWorkspaces(workspaces.filter(workspace => workspace.id !== workspaceToDelete))
+      
+      toast({
+        title: "Success",
+        description: "Workspace deleted successfully",
+      })
+    } catch (error) {
+      console.error('Error deleting workspace:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete workspace. Please try again later.'
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setShowDeleteDialog(false)
+      setWorkspaceToDelete(null)
+    }
+  }
+
+  const handleRename = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault() // Prevent navigation
+    e.stopPropagation() // Prevent event bubbling
+    
+    // Find the workspace to rename
+    const workspace = workspaces.find(w => w.id === id)
+    if (!workspace) return
+    
+    // Prompt the user for a new title
+    const newTitle = window.prompt("Enter a new title for this conversation:", workspace.guideName)
+    
+    // If the user cancels or enters an empty title, do nothing
+    if (!newTitle || newTitle.trim() === '') {
+      return
+    }
+    
+    try {
+      const response = await fetch(`/api/chat-instances/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle }),
+      })
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to rename workspace. Please try again later.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
+      // Update the workspace in the state
+      setWorkspaces(workspaces.map(w => 
+        w.id === id ? { ...w, guideName: newTitle } : w
+      ))
+      
+      toast({
+        title: "Success",
+        description: "Workspace renamed successfully",
+      })
+    } catch (error) {
+      console.error('Error renaming workspace:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to rename workspace. Please try again later.'
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
   }
 
   if (!isMounted) {
     return null // or a loading placeholder
+  }
+
+  if (isLoading) {
+    return (
+      <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading workspaces...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500">{error}</p>
+          <Button onClick={fetchWorkspaces} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // If no workspaces, show empty state
@@ -112,7 +300,7 @@ export function WorkspaceList() {
       <div className="rounded-[6px] border bg-white shadow-sm">
         {workspaces.map((workspace, index) => (
           <Link
-            href={`/conversations/${encodeURIComponent(workspace.guideName)}`}
+            href={`/conversations/${encodeURIComponent(workspace.id)}`}
             key={workspace.id}
             className={`flex flex-col gap-4 p-4 hover:bg-muted/50 lg:grid lg:grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] lg:items-center ${
               index !== workspaces.length - 1 ? "border-b" : ""
@@ -142,7 +330,7 @@ export function WorkspaceList() {
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                     <span className="sr-only">Open menu</span>
                     <svg
                       width="15"
@@ -161,12 +349,12 @@ export function WorkspaceList() {
                     </svg>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleRename(workspace.id)}>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem onClick={(e) => handleRename(workspace.id, e)}>
                     <Edit2 className="mr-2 h-4 w-4" />
                     <span>Rename</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDelete(workspace.id)} className="text-red-600">
+                  <DropdownMenuItem onClick={(e) => handleDeleteClick(workspace.id, e)} className="text-red-600">
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Delete</span>
                   </DropdownMenuItem>
@@ -176,6 +364,23 @@ export function WorkspaceList() {
           </Link>
         ))}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this conversation and all of its responses.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

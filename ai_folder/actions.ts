@@ -72,7 +72,11 @@ import {
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 import { QueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/components/utilities/query-provider";
-import { getChatResponseById, updateChatResponseStatus } from "@/db/queries/chat-responses-queries";
+import { 
+  getChatResponseById, 
+  updateChatResponseStatus,
+  updateChatResponse
+} from "@/db/queries/chat-responses-queries";
 import { logger } from '@/lib/logger';
 
 // Import the AI model configuration
@@ -139,37 +143,47 @@ async function getPopulatedConversationPlanPrompt(userId: string): Promise<strin
 }
 
 // Function to get populated thinking help prompt
-async function getPopulatedThinkingHelpPrompt(userId: string): Promise<string> {
+async function getPopulatedThinkingHelpPrompt(userId: string | null): Promise<string> {
   try {
-    // Check cache first
+    // For external users, use a default thinking help prompt
+    if (!userId || userId === 'external') {
+      logger.debug('Loading external thinking help prompt template');
+      
+      // Load the thinking help prompt directly
+      return fs.readFileSync(
+        path.join(process.cwd(), 'agent_prompts', 'thinking_help_prompt.md'),
+        'utf-8'
+      );
+    }
+    
     const cachedPrompt = thinkingHelpPromptCache.get(userId);
     if (cachedPrompt) {
+      logger.debug('Using cached thinking help prompt for user:', { userId });
       return cachedPrompt;
     }
 
-    // Load the prompt template
+    logger.debug('Cache miss, loading thinking help prompt for user:', { userId });
+    
     const promptTemplate = fs.readFileSync(
       path.join(process.cwd(), 'agent_prompts', 'thinking_help_prompt.md'),
       'utf-8'
     );
 
-    // Get user profile data
     const profile = await getUserProfile({ userId });
     if (!profile) {
       throw new Error('User profile not found');
     }
 
-    // Replace template variables with actual values
     const populatedPrompt = promptTemplate
+      .replace('{first_name}', profile.firstName || '')
       .replace('{organisation_name}', profile.organisationName || '')
       .replace('{organisation_description}', profile.organisationDescription || '');
 
-    // Cache the result
     thinkingHelpPromptCache.set(userId, populatedPrompt);
     
     return populatedPrompt;
   } catch (error) {
-    console.error('Error populating thinking help prompt:', error);
+    logger.error('Error populating thinking help prompt:', error);
     throw error;
   }
 }
@@ -224,7 +238,7 @@ async function getPopulatedProgressPrompt(
     }
 
     const promptTemplate = fs.readFileSync(
-      path.join(process.cwd(), 'agent_prompts', 'external_chat_progress_prompt.md'),
+      path.join(process.cwd(), 'agent_prompts', 'objective_update_prompt.md'),
       'utf-8'
     );
 
@@ -234,10 +248,9 @@ async function getPopulatedProgressPrompt(
       .replace('{conversation_plan}', JSON.stringify(conversationPlan, null, 2));
 
     progressPromptCache.set(cacheKey, populatedPrompt);
-    
     return populatedPrompt;
   } catch (error) {
-    console.error('Error populating progress prompt:', error);
+    logger.error('Error populating progress prompt:', error);
     throw error;
   }
 }
@@ -264,113 +277,113 @@ export function invalidateProgressPromptCache(key: string) {
 
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
 
-export async function generateConversationPlan({ messages, userId, chatId }: { messages: CoreMessage[], userId: string, chatId: string }) {
-  // This function follows separation of concerns:
-  // 1. It generates structured data (the conversation plan)
-  // 2. The UI rendering is handled separately by the ConversationPlan component
-  // 3. This prevents duplication between AI text responses and UI elements
+// export async function generateConversationPlan({ messages, userId, chatId }: { messages: CoreMessage[], userId: string, chatId: string }) {
+//   // This function follows separation of concerns:
+//   // 1. It generates structured data (the conversation plan)
+//   // 2. The UI rendering is handled separately by the ConversationPlan component
+//   // 3. This prevents duplication between AI text responses and UI elements
   
-  const systemPrompt = await getPopulatedConversationPlanPrompt(userId);
+//   const systemPrompt = await getPopulatedConversationPlanPrompt(userId);
   
-  console.log('\n=== CONVERSATION PLAN GENERATION REQUEST ===');
-  console.log('System Prompt:', systemPrompt);
-  console.log('Messages:', messages.map(m => ({
-    role: m.role,
-    content: m.content
-  })));
-  console.log('==========================================\n');
+//   console.log('\n=== CONVERSATION PLAN GENERATION REQUEST ===');
+//   console.log('System Prompt:', systemPrompt);
+//   console.log('Messages:', messages.map(m => ({
+//     role: m.role,
+//     content: m.content
+//   })));
+//   console.log('==========================================\n');
 
-  // Add retry logic for the generateObject call
-  const maxRetries = 3;
-  let retryCount = 0;
-  let lastError: any = null;
+//   // Add retry logic for the generateObject call
+//   const maxRetries = 3;
+//   let retryCount = 0;
+//   let lastError: any = null;
 
-  while (retryCount < maxRetries) {
-    try {
-      const { object: rawPlan } = await generateObject({
-        model: o3MiniModel,
-        system: `${systemPrompt}
+//   while (retryCount < maxRetries) {
+//     try {
+//       const { object: rawPlan } = await generateObject({
+//         model: o3MiniModel,
+//         system: `${systemPrompt}
 
-IMPORTANT: Generate only the plan data. Do not include any instructions or explanations about the plan in your response.
-The plan will be displayed automatically by the UI.
+// IMPORTANT: Generate only the plan data. Do not include any instructions or explanations about the plan in your response.
+// The plan will be displayed automatically by the UI.
 
-CRITICAL CONSTRAINTS:
-1. Keep all objective text fields under 500 characters
-2. Keep all other text fields under 200 characters
-3. Do not include markdown formatting in any field
-4. Do not include explanations or meta-commentary in any field
-5. Ensure all arrays have at least one item
-6. IMPORTANT: You MUST include a 'keyLearningOutcome' for each objective`,
-        prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-        schema: z.object({
-          title: z.string().describe("Jargon-free title with key context"),
-          duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
-          summary: z.string().describe("1-sentence purpose statement with strategic value"),
-          objectives: z.array(
-            z.object({
-              objective: z.string().describe("Active-verb focus area"),
-              keyLearningOutcome: z.string().describe("Decision-driving insight"),
-              focusPoints: z.array(z.string()).describe("List of focus points for the objective"),
-              guidanceForAgent: z.array(z.string()).describe("Tips for conducting the conversation, including tool suggestions"),
-              illustrativePrompts: z.array(z.string()).describe("Contextually relevant questions (adapt as needed)"),
-              expectedConversationTurns: z.string().describe("Expected number of conversation turns")
-            })
-          ).describe("Time-aware objectives sorted by priority")
-        }),
-      });
+// CRITICAL CONSTRAINTS:
+// 1. Keep all objective text fields under 500 characters
+// 2. Keep all other text fields under 200 characters
+// 3. Do not include markdown formatting in any field
+// 4. Do not include explanations or meta-commentary in any field
+// 5. Ensure all arrays have at least one item
+// 6. IMPORTANT: You MUST include a 'keyLearningOutcome' for each objective`,
+//         prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+//         schema: z.object({
+//           title: z.string().describe("Jargon-free title with key context"),
+//           duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
+//           summary: z.string().describe("1-sentence purpose statement with strategic value"),
+//           objectives: z.array(
+//             z.object({
+//               objective: z.string().describe("Active-verb focus area"),
+//               keyLearningOutcome: z.string().describe("Decision-driving insight"),
+//               focusPoints: z.array(z.string()).describe("List of focus points for the objective"),
+//               guidanceForAgent: z.array(z.string()).describe("Tips for conducting the conversation, including tool suggestions"),
+//               illustrativePrompts: z.array(z.string()).describe("Contextually relevant questions (adapt as needed)"),
+//               expectedConversationTurns: z.string().describe("Expected number of conversation turns")
+//             })
+//           ).describe("Time-aware objectives sorted by priority")
+//         }),
+//       });
 
-      // Validate that we have at least one objective
-      if (!rawPlan || !rawPlan.objectives || rawPlan.objectives.length === 0) {
-        throw new Error("Generated plan must have at least one objective");
-      }
+//       // Validate that we have at least one objective
+//       if (!rawPlan || !rawPlan.objectives || rawPlan.objectives.length === 0) {
+//         throw new Error("Generated plan must have at least one objective");
+//       }
 
-      // Transform the raw plan to match our schema
-      const plan: ConversationPlan = {
-        title: rawPlan.title,
-        duration: rawPlan.duration,
-        summary: rawPlan.summary,
-        objectives: rawPlan.objectives.map(obj => ({
-          objective: obj.objective || "Untitled Objective",
-          keyLearningOutcome: obj.keyLearningOutcome || "Key insight to be gained",
-          focusPoints: Array.isArray(obj.focusPoints) ? obj.focusPoints : [],
-          guidanceForAgent: Array.isArray(obj.guidanceForAgent) ? obj.guidanceForAgent : ["Guide the conversation naturally"],
-          illustrativePrompts: Array.isArray(obj.illustrativePrompts) ? obj.illustrativePrompts : ["What are your thoughts on this?"],
-          expectedConversationTurns: obj.expectedConversationTurns || "1"
-        }))
-      };
+//       // Transform the raw plan to match our schema
+//       const plan: ConversationPlan = {
+//         title: rawPlan.title,
+//         duration: rawPlan.duration,
+//         summary: rawPlan.summary,
+//         objectives: rawPlan.objectives.map(obj => ({
+//           objective: obj.objective || "Untitled Objective",
+//           keyLearningOutcome: obj.keyLearningOutcome || "Key insight to be gained",
+//           focusPoints: Array.isArray(obj.focusPoints) ? obj.focusPoints : [],
+//           guidanceForAgent: Array.isArray(obj.guidanceForAgent) ? obj.guidanceForAgent : ["Guide the conversation naturally"],
+//           illustrativePrompts: Array.isArray(obj.illustrativePrompts) ? obj.illustrativePrompts : ["What are your thoughts on this?"],
+//           expectedConversationTurns: obj.expectedConversationTurns || "1"
+//         }))
+//       };
 
-      try {
-        // Save the conversation plan
-        await updateChatInstanceConversationPlan(chatId, plan);
-      } catch (error) {
-        console.error('Failed to save conversation plan:', error);
-        // Continue even if save fails - don't block the response
-      }
+//       try {
+//         // Save the conversation plan
+//         await updateChatInstanceConversationPlan(chatId, plan);
+//       } catch (error) {
+//         console.error('Failed to save conversation plan:', error);
+//         // Continue even if save fails - don't block the response
+//       }
 
-      console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
-      console.log('Generated Plan:', JSON.stringify(plan, null, 2));
-      console.log('============================================\n');
+//       console.log('\n=== CONVERSATION PLAN GENERATION RESPONSE ===');
+//       console.log('Generated Plan:', JSON.stringify(plan, null, 2));
+//       console.log('============================================\n');
 
-      return plan;
-    } catch (error) {
-      lastError = error;
-      console.error(`Conversation plan generation attempt ${retryCount + 1} failed:`, error);
-      retryCount++;
+//       return plan;
+//     } catch (error) {
+//       lastError = error;
+//       console.error(`Conversation plan generation attempt ${retryCount + 1} failed:`, error);
+//       retryCount++;
       
-      // If we've reached max retries, throw the last error
-      if (retryCount >= maxRetries) {
-        logger.error('All conversation plan generation attempts failed:', lastError);
-        throw new Error('Failed to generate conversation plan after multiple attempts');
-      }
+//       // If we've reached max retries, throw the last error
+//       if (retryCount >= maxRetries) {
+//         logger.error('All conversation plan generation attempts failed:', lastError);
+//         throw new Error('Failed to generate conversation plan after multiple attempts');
+//       }
       
-      // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-    }
-  }
+//       // Wait before retrying (exponential backoff)
+//       await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+//     }
+//   }
 
-  // This should never be reached due to the throw in the catch block above
-  throw lastError;
-}
+//   // This should never be reached due to the throw in the catch block above
+//   throw lastError;
+// }
 
 export async function performWebSearch({ query }: { query: string }) {
   try {
@@ -470,11 +483,13 @@ export async function generateDisplayOptions({
   return result;
 }
 
-export async function thinkingHelp({ messages, userId }: { messages: CoreMessage[], userId: string }) {
+export async function thinkingHelp({ messages, userId }: { messages: CoreMessage[], userId: string | null }) {
   try {
-    logger.debug('Starting thinking help generation:', { userId });
+    // Use external for non-authenticated users
+    const effectiveUserId = userId || 'external';
+    const systemPrompt = await getPopulatedThinkingHelpPrompt(effectiveUserId);
     
-    const systemPrompt = await getPopulatedThinkingHelpPrompt(userId);
+    logger.debug('Starting thinking help generation:', { userId });
     
     // Log the input to the AI model
     logger.api('Thinking help input:', {
@@ -565,26 +580,60 @@ export async function updateChatProgress({
   chatResponseId,
   chatInstanceId,
   organizationName,
-  organizationContext
+  organizationContext,
+  initialProgress = null,
+  objectiveUpdateText = null
 }: { 
   messages: any[],
   chatResponseId: string,
   chatInstanceId: string,
   organizationName: string,
-  organizationContext: string
+  organizationContext: string,
+  initialProgress?: any,
+  objectiveUpdateText?: string | null
 }) {
   try {
+    logger.info('Starting updateChatProgress', { 
+      chatResponseId, 
+      chatInstanceId,
+      messageCount: messages.length,
+      hasInitialProgress: !!initialProgress,
+      hasObjectiveUpdateText: !!objectiveUpdateText,
+      objectiveUpdateTextLength: objectiveUpdateText ? objectiveUpdateText.length : 0
+    });
+    
     // Get chat instance for conversation plan
     const chatInstance = await getChatInstanceById(chatInstanceId);
     if (!chatInstance) {
       throw new Error('Chat instance not found');
     }
+    
+    logger.debug('Retrieved chat instance', { 
+      chatInstanceId,
+      hasConversationPlan: !!chatInstance.conversationPlan,
+      hasObjectiveProgress: !!chatInstance.objectiveProgress,
+      objectiveProgressPreview: chatInstance.objectiveProgress 
+        ? JSON.stringify(chatInstance.objectiveProgress).substring(0, 100) + '...' 
+        : 'None'
+    });
 
     // Get current chat response
     const chatResponse = await getChatResponseById(chatResponseId);
     if (!chatResponse) {
       throw new Error('Chat response not found');
     }
+    
+    logger.debug('Retrieved chat response', { 
+      chatResponseId,
+      status: chatResponse.status,
+      completionStatus: chatResponse.completionStatus,
+      hasChatProgress: !!chatResponse.chatProgress,
+      chatProgressPreview: chatResponse.chatProgress 
+        ? (typeof chatResponse.chatProgress === 'string' 
+          ? chatResponse.chatProgress.substring(0, 100) + '...' 
+          : JSON.stringify(chatResponse.chatProgress).substring(0, 100) + '...')
+        : 'None'
+    });
 
     // Get system prompt for progress evaluation
     const systemPrompt = await getPopulatedProgressPrompt(
@@ -592,10 +641,32 @@ export async function updateChatProgress({
       organizationContext,
       chatInstance.conversationPlan
     );
+    
+    logger.debug('Retrieved populated progress prompt', { 
+      promptLength: systemPrompt.length,
+      promptPreview: systemPrompt.substring(0, 100) + '...'
+    });
 
+    // Add initial progress and objective update to the prompt if available
+    let promptWithProgress = systemPrompt;
+    if (initialProgress) {
+      promptWithProgress += `\n\nCurrent progress state:\n${JSON.stringify(initialProgress, null, 2)}`;
+      logger.debug('Added initial progress to prompt');
+    }
+    if (objectiveUpdateText) {
+      promptWithProgress += `\n\nObjective update analysis:\n${objectiveUpdateText}`;
+      logger.debug('Added objective update text to prompt');
+    }
+    
+    logger.debug('Generating progress update with AI model', {
+      finalPromptLength: promptWithProgress.length,
+      messageCount: messages.length
+    });
+
+    const aiStart = performance.now();
     const { object: progressUpdate } = await generateObject({
       model: geminiFlashModel,
-      system: systemPrompt,
+      system: promptWithProgress,
       prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
       schema: z.object({
         status: z.enum(["not_started", "in_progress", "completed"]).describe("Current status of the chat"),
@@ -607,17 +678,138 @@ export async function updateChatProgress({
         summary: z.string().describe("Brief summary of progress")
       })
     });
+    const aiEnd = performance.now();
+    
+    logger.info('AI generated progress update', { 
+      duration: `${(aiEnd - aiStart).toFixed(2)}ms`,
+      status: progressUpdate.status,
+      completionStatus: progressUpdate.completionStatus,
+      progress: progressUpdate.progress,
+      currentObjective: progressUpdate.currentObjective,
+      completedObjectivesCount: progressUpdate.completedObjectives.length,
+      completedObjectives: progressUpdate.completedObjectives,
+      summary: progressUpdate.summary
+    });
 
-    // Update chat response status
-    await updateChatResponseStatus(
+    // Create or update the progress object
+    let chatProgress = initialProgress;
+    
+    // If no initial progress was provided, try to get it from the chat response
+    if (!chatProgress && chatResponse.chatProgress) {
+      try {
+        // Ensure we're parsing a string, not an object
+        const chatProgressStr = typeof chatResponse.chatProgress === 'string' 
+          ? chatResponse.chatProgress 
+          : JSON.stringify(chatResponse.chatProgress);
+        
+        chatProgress = JSON.parse(chatProgressStr);
+        logger.debug('Using existing chat progress from chat response', {
+          source: 'chatResponse.chatProgress',
+          progressPreview: JSON.stringify(chatProgress).substring(0, 100) + '...'
+        });
+      } catch (e) {
+        logger.error('Error parsing existing chat progress:', e);
+        // Don't initialize with default structure here, we'll check objectiveProgress next
+      }
+    }
+    
+    // If we still don't have progress data, initialize from chat instance's objectiveProgress
+    if (!chatProgress) {
+      if (chatInstance.objectiveProgress) {
+        // Use the chat instance's objectiveProgress as the initial structure
+        chatProgress = chatInstance.objectiveProgress;
+        logger.info('Initializing chat progress from chat instance objectiveProgress', {
+          source: 'chatInstance.objectiveProgress',
+          progressPreview: JSON.stringify(chatProgress).substring(0, 100) + '...'
+        });
+      } else {
+        // Fall back to default structure only if objectiveProgress is not defined
+        logger.info('No objectiveProgress found, using default structure');
+        chatProgress = {
+          objectives: {
+            objective01: { status: "current" },
+            objective02: { status: "tbc" },
+            objective03: { status: "tbc" },
+            objective04: { status: "tbc" }
+          }
+        };
+      }
+    }
+    
+    logger.debug('Progress object before updates', {
+      objectiveCount: Object.keys(chatProgress.objectives).length,
+      objectives: Object.entries(chatProgress.objectives).map(([key, objValue]) => {
+        const obj = objValue as { status: string };
+        return {
+          key,
+          status: obj.status
+        };
+      })
+    });
+    
+    // Update the progress based on completed objectives
+    if (progressUpdate.completedObjectives.length > 0) {
+      logger.debug('Updating objectives based on completedObjectives', {
+        completedObjectives: progressUpdate.completedObjectives
+      });
+      
+      // Mark completed objectives as "done"
+      for (const [key, obj] of Object.entries(chatProgress.objectives)) {
+        // Check if this objective is in the completed list
+        // We're using a simple heuristic: if the objective key (e.g., "objective01") 
+        // is mentioned in any of the completed objectives, mark it as done
+        const isCompleted = progressUpdate.completedObjectives.some(
+          (objective: string) => objective.toLowerCase().includes(key.toLowerCase())
+        );
+        
+        if (isCompleted) {
+          logger.debug(`Marking objective ${key} as done`);
+          chatProgress.objectives[key].status = "done";
+        }
+      }
+      
+      // Find the current objective based on progressUpdate.currentObjective
+      for (const [key, obj] of Object.entries(chatProgress.objectives)) {
+        // If this objective is mentioned in currentObjective, mark it as current
+        if (progressUpdate.currentObjective.toLowerCase().includes(key.toLowerCase())) {
+          logger.debug(`Marking objective ${key} as current`);
+          chatProgress.objectives[key].status = "current";
+        }
+      }
+    } else {
+      logger.debug('No completed objectives to update');
+    }
+    
+    logger.debug('Progress object after updates', {
+      objectiveCount: Object.keys(chatProgress.objectives).length,
+      objectives: Object.entries(chatProgress.objectives).map(([key, objValue]) => {
+        const obj = objValue as { status: string };
+        return {
+          key,
+          status: obj.status
+        };
+      })
+    });
+
+    // Update chat response status and progress
+    logger.info('Saving updated progress to database', {
       chatResponseId,
-      progressUpdate.status,
-      progressUpdate.completionStatus
-    );
+      status: progressUpdate.status,
+      completionStatus: progressUpdate.completionStatus,
+      progressJson: JSON.stringify(chatProgress).substring(0, 100) + '...'
+    });
+    
+    await updateChatResponse(chatResponseId, {
+      status: progressUpdate.status,
+      completionStatus: progressUpdate.completionStatus,
+      chatProgress: JSON.stringify(chatProgress) // Save the updated progress
+    });
+    
+    logger.info('Chat progress updated successfully');
 
     return progressUpdate;
   } catch (error) {
-    console.error('Error updating chat progress:', error);
+    logger.error('Error updating chat progress:', error);
     throw error;
   }
 }
@@ -637,26 +829,55 @@ export async function progressBarUpdate({
     logger.debug('Starting progress bar update:', { chatId });
     
     // Get current progress from database
-    const chat = await getChatInstanceById(chatId);
+    const chat = await getChatResponseById(chatId);
     if (!chat) {
-      logger.error('Chat not found:', { chatId });
+      logger.error('Chat response not found:', { chatId });
       return;
     }
     
     // Initialize progress if it doesn't exist
-    let objectiveProgress = chat.objectiveProgress as ObjectiveProgress;
-    if (!objectiveProgress) {
-      objectiveProgress = {
-        objectives: {
-          objective01: { status: "current" },
-          objective02: { status: "tbc" },
-          objective03: { status: "tbc" },
-          objective04: { status: "tbc" }
+    let objectiveProgress: ObjectiveProgress | null = null;
+    
+    // Try to parse the chat_progress field
+    if (chat.chatProgress) {
+      try {
+        // Handle different types of chatProgress (could be string or object)
+        let chatProgressStr: string;
+        
+        if (typeof chat.chatProgress === 'string') {
+          chatProgressStr = chat.chatProgress;
+        } else {
+          // If it's already an object, stringify it
+          chatProgressStr = JSON.stringify(chat.chatProgress);
         }
-      };
+        
+        // Now parse the string
+        objectiveProgress = JSON.parse(chatProgressStr) as ObjectiveProgress;
+        logger.debug('Successfully parsed chat progress');
+      } catch (e) {
+        logger.error('Error parsing chat progress:', e);
+      }
+    }
+    
+    // If no progress exists, get it from the chat instance
+    if (!objectiveProgress) {
+      // Get the chat instance to access objectiveProgress
+      const chatInstance = await getChatInstanceById(chat.chatInstanceId);
       
-      // Save the initialized progress
-      await updateChatInstance(chatId, { objectiveProgress });
+      if (chatInstance && chatInstance.objectiveProgress) {
+        objectiveProgress = chatInstance.objectiveProgress as ObjectiveProgress;
+        logger.debug('Using objectiveProgress from chat instance');
+      } else {
+        // Create default progress structure if nothing exists
+        objectiveProgress = {
+          objectives: {
+            objective01: { status: "current" },
+            objective02: { status: "tbc" },
+            objective03: { status: "tbc" },
+            objective04: { status: "tbc" }
+          }
+        };
+      }
     }
     
     // Extract objective updater outputs from messages
@@ -710,22 +931,64 @@ export async function progressBarUpdate({
     
     logger.api('Generated progress updates:', { updates });
     
-    // Apply updates to the progress object using the programmatic function
+    // Apply updates to the progress object
     if (updates.length > 0) {
-      // Use the new programmatic function to apply updates and handle the "next objective" logic
-      const updatedProgress = await updateObjectiveProgressProgrammatically(chatId, updates);
+      // Apply each update to the progress object
+      for (const update of updates) {
+        const pathParts = update.path.split('.');
+        if (pathParts.length !== 3 || pathParts[0] !== 'objectives' || pathParts[2] !== 'status') {
+          logger.debug('Invalid update path:', update.path);
+          continue;
+        }
+        
+        const objectiveKey = pathParts[1];
+        
+        // Apply the update
+        if (!objectiveProgress.objectives[objectiveKey]) {
+          objectiveProgress.objectives[objectiveKey] = { status: 'tbc' };
+        }
+        
+        objectiveProgress.objectives[objectiveKey].status = update.value as "done" | "current" | "tbc";
+      }
+      
+      // Handle "next objective" logic - if an objective is marked as "done",
+      // find the next "tbc" objective and mark it as "current"
+      const objectiveKeys = Object.keys(objectiveProgress.objectives).sort();
+      let hasCurrentObjective = false;
+      
+      // First check if there's already a "current" objective
+      for (const key of objectiveKeys) {
+        if (objectiveProgress.objectives[key].status === "current") {
+          hasCurrentObjective = true;
+          break;
+        }
+      }
+      
+      // If there's no "current" objective, find the first "tbc" and make it "current"
+      if (!hasCurrentObjective) {
+        for (const key of objectiveKeys) {
+          if (objectiveProgress.objectives[key].status === "tbc") {
+            objectiveProgress.objectives[key].status = "current";
+            break;
+          }
+        }
+      }
+      
+      // Save the updated progress
+      await updateChatResponse(chatId, { 
+        chatProgress: JSON.stringify(objectiveProgress) 
+      });
       
       logger.info('Progress bar updated successfully:', { 
         chatId, 
         updates,
-        updatedProgress
+        updatedProgress: objectiveProgress
       });
     } else {
       logger.debug('No progress updates needed');
     }
   } catch (error) {
-    console.error('Error in progress bar update:', error);
-    throw error;
+    logger.error('Error in progress bar update:', error);
   }
 }
 

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 import { chatInstancesTable } from "./chat-instances-schema";
 
@@ -12,6 +12,7 @@ export const chatResponsesTable = pgTable("chat_responses", {
     .references(() => chatInstancesTable.id, { onDelete: "cascade" }),
   completionStatus: text("completion_status"),
   status: text("status"),
+  chatProgress: jsonb("chat_progress"),
   intervieweeFirstName: text("interviewee_first_name"),
   intervieweeSecondName: text("interviewee_second_name"),
   intervieweeEmail: text("interviewee_email"),

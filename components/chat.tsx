@@ -5,22 +5,28 @@ import { Message } from "ai"
 import { useChat } from "ai/react"
 import { Message as ChatMessage } from "./message"
 import { ChatInput } from "./input"
-import { Loader2 } from "lucide-react"
+import { Loader2, ArrowRight } from "lucide-react"
 import { TopicGrid } from "./TopicGrid"
 import { ConversationProgress } from "./conversation-progress"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { Button } from "./ui/button"
 
 interface ChatProps {
   conversationId: string
   initialMessages?: Message[]
+  chatInstanceId?: string
 }
 
-export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
+export function Chat({ conversationId, initialMessages = [], chatInstanceId }: ChatProps) {
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [showProgressBar, setShowProgressBar] = useState(false)
+  
+  // Comment out showProgressBar state - we'll always set it to false
+  // const [showProgressBar, setShowProgressBar] = useState(false)
+  
   const [hasSelectedTopic, setHasSelectedTopic] = useState(false)
+  const [isStarted, setIsStarted] = useState(!!initialMessages.length)
 
   // Initialize chat with AI SDK's useChat hook
   const { 
@@ -34,7 +40,7 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
     error
   } = useChat({
     id: conversationId,
-    body: { id: conversationId },
+    body: { id: conversationId, chatInstanceId },
     initialMessages,
     // maxSteps allows the model to make multiple steps in a single turn
     // This is essential for tool usage, as it allows the model to:
@@ -56,7 +62,7 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
         if ('result' in endCall) {
           const { redirectUrl, delayMs } = endCall.result as { redirectUrl: string; delayMs: number };
           setTimeout(() => {
-            window.location.href = redirectUrl;
+            router.push('/thank-you');
           }, delayMs);
         }
       }
@@ -92,6 +98,11 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
 
   const handleTopicSelect = (prompt: string) => {
     setHasSelectedTopic(true)
+    setIsStarted(true)
+  }
+
+  const handleGetStarted = () => {
+    setIsStarted(true)
   }
 
   const scrollToBottom = () => {
@@ -100,14 +111,38 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, showProgressBar])
+  }, [messages])
 
+  // Comment out the effect hook that sets showProgressBar
+  /*
   useEffect(() => {
     // Show progress bar as soon as there's at least one message
     if (messages.length > 0 && !showProgressBar) {
       setShowProgressBar(true)
     }
   }, [messages.length, showProgressBar])
+  */
+
+  // Show welcome screen with "Get Started" button if not started
+  if (!isStarted) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 flex items-center justify-center">
+          <div className="mx-auto max-w-3xl w-full text-center">
+            <h1 className="text-3xl font-bold mb-6">Welcome to the Interview</h1>
+            <p className="text-lg mb-8">Thank you for participating in this conversation. Your insights are valuable to us.</p>
+            <Button 
+              onClick={handleGetStarted} 
+              size="lg" 
+              className="mx-auto"
+            >
+              Get Started <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Show centered layout with topic grid if no topic has been selected and no messages
   if (!hasSelectedTopic && messages.length === 0) {
@@ -174,14 +209,8 @@ export function Chat({ conversationId, initialMessages = [] }: ChatProps) {
           onChange={(e) => setInput(e.target.value)}
           onSubmit={handleSubmit}
           disabled={isLoading}
-          showProgressBar={showProgressBar}
-          progressBar={
-            <ConversationProgress 
-              conversationId={conversationId}
-              messageCount={messages.length}
-              isLoading={isLoading}
-            />
-          }
+          showProgressBar={false}
+          progressBar={null}
           stop={stop}
         />
       </div>

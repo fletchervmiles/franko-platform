@@ -2,26 +2,25 @@
  * Chat Page Component
  * 
  * This is a server component that handles:
- * 1. Chat retrieval from database
- * 2. Authentication verification
+ * 1. Chat instance verification
+ * 2. Chat response creation
  * 3. Message format conversion
- * 4. Authorization checks
  * 
  * Data Flow:
  * 1. URL params → Chat ID
- * 2. Database query → Chat data
- * 3. Auth check → User session
+ * 2. Database query → Chat instance data
+ * 3. Create chat response → New response record
  * 4. Format conversion → UI messages
  * 5. Render chat → Chat component
  */
 
 import { Message } from "ai";
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { ChatWrapper } from "@/components/chat-wrapper";
-import { NavSidebar } from "@/components/nav-sidebar";
-import { getChatInstanceById, createChatInstance } from "@/db/queries/chat-instances-queries";
+import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
+import { createChatResponse, getChatResponseById } from "@/db/queries/chat-responses-queries";
 import { type SelectChatInstance } from "@/db/schema/chat-instances-schema";
+import { generateUUID } from "@/lib/utils";
 
 type ChatWithMessages = Omit<SelectChatInstance, 'messages'> & { messages: Message[] };
 
@@ -29,61 +28,49 @@ type ChatWithMessages = Omit<SelectChatInstance, 'messages'> & { messages: Messa
  * Chat Page
  * @param {object} params - URL parameters containing chat ID
  * 
- * Security Checks:
- * 1. User is authenticated
- * 2. For existing chats:
- *    - Chat exists
- *    - User owns the chat
- * 3. For new chats:
- *    - Create chat instance
- *    - Initialize with empty messages
+ * Flow:
+ * 1. Verify chat instance exists
+ * 2. Create a new chat response linked to the instance
+ * 3. Initialize with empty messages
+ * 4. Render the chat interface
  */
 export default async function Page({ params }: { params: { id: string } }) {
-  // Get user session for authentication
-  const { userId } = await auth();
-
-  // Return 404 if user is not authenticated
-  if (!userId) {
-    return notFound();
-  }
-
   const { id } = params;
   let chat: ChatWithMessages;
 
   try {
-    // Attempt to fetch existing chat from database
+    // Attempt to fetch existing chat instance from database
     const chatFromDb = await getChatInstanceById(id);
 
-    // If chat exists, verify ownership
-    if (chatFromDb) {
-      if (userId !== chatFromDb.userId) {
-        return notFound(); // User doesn't own this chat
-      }
-
-      // Convert messages to UI format
-      chat = {
-        ...chatFromDb,
-        messages: chatFromDb.messages ? JSON.parse(chatFromDb.messages) : []
-      };
-    } else {
-      // Create new chat instance
-      const emptyMessages = JSON.stringify([]);
-      const newChat = await createChatInstance({
-        id,
-        userId,
-        messages: emptyMessages
-      });
-
-      chat = {
-        ...newChat,
-        messages: []
-      };
+    // If chat doesn't exist, return 404
+    if (!chatFromDb) {
+      return notFound();
     }
 
+    // Create a new chat response for this instance
+    const responseId = generateUUID();
+    const emptyMessages = JSON.stringify([]);
+    
+    // Create new chat response linked to this instance
+    await createChatResponse({
+      id: responseId,
+      chatInstanceId: id,
+      userId: chatFromDb.userId, // Using instance owner's ID for tracking
+      messagesJson: emptyMessages,
+      status: "started",
+      completionStatus: "incomplete",
+    });
+
+    // Format chat for UI
+    chat = {
+      ...chatFromDb,
+      messages: []
+    };
+
     return (
-      <NavSidebar>
-        <ChatWrapper conversationId={chat.id} initialMessages={chat.messages} />
-      </NavSidebar>
+      <div className="h-full flex flex-col">
+        <ChatWrapper conversationId={responseId} initialMessages={chat.messages} chatInstanceId={id} />
+      </div>
     );
   } catch (error) {
     console.error("Error loading chat:", error);

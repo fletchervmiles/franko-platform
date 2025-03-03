@@ -25,12 +25,13 @@ const Chat = dynamic(() => import("@/components/chat").then(mod => ({ default: m
 interface ChatWrapperProps {
   conversationId: string
   initialMessages: Message[]
+  chatInstanceId?: string
 }
 
-export function ChatWrapper({ conversationId, initialMessages }: ChatWrapperProps) {
+export function ChatWrapper({ conversationId, initialMessages, chatInstanceId }: ChatWrapperProps) {
   return (
     <Suspense fallback={<LoadingSpinner />}>
-      <Chat conversationId={conversationId} initialMessages={initialMessages} />
+      <Chat conversationId={conversationId} initialMessages={initialMessages} chatInstanceId={chatInstanceId} />
     </Suspense>
   )
 } 

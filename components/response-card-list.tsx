@@ -8,6 +8,7 @@ interface Response {
   completionDate: string
   summary: string
   transcript: string
+  customerWords: number
 }
 
 interface ResponseCardListProps {

@@ -1,43 +1,89 @@
+/**
+ * External Chat Wrapper Component
+ * 
+ * This client component serves as a wrapper around the ExternalChat component:
+ * 1. Provides Suspense boundary for loading states
+ * 2. Shows a loading spinner while the chat is initializing
+ * 3. Passes through all necessary props to the ExternalChat component
+ * 
+ * This wrapper improves user experience by showing a loading state
+ * while the chat component is being loaded, and handles any potential
+ * rendering errors or suspense states from the chat component.
+ */
+
 "use client"
 
-import { Suspense } from "react"
+import React, { Suspense, useState, useEffect } from "react"
 import { Message } from "ai"
 import { ExternalChat } from "@/components/external-chat"
 import { Loader2 } from "lucide-react"
 
 interface ExternalChatWrapperProps {
-  chatInstanceId: string
-  chatResponseId: string
-  initialMessages: Message[]
-  organizationName: string
-  organizationContext: string
+  chatInstanceId: string       // ID of the chat instance
+  chatResponseId: string       // ID of the chat response record
+  initialMessages: Message[]   // Initial messages to display
 }
 
 export function ExternalChatWrapper({
   chatInstanceId,
   chatResponseId,
   initialMessages,
-  organizationName,
-  organizationContext
 }: ExternalChatWrapperProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <p className="text-sm text-gray-500">Loading chat...</p>
-          </div>
+  const [hasError, setHasError] = useState(false);
+  const [errorInfo, setErrorInfo] = useState<any>(null);
+
+  const handleError = (error: Error) => {
+    console.error("Error in ExternalChat:", error);
+    setHasError(true);
+    setErrorInfo(error);
+  };
+
+  if (hasError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-4">
+        <div className="text-red-500 font-semibold text-xl mb-4">
+          Something went wrong
         </div>
-      }
-    >
-      <ExternalChat
-        chatInstanceId={chatInstanceId}
-        chatResponseId={chatResponseId}
-        initialMessages={initialMessages}
-        organizationName={organizationName}
-        organizationContext={organizationContext}
-      />
-    </Suspense>
-  )
+        <div className="text-gray-600 text-sm mb-6 max-w-md text-center">
+          We encountered an error while loading the chat. Please try refreshing the page or contact support if the problem persists.
+        </div>
+        <div className="text-xs text-gray-500 max-w-md overflow-auto bg-gray-100 p-2 rounded">
+          {errorInfo?.toString()}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ErrorBoundary onError={handleError}>
+      <Suspense
+        fallback={
+          <div className="h-full flex flex-col items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+            <p className="text-sm text-gray-500 mt-2">Loading interview...</p>
+          </div>
+        }
+      >
+        <ExternalChat
+          chatInstanceId={chatInstanceId}
+          chatResponseId={chatResponseId}
+          initialMessages={initialMessages}
+        />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+// Error boundary component to catch and display errors
+class ErrorBoundary extends React.Component<{
+  children: React.ReactNode;
+  onError: (error: Error) => void;
+}> {
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+
+  render() {
+    return this.props.children;
+  }
 } 

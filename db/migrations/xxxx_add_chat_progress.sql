@@ -1,0 +1,1 @@
+ALTER TABLE "chat_responses" ADD COLUMN "chat_progress" text; 

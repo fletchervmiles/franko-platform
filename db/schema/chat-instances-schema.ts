@@ -18,6 +18,7 @@ export const chatInstancesTable = pgTable("chat_instances", {
   conversationPlan: jsonb("conversation_plan"),
   objectiveProgress: jsonb("objective_progress"),  // Add new field
   conversationPlanLastEdited: timestamp("conversation_plan_last_edited").defaultNow().notNull(),
+  lastViewed: timestamp("last_viewed"), // Add lastViewed field to track when the user last viewed responses
   // New fields
   topic: text("topic"),
   duration: text("duration"),
@@ -26,6 +27,7 @@ export const chatInstancesTable = pgTable("chat_instances", {
   incentiveCode: text("incentive_code"),
   incentiveDescription: text("incentive_description"),
   additionalDetails: text("additional_details"),
+  welcomeDescription: text("welcome_description"), // Added new field
   published: boolean("published").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

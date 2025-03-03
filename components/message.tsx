@@ -265,8 +265,10 @@ export function Message({
         )}>
           {!isUser && showLoading && (
             <div className="flex items-center h-6">
-              <div className="w-16 h-0.5 bg-gray-100 rounded-full overflow-hidden relative">
-                <div className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              <div className="flex space-x-1 items-end bg-gray-100 px-3 py-2 rounded-xl">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite]"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.2s]"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.4s]"></div>
               </div>
             </div>
           )}
