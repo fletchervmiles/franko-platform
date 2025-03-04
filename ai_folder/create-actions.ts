@@ -27,26 +27,72 @@ async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: s
   // Create one fewer objective in the progress tracker
   const progressObjectiveCount = Math.max(1, objectiveCount - 1);
   
+  // Calculate totals for min/max turns
+  let totalMin = 0;
+  let totalMax = 0;
+  
   // Create the objective progress object
   const objectiveProgress: ObjectiveProgress = {
+    overall_turns: 0,
+    expected_total_min: 0,
+    expected_total_max: 0,
     objectives: {}
   };
   
-  // Populate the objectives with the correct status
+  // Function to parse turn expectations
+  function parseTurnExpectation(turnString: string): { min: number; max: number } {
+    // Remove any whitespace and convert to string
+    const cleaned = String(turnString).trim();
+    
+    // Handle range format (e.g., "2-3")
+    if (cleaned.includes('-')) {
+      const [min, max] = cleaned.split('-').map(Number);
+      return { min, max };
+    }
+    
+    // Handle approximate format (e.g., "≈3")
+    if (cleaned.includes('≈')) {
+      const base = Number(cleaned.replace('≈', ''));
+      return { min: base - 1, max: base + 1 };
+    }
+    
+    // Handle single number (e.g., "3")
+    const exact = Number(cleaned);
+    return { min: exact, max: exact };
+  }
+  
+  // Populate the objectives with the correct status and expected turns
   for (let i = 0; i < progressObjectiveCount; i++) {
     // Create keys like objective01, objective02, etc.
     const paddedIndex = String(i + 1).padStart(2, '0');
     const objectiveKey = `objective${paddedIndex}`;
     
+    // Get expected turns from the plan (use the corresponding objective)
+    const planObjective = plan.objectives[i];
+    const { min, max } = parseTurnExpectation(planObjective.expectedConversationTurns || "1");
+    
     objectiveProgress.objectives[objectiveKey] = {
-      status: i === 0 ? "current" : "tbc"
+      status: i === 0 ? "current" : "tbc",
+      turns_used: 0,
+      expected_min: min,
+      expected_max: max
     };
+    
+    // Add to totals
+    totalMin += min;
+    totalMax += max;
   }
+  
+  // Set the total expected turns
+  objectiveProgress.expected_total_min = totalMin;
+  objectiveProgress.expected_total_max = totalMax;
   
   logger.debug('Creating objective progress:', {
     chatId,
     planObjectiveCount: objectiveCount,
-    progressObjectiveCount
+    progressObjectiveCount,
+    expectedTotalMin: totalMin,
+    expectedTotalMax: totalMax
   });
   
   // Save the objective progress to the database

@@ -71,15 +71,15 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
   const hasContent = value.trim().length > 0
 
   return (
-    <div className="w-full bg-gradient-to-t from-white via-white to-white/0 pt-2">
-      <div className="mx-auto max-w-3xl px-4 md:px-8 lg:px-12 pb-4">
+    <div className="w-full bg-[#F9F8F6] pt-2">
+      <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
         <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)]">
           <form onSubmit={(e) => {
             console.log("Form submit event triggered in ChatInput");
             console.log("Form values:", { value });
             console.log("Is disabled:", disabled);
             onSubmit(e);
-          }} className="flex items-start gap-2 p-2">
+          }} className="flex items-start gap-2 p-2 px-8">
             <Textarea
               ref={textareaRef}
               value={value}

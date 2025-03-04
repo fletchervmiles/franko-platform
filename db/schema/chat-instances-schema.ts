@@ -3,9 +3,15 @@ import { profilesTable } from "./profiles-schema";
 
 // Update ObjectiveProgress interface to make comments optional
 export interface ObjectiveProgress {
+  overall_turns: number;
+  expected_total_min: number;
+  expected_total_max: number;
   objectives: Record<string, {
     status: "done" | "current" | "tbc";
-    comments?: string[]; // Make comments optional with ?
+    comments?: string[];
+    turns_used: number;
+    expected_min: number;
+    expected_max: number;
   }>;
 }
 

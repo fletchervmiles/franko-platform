@@ -20,7 +20,7 @@ export default function ActiveChatPage({
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-screen bg-[#F9F8F6]">
       <ExternalChatWrapper
         chatInstanceId={id}
         chatResponseId={chatResponseId}

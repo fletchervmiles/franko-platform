@@ -210,47 +210,18 @@ export function Message({
   // Determine if we should show loading state
   const showLoading = isLoading && !content && !toolInvocations?.length;
 
-  // Render avatar or spacer based on isFirstInTurn
-  const renderAvatarOrSpacer = () => {
-    if (isFirstInTurn) {
-      return (
-        <Avatar className={cn(
-          "h-6 w-6 flex-shrink-0 transition-transform group-hover:scale-105",
-          isUser ? "ring-1 ring-blue-500 ring-offset-1 ring-offset-white" : "",
-          "mt-1.5"
-        )}>
-          <div className="flex h-full w-full items-center justify-center rounded-full overflow-hidden">
-            <Image
-              src={isUser ? "/assets/user_avatar.svg" : "/favicon/favicon.svg"}
-              alt={isUser ? "User Avatar" : "AI Avatar"}
-              width={18}
-              height={18}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        </Avatar>
-      );
-    } else {
-      return <div className="w-6 flex-shrink-0" />; // Spacer for alignment
-    }
-  };
-
   return (
     <motion.div 
       className={cn(
-        "group flex gap-3 w-full max-w-3xl mx-auto transition-opacity",
-        isUser ? "flex-row-reverse" : "",
-        "hover:opacity-100 px-4 md:px-8"
+        "group flex w-full max-w-4xl mx-auto transition-opacity",
+        "hover:opacity-100 px-4 md:px-8 lg:px-14"
       )}
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
     >
-      {renderAvatarOrSpacer()}
-
       <div className={cn(
-        "flex flex-col gap-1",
-        isUser ? "items-end" : "items-start",
-        "flex-1"
+        "flex flex-col gap-1 w-full",
+        isUser ? "items-end" : "items-start"
       )}>
         {timestamp && (
           <div className="text-xs text-gray-400 transition-opacity opacity-0 group-hover:opacity-100">
@@ -258,17 +229,17 @@ export function Message({
           </div>
         )}
         <div className={cn(
-          "rounded-lg px-3 py-1.5 text-base",
+          "text-base max-w-[85%]",
           isUser 
-            ? "bg-blue-500 text-white" 
-            : "bg-transparent text-gray-900"
+            ? "bg-white text-gray-900 rounded-3xl rounded-br-lg border border-gray-200 px-4 py-2.5" // Increased roundness while maintaining speech bubble effect
+            : "bg-transparent text-gray-900 rounded-lg px-4 py-2.5"
         )}>
           {!isUser && showLoading && (
-            <div className="flex items-center h-6">
-              <div className="flex space-x-1 items-end bg-gray-100 px-3 py-2 rounded-xl">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite]"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.2s]"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.4s]"></div>
+            <div className="flex items-center h-7">
+              <div className="flex space-x-2 items-end bg-gray-100 px-4 py-2.5 rounded-xl">
+                <div className="w-2.5 h-2.5 bg-gray-600 rounded-full animate-[typing_1.2s_ease-in-out_infinite]"></div>
+                <div className="w-2.5 h-2.5 bg-gray-600 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.2s]"></div>
+                <div className="w-2.5 h-2.5 bg-gray-600 rounded-full animate-[typing_1.2s_ease-in-out_infinite_0.4s]"></div>
               </div>
             </div>
           )}
