@@ -224,6 +224,7 @@ export function ExternalChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(false);
+  const [userMessageCount, setUserMessageCount] = useState(0);
 
   const {
     messages,
@@ -241,40 +242,82 @@ export function ExternalChat({
     initialMessages,
   });
 
-  // Send auto greeting once at initialization.
+  // Auto-scroll effect
   useEffect(() => {
-    async function sendGreeting() {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+  
+  // Track user messages for progress bar
+  useEffect(() => {
+    const userMessages = messages.filter(m => m.role === 'user');
+    setUserMessageCount(userMessages.length);
+    
+    if (userMessages.length >= 2) {
+      setShowProgressBar(true);
+    }
+  }, [messages]);
+
+  // Send auto greeting once at initialization
+  useEffect(() => {
+    const sendGreeting = async () => {
       try {
+        // Default greeting message
         let greeting = "Hi, I'm ready!";
 
-        const res = await fetch(`/api/chat-responses/${chatResponseId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.intervieweeFirstName) {
-            greeting = `Hi, I'm ${data.intervieweeFirstName} and I'm ready!`;
+        // Try to get user's name if available
+        try {
+          const res = await fetch(`/api/chat-responses/${chatResponseId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.intervieweeFirstName) {
+              greeting = `Hi, I'm ${data.intervieweeFirstName} and I'm ready!`;
+            }
           }
+        } catch (nameError) {
+          console.error("Failed to get user name, using default greeting", nameError);
         }
 
+        console.log(`Sending initial greeting: "${greeting}"`);
+        
+        // Set the input value first
         setInput(greeting);
-
-        // handleSubmit expects a form event with preventDefault
-        await handleSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
-
-        // Clear input after sending the auto message
-        setInput("");
+        
+        // Use setTimeout to ensure state updates before submitting
+        setTimeout(async () => {
+          try {
+            // Create a mock form event
+            const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+            
+            // Submit the form with the greeting message
+            await handleSubmit(mockEvent);
+            
+            // Clear the input after sending
+            setInput("");
+            
+            console.log("Initial greeting sent successfully");
+          } catch (submitError) {
+            console.error("Failed to submit initial greeting:", submitError);
+          } finally {
+            // End initialization regardless of success/failure
+            setIsInitializing(false);
+          }
+        }, 100);
       } catch (error) {
-        console.error("Auto greeting failed", error);
-      } finally {
-        setIsInitializing(false); // Done initializing after message sent
+        console.error("Auto greeting process failed:", error);
+        setIsInitializing(false);
       }
-    }
+    };
 
+    // Only send greeting on initial render if we're still initializing
     if (isInitializing && chatResponseId) {
+      console.log("Starting auto-greeting process");
       sendGreeting();
     }
-  }, [isInitializing, chatResponseId, setInput, handleSubmit]);
+  }, [chatResponseId, isInitializing, handleSubmit, setInput]);
 
-  // Loader screen during initialization
+  // Loading screen during initialization
   if (isInitializing) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -288,22 +331,18 @@ export function ExternalChat({
     );
   }
 
-  // Render actual conversation once initialized
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-14">
         <div className="mx-auto max-w-4xl space-y-8 py-8">
+          {/* Show all messages including the auto-greeting */}
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}
               content={message.content}
               isUser={message.role === "user"}
               chatId={chatResponseId}
-              isLoading={
-                isLoading &&
-                index === messages.length - 1 &&
-                message.role === "user"
-              }
+              isLoading={false}
               toolInvocations={message.toolInvocations}
               messageIndex={index}
               allMessages={messages}
@@ -313,6 +352,7 @@ export function ExternalChat({
             />
           ))}
 
+          {/* Show typing animation when waiting for AI response */}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
             <ChatMessage
               content=""
