@@ -283,6 +283,27 @@ export async function POST(request: Request) {
      */
     const { messages, id = generateUUID(), chatInstanceId, chatResponseId, organizationName = "", organizationContext = "" } = await request.json();
     
+    // Get the system prompt for logging
+    const systemPrompt = await getPopulatedPrompt(chatInstanceId);
+
+    // // Detailed request logging
+    // console.log('\n=== CHAT REQUEST DETAILS ===');
+    // console.log('Request ID:', id);
+    // console.log('Chat Instance ID:', chatInstanceId);
+    // console.log('Chat Response ID:', chatResponseId);
+    // console.log('\nMessages:');
+    // messages.forEach((msg: Message, index: number) => {
+    //   console.log(`\n[Message ${index + 1}]`);
+    //   console.log('Role:', msg.role);
+    //   console.log('Content:', msg.content);
+    //   if (msg.toolInvocations) {
+    //     console.log('Tool Invocations:', JSON.stringify(msg.toolInvocations, null, 2));
+    //   }
+    // });
+    // console.log('\nSystem Prompt:');
+    // console.log(systemPrompt);
+    // console.log('\n=== END REQUEST DETAILS ===\n');
+
     // Use api logger instead of ai logger for API request details
     logger.api('Incoming messages:', {
       id,
@@ -295,7 +316,7 @@ export async function POST(request: Request) {
       }))
     });
 
-    logger.info('Processing chat request:', { id, chatResponseId, messageCount: messages.length });
+    // logger.info('Processing chat request:', { id, chatResponseId, messageCount: messages.length });
 
     // Verify the chat response exists
     if (!chatResponseId) {
@@ -347,20 +368,6 @@ export async function POST(request: Request) {
      * - Available tools for AI to use
      * - Response streaming settings
      */
-    const systemPrompt = await getPopulatedPrompt(chatInstanceId);
-    
-    // The system prompt already contains the necessary instructions
-    // No need for additional instructions here
-
-    /**
-     * AI Model Configuration
-     * 
-     * Sets up the AI model with:
-     * - System prompt with tool usage instructions
-     * - Core messages from the conversation
-     * - Available tools and their configurations
-     * - Maximum steps for multi-turn interactions
-     */
     const result = await streamText({
       model: geminiFlashModel,
       system: systemPrompt,
@@ -369,7 +376,7 @@ export async function POST(request: Request) {
 
       tools: {
         endConversation: {
-          description: "A tool that ends the conversation by redirecting the user back to their dashboard, where they can review and edit the final conversation plan and access additional details like the shareable link. **When to use:** Use this tool immediately after the conversation has finished, when all objectives have been met or when the user indicates no further input is needed.",
+          description: "- **Description:** Concludes the interaction by redirecting the user to their dashboard, where they can review and edit the conversation plan. - **When to Use:** This tool is mandatory at the conversation's end when all objectives are met or when the user has no further input. It is highlighted within the final objective of the conversation plan.",
           parameters: z.object({
             // Required dummy parameter to satisfy Gemini's schema requirements
             _dummy: z.string().optional().describe("Placeholder parameter")
@@ -383,7 +390,7 @@ export async function POST(request: Request) {
 
         
         searchWeb: {
-          description: "A tool that performs a web search to gather factual context from publicly available sources (such as product descriptions, documentation, or feature specs). **When to use:** Use tool when key details are missing from the user's input, when automating context retrieval is desired, or when external, verifiable data is needed to inform the conversation. Avoid using it if all necessary information is already provided, if the data is private or sensitive, or if the request is purely subjective.",
+          description: "A tool to perform a web search, gathering factual information from publicly available sources like product specifications. Ideal for filling information gaps. **When to Use:** Use when there's a need for verified data or when the conversation lacks key details. Not to be overused and should be considered only if the specific objective suggests this tool.",
           parameters: z.object({
             query: z.string().describe("The search query to find information about"),
             searchDepth: z
@@ -592,16 +599,38 @@ export async function POST(request: Request) {
               try {
                 logger.debug('Starting objective update process');
                 
+                // Get the chat instance to ensure we have the latest progress structure
+                const chatInstance = await getChatInstanceById(chatInstanceId);
+                if (!chatInstance || !chatInstance.objectiveProgress) {
+                  logger.error('Chat instance or objectiveProgress not found', { 
+                    chatInstanceId, 
+                    hasInstance: !!chatInstance, 
+                    hasProgress: !!(chatInstance && chatInstance.objectiveProgress) 
+                  });
+                  return;
+                }
+                
+                // Ensure the chat response has the latest progress structure
+                // This ensures the chat_progress field is properly initialized
+                if (!chatResponse.chatProgress) {
+                  logger.debug('Initializing chatProgress in chat response', { chatResponseId });
+                  await updateChatResponse(chatResponseId, {
+                    chatProgress: chatInstance.objectiveProgress
+                  });
+                }
+                
+                // CRITICAL FIX: Use chatResponseId instead of chatInstanceId for objectiveUpdate
+                // objectiveUpdate function expects chatId to be a chat response ID, not a chat instance ID
                 const objectiveResult = await objectiveUpdate({
                   messages: coreMessages,
-                userId: chatResponse.userId,
-                chatId: chatInstanceId
+                  userId: chatResponse.userId,
+                  chatId: chatResponseId  // Changed from chatInstanceId to chatResponseId
                 });
 
-                logger.api('Objective update result in route handler:', {
-                  resultLength: objectiveResult.length,
-                  result: objectiveResult
-                });
+                // logger.api('Objective update result in route handler:', {
+                //   resultLength: objectiveResult.length,
+                //   result: objectiveResult
+                // });
 
                 // Create objective update message
                 const objectiveMessage = {
@@ -623,7 +652,7 @@ export async function POST(request: Request) {
                 messagesJson: JSON.stringify(allMessages),
                 });
 
-                logger.debug('Objective update message added to chat history');
+                // logger.debug('Objective update message added to chat history');
 
                 // After objective update is complete, update progress bar (non-blocking)
                 Promise.resolve().then(async () => {

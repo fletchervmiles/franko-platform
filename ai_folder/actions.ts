@@ -38,6 +38,9 @@ import { logger } from '@/lib/logger';
 // Import the AI model configuration
 import { geminiFlashModel, geminiProModel, o3MiniModel } from ".";
 
+// Import the correct function from the right file
+import { numberedObjectivesToArray } from "@/components/conversationPlanSchema";
+
 /**
  * Cache Systems
  * 
@@ -184,16 +187,21 @@ async function getPopulatedThinkingHelpPrompt(userId: string | null): Promise<st
  * Gets a personalized objective update prompt for a specific user
  * 
  * This function creates prompts that help track progress toward conversation objectives.
- * It personalizes the prompts with organization-specific information.
+ * It personalizes the prompts with organization-specific information and the conversation plan.
  * The function employs caching to improve performance for repeat users.
  * 
  * @param userId - The unique identifier for the user
+ * @param conversationPlan - The current conversation plan
  * @returns A promise that resolves to the populated prompt string
  */
-async function getPopulatedObjectiveUpdatePrompt(userId: string): Promise<string> {
+async function getPopulatedObjectiveUpdatePrompt(
+  userId: string,
+  conversationPlan: ConversationPlan
+): Promise<string> {
   try {
-    // Check cache first to avoid unnecessary processing
-    const cachedPrompt = objectiveUpdatePromptCache.get(userId);
+    // Create a cache key that includes both user and plan
+    const cacheKey = `${userId}-${JSON.stringify(conversationPlan)}`;
+    const cachedPrompt = objectiveUpdatePromptCache.get(cacheKey);
     if (cachedPrompt) {
       return cachedPrompt;
     }
@@ -210,13 +218,37 @@ async function getPopulatedObjectiveUpdatePrompt(userId: string): Promise<string
       throw new Error('User profile not found');
     }
 
-    // Replace placeholder values with actual user data
+    // Format the conversation plan as JSON with proper code block formatting
+    // Ensure consistent structure by normalizing the plan format
+    const normalizedPlan = {
+      title: conversationPlan.title || "Conversation Plan",
+      summary: conversationPlan.summary || "Conversation Summary",
+      duration: conversationPlan.duration || "5-10 minutes",
+      thinking: conversationPlan.thinking || {},
+      objectives: Array.isArray(conversationPlan.objectives) ? 
+        conversationPlan.objectives : 
+        numberedObjectivesToArray(conversationPlan.objectives || {})
+    };
+    
+    // Log the plan for debugging
+    logger.debug('Formatting conversation plan for prompt', {
+      planTitle: normalizedPlan.title,
+      objectiveCount: normalizedPlan.objectives.length,
+      planFormat: typeof conversationPlan === 'string' ? 'string' : 'object'
+    });
+    
+    const formattedConversationPlan = "```json\n" + 
+      JSON.stringify(normalizedPlan, null, 2) + 
+      "\n```";
+
+    // Replace placeholder values with actual user data and conversation plan
     const populatedPrompt = promptTemplate
       .replace('{organisation_name}', profile.organisationName || '')
-      .replace('{organisation_description}', profile.organisationDescription || '');
+      .replace('{organisation_description}', profile.organisationDescription || '')
+      .replace('{conversation_plan}', formattedConversationPlan);
 
-    // Cache the result for future requests
-    objectiveUpdatePromptCache.set(userId, populatedPrompt);
+    // Cache the result for future requests using the compound key
+    objectiveUpdatePromptCache.set(cacheKey, populatedPrompt);
     
     return populatedPrompt;
   } catch (error) {
@@ -513,28 +545,166 @@ export async function thinkingHelp({ messages, userId }: { messages: CoreMessage
  * 
  * @param messages - The conversation history so far
  * @param userId - The user's unique identifier
- * @param chatId - The ID of the current chat session
+ * @param chatId - The chat response ID (not chat instance ID)
  * @returns A text string describing progress toward objectives
  */
 export async function objectiveUpdate({ messages, userId, chatId }: { 
   messages: CoreMessage[], 
   userId: string,
-  chatId: string
+  chatId: string  // This is expected to be a chat response ID
 }) {
   try {
     logger.debug('Starting objective update:', { chatId, userId });
     
-    // Get the populated prompt which already contains the hardcoded objectives
-    const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId);
+    // Get the chat response first
+    const chatResponse = await getChatResponseById(chatId);
+    if (!chatResponse) {
+      throw new Error('Chat response not found');
+    }
     
-    // Get current progress to provide context to the AI
-    const chat = await getChatInstanceById(chatId);
-    const currentProgress = chat?.objectiveProgress;
+    // Now get the chat instance associated with this response to access the conversation plan
+    const chat = await getChatInstanceById(chatResponse.chatInstanceId);
+    if (!chat) {
+      throw new Error('Chat instance not found');
+    }
     
-    // Add current progress to prompt if available
+    // Ensure we have a conversation plan
+    if (!chat.conversationPlan) {
+      throw new Error('Conversation plan not found');
+    }
+    
+    // Convert the conversation plan to the required type structure if needed
+    let typedConversationPlan: ConversationPlan;
+    try {
+      // Handle conversation plan which might be stored in different formats
+      if (typeof chat.conversationPlan === 'string') {
+        typedConversationPlan = JSON.parse(chat.conversationPlan);
+      } else {
+        // Convert from database format to expected interface format
+        const planData = chat.conversationPlan as any;
+        
+        // First ensure the objectives are in the correct format for numberedObjectivesToArray
+        const objectives = planData.objectives || {};
+        const isValidNumberedObjectives = typeof objectives === 'object' && 
+          !Array.isArray(objectives) &&
+          Object.keys(objectives).some(key => key.startsWith('objective'));
+        
+        typedConversationPlan = {
+          title: planData.title || 'Conversation Plan',
+          summary: planData.summary || 'Conversation Summary',
+          duration: planData.duration || '5-10 minutes',
+          thinking: planData.thinking || {},
+          objectives: isValidNumberedObjectives ? 
+            numberedObjectivesToArray(objectives) : 
+            (Array.isArray(planData.objectives) ? planData.objectives : [])
+        };
+      }
+    } catch (error) {
+      logger.error('Error parsing conversation plan:', error);
+      throw new Error('Invalid conversation plan format');
+    }
+    
+    // Get the populated prompt with the conversation plan
+    // Log the conversation plan for debugging
+    logger.debug('Using conversation plan for objective update', {
+      title: typedConversationPlan.title,
+      objectiveCount: typedConversationPlan.objectives.length
+    });
+    
+    const systemPrompt = await getPopulatedObjectiveUpdatePrompt(userId, typedConversationPlan);
+    
+    // We already have the chat response from earlier in the function
+    // No need to fetch it again
+    
+    // Calculate current turn count directly from messages
+    const messageGroups = messages.reduce((acc, msg) => {
+      if (msg.role === 'user') {
+        acc.push([msg]);
+      } else if (acc.length > 0 && (msg.role === 'assistant' || msg.role === 'tool')) {
+        acc[acc.length - 1].push(msg);
+      }
+      return acc;
+    }, [] as CoreMessage[][]);
+
+    const turnCount = messageGroups.length;
+    logger.debug('Calculated current turn count for objective update:', { turnCount });
+
+    // Parse the chat progress from the response (could be string or object)
+    let currentProgress = null;
+    if (chatResponse.chatProgress) {
+      try {
+        if (typeof chatResponse.chatProgress === 'string') {
+          currentProgress = JSON.parse(chatResponse.chatProgress);
+        } else {
+          currentProgress = chatResponse.chatProgress;
+        }
+      } catch (error) {
+        logger.error('Error parsing chat progress from chat response:', error);
+      }
+    }
+    
+    // If no progress in chat response, fall back to chat instance progress
+    if (!currentProgress) {
+      logger.debug('No chat progress in chat response, falling back to chat instance objectiveProgress');
+      if (chat.objectiveProgress) {
+        if (typeof chat.objectiveProgress === 'string') {
+          try {
+            currentProgress = JSON.parse(chat.objectiveProgress as string);
+          } catch (error) {
+            logger.error('Error parsing objectiveProgress as string:', error);
+            currentProgress = chat.objectiveProgress; // Use as is if parsing fails
+          }
+        } else {
+          currentProgress = chat.objectiveProgress;
+        }
+        logger.debug('Using objectiveProgress from chat instance', { currentProgress });
+      } else {
+        logger.info('No objectiveProgress found in chat instance');
+      }
+    }
+    
+    // Update the turn counts directly to ensure accurate reporting
+    if (currentProgress) {
+      // Update overall turns
+      currentProgress.overall_turns = turnCount;
+      
+      // Update the current objective's turns with the same logic as progressBarUpdate
+      const currentObjectiveKey = Object.entries(currentProgress.objectives)
+        .find(([_, obj]) => obj.status === "current")?.[0];
+      
+      if (currentObjectiveKey) {
+        // Calculate the turns for the current objective using the same logic as progressBarUpdate
+        const objectiveKeys = Object.keys(currentProgress.objectives).sort();
+        const currentIndex = objectiveKeys.indexOf(currentObjectiveKey);
+        
+        if (currentIndex === 0) {
+          // First objective, turns are just the total turns
+          currentProgress.objectives[currentObjectiveKey].turns_used = turnCount;
+        } else {
+          // For other objectives, subtract the turns used by previous completed objectives
+          let previousTurns = 0;
+          for (let i = 0; i < currentIndex; i++) {
+            const prevObjectiveKey = objectiveKeys[i];
+            previousTurns += currentProgress.objectives[prevObjectiveKey].turns_used;
+          }
+          
+          // The turns used for this objective is the current turn count minus turns used in previous objectives
+          const objectiveTurns = Math.max(1, turnCount - previousTurns);
+          currentProgress.objectives[currentObjectiveKey].turns_used = objectiveTurns;
+        }
+      }
+      
+      logger.debug('Updated turn counts for objective update function', { 
+        overallTurns: currentProgress.overall_turns,
+        currentObjective: currentObjectiveKey,
+        currentObjectiveTurns: currentObjectiveKey ? currentProgress.objectives[currentObjectiveKey].turns_used : 0
+      });
+    }
+    
+    // Format current progress in a clear, structured way for the model
     const contextMessage = currentProgress ? 
-      `Current objectives state:\n${JSON.stringify(currentProgress, null, 2)}\n\n` : 
-      '';
+      `Current objectives state:\n\`\`\`json\n${JSON.stringify(currentProgress, null, 2)}\n\`\`\`\n\n` : 
+      'No current progress data available. This may be the first update.\n\n';
     
     // Combine messages with additional system guidance
     const promptMessages = [
@@ -542,45 +712,67 @@ export async function objectiveUpdate({ messages, userId, chatId }: {
       {
         role: 'system' as const,
         content: `${contextMessage}Please analyze the conversation progress based on the objectives in the prompt and the conversation history.
-Provide a concise update in the format specified in the prompt.`
+Provide a concise update in the format specified in the prompt.
+
+Be sure to output a properly formatted progress update that follows the exact structure shown in the examples in the prompt.
+Your output will be used to update the progress tracking in the database.`
       }
     ];
 
-    // Log the input to the AI model for debugging
-    logger.api('Objective update input:', {
-      messageCount: promptMessages.length,
-      systemPromptLength: systemPrompt.length,
-      currentProgress
-    });
+    // // Log the input to the AI model for debugging
+    // logger.api('Objective update input:', {
+    //   messageCount: promptMessages.length,
+    //   systemPromptLength: systemPrompt.length,
+    //   currentProgress
+    // });
 
-    // Add detailed debug logging of the full request structure
-    console.log('\n=== FULL REQUEST STRUCTURE ===');
-    console.log('1. System Prompt:');
-    console.log(systemPrompt);
-    console.log('\n2. Prompt Messages:');
-    promptMessages.forEach((msg, i) => {
-      console.log(`\nMessage ${i + 1}:`);
-      console.log(`Role: ${msg.role}`);
-      console.log(`Content: ${msg.content}`);
-    });
-    console.log('\n3. Final Formatted Prompt:');
-    console.log(promptMessages.map(m => `${m.role}: ${m.content}`).join('\n'));
-    console.log('\n=== END REQUEST STRUCTURE ===\n');
+    // // Add detailed debug logging of the full request structure
+    // console.log('\n=== FULL REQUEST STRUCTURE ===');
+    // console.log('1. System Prompt:');
+    // console.log(systemPrompt);
+    // console.log('\n2. Prompt Messages:');
+    // promptMessages.forEach((msg, i) => {
+    //   console.log(`\nMessage ${i + 1}:`);
+    //   console.log(`Role: ${msg.role}`);
+    //   console.log(`Content: ${msg.content}`);
+    // });
+    // console.log('\n=== END REQUEST STRUCTURE ===\n');
 
-    // Generate text response analyzing progress toward objectives
-    const { text: progressUpdate } = await generateText({
-      model: geminiFlashModel,
-      system: systemPrompt,
-      prompt: promptMessages.map(m => `${m.role}: ${m.content}`).join('\n'),
-    });
-
-    // Log the output from the AI model for debugging
-    logger.api('Objective update output:', {
-      progressUpdateLength: progressUpdate.length,
-      progressUpdate
-    });
-
-    return progressUpdate;
+    try {
+      // Convert messages to a single string for the prompt
+      const messagesText = promptMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+      
+      // // Log key information just before making the API call
+      // logger.debug('About to generate objective update', {
+      //   systemPromptLength: systemPrompt?.length || 0,
+      //   messagesCount: promptMessages.length,
+      //   currentProgressExists: !!currentProgress
+      // });
+      
+      // Generate text response analyzing progress toward objectives
+      const { text: progressUpdate } = await generateText({
+        model: geminiFlashModel,
+        system: systemPrompt,
+        prompt: messagesText,
+      });
+      
+      // Validate that we got a valid response
+      if (!progressUpdate || progressUpdate.trim().length < 5) {
+        logger.error('Empty or very short progress update returned', { progressUpdate });
+        return "Progress update unavailable. Please continue with the conversation.";
+      }
+      
+      // Log the output from the AI model for debugging
+      logger.api('Objective update output:', {
+        progressUpdateLength: progressUpdate.length,
+        progressUpdate: progressUpdate.substring(0, 200) + (progressUpdate.length > 200 ? '...' : '')
+      });
+      
+      return progressUpdate;
+    } catch (apiError) {
+      logger.error('API error in objective update generation:', apiError);
+      return "Progress update generation failed. Please continue with the conversation.";
+    }
   } catch (error) {
     logger.error('Error in objective update:', error);
     return "Error generating objective update."; // Fallback message on error
@@ -610,7 +802,7 @@ export async function progressBarUpdate({
   chatId: string;
 }): Promise<void> {
   try {
-    logger.debug('Starting progress bar update:', { chatId });
+    // logger.debug('Starting progress bar update:', { chatId });
     
     // Get current progress from database
     const chat = await getChatResponseById(chatId);
@@ -622,35 +814,43 @@ export async function progressBarUpdate({
     // Initialize progress if it doesn't exist
     let objectiveProgress: ObjectiveProgress | null = null;
     
-    // Try to parse the chat_progress field
+    // Try to get the chat_progress field
     if (chat.chatProgress) {
       try {
         // Handle different types of chatProgress (could be string or object)
-        let chatProgressStr: string;
-        
         if (typeof chat.chatProgress === 'string') {
-          chatProgressStr = chat.chatProgress;
+          // It's stored as a string, so parse it
+          objectiveProgress = JSON.parse(chat.chatProgress) as ObjectiveProgress;
         } else {
-          // If it's already an object, stringify it
-          chatProgressStr = JSON.stringify(chat.chatProgress);
+          // It's already an object, use it directly
+          objectiveProgress = chat.chatProgress as ObjectiveProgress;
         }
         
-        // Now parse the string
-        objectiveProgress = JSON.parse(chatProgressStr) as ObjectiveProgress;
-        logger.debug('Successfully parsed chat progress');
+        logger.debug('Successfully extracted chat progress', {
+          progressType: typeof chat.chatProgress,
+          hasObjectives: objectiveProgress ? !!objectiveProgress.objectives : false
+        });
       } catch (e) {
-        logger.error('Error parsing chat progress:', e);
+        logger.error('Error processing chat progress:', e);
       }
     }
     
-    // If no progress exists, get it from the chat instance
+    // If no progress exists, get it from the chat instance and initialize it
     if (!objectiveProgress) {
       // Get the chat instance to access objectiveProgress
       const chatInstance = await getChatInstanceById(chat.chatInstanceId);
       
       if (chatInstance && chatInstance.objectiveProgress) {
-        objectiveProgress = chatInstance.objectiveProgress as ObjectiveProgress;
-        logger.debug('Using objectiveProgress from chat instance');
+        // Use a COPY of the template from the chat instance, not a reference
+        // This ensures we don't modify the template in the chat instance
+        objectiveProgress = JSON.parse(JSON.stringify(chatInstance.objectiveProgress)) as ObjectiveProgress;
+        logger.debug('Using COPY of objectiveProgress from chat instance template');
+        
+        // Initialize this copy with the chat response
+        await updateChatResponse(chatId, { 
+          chatProgress: objectiveProgress 
+        });
+        logger.debug('Initialized chat_progress in chat response from template');
       } else {
         // Create default progress structure if nothing exists
         objectiveProgress = {
@@ -702,26 +902,64 @@ export async function progressBarUpdate({
     // Update turn counts
     objectiveProgress.overall_turns = turnCount;
     
-    // Find current objective and update its turns
+    // Find current objective and update its turns - but only set the turns for the current objective
+    // instead of accumulating from previous objectives
     const currentObjectiveKey = Object.entries(objectiveProgress.objectives)
       .find(([_, obj]) => obj.status === "current")?.[0];
     
     if (currentObjectiveKey) {
-      objectiveProgress.objectives[currentObjectiveKey].turns_used = turnCount;
+      // Count turns only for this specific objective by finding the previous objective
+      const objectiveKeys = Object.keys(objectiveProgress.objectives).sort();
+      const currentIndex = objectiveKeys.indexOf(currentObjectiveKey);
+      
+      if (currentIndex === 0) {
+        // This is the first objective, so the turns are just the total turns
+        objectiveProgress.objectives[currentObjectiveKey].turns_used = turnCount;
+      } else {
+        // For other objectives, subtract the turns used by previous completed objectives
+        let previousTurns = 0;
+        for (let i = 0; i < currentIndex; i++) {
+          const prevObjectiveKey = objectiveKeys[i];
+          previousTurns += objectiveProgress.objectives[prevObjectiveKey].turns_used;
+        }
+        
+        // The turns used for this objective is the current turn count minus turns used in previous objectives
+        const objectiveTurns = Math.max(1, turnCount - previousTurns);
+        objectiveProgress.objectives[currentObjectiveKey].turns_used = objectiveTurns;
+      }
     }
     
     // Extract objective updater outputs from messages
-    const objectiveUpdates = messages
+    // Try different methods to find objective updates
+    let objectiveUpdates: string[] = [];
+    
+    // Method 1: Check for metadata
+    const metadataUpdates = messages
       .filter(m => {
         const metadata = m.experimental_providerMetadata?.metadata;
         return metadata && metadata.type === 'objective-update';
       })
       .map(m => typeof m.content === 'string' ? m.content : JSON.stringify(m.content));
     
+    // Method 2: Look for assistant messages with "Progress Update" text pattern
+    const textPatternUpdates = messages
+      .filter(m => m.role === 'assistant' && 
+        typeof m.content === 'string' && 
+        (m.content.includes('**Progress Update') || m.content.includes('Progress Update:')))
+      .map(m => m.content as string);
+    
+    // Combine all found updates
+    objectiveUpdates = [...metadataUpdates, ...textPatternUpdates];
+    
     if (objectiveUpdates.length === 0) {
       logger.debug('No objective updates found, skipping progress bar update');
       return;
     }
+    
+    logger.debug('Found objective updates:', { 
+      count: objectiveUpdates.length, 
+      updates: objectiveUpdates.map(u => u.substring(0, 100) + '...') 
+    });
     
     // Load the progress bar updater prompt
     const prompt = loadPrompt('progress_bar_updater.md');
@@ -817,31 +1055,51 @@ export async function progressBarUpdate({
         }
       }
       
-      // Save the updated progress
-      await updateChatResponse(chatId, { 
-        chatProgress: JSON.stringify(objectiveProgress) 
-      });
-      
-      // Add detailed logging of the final progress state
-      console.log('\n=== PROGRESS BAR UPDATE FINAL STATE ===');
-      console.log('Chat ID:', chatId);
-      console.log('\nOverall Progress:');
-      console.log('- Total Turns:', objectiveProgress.overall_turns);
-      console.log('- Expected Total:', `${objectiveProgress.expected_total_min}-${objectiveProgress.expected_total_max} turns`);
-      console.log('\nObjectives Status:');
-      Object.entries(objectiveProgress.objectives).forEach(([key, obj]) => {
-        console.log(`\n${key}:`);
-        console.log(`- Status: ${obj.status}`);
-        console.log(`- Turns Used: ${obj.turns_used}`);
-        console.log(`- Expected Range: ${obj.expected_min}-${obj.expected_max} turns`);
-      });
-      console.log('\n=== END PROGRESS BAR UPDATE ===\n');
-      
-      logger.info('Progress bar updated successfully:', { 
-        chatId, 
-        updates,
-        updatedProgress: objectiveProgress
-      });
+      try {
+        // Save the updated progress to chat response ONLY
+        // Do NOT update the chat instance's objective_progress, as it's meant to be a template
+        const updatedChatResponse = await updateChatResponse(chatId, { 
+          chatProgress: objectiveProgress 
+        });
+        
+        logger.debug('Updated chat_progress in chat response', { 
+          chatId,
+          responseId: updatedChatResponse?.id,
+          overallTurns: objectiveProgress.overall_turns
+        });
+        
+        if (!updatedChatResponse) {
+          logger.error('Failed to update chat response with new progress', { chatId });
+        } else {
+          logger.debug('Successfully updated chat response with new progress', { 
+            chatId, 
+            updatedResponseId: updatedChatResponse.id 
+          });
+        }
+        
+        // Add detailed logging of the final progress state
+        console.log('\n=== PROGRESS BAR UPDATE FINAL STATE ===');
+        console.log('Chat ID:', chatId);
+        console.log('\nOverall Progress:');
+        console.log('- Total Turns:', objectiveProgress.overall_turns);
+        console.log('- Expected Total:', `${objectiveProgress.expected_total_min}-${objectiveProgress.expected_total_max} turns`);
+        console.log('\nObjectives Status:');
+        Object.entries(objectiveProgress.objectives).forEach(([key, obj]) => {
+          console.log(`\n${key}:`);
+          console.log(`- Status: ${obj.status}`);
+          console.log(`- Turns Used: ${obj.turns_used}`);
+          console.log(`- Expected Range: ${obj.expected_min}-${obj.expected_max} turns`);
+        });
+        console.log('\n=== END PROGRESS BAR UPDATE ===\n');
+        
+        logger.info('Progress bar updated successfully:', { 
+          chatId, 
+          updates,
+          updatedProgress: objectiveProgress
+        });
+      } catch (dbError) {
+        logger.error('Failed to update database with new progress:', dbError);
+      }
     } else {
       logger.debug('No progress updates needed');
     }
@@ -965,3 +1223,4 @@ async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: s
   
   return objectiveProgress;
 }
+
