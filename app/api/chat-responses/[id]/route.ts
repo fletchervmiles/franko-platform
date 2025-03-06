@@ -19,10 +19,11 @@
  */
 
 import { NextResponse } from "next/server";
-import { getChatResponseById } from "@/db/queries/chat-responses-queries";
+import { getChatResponseUserInfoById } from "@/db/queries/chat-responses-queries";
 
 /**
  * GET handler for retrieving a chat response by ID
+ * Returns only essential user information for improved performance
  * 
  * @param request - The incoming HTTP request
  * @param params - URL parameters containing the chat response ID
@@ -39,24 +40,21 @@ export async function GET(
       return new NextResponse("Missing chat response ID", { status: 400 });
     }
 
-    const chatResponse = await getChatResponseById(chatResponseId);
+    // Cache headers for better client-side caching
+    const headers = new Headers();
+    headers.set('Cache-Control', 'public, max-age=60'); // Cache for 60 seconds
+    
+    // Use the optimized query that only fetches the fields we need
+    const userData = await getChatResponseUserInfoById(chatResponseId);
 
-    if (!chatResponse) {
+    if (!userData) {
       return new NextResponse("Chat response not found", { status: 404 });
     }
 
-    // Return the chat response data without sensitive information
-    return NextResponse.json({
-      id: chatResponse.id,
-      chatInstanceId: chatResponse.chatInstanceId,
-      status: chatResponse.status,
-      intervieweeFirstName: chatResponse.intervieweeFirstName,
-      intervieweeEmail: chatResponse.intervieweeEmail,
-      interviewStartTime: chatResponse.interviewStartTime,
-      interviewEndTime: chatResponse.interviewEndTime,
-    });
+    // Return minimal user data to improve response time
+    return NextResponse.json(userData, { headers });
   } catch (error) {
     console.error("Failed to retrieve chat response:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
-} 
+}

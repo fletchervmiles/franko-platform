@@ -44,35 +44,45 @@ export async function POST(request: Request) {
       return new NextResponse("Missing chatInstanceId", { status: 400 });
     }
 
-    // Get the chat instance to get the userId
-    const [chatInstance] = await db
-      .select()
-      .from(chatInstancesTable)
-      .where(eq(chatInstancesTable.id, chatInstanceId));
+    // Performance optimization: Use a single transaction for all database operations
+    // This reduces round-trips to the database and improves atomicity
+    return await db.transaction(async (tx) => {
+      // Get the chat instance to get the userId - Select only the fields we need
+      // This reduces data transfer and improves query performance
+      const [chatInstance] = await tx
+        .select({
+          userId: chatInstancesTable.userId,
+          objectiveProgress: chatInstancesTable.objectiveProgress
+        })
+        .from(chatInstancesTable)
+        .where(eq(chatInstancesTable.id, chatInstanceId));
 
-    if (!chatInstance) {
-      return new NextResponse("Chat instance not found", { status: 404 });
-    }
+      if (!chatInstance) {
+        return new NextResponse("Chat instance not found", { status: 404 });
+      }
 
-    // Create a new chat response
-    const chatResponseId = generateUUID();
-    
-    const [chatResponse] = await db
-      .insert(chatResponsesTable)
-      .values({
-        id: chatResponseId,
-        userId: chatInstance.userId,
-        chatInstanceId,
-        status: "active",
-        intervieweeFirstName,
-        intervieweeSecondName,
-        intervieweeEmail,
-        interviewStartTime: new Date(),
-        chatProgress: chatInstance.objectiveProgress,
-      })
-      .returning();
+      // Create a new chat response with a single DB operation
+      const chatResponseId = generateUUID();
+      
+      // Using the transaction context for the insert
+      const [chatResponse] = await tx
+        .insert(chatResponsesTable)
+        .values({
+          id: chatResponseId,
+          userId: chatInstance.userId,
+          chatInstanceId,
+          status: "active",
+          intervieweeFirstName,
+          intervieweeSecondName, 
+          intervieweeEmail,
+          interviewStartTime: new Date(),
+          chatProgress: chatInstance.objectiveProgress,
+        })
+        .returning({ id: chatResponsesTable.id });
 
-    return NextResponse.json({ chatResponseId: chatResponse.id });
+      // Return minimal data to improve response time
+      return NextResponse.json({ chatResponseId: chatResponse.id });
+    });
   } catch (error) {
     console.error("Failed to initialize chat response:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

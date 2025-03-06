@@ -15,7 +15,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useChat, Message } from "ai/react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { Message as ChatMessage } from "@/components/message";
 import { ChatInput } from "@/components/input";
 import { ExternalChatProgress } from "@/components/external-chat-progress";
+import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
 
 interface ExternalChatProps {
   chatInstanceId: string;
@@ -39,7 +40,10 @@ export function ExternalChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(false);
-  const [userMessageCount, setUserMessageCount] = useState(0);
+
+  // Use optimized hook for fetching user data
+  // IMPORTANT: All hooks must be called in the same order on every render
+  const { data: userData, isLoading: isLoadingUserData } = useChatResponseUser(chatResponseId);
 
   const {
     messages,
@@ -74,81 +78,148 @@ export function ExternalChat({
       }
     }
   });
-
-  // Auto-scroll effect
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+  
+  // All memoized values should be defined here in a consistent order
+  // 1. Track user messages for progress bar with memoization
+  const userMessageCount = useMemo(() => {
+    return messages.filter(m => m.role === 'user').length;
   }, [messages]);
   
-  // Track user messages for progress bar
-  useEffect(() => {
-    const userMessages = messages.filter(m => m.role === 'user');
-    setUserMessageCount(userMessages.length);
-    
-    if (userMessages.length >= 2) {
-      setShowProgressBar(true);
-    }
-  }, [messages]);
-
-  // Send auto greeting once at initialization
-  useEffect(() => {
-    const sendGreeting = async () => {
-      try {
-        // Default greeting message
-        let greeting = "Hi, I'm ready!";
-
-        // Try to get user's name if available
-        try {
-          const res = await fetch(`/api/chat-responses/${chatResponseId}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data?.intervieweeFirstName) {
-              greeting = `Hi, I'm ${data.intervieweeFirstName} and I'm ready!`;
-            }
-          }
-        } catch (nameError) {
-          console.error("Failed to get user name, using default greeting", nameError);
+  // 2. Memoize the actual messages to avoid re-renders when only loading state changes
+  const messageElements = useMemo(() => {
+    return messages.map((message, index) => (
+      <ChatMessage
+        key={message.id}
+        content={message.content}
+        isUser={message.role === "user"}
+        chatId={chatResponseId}
+        isLoading={false}
+        toolInvocations={message.toolInvocations}
+        messageIndex={index}
+        allMessages={messages}
+        isFirstInTurn={
+          index === 0 || messages[index - 1]?.role !== message.role
         }
+      />
+    ));
+  }, [messages, chatResponseId]);
 
-        console.log(`Sending initial greeting: "${greeting}"`);
-        
-        // Set the input value first
-        setInput(greeting);
-        
-        // Use setTimeout to ensure state updates before submitting
-        setTimeout(async () => {
-          try {
-            // Create a mock form event
-            const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-            
-            // Submit the form with the greeting message
-            await handleSubmit(mockEvent);
-            
-            // Clear the input after sending
-            setInput("");
-            
-            console.log("Initial greeting sent successfully");
-          } catch (submitError) {
-            console.error("Failed to submit initial greeting:", submitError);
-          } finally {
-            // End initialization regardless of success/failure
-            setIsInitializing(false);
-          }
-        }, 100);
-      } catch (error) {
-        console.error("Auto greeting process failed:", error);
-        setIsInitializing(false);
+  // 3. Memoize the loading indicator
+  const loadingIndicator = useMemo(() => {
+    if (!isLoading || messages.length === 0 || messages[messages.length - 1]?.role !== "user") {
+      return null;
+    }
+    
+    return (
+      <ChatMessage
+        content=""
+        isUser={false}
+        chatId={chatResponseId}
+        isLoading={true}
+        messageIndex={-1}
+        allMessages={[]}
+        isFirstInTurn={true}
+      />
+    );
+  }, [isLoading, messages, chatResponseId]);
+
+  // 4. Memoize the progress bar to prevent unnecessary re-renders
+  const progressBarElement = useMemo(() => {
+    if (!showProgressBar) return null;
+    
+    return (
+      <ExternalChatProgress
+        chatResponseId={chatResponseId}
+        messageCount={messages.length}
+      />
+    );
+  }, [showProgressBar, chatResponseId, messages.length]);
+
+  // Optimized auto-scroll effect with debounce
+  useEffect(() => {
+    // Only scroll when messages change and we have a reference
+    if (!messagesEndRef.current) return;
+    
+    // Use requestAnimationFrame to schedule the scroll for the next frame
+    // This is more efficient than doing it on every render
+    let scrollTimeoutId: number;
+    
+    const scrollToBottom = () => {
+      scrollTimeoutId = requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      });
+    };
+    
+    // Only scroll if we're at or near the bottom already
+    // This prevents interrupting the user if they're scrolling up to read
+    const shouldScroll = () => {
+      const container = messagesEndRef.current?.parentElement;
+      if (!container) return true;
+      
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // If we're within 100px of the bottom, auto-scroll
+      return scrollHeight - scrollTop - clientHeight < 100;
+    };
+    
+    if (shouldScroll()) {
+      scrollToBottom();
+    }
+    
+    // Cleanup
+    return () => {
+      if (scrollTimeoutId) {
+        cancelAnimationFrame(scrollTimeoutId);
       }
     };
-
-    // Only send greeting on initial render if we're still initializing
-    if (isInitializing && chatResponseId) {
-      console.log("Starting auto-greeting process");
-      sendGreeting();
+  }, [messages.length]);
+  
+  // Only update UI when user message count changes
+  useEffect(() => {
+    if (userMessageCount >= 2 && !showProgressBar) {
+      setShowProgressBar(true);
     }
-  }, [chatResponseId, isInitializing, handleSubmit, setInput]);
+  }, [userMessageCount, showProgressBar]);
+  
+  // Send auto greeting once at initialization - optimized version
+  useEffect(() => {
+    // Skip if we're still loading user data
+    if (isInitializing && chatResponseId && !isLoadingUserData) {
+      const sendOptimizedGreeting = async () => {
+        try {
+          // Create greeting based on user data from the cached query
+          const greeting = userData?.intervieweeFirstName 
+            ? `Hi, I'm ${userData.intervieweeFirstName} and I'm ready!` 
+            : "Hi, I'm ready!";
+            
+          // Set input and submit in a single update cycle
+          setInput(greeting);
+          
+          // Use requestAnimationFrame instead of setTimeout for better performance
+          requestAnimationFrame(() => {
+            const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+            
+            // Submit without awaiting to prevent blocking
+            handleSubmit(mockEvent)
+              .then(() => {
+                setInput("");
+                console.log("Initial greeting sent");
+              })
+              .catch(err => {
+                console.error("Failed to submit greeting:", err);
+              })
+              .finally(() => {
+                setIsInitializing(false);
+              });
+          });
+        } catch (error) {
+          console.error("Auto greeting failed:", error);
+          setIsInitializing(false);
+        }
+      };
+      
+      sendOptimizedGreeting();
+    }
+  }, [chatResponseId, isInitializing, userData, isLoadingUserData, handleSubmit, setInput]);
 
   // Loading screen during initialization
   if (isInitializing) {
@@ -164,39 +235,17 @@ export function ExternalChat({
     );
   }
 
+  // All useMemo hooks have been moved to the top of the component
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-14">
         <div className="mx-auto max-w-4xl space-y-8 py-8">
           {/* Show all messages including the auto-greeting */}
-          {messages.map((message, index) => (
-            <ChatMessage
-              key={message.id}
-              content={message.content}
-              isUser={message.role === "user"}
-              chatId={chatResponseId}
-              isLoading={false}
-              toolInvocations={message.toolInvocations}
-              messageIndex={index}
-              allMessages={messages}
-              isFirstInTurn={
-                index === 0 || messages[index - 1]?.role !== message.role
-              }
-            />
-          ))}
+          {messageElements}
 
           {/* Show typing animation when waiting for AI response */}
-          {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <ChatMessage
-              content=""
-              isUser={false}
-              chatId={chatResponseId}
-              isLoading={true}
-              messageIndex={-1}
-              allMessages={[]}
-              isFirstInTurn={true}
-            />
-          )}
+          {loadingIndicator}
 
           {error && (
             <div className="p-4 bg-destructive/10 text-destructive rounded-md text-sm">
@@ -217,14 +266,7 @@ export function ExternalChat({
             onSubmit={handleSubmit}
             disabled={isLoading}
             showProgressBar={showProgressBar}
-            progressBar={
-              showProgressBar && (
-                <ExternalChatProgress
-                  chatResponseId={chatResponseId}
-                  messageCount={messages.length}
-                />
-              )
-            }
+            progressBar={progressBarElement}
             stop={stop}
           />
         </div>

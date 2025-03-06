@@ -18,6 +18,24 @@ export async function getChatResponseById(id: string): Promise<SelectChatRespons
   return chatResponse;
 }
 
+/**
+ * Gets only essential user information from a chat response
+ * This is an optimized version that only fetches the fields needed for personalization
+ */
+export async function getChatResponseUserInfoById(id: string): Promise<{
+  intervieweeFirstName?: string;
+  intervieweeEmail?: string;
+} | undefined> {
+  const [chatResponse] = await db
+    .select({
+      intervieweeFirstName: chatResponsesTable.intervieweeFirstName,
+      intervieweeEmail: chatResponsesTable.intervieweeEmail
+    })
+    .from(chatResponsesTable)
+    .where(eq(chatResponsesTable.id, id));
+  return chatResponse;
+}
+
 export async function getChatResponsesByUserId(userId: string): Promise<SelectChatResponse[]> {
   return await db
     .select()

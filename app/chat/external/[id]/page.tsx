@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { WelcomeForm } from "@/components/welcome-form";
-import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { Loader2 } from "lucide-react";
+import { useChatInstance } from "@/lib/hooks/use-chat-instance";
+import { useInitializeChatResponse } from "@/lib/hooks/use-initialize-chat-response";
 
 export default function StartChatPage({
   params: { id },
@@ -13,69 +14,42 @@ export default function StartChatPage({
   params: { id: string };
 }) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [chatInstance, setChatInstance] = useState<any>(null);
+  
+  // Use React Query hook for chat instance data
+  const { 
+    data: chatInstance, 
+    isLoading: isLoadingInstance, 
+    error: instanceError 
+  } = useChatInstance(id);
+  
+  // Use React Query hook for chat response initialization
+  const { 
+    mutate: initializeChat, 
+    isPending: isInitializing, 
+    error: initError 
+  } = useInitializeChatResponse();
 
-  useEffect(() => {
-    const fetchChatInstance = async () => {
-      try {
-        const instance = await getChatInstanceById(id);
-        setChatInstance(instance);
-      } catch (err) {
-        console.error('Failed to fetch chat instance:', err);
-        setError('Failed to load chat session');
-      }
-    };
-
-    fetchChatInstance();
-  }, [id]);
-
-  const handleStartChat = async (formData?: {
+  const handleStartChat = (formData?: {
     firstName: string;
     email: string;
   }) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Initialize chat response
-      const response = await fetch('/api/chat-responses/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    initializeChat(
+      { 
+        chatInstanceId: id, 
+        userData: formData 
+      },
+      {
+        onSuccess: (data) => {
+          setIsNavigating(true);
+          router.push(`/chat/external/${id}/active?responseId=${data.chatResponseId}`);
         },
-        body: JSON.stringify({
-          chatInstanceId: id,
-          ...(formData && {
-            intervieweeFirstName: formData.firstName,
-            intervieweeEmail: formData.email,
-          }),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to initialize chat');
       }
-
-      const data = await response.json();
-      
-      // Set navigating state before redirect
-      setIsNavigating(true);
-      
-      // Redirect to the active chat page with both IDs
-      router.push(`/chat/external/${id}/active?responseId=${data.chatResponseId}`);
-    } catch (err) {
-      console.error('Failed to start chat:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start chat');
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
-  if (!chatInstance) {
+  // Loading state for chat instance
+  if (isLoadingInstance) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-gray-600">Loading...</div>
@@ -83,6 +57,7 @@ export default function StartChatPage({
     );
   }
 
+  // Navigating state
   if (isNavigating) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -94,6 +69,11 @@ export default function StartChatPage({
     );
   }
 
+  // Error handling
+  const errorMessage = instanceError instanceof Error 
+    ? instanceError.message 
+    : (initError instanceof Error ? initError.message : null);
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-lg w-full p-8 bg-white shadow-lg">
@@ -103,27 +83,27 @@ export default function StartChatPage({
               Welcome! Ready to Chat?
             </h1>
             <p className="text-gray-600">
-              {chatInstance.welcomeDescription || 
+              {chatInstance?.welcomeDescription || 
                 "This will be a brief 3-4 minute chat to share your thoughts on Clerk.com's onboarding and documentation. Your feedback will help make the experience even better for developers like you!"}
             </p>
           </div>
           
-          {error && (
+          {errorMessage && (
             <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm">
-              {error}
+              {errorMessage}
             </div>
           )}
           
-          {chatInstance.respondentContacts ? (
+          {chatInstance?.respondentContacts ? (
             <WelcomeForm 
               onSubmit={handleStartChat}
-              isLoading={isLoading}
+              isLoading={isInitializing}
             />
           ) : (
             <div className="flex justify-center">
               <button
                 onClick={() => handleStartChat()}
-                disabled={isLoading}
+                disabled={isInitializing}
                 className={`
                   w-full max-w-sm bg-gradient-to-r from-blue-500 to-indigo-600 
                   hover:from-blue-600 hover:to-indigo-700 text-white
@@ -131,7 +111,7 @@ export default function StartChatPage({
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
-                {isLoading ? "Preparing Your Session..." : "Get Started"}
+                {isInitializing ? "Preparing Your Session..." : "Get Started"}
               </button>
             </div>
           )}
