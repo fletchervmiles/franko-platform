@@ -92,13 +92,13 @@ export const ExternalChatProgress = React.memo(function ExternalChatProgress({
     placeholderData: (prev) => prev
   });
 
-  // Don't render anything if we've never had progress data
-  if (!progress) {
-    return null;
-  }
-
   // Memoize the steps calculation to avoid recalculations on every render
   const steps = useMemo(() => {
+    // Don't calculate steps if no progress data is available
+    if (!progress) {
+      return [];
+    }
+
     // If we have detailed objective progress, use it to create steps
     if (progress.chatProgress?.objectives) {
       const objectives = progress.chatProgress.objectives;
@@ -125,7 +125,11 @@ export const ExternalChatProgress = React.memo(function ExternalChatProgress({
     }
   }, [progress]);
 
-  // Render the progress bar
+  // Only render the progress bar if we have steps
+  if (steps.length === 0) {
+    return null;
+  }
+  
   return (
     <ProgressBar
       steps={steps}

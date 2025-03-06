@@ -3,19 +3,28 @@
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 
-export default function LoadingScreen() {
-  const loadingMessages = [
-    "Analyzing your objectives and context to design a tailored conversation plan...",
-    "Defining an exploratory structure based on your desired outcomes...",
-    "Crafting the guide to ensure an expert-level, discovery-focused approach...",
-    "Aligning question style and tone to your organization's branding and voice...",
-    "Almost ready—we’re putting the final touches on your personalized conversation plan..."
-  ]
+interface LoadingScreenProps {
+  message?: string;
+}
+
+export function LoadingScreen({ message }: LoadingScreenProps) {
+  const loadingMessages = message 
+    ? [message] 
+    : [
+      "Analyzing your objectives and context to design a tailored conversation plan...",
+      "Defining an exploratory structure based on your desired outcomes...",
+      "Crafting the guide to ensure an expert-level, discovery-focused approach...",
+      "Aligning question style and tone to your organization's branding and voice...",
+      "Almost ready—we're putting the final touches on your personalized conversation plan..."
+    ]
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [fadeState, setFadeState] = useState("fade-in")
 
   useEffect(() => {
+    // If there's only one message, don't cycle through messages
+    if (loadingMessages.length <= 1) return;
+    
     const interval = setInterval(() => {
       setFadeState("fade-out")
       setTimeout(() => {
@@ -46,4 +55,7 @@ export default function LoadingScreen() {
       </div>
     </div>
   )
-} 
+}
+
+// Also export as default for backward compatibility
+export default LoadingScreen;
