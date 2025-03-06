@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Edit2, Trash2 } from "lucide-react"
+import { Edit2, Trash2, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,17 +16,64 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { ShareableLink } from "@/components/shareable-link"
-import ConversationPlanForm from "@/components/conversation-plan-form"
-import { ConversationResponses } from "@/components/conversation-responses"
+import dynamic from "next/dynamic"
 import type { ConversationPlan } from "@/components/conversationPlanSchema"
-import { EmailNotificationSetting } from "@/components/email-notification-setting"
-import { IncentiveSetting } from "@/components/incentive-setting"
 import { NavSidebar } from "@/components/nav-sidebar"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import React from "react"
+
+// Dynamically import components for each tab to reduce initial bundle size
+const ShareableLink = dynamic(
+  () => import("@/components/shareable-link").then(mod => ({ default: mod.ShareableLink })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const ConversationPlanForm = dynamic(
+  () => import("@/components/conversation-plan-form"),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const ConversationResponses = dynamic(
+  () => import("@/components/conversation-responses").then(mod => ({ default: mod.ConversationResponses })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const EmailNotificationSetting = dynamic(
+  () => import("@/components/email-notification-setting").then(mod => ({ default: mod.EmailNotificationSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const IncentiveSetting = dynamic(
+  () => import("@/components/incentive-setting").then(mod => ({ default: mod.IncentiveSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+// Loading placeholder for lazy-loaded components
+const LoadingPlaceholder = () => (
+  <div className="w-full p-4 flex items-center justify-center">
+    <div className="text-center">
+      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+      <p className="mt-2 text-sm text-muted-foreground">Loading content...</p>
+    </div>
+  </div>
+)
 
 interface ConversationPageClientProps {
   params: {
@@ -486,7 +533,9 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
             </TabsTrigger>
           </TabsList>
           <TabsContent value="share" className="mt-10">
-            <ShareableLink guideName={chatId} />
+            <Suspense fallback={<LoadingPlaceholder />}>
+              <ShareableLink guideName={chatId} />
+            </Suspense>
           </TabsContent>
           <TabsContent value="plan" className="mt-10">
             <Card className="rounded-[6px] border shadow-sm overflow-hidden bg-[#FAFAFA]">
@@ -508,26 +557,34 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
                     Regenerate Plan
                   </Button>
                 </div>
-                <ConversationPlanForm 
-                  chatId={chatId} 
-                  onSubmit={handleConversationPlanSubmit} 
-                  initialData={conversationPlan}
-                  startInEditMode={isFromRegenerate}
-                />
+                <Suspense fallback={<LoadingPlaceholder />}>
+                  <ConversationPlanForm 
+                    chatId={chatId} 
+                    onSubmit={handleConversationPlanSubmit} 
+                    initialData={conversationPlan}
+                    startInEditMode={isFromRegenerate}
+                  />
+                </Suspense>
               </div>
             </Card>
           </TabsContent>
           <TabsContent value="responses" className="mt-10">
-            <ConversationResponses {...mockResponsesData} />
+            <Suspense fallback={<LoadingPlaceholder />}>
+              <ConversationResponses {...mockResponsesData} />
+            </Suspense>
           </TabsContent>
           <TabsContent value="settings" className="mt-10">
             <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
               <div className="p-6 space-y-6">
                 <div className="bg-white rounded-[6px] shadow-sm">
-                  <EmailNotificationSetting />
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <EmailNotificationSetting />
+                  </Suspense>
                 </div>
                 <div className="bg-white rounded-[6px] shadow-sm">
-                  <IncentiveSetting />
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <IncentiveSetting />
+                  </Suspense>
                 </div>
               </div>
             </Card>

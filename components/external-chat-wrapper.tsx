@@ -15,8 +15,22 @@
 
 import React, { Suspense, useState, useEffect } from "react"
 import { Message } from "ai"
-import { ExternalChat } from "@/components/external-chat"
+import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
+
+// Dynamically import the ExternalChat component for code splitting
+const ExternalChat = dynamic(
+  () => import("@/components/external-chat").then((mod) => ({ default: mod.ExternalChat })),
+  {
+    loading: () => (
+      <div className="h-full flex flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        <p className="text-sm text-gray-500 mt-2">Preparing conversation interface...</p>
+      </div>
+    ),
+    ssr: false,
+  }
+)
 
 interface ExternalChatWrapperProps {
   chatInstanceId: string       // ID of the chat instance
@@ -86,4 +100,4 @@ class ErrorBoundary extends React.Component<{
   render() {
     return this.props.children;
   }
-} 
+}
