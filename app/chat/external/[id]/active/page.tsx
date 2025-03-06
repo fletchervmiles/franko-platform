@@ -13,24 +13,30 @@ export default function ActiveChatPage({
   const searchParams = useSearchParams();
   const chatResponseId = searchParams.get("responseId");
 
-  // Prefetch user data as soon as the page loads
-  // This speeds up the auto-greeting by having data ready before the chat component needs it
+  // Simplified prefetching strategy to ensure compatibility
   useEffect(() => {
     if (chatResponseId) {
-      // Prefetch the user data for the chat response
+      // Prefetch user data for greeting customization - using the standard API
       queryClient.prefetchQuery({
         queryKey: ['chatResponse', chatResponseId, 'user'],
         queryFn: async () => {
-          const res = await fetch(`/api/chat-responses/${chatResponseId}`);
-          if (!res.ok) {
-            throw new Error("Failed to fetch chat response user data");
+          try {
+            const res = await fetch(`/api/chat-responses/${chatResponseId}`);
+            if (!res.ok) {
+              console.warn("Failed to prefetch chat response user data, will try again later");
+              return { intervieweeFirstName: null };
+            }
+            return res.json();
+          } catch (error) {
+            console.warn("Error prefetching chat response data:", error);
+            return { intervieweeFirstName: null };
           }
-          return res.json();
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: 2
       });
     }
-  }, [chatResponseId]);
+  }, [chatResponseId, queryClient]);
 
   if (!chatResponseId) {
     return (

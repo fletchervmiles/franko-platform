@@ -180,46 +180,60 @@ export function ExternalChat({
     }
   }, [userMessageCount, showProgressBar]);
   
-  // Send auto greeting once at initialization - optimized version
+  // Send auto greeting once at initialization
   useEffect(() => {
-    // Skip if we're still loading user data
-    if (isInitializing && chatResponseId && !isLoadingUserData) {
-      const sendOptimizedGreeting = async () => {
+    // Only execute this effect once when the component mounts
+    // Make sure we have a chat response ID and we're in initializing state
+    if (isInitializing && chatResponseId) {
+      console.log("Starting auto-greeting process");
+      
+      // Use a simpler approach that's more reliable
+      const sendGreeting = async () => {
         try {
-          // Create greeting based on user data from the cached query
-          const greeting = userData?.intervieweeFirstName 
-            ? `Hi, I'm ${userData.intervieweeFirstName} and I'm ready!` 
-            : "Hi, I'm ready!";
-            
-          // Set input and submit in a single update cycle
+          // Default greeting that doesn't depend on user data
+          const greeting = "Hi, I'm ready!";
+          
+          console.log(`Sending greeting: "${greeting}"`);
+          
+          // Set the input value
           setInput(greeting);
           
-          // Use requestAnimationFrame instead of setTimeout for better performance
-          requestAnimationFrame(() => {
-            const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-            
-            // Submit without awaiting to prevent blocking
-            handleSubmit(mockEvent)
-              .then(() => {
-                setInput("");
-                console.log("Initial greeting sent");
-              })
-              .catch(err => {
-                console.error("Failed to submit greeting:", err);
-              })
-              .finally(() => {
-                setIsInitializing(false);
-              });
-          });
+          // Small delay to ensure state is updated
+          setTimeout(() => {
+            try {
+              // Create a mock form event
+              const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+              
+              // Submit the form with the greeting message
+              handleSubmit(mockEvent)
+                .then(() => {
+                  console.log("Initial greeting sent successfully");
+                  // Clear the input after sending
+                  setInput("");
+                })
+                .catch(err => {
+                  console.error("Failed to submit greeting:", err);
+                })
+                .finally(() => {
+                  // End initialization regardless of success/failure
+                  setIsInitializing(false);
+                });
+            } catch (submitError) {
+              console.error("Auto greeting submit error:", submitError);
+              setIsInitializing(false);
+            }
+          }, 300); // Use a slightly longer delay to ensure all state is properly updated
         } catch (error) {
           console.error("Auto greeting failed:", error);
           setIsInitializing(false);
         }
       };
       
-      sendOptimizedGreeting();
+      // Wait a moment for everything to be ready
+      setTimeout(sendGreeting, 500);
     }
-  }, [chatResponseId, isInitializing, userData, isLoadingUserData, handleSubmit, setInput]);
+    // Only run once on mount but include required dependencies to satisfy React
+  }, [chatResponseId, isInitializing, handleSubmit, setInput]);
 
   // Loading screen during initialization
   if (isInitializing) {

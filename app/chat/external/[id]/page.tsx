@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { WelcomeForm } from "@/components/welcome-form";
 import { Loader2 } from "lucide-react";
-import { useChatInstance } from "@/lib/hooks/use-chat-instance";
-import { useInitializeChatResponse } from "@/lib/hooks/use-initialize-chat-response";
+import { useConsolidatedChatInit } from "@/lib/hooks/use-consolidated-chat-init";
 
 export default function StartChatPage({
   params: { id },
@@ -14,26 +13,72 @@ export default function StartChatPage({
   params: { id: string };
 }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [chatInstanceData, setChatInstanceData] = useState<{
+    welcomeDescription?: string;
+    respondentContacts?: boolean;
+  } | null>(null);
   
-  // Use React Query hook for chat instance data
-  const { 
-    data: chatInstance, 
-    isLoading: isLoadingInstance, 
-    error: instanceError 
-  } = useChatInstance(id);
-  
-  // Use React Query hook for chat response initialization
+  // Use consolidated initialization hook that handles both
+  // chat instance retrieval and chat response creation in a single API call
   const { 
     mutate: initializeChat, 
     isPending: isInitializing, 
-    error: initError 
-  } = useInitializeChatResponse();
+    error: initError,
+    data: initData
+  } = useConsolidatedChatInit();
+
+  // Initial load - fetch instance data via the legacy API to ensure compatibility
+  useEffect(() => {
+    async function fetchInstanceData() {
+      try {
+        console.log(`Fetching chat instance data for ID: ${id}`);
+        
+        // Use the legacy API for the initial load to ensure compatibility
+        // This loads just the chat instance details without creating a chat response yet
+        const response = await fetch(`/api/chat-instances/${id}`);
+        
+        if (!response.ok) {
+          console.warn(`Chat instance fetch failed with status ${response.status}`);
+          
+          // Provide fallback data instead of throwing an error
+          // This ensures the UI can still render even if the API fails
+          setChatInstanceData({
+            welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
+            respondentContacts: false
+          });
+        } else {
+          const chatInstance = await response.json();
+          console.log("Fetched chat instance data:", chatInstance);
+          
+          // Set the instance data from the response
+          setChatInstanceData(chatInstance);
+        }
+      } catch (error) {
+        console.error('Failed to fetch chat instance:', error);
+        // Provide fallback data even when exceptions occur
+        setChatInstanceData({
+          welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
+          respondentContacts: false
+        });
+      } finally {
+        // Always stop the loading state, whether successful or not
+        setIsLoading(false);
+      }
+    }
+    
+    // Only fetch if we don't have the data yet
+    if (!chatInstanceData) {
+      fetchInstanceData();
+    }
+  }, [chatInstanceData, id]);
 
   const handleStartChat = (formData?: {
     firstName: string;
     email: string;
   }) => {
+    // Now we have user data, get a real chat response ID
     initializeChat(
       { 
         chatInstanceId: id, 
@@ -48,8 +93,8 @@ export default function StartChatPage({
     );
   };
 
-  // Loading state for chat instance
-  if (isLoadingInstance) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-gray-600">Loading...</div>
@@ -69,10 +114,10 @@ export default function StartChatPage({
     );
   }
 
-  // Error handling
-  const errorMessage = instanceError instanceof Error 
-    ? instanceError.message 
-    : (initError instanceof Error ? initError.message : null);
+  // Error handling - don't show errors from the initial "ping" request
+  // Only show errors from actual user-initiated submissions
+  const errorMessage = isInitializing ? null : 
+    (initError instanceof Error ? initError.message : null);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -83,7 +128,7 @@ export default function StartChatPage({
               Welcome! Ready to Chat?
             </h1>
             <p className="text-gray-600">
-              {chatInstance?.welcomeDescription || 
+              {chatInstanceData?.welcomeDescription || 
                 "This will be a brief 3-4 minute chat to share your thoughts on Clerk.com's onboarding and documentation. Your feedback will help make the experience even better for developers like you!"}
             </p>
           </div>
@@ -94,7 +139,7 @@ export default function StartChatPage({
             </div>
           )}
           
-          {chatInstance?.respondentContacts ? (
+          {chatInstanceData?.respondentContacts ? (
             <WelcomeForm 
               onSubmit={handleStartChat}
               isLoading={isInitializing}
