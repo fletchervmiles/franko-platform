@@ -52,20 +52,60 @@ export async function updateChatResponseMessages(
   return await updateChatResponse(id, { messagesJson: messages });
 }
 
+/**
+ * Updates the status of a chat response.
+ * Optimized to avoid unnecessary database queries when calculating interview duration.
+ * 
+ * @param id The ID of the chat response
+ * @param status The new status
+ * @param completionStatus The new completion status
+ * @param interviewStartTime Optional start time to avoid an extra database query
+ * @returns The updated chat response
+ */
 export async function updateChatResponseStatus(
   id: string,
   status: string,
-  completionStatus: string
+  completionStatus: string,
+  interviewStartTime?: Date
 ): Promise<SelectChatResponse | undefined> {
-  return await updateChatResponse(id, { 
-    status,
-    completionStatus,
-    ...(completionStatus === "completed" ? {
-      interviewEndTime: new Date(),
-      totalInterviewMinutes: Math.round(
-        (new Date().getTime() - (await getChatResponseById(id))?.interviewStartTime?.getTime()!) / 60000
-      )
-    } : {})
+  // Use a transaction to ensure data consistency and reduce roundtrips
+  return await db.transaction(async (tx) => {
+    const updates: Partial<InsertChatResponse> = { 
+      status,
+      completionStatus
+    };
+    
+    if (completionStatus === "completed") {
+      const now = new Date();
+      updates.interviewEndTime = now;
+      
+      if (interviewStartTime) {
+        // Use provided start time instead of making a database query
+        updates.totalInterviewMinutes = Math.round((now.getTime() - interviewStartTime.getTime()) / 60000);
+      } else {
+        // Only fetch the start time if it wasn't provided
+        const [chatResponse] = await tx
+          .select({ interviewStartTime: chatResponsesTable.interviewStartTime })
+          .from(chatResponsesTable)
+          .where(eq(chatResponsesTable.id, id))
+          .limit(1);
+        
+        if (chatResponse?.interviewStartTime) {
+          updates.totalInterviewMinutes = Math.round(
+            (now.getTime() - chatResponse.interviewStartTime.getTime()) / 60000
+          );
+        }
+      }
+    }
+    
+    // Update the record
+    const [updatedChatResponse] = await tx
+      .update(chatResponsesTable)
+      .set(updates)
+      .where(eq(chatResponsesTable.id, id))
+      .returning();
+    
+    return updatedChatResponse;
   });
 }
 
@@ -118,4 +158,4 @@ export async function updateChatResponseInterviewTimes(
     .where(eq(chatResponsesTable.id, id))
     .returning();
   return updatedChatResponse;
-} 
+}

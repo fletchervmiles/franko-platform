@@ -76,6 +76,7 @@
     "next": "15.0.0-canary.152",
     "next-themes": "^0.4.3",
     "openai": "^4.71.1",
+    "pg": "^8.13.3",
     "postgres": "^3.4.5",
     "react": "19.0.0-rc-7771d3a7-20240827",
     "react-day-picker": "^8.10.1",

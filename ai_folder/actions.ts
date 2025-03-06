@@ -670,7 +670,7 @@ export async function objectiveUpdate({ messages, userId, chatId }: {
       
       // Update the current objective's turns with the same logic as progressBarUpdate
       const currentObjectiveKey = Object.entries(currentProgress.objectives)
-        .find(([_, obj]) => obj.status === "current")?.[0];
+        .find(([_, obj]) => (obj as any).status === "current")?.[0];
       
       if (currentObjectiveKey) {
         // Calculate the turns for the current objective using the same logic as progressBarUpdate
