@@ -17,7 +17,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { ProgressBar, type Step } from "./progress-bar"
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema"
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
+import React from "react"
 
 interface ExternalChatProgressProps {
   chatResponseId: string  // ID of the chat response to track
@@ -59,22 +60,28 @@ async function fetchProgress(chatResponseId: string): Promise<{
   return data
 }
 
-export function ExternalChatProgress({ chatResponseId, messageCount }: ExternalChatProgressProps) {
+export const ExternalChatProgress = React.memo(function ExternalChatProgress({ 
+  chatResponseId, 
+  messageCount 
+}: ExternalChatProgressProps) {
   // Track if we're currently fetching progress
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Memoize query function to prevent recreation on each render
+  const queryFn = useCallback(async () => {
+    setIsUpdating(true);
+    try {
+      return await fetchProgress(chatResponseId);
+    } finally {
+      // Add a small delay before removing the updating state for better UX
+      setTimeout(() => setIsUpdating(false), 300);
+    }
+  }, [chatResponseId]);
 
   // Fetch progress data with React Query
   const { data: progress, isLoading } = useQuery({
     queryKey: ['external-chat-progress', chatResponseId, messageCount],
-    queryFn: async () => {
-      setIsUpdating(true);
-      try {
-        return await fetchProgress(chatResponseId);
-      } finally {
-        // Add a small delay before removing the updating state for better UX
-        setTimeout(() => setIsUpdating(false), 300);
-      }
-    },
+    queryFn,
     // Only refetch when the query is stale
     staleTime: 5000, // 5 seconds
     // Don't refetch on window focus
@@ -83,53 +90,47 @@ export function ExternalChatProgress({ chatResponseId, messageCount }: ExternalC
     retry: false,
     // Use previous data while loading new data
     placeholderData: (prev) => prev
-  })
+  });
 
   // Don't render anything if we've never had progress data
   if (!progress) {
-    return null
+    return null;
   }
 
-  // If we have detailed objective progress, use it to create steps
-  if (progress.chatProgress?.objectives) {
-    const objectives = progress.chatProgress.objectives
-    const steps: Step[] = Object.entries(objectives)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([id, obj]) => ({
-        label: "", // Empty label since we're not displaying it
-        status: obj.status === "done" ? "completed" 
-               : obj.status === "current" ? "in-review"
-               : "pending"
-      }))
+  // Memoize the steps calculation to avoid recalculations on every render
+  const steps = useMemo(() => {
+    // If we have detailed objective progress, use it to create steps
+    if (progress.chatProgress?.objectives) {
+      const objectives = progress.chatProgress.objectives;
+      return Object.entries(objectives)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([id, obj]) => ({
+          label: "", // Empty label since we're not displaying it
+          status: obj.status === "done" ? "completed" 
+                : obj.status === "current" ? "in-review"
+                : "pending"
+        })) as Step[];
+    } else {
+      // Fallback to simple two-step progress bar if no detailed progress is available
+      return [
+        {
+          label: 'Interview in Progress',
+          status: progress.status === 'in_progress' ? 'in-review' : 'completed'
+        },
+        {
+          label: 'Interview Complete',
+          status: progress.completionStatus === 'completed' ? 'completed' : 'pending'
+        }
+      ] as Step[];
+    }
+  }, [progress]);
 
-    // Render the progress bar with the objectives as steps
-    return (
-      <ProgressBar
-        steps={steps}
-        className="max-w-none"
-        isUpdating={isUpdating || isLoading}
-      />
-    )
-  } else {
-    // Fallback to simple two-step progress bar if no detailed progress is available
-    const steps: Step[] = [
-      {
-        label: 'Interview in Progress',
-        status: progress.status === 'in_progress' ? 'in-review' : 'completed'
-      },
-      {
-        label: 'Interview Complete',
-        status: progress.completionStatus === 'completed' ? 'completed' : 'pending'
-      }
-    ]
-
-    // Render the simple progress bar
-    return (
-      <ProgressBar
-        steps={steps}
-        className="max-w-none"
-        isUpdating={isUpdating || isLoading}
-      />
-    )
-  }
-} 
+  // Render the progress bar
+  return (
+    <ProgressBar
+      steps={steps}
+      className="max-w-none"
+      isUpdating={isUpdating || isLoading}
+    />
+  );
+});

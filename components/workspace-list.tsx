@@ -4,7 +4,8 @@ import { Trash2, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import InterviewStatus from "./interview-status"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import React from "react"
 import Link from "next/link"
 import { CreateChatButton } from "./create-chat-button"
 import Image from "next/image"
@@ -29,34 +30,6 @@ interface Workspace {
   customerWords: number
 }
 
-// Sample data - replace with actual data fetching
-// const workspaces: Workspace[] = [
-//   {
-//     id: "4wffc6nnh",
-//     guideName: "InterviewGuide01 - Churn",
-//     status: "new responses",
-//     lastEdited: "2023-05-15",
-//     responses: 10,
-//     customerWords: 133,
-//   },
-//   {
-//     id: "chb1oqiqv",
-//     guideName: "InterviewGuide02 - Product Feedback",
-//     status: "reviewed",
-//     lastEdited: "2023-04-01",
-//     responses: 102,
-//     customerWords: 3944,
-//   },
-//   {
-//     id: "pz7khu6p9",
-//     guideName: "InterviewGuide03 - Churn",
-//     status: "new responses",
-//     lastEdited: "2023-03-10",
-//     responses: 2342,
-//     customerWords: 39439,
-//   },
-// ]
-
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
@@ -78,7 +51,7 @@ function EmptyState() {
   )
 }
 
-export function WorkspaceList() {
+export const WorkspaceList = React.memo(function WorkspaceList() {
   const [isMounted, setIsMounted] = useState(false)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -87,21 +60,7 @@ export function WorkspaceList() {
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMounted(true)
-    }, 100) // 100ms delay
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    if (isMounted) {
-      fetchWorkspaces()
-    }
-  }, [isMounted])
-
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -138,16 +97,30 @@ export function WorkspaceList() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsMounted(true)
+    }, 100) // 100ms delay
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchWorkspaces()
+    }
+  }, [isMounted, fetchWorkspaces])
+
+  const handleDeleteClick = useCallback((id: string, e: React.MouseEvent) => {
     e.preventDefault() // Prevent navigation
     e.stopPropagation() // Prevent event bubbling
     setWorkspaceToDelete(id)
     setShowDeleteDialog(true)
-  }
+  }, [])
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!workspaceToDelete) return
 
     try {
@@ -190,9 +163,9 @@ export function WorkspaceList() {
       setShowDeleteDialog(false)
       setWorkspaceToDelete(null)
     }
-  }
+  }, [workspaceToDelete, workspaces, toast])
 
-  const handleRename = async (id: string, e: React.MouseEvent) => {
+  const handleRename = useCallback(async (id: string, e: React.MouseEvent) => {
     e.preventDefault() // Prevent navigation
     e.stopPropagation() // Prevent event bubbling
     
@@ -251,7 +224,7 @@ export function WorkspaceList() {
         variant: "destructive",
       })
     }
-  }
+  }, [workspaces, toast])
 
   if (!isMounted) {
     return null // or a loading placeholder
@@ -383,5 +356,4 @@ export function WorkspaceList() {
       </AlertDialog>
     </div>
   )
-}
-
+});

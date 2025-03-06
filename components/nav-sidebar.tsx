@@ -1,6 +1,6 @@
 "use client"
 
-import type * as React from "react"
+import React from "react"
 import {
   LayoutDashboard,
   MessageSquare,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
@@ -38,72 +38,149 @@ const sidebarStyles = {
   "--sidebar-width": "16rem",
 } as React.CSSProperties
 
-const data = {
-  navMain: [
-    {
-      title: "Product",
-      items: [
-        {
-          title: "Workspace",
-          url: "/workspace  ",
-          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Onboarding",
-          url: "/onboarding",
-          icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Response Q&A",
-          url: "/response-qa",
-          icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Context Setup",
-          url: "/context-setup",
-          icon: <FileText className="mr-0.5 h-4 w-4" />,
-        },
-      ],
-    },
-    {
-      title: "Account",
-      items: [
-        {
-          title: "Update Plan",
-          url: "/account/update-plan",
-          icon: <CreditCard className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Usage",
-          url: "/account/usage",
-          icon: <BarChart className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Support",
-          url: "/account/support",
-          icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Feedback",
-          url: "/account/feedback",
-          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "User Profile",
-          url: "/account/profile",
-          icon: <User className="mr-0.5 h-4 w-4" />,
-        },
-        {
-          title: "Sign Out",
-          url: "/account/signout",
-          icon: <LogOut className="mr-0.5 h-4 w-4" />,
-        },
-      ],
-    },
-  ],
-}
+const navMainData = [
+  {
+    title: "Product",
+    items: [
+      {
+        title: "Workspace",
+        url: "/workspace  ",
+        icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Onboarding",
+        url: "/onboarding",
+        icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Response Q&A",
+        url: "/response-qa",
+        icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Context Setup",
+        url: "/context-setup",
+        icon: <FileText className="mr-0.5 h-4 w-4" />,
+      },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      {
+        title: "Update Plan",
+        url: "/account/update-plan",
+        icon: <CreditCard className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Usage",
+        url: "/account/usage",
+        icon: <BarChart className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Support",
+        url: "/account/support",
+        icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Feedback",
+        url: "/account/feedback",
+        icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "User Profile",
+        url: "/account/profile",
+        icon: <User className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Sign Out",
+        url: "/account/signout",
+        icon: <LogOut className="mr-0.5 h-4 w-4" />,
+      },
+    ],
+  },
+];
 
-export function NavSidebar({ children }: { children: React.ReactNode }) {
+// Memoized sidebar menu item component
+const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({ 
+  item, 
+  section
+}: { 
+  item: { title: string; url: string; icon: React.ReactNode }; 
+  section: { title: string } 
+}) {
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+      >
+        <Link href={item.url} className="flex items-center">
+          <span
+            className={`${section.title === "Account" ? "text-gray-500" : "text-gray-800"}`}
+          >
+            {item.icon}
+          </span>
+          <span className="ml-2 font-medium">{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+});
+
+// Memoized sidebar section component
+const SidebarSectionMemo = React.memo(function SidebarSectionComponent({
+  item,
+  index
+}: {
+  item: { title: string; items: Array<{ title: string; url: string; icon: React.ReactNode }> };
+  index: number;
+}) {
+  return (
+    <div key={item.title}>
+      {index > 0 && (
+        <div className="mx-3 my-4 border-t border-dotted border-gray-200 dark:border-gray-700" />
+      )}
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-sm font-semibold tracking-tight mb-2 px-3">
+          {item.title}
+        </SidebarGroupLabel>
+        {item.items.length > 0 && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {item.items.map((subItem) => (
+                <SidebarMenuItemMemo key={subItem.title} item={subItem} section={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+      </SidebarGroup>
+    </div>
+  );
+});
+
+// Loading skeleton for sidebar sections
+const SkeletonSection = React.memo(function SkeletonSectionComponent({ 
+  section, 
+  index 
+}: { 
+  section: { title: string; items: any[] }; 
+  index: number 
+}) {
+  return (
+    <div key={section.title}>
+      {index > 0 && <div className="my-4 border-t border-dotted border-gray-200" />}
+      <div className="space-y-2">
+        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+        {section.items.map((item) => (
+          <div key={item.title} className="h-8 bg-gray-200 rounded animate-pulse mt-2" />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export const NavSidebar = React.memo(function NavSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
 
@@ -111,9 +188,9 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
     setIsMounted(true)
   }, [])
 
-  const getPageTitle = () => {
+  const getPageTitle = useCallback(() => {
     if (pathname === "/create") return "Create"
-    for (const section of data.navMain) {
+    for (const section of navMainData) {
       const matchingItem = section.items.find((item) => {
         if (pathname === "/" && item.url === "/") return true
         if (pathname !== "/" && item.url !== "/" && pathname.startsWith(item.url)) return true
@@ -124,7 +201,10 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
       }
     }
     return "Workspace"
-  }
+  }, [pathname])
+
+  // Memoize the page title calculation
+  const pageTitle = useMemo(() => getPageTitle(), [getPageTitle])
 
   if (!isMounted) {
     return (
@@ -134,16 +214,8 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
             <div className="h-6 w-6 bg-gray-200 rounded animate-pulse" />
           </div>
           <div className="p-3 space-y-4">
-            {data.navMain.map((section, index) => (
-              <div key={section.title}>
-                {index > 0 && <div className="my-4 border-t border-dotted border-gray-200" />}
-                <div className="space-y-2">
-                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                  {section.items.map((item) => (
-                    <div key={item.title} className="h-8 bg-gray-200 rounded animate-pulse mt-2" />
-                  ))}
-                </div>
-              </div>
+            {navMainData.map((section, index) => (
+              <SkeletonSection key={section.title} section={section} index={index} />
             ))}
           </div>
         </div>
@@ -192,40 +264,8 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
               </SidebarHeader>
               <SidebarContent className="bg-[#FAFAFA] dark:bg-gray-800">
                 <div className="space-y-4">
-                  {data.navMain.map((item, index) => (
-                    <div key={item.title}>
-                      {index > 0 && (
-                        <div className="mx-3 my-4 border-t border-dotted border-gray-200 dark:border-gray-700" />
-                      )}
-                      <SidebarGroup>
-                        <SidebarGroupLabel className="text-sm font-semibold tracking-tight mb-2 px-3">
-                          {item.title}
-                        </SidebarGroupLabel>
-                        {item.items.length > 0 && (
-                          <SidebarGroupContent>
-                            <SidebarMenu>
-                              {item.items.map((subItem) => (
-                                <SidebarMenuItem key={subItem.title}>
-                                  <SidebarMenuButton
-                                    asChild
-                                    className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
-                                  >
-                                    <Link href={subItem.url} className="flex items-center">
-                                      <span
-                                        className={`${item.title === "Account" ? "text-gray-500" : "text-gray-800"}`}
-                                      >
-                                        {subItem.icon}
-                                      </span>
-                                      <span className="ml-2 font-medium">{subItem.title}</span>
-                                    </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              ))}
-                            </SidebarMenu>
-                          </SidebarGroupContent>
-                        )}
-                      </SidebarGroup>
-                    </div>
+                  {navMainData.map((item, index) => (
+                    <SidebarSectionMemo key={item.title} item={item} index={index} />
                   ))}
                 </div>
               </SidebarContent>
@@ -239,7 +279,7 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{getPageTitle()}</BreadcrumbPage>
+                  <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -249,5 +289,4 @@ export function NavSidebar({ children }: { children: React.ReactNode }) {
       </SidebarProvider>
     </div>
   )
-}
-
+});

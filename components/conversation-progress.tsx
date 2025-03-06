@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { ProgressBar, type Step } from "./progress-bar";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { queryClient } from './utilities/query-provider';
+import React from 'react';
 
 interface ConversationProgressProps {
   conversationId: string;
@@ -18,7 +19,7 @@ async function fetchProgress(chatId: string): Promise<ObjectiveProgress | null> 
   return response.json();
 }
 
-export function ConversationProgress({ 
+export const ConversationProgress = React.memo(function ConversationProgress({ 
   conversationId, 
   messageCount,
   isLoading = false
@@ -33,17 +34,20 @@ export function ConversationProgress({
   // Track previous loading state
   const prevIsLoadingRef = useRef(isLoading);
 
+  // Memoize the query function to prevent recreation on each render
+  const queryFn = useCallback(async () => {
+    setIsUpdating(true);
+    try {
+      return await fetchProgress(conversationId);
+    } finally {
+      // Add a small delay before removing the updating state for better UX
+      setTimeout(() => setIsUpdating(false), 300);
+    }
+  }, [conversationId]);
+
   const { data: progress, isFetching } = useQuery<ObjectiveProgress | null>({
     queryKey: ['objective-progress', conversationId],
-    queryFn: async () => {
-      setIsUpdating(true);
-      try {
-        return await fetchProgress(conversationId);
-      } finally {
-        // Add a small delay before removing the updating state for better UX
-        setTimeout(() => setIsUpdating(false), 300);
-      }
-    },
+    queryFn,
     // Only refetch when the query is stale
     staleTime: 5000, // 5 seconds
     // Don't refetch on window focus
@@ -74,7 +78,7 @@ export function ConversationProgress({
     prevIsLoadingRef.current = isLoading;
   }, [isLoading, conversationId]);
 
-  // Manage polling lifecycle
+  // Manage polling lifecycle with clear cleanup
   useEffect(() => {
     // Clear any existing intervals and timeouts when dependencies change
     if (pollingIntervalRef.current) {
@@ -116,18 +120,22 @@ export function ConversationProgress({
     };
   }, [isLoading, expectingUpdates, conversationId]);
 
+  // Return null early if we don't have progress data
   if (!progress?.objectives) {
     return null;
   }
 
-  const steps: Step[] = Object.entries(progress.objectives)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, obj]) => ({
-      label: "", // Empty label since we're not displaying it anymore
-      status: obj.status === "done" ? "completed" 
-             : obj.status === "current" ? "in-review"
-             : "pending"
-    }));
+  // Memoize step computation to avoid recalculating on every render
+  const steps = useMemo(() => {
+    return Object.entries(progress.objectives)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, obj]) => ({
+        label: "", // Empty label since we're not displaying it anymore
+        status: obj.status === "done" ? "completed" 
+               : obj.status === "current" ? "in-review"
+               : "pending"
+      } as Step));
+  }, [progress.objectives]);
 
   return <ProgressBar steps={steps} isUpdating={isUpdating || isFetching} />;
-} 
+});

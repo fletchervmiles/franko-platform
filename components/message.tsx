@@ -3,7 +3,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { ToolInvocation, Message as AIMessage } from "ai"
 import { motion } from "framer-motion"
-import { ReactNode, useMemo, useEffect } from "react"
+import React, { ReactNode, useMemo, useEffect, useCallback } from "react"
 import { Markdown } from "@/components/custom/markdown"
 import { ConversationPlan } from "@/components/conversation-plan"
 import { OptionButtons } from "@/components/OptionButtons"
@@ -48,7 +48,7 @@ const areSimilarTexts = (text1: string, text2: string, threshold = 0.7): boolean
   return similarity >= threshold;
 };
 
-export function Message({ 
+export const Message = React.memo(function Message({ 
   content, 
   isUser = false, 
   timestamp, 
@@ -188,7 +188,7 @@ export function Message({
     isFirstInTurn
   });
 
-  const getDisplayContent = (content: string) => {
+  const getDisplayContent = useCallback((content: string) => {
     try {
       if (content.includes('```json') && content.includes('```')) {
         const jsonStr = content.split('```json\n')[1].split('\n```')[0];
@@ -200,11 +200,14 @@ export function Message({
       console.error('Error parsing JSON:', error);
       return content;
     }
-  };
+  }, []);
 
   // Determine if we have displayable tool invocations (not searchWeb or thinkingHelp)
-  const hasDisplayableTools = toolInvocations?.some(
-    t => t.state === "result" && t.toolName !== "searchWeb" && t.toolName !== "thinkingHelp"
+  const hasDisplayableTools = useMemo(() => 
+    toolInvocations?.some(
+      t => t.state === "result" && t.toolName !== "searchWeb" && t.toolName !== "thinkingHelp"
+    ), 
+    [toolInvocations]
   );
 
   // Determine if we should show loading state
@@ -317,5 +320,4 @@ export function Message({
       </div>
     </motion.div>
   );
-}
-
+});

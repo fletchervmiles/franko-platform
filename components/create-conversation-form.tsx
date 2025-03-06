@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -97,7 +98,7 @@ interface CreateConversationFormProps {
   isRegenerating?: boolean;
 }
 
-export function CreateConversationForm({ isNew = false, chatId: propChatId, isRegenerating = false }: CreateConversationFormProps) {
+export const CreateConversationForm = React.memo(function CreateConversationForm({ isNew = false, chatId: propChatId, isRegenerating = false }: CreateConversationFormProps) {
   const router = useRouter()
   const params = useParams()
   // Use the prop chatId if provided, otherwise try to get it from params
@@ -738,4 +739,4 @@ export function CreateConversationForm({ isNew = false, chatId: propChatId, isRe
       )}
     </div>
   )
-} 
+}); 

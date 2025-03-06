@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Edit2, Trash2 } from "lucide-react"
@@ -26,6 +26,7 @@ import { NavSidebar } from "@/components/nav-sidebar"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import React from "react"
 
 interface ConversationPageClientProps {
   params: {
@@ -34,7 +35,7 @@ interface ConversationPageClientProps {
   userId: string
 }
 
-export function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
+export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
   const fromParam = searchParams.get('from')
@@ -58,14 +59,8 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
     }
   }, [tabParam])
 
-  // Update lastViewed timestamp when the user views the responses tab
-  useEffect(() => {
-    if (activeTab === 'responses') {
-      updateLastViewed();
-    }
-  }, [activeTab]);
-
-  const updateLastViewed = async () => {
+  // Memoize the updateLastViewed function
+  const updateLastViewed = useCallback(async () => {
     try {
       const response = await fetch(`/api/chat-instances/${chatId}/last-viewed`, {
         method: 'POST',
@@ -88,7 +83,14 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
     } catch (error) {
       console.error('Error updating last viewed timestamp:', error);
     }
-  };
+  }, [chatId]);
+
+  // Update lastViewed timestamp when the user views the responses tab
+  useEffect(() => {
+    if (activeTab === 'responses') {
+      updateLastViewed();
+    }
+  }, [activeTab, updateLastViewed]);
 
   useEffect(() => {
     async function loadConversationPlan() {
@@ -131,7 +133,8 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
     loadConversationPlan();
   }, [chatId, toast]);
 
-  const handleDelete = async () => {
+  // Memoize handleDelete function
+  const handleDelete = useCallback(async () => {
     try {
       const response = await fetch(`/api/chat-instances/${chatId}`, {
         method: 'DELETE',
@@ -171,9 +174,10 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
       
       setShowDeleteDialog(false);
     }
-  }
+  }, [chatId, toast, router]);
 
-  const handleRename = async () => {
+  // Memoize handleRename function
+  const handleRename = useCallback(async () => {
     // Get the current title
     const currentTitle = conversationPlan?.title || "Untitled Conversation";
     
@@ -231,9 +235,10 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
         variant: "destructive",
       });
     }
-  }
+  }, [chatId, conversationPlan, toast]);
 
-  const handleConversationPlanSubmit = async (data: ConversationPlan) => {
+  // Memoize handleConversationPlanSubmit function
+  const handleConversationPlanSubmit = useCallback(async (data: ConversationPlan) => {
     try {
       const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
         method: 'POST',
@@ -274,7 +279,7 @@ export function ConversationPageClient({ params, userId }: ConversationPageClien
         variant: "destructive",
       });
     }
-  }
+  }, [chatId, toast]);
 
   // Mock data for ResponseCards
   const mockResponses = [
@@ -393,13 +398,13 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
     },
   ]
 
-  // Mock data for ConversationResponses
-  const mockResponsesData = {
+  // Memoize mockResponsesData to prevent recalculation on each render
+  const mockResponsesData = useMemo(() => ({
     responses: mockResponses.length,
     totalCustomerWords: mockResponses.reduce((total, response) => total + response.transcript.split(" ").length, 0),
     completionRate: mockResponses.reduce((sum, response) => sum + response.completionRate, 0) / mockResponses.length,
     responseData: mockResponses,
-  }
+  }), [mockResponses]);
 
   return (
     <NavSidebar>
@@ -546,4 +551,4 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
       </div>
     </NavSidebar>
   )
-} 
+});

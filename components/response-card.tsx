@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import { ChevronDown, ChevronUp, User, FileText, Mail, BarChart } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,110 @@ interface ResponseCardProps {
   completionRate: number
 }
 
-export function ResponseCard({
+// Memoized ReactMarkdown component with custom styling
+const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-2 text-black" {...props} />,
+        h2: ({ node, ...props }) => <h2 className="text-lg font-semibold mb-2 text-black" {...props} />,
+        h3: ({ node, ...props }) => <h3 className="text-sm font-extrabold mb-1 text-black" {...props} />,
+        p: ({ node, ...props }) => <p className="mb-2 text-gray-900" {...props} />,
+        ul: ({ node, ...props }) => (
+          <ul className="list-disc pl-4 mb-2 marker:text-black text-gray-800" {...props} />
+        ),
+        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+        strong: ({ node, ...props }) => <strong className="font-bold text-black">{props.children}</strong>,
+        em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+});
+
+// Memoized card header component
+const CardHeader = React.memo(function CardHeader({
+  name,
+  customerWords,
+  formattedDate,
+  isOpen,
+  toggleOpen
+}: {
+  name: string;
+  customerWords: number;
+  formattedDate: string;
+  isOpen: boolean;
+  toggleOpen: () => void;
+}) {
+  return (
+    <div
+      className={`flex items-center p-6 hover:bg-gray-100 cursor-pointer ${isOpen ? "bg-gray-100" : ""}`}
+      onClick={toggleOpen}
+    >
+      <div className="flex items-center justify-between flex-1 gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+          <User className="h-5 w-5 text-blue-600 hidden sm:inline-block" />
+          <h3 className="text-sm font-semibold truncate">{name}</h3>
+        </div>
+        <div className="flex-shrink-0 text-center">
+          <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm">
+            +{customerWords.toLocaleString()} Words
+          </span>
+        </div>
+        <div className="flex-shrink-0">
+          <span className="text-sm text-gray-900">{formattedDate}</span>
+        </div>
+      </div>
+      <Button variant="ghost" size="sm" className="p-0 text-blue-600 ml-4">
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+});
+
+// Memoized transcript block component
+const TranscriptBlock = React.memo(function TranscriptBlock({
+  block,
+  index,
+  searchTerm
+}: {
+  block: string;
+  index: number;
+  searchTerm: string;
+}) {
+  // Split the block into speaker and content
+  const [speaker, ...content] = block.split(": ");
+  
+  // Function to highlight search terms
+  const highlightSearchTerm = useCallback((text: string) => {
+    if (!searchTerm) return text;
+    const parts = text.split(new RegExp(`(${searchTerm})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === searchTerm.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-200">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  }, [searchTerm]);
+  
+  const highlightedContent = useMemo(() => 
+    highlightSearchTerm(content.join(": ")), 
+    [content, highlightSearchTerm]
+  );
+
+  return (
+    <div className={`p-3 rounded ${index % 2 === 0 ? "bg-gray-100" : "bg-white"}`}>
+      <strong className="text-blue-600">{speaker}:</strong>
+      <p>{highlightedContent}</p>
+    </div>
+  );
+});
+
+export const ResponseCard = React.memo(function ResponseCard({
   name,
   email,
   summary,
@@ -41,48 +144,44 @@ export function ResponseCard({
   const [isFullSummary, setIsFullSummary] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
-  const formattedDate = format(new Date(completionDate), "MMM d, yyyy")
+  const formattedDate = useMemo(() => 
+    format(new Date(completionDate), "MMM d, yyyy"),
+    [completionDate]
+  );
 
-  const summaryPreview = summary.split("\n").slice(0, 3).join("\n")
+  const summaryPreview = useMemo(() => 
+    summary.split("\n").slice(0, 3).join("\n"),
+    [summary]
+  );
 
-  const highlightSearchTerm = (text: string) => {
-    if (!searchTerm) return text
-    const parts = text.split(new RegExp(`(${searchTerm})`, "gi"))
-    return parts.map((part, i) =>
-      part.toLowerCase() === searchTerm.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-200">
-          {part}
-        </mark>
-      ) : (
-        part
-      ),
-    )
-  }
+  const toggleOpen = useCallback(() => {
+    setIsOpen(!isOpen);
+  }, [isOpen]);
+
+  const toggleFullSummary = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFullSummary(!isFullSummary);
+  }, [isFullSummary]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const transcriptBlocks = useMemo(() => 
+    transcript.split("\n\n"),
+    [transcript]
+  );
 
   return (
     <div className={`${!isLast ? "border-b" : ""}`}>
-      <div
-        className={`flex items-center p-6 hover:bg-gray-100 cursor-pointer ${isOpen ? "bg-gray-100" : ""}`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center justify-between flex-1 gap-4">
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
-            <User className="h-5 w-5 text-blue-600 hidden sm:inline-block" />
-            <h3 className="text-sm font-semibold truncate">{name}</h3>
-          </div>
-          <div className="flex-shrink-0 text-center">
-            <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm">
-              +{customerWords.toLocaleString()} Words
-            </span>
-          </div>
-          <div className="flex-shrink-0">
-            <span className="text-sm text-gray-900">{formattedDate}</span>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" className="p-0 text-blue-600 ml-4">
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-      </div>
+      <CardHeader 
+        name={name}
+        customerWords={customerWords}
+        formattedDate={formattedDate}
+        isOpen={isOpen}
+        toggleOpen={toggleOpen}
+      />
+      
       {isOpen && (
         <div className="p-6 bg-white space-y-4">
           <div className="block sm:hidden mb-4">
@@ -109,29 +208,12 @@ export function ResponseCard({
               <span>Summary</span>
             </h4>
             <div className="text-sm bg-white border border-gray-200 p-4 rounded prose max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-2 text-black" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-lg font-semibold mb-2 text-black" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-sm font-extrabold mb-1 text-black" {...props} />,
-                  p: ({ node, ...props }) => <p className="mb-2 text-gray-900" {...props} />,
-                  ul: ({ node, ...props }) => (
-                    <ul className="list-disc pl-4 mb-2 marker:text-black text-gray-800" {...props} />
-                  ),
-                  li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-bold text-black">{props.children}</strong>,
-                  em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
-                }}
-              >
-                {isFullSummary ? summary : summaryPreview}
-              </ReactMarkdown>
+              <MarkdownRenderer content={isFullSummary ? summary : summaryPreview} />
+              
               {summary.split("\n").length > 3 && (
                 <Button
                   variant="link"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsFullSummary(!isFullSummary)
-                  }}
+                  onClick={toggleFullSummary}
                   className="mt-2 p-0 h-auto font-normal text-blue-600"
                 >
                   {isFullSummary ? "Read less" : "Read more"}
@@ -156,19 +238,18 @@ export function ResponseCard({
                 type="search"
                 placeholder="Search transcript..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="my-4"
               />
               <div className="space-y-4">
-                {transcript.split("\n\n").map((block, index) => {
-                  const [speaker, ...content] = block.split(": ")
-                  return (
-                    <div key={index} className={`p-3 rounded ${index % 2 === 0 ? "bg-gray-100" : "bg-white"}`}>
-                      <strong className="text-blue-600">{speaker}:</strong>
-                      <p>{highlightSearchTerm(content.join(": "))}</p>
-                    </div>
-                  )
-                })}
+                {transcriptBlocks.map((block, index) => (
+                  <TranscriptBlock 
+                    key={index} 
+                    block={block} 
+                    index={index} 
+                    searchTerm={searchTerm} 
+                  />
+                ))}
               </div>
             </DialogContent>
           </Dialog>
@@ -176,5 +257,4 @@ export function ResponseCard({
       )}
     </div>
   )
-}
-
+});

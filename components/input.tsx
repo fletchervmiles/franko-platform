@@ -2,9 +2,10 @@
 
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowUp, StopCircle } from "lucide-react"
-import { useRef, useEffect, forwardRef, type ForwardedRef } from "react"
+import { useRef, useEffect, forwardRef, type ForwardedRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import React from "react"
 
 interface ChatInputProps {
   value: string
@@ -29,22 +30,29 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
   const localRef = useRef<HTMLTextAreaElement>(null)
   const textareaRef = (ref || localRef) as React.RefObject<HTMLTextAreaElement>
 
-  useEffect(() => {
+  // Memoize the height adjustment function
+  const adjustHeight = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "inherit"
       const scrollHeight = textareaRef.current.scrollHeight
       textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 64), 200)}px`
     }
-  }, [value])
+  }, [textareaRef]);
+
+  // Update textarea height when value changes
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight])
 
   // Add effect to focus textarea when enabled
   useEffect(() => {
     if (!disabled && textareaRef.current) {
       textareaRef.current.focus()
     }
-  }, [disabled])
+  }, [disabled, textareaRef])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // Memoize keydown handler to avoid recreating function on each render
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     console.log("Key pressed:", e.key);
     console.log("Shift key pressed:", e.shiftKey);
     
@@ -66,7 +74,15 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
         onSubmit(new Event("submit") as unknown as React.FormEvent<HTMLFormElement>)
       }
     }
-  }
+  }, [disabled, onSubmit]);
+
+  // Memoize form submit handler
+  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    console.log("Form submit event triggered in ChatInput");
+    console.log("Form values:", { value });
+    console.log("Is disabled:", disabled);
+    onSubmit(e);
+  }, [onSubmit, value, disabled]);
 
   const hasContent = value.trim().length > 0
 
@@ -74,12 +90,7 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     <div className="w-full bg-[#F9F8F6] pt-2">
       <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
         <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)]">
-          <form onSubmit={(e) => {
-            console.log("Form submit event triggered in ChatInput");
-            console.log("Form values:", { value });
-            console.log("Is disabled:", disabled);
-            onSubmit(e);
-          }} className="flex items-start gap-2 p-2 px-8">
+          <form onSubmit={handleFormSubmit} className="flex items-start gap-2 p-2 px-8">
             <Textarea
               ref={textareaRef}
               value={value}
@@ -146,5 +157,4 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
   )
 }
 
-export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(ChatInputComponent)
-
+export const ChatInput = React.memo(forwardRef<HTMLTextAreaElement, ChatInputProps>(ChatInputComponent));
