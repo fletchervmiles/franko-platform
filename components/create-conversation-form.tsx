@@ -171,7 +171,15 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
           setRespondentContacts(data.respondentContacts);
           setIncentiveStatus(data.incentiveStatus);
           setIncentiveCode(data.incentiveCode || "");
-          setIncentiveDescription(data.incentiveDescription || "");
+          
+          // Remove the prefix from incentive description if it exists
+          let incentiveDesc = data.incentiveDescription || "";
+          const prefix = "Upon completion, you'll receive ";
+          if (incentiveDesc.startsWith(prefix)) {
+            incentiveDesc = incentiveDesc.substring(prefix.length);
+          }
+          setIncentiveDescription(incentiveDesc);
+          
           setAdditionalDetails(data.additionalDetails || "");
           
           // Show all cards when regenerating
@@ -306,6 +314,11 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         targetChatId = id;
       }
       
+      // Prepare incentive description with prefix if incentive is enabled
+      const formattedIncentiveDescription = incentiveStatus 
+        ? `Upon completion, you'll receive ${incentiveDescription}` 
+        : incentiveDescription;
+      
       // Now update the chat instance with form data
       const response = await fetch(`/api/chat-instances/update?chatId=${targetChatId}`, {
         method: 'POST',
@@ -318,7 +331,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
           respondentContacts,
           incentiveStatus,
           incentiveCode,
-          incentiveDescription,
+          incentiveDescription: formattedIncentiveDescription,
           additionalDetails,
         }),
       })
@@ -612,7 +625,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         <div ref={cardRefs.card4}>
           <div className="border rounded-lg p-6 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-1 flex items-center">
-              Add an Incentive
+              Add an Incentive (optional)
               <StatusDot active={hasContent(4)} />
             </h3>
             <p className="text-sm text-gray-500 mb-4">Encourage participation with a reward.</p>
@@ -645,31 +658,37 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
             </div>
             
             {incentiveStatus && (
-              <div className="space-y-4 mt-4 max-w-xl">
+              <div className="space-y-6 mt-4 max-w-2xl p-4 bg-gray-50 rounded-md border border-gray-100">
                 <div>
                   <label htmlFor="incentive-code" className="block text-sm font-medium mb-1">
-                    Discount Code (optional)
+                    Incentive Code
                   </label>
                   <Input
                     id="incentive-code"
                     value={incentiveCode}
                     onChange={(e) => setIncentiveCode(e.target.value)}
                     placeholder="Enter a discount code to share after the chat (e.g., 'SAVE10')"
-                    className="bg-white"
+                    className="bg-white max-w-xs"
                   />
                 </div>
                 
-                <div>
+                <div className="pt-2">
                   <label htmlFor="incentive-description" className="block text-sm font-medium mb-1">
-                    Description (optional)
+                    Incentive Details
                   </label>
-                  <Textarea
-                    id="incentive-description"
-                    value={incentiveDescription}
-                    onChange={(e) => setIncentiveDescription(e.target.value)}
-                    placeholder="Add a brief message to show at the start (e.g., 'Finish this chat and get 10% off your next purchase!')"
-                    className="bg-white"
-                  />
+                  <p className="text-xs text-gray-500 mb-2">
+                    Complete the sentence to describe your reward. It will appear to users prefixed with 'Upon completion, you'll receive'.
+                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className="text-sm whitespace-nowrap italic text-gray-600">Upon completion, you'll receive</span>
+                    <Input
+                      id="incentive-description"
+                      value={incentiveDescription}
+                      onChange={(e) => setIncentiveDescription(e.target.value)}
+                      placeholder="20% off your next order, a free sample, etc."
+                      className="bg-white flex-1"
+                    />
+                  </div>
                 </div>
               </div>
             )}

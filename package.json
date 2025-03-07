@@ -59,6 +59,7 @@
     "@vercel/blob": "^0.27.1",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "3.4.9",
+    "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -96,6 +97,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.1.6",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Loader2, Copy, Check, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import confetti from "canvas-confetti";
 
 export default function ThankYouPage({
   params: { id },
@@ -16,6 +17,19 @@ export default function ThankYouPage({
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  // Trigger confetti when the component mounts and isn't loading
+  useEffect(() => {
+    if (!isLoading) {
+      // Simple confetti effect
+      confetti({
+        particleCount: 150,  // Number of confetti particles
+        spread: 70,          // How spread out the confetti is
+        origin: { y: 0.6 },  // Start slightly below the top
+        colors: ['#5F9EA0', '#FF69B4', '#FFFACD', '#FFD700', '#87CEFA'], // Pastel colors
+      });
+    }
+  }, [isLoading]);
 
   // Fetch chat instance data
   useEffect(() => {
@@ -50,6 +64,15 @@ export default function ThankYouPage({
     if (chatInstanceData?.incentive_code) {
       navigator.clipboard.writeText(chatInstanceData.incentive_code);
       setCopied(true);
+      
+      // Trigger a small confetti burst when copying
+      confetti({
+        particleCount: 80,
+        spread: 50,
+        origin: { x: 0.8, y: 0.6 }, // Near the copy button
+        colors: ['#FFD700', '#FFA500', '#FF6347'], // Gold, orange, tomato
+      });
+      
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -70,7 +93,7 @@ export default function ThankYouPage({
       <Card className="max-w-lg w-full p-8 bg-white shadow-lg">
         <div className="space-y-6">
           <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold">Thank You</h1>
+            <h1 className="text-2xl font-bold">Thank you!</h1>
             <p className="text-gray-600">
               Your time is greatly appreciated!
             </p>
@@ -78,10 +101,6 @@ export default function ThankYouPage({
 
           {chatInstanceData?.incentive_status && chatInstanceData?.incentive_code && (
             <div className="mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="flex items-center gap-2 mb-2">
-                <Gift className="h-5 w-5 text-indigo-500" />
-                <span className="font-medium">Your Incentive Code</span>
-              </div>
               <div className="flex items-center gap-2">
                 <code className="bg-white px-3 py-2 rounded border border-gray-200 flex-1 text-center">
                   {chatInstanceData.incentive_code}

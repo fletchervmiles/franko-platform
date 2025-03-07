@@ -35,11 +35,13 @@ const DynamicExternalChatWrapper = dynamic(
 interface OptimizedChatLoaderProps {
   chatInstanceId: string;
   chatResponseId: string;
+  welcomeDescription?: string;
 }
 
 export function OptimizedChatLoader({
   chatInstanceId,
   chatResponseId,
+  welcomeDescription,
 }: OptimizedChatLoaderProps) {
   return (
     <div className="h-screen bg-[#F9F8F6]">
@@ -48,6 +50,7 @@ export function OptimizedChatLoader({
           chatInstanceId={chatInstanceId}
           chatResponseId={chatResponseId}
           initialMessages={[]}
+          welcomeDescription={welcomeDescription}
         />
       </Suspense>
     </div>

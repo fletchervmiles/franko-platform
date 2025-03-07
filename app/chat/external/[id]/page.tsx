@@ -106,7 +106,9 @@ export default function StartChatPage({
       {
         onSuccess: (data) => {
           setIsNavigating(true);
-          router.push(`/chat/external/${id}/active?responseId=${data.chatResponseId}`);
+          const welcomeDesc = chatInstanceData?.welcomeDescription ? 
+            encodeURIComponent(chatInstanceData.welcomeDescription) : '';
+          router.push(`/chat/external/${id}/active?responseId=${data.chatResponseId}&welcomeDesc=${welcomeDesc}`);
         },
       }
     );

@@ -13,6 +13,8 @@ export default function ActiveChatPage({
 }) {
   const searchParams = useSearchParams();
   const chatResponseId = searchParams.get("responseId");
+  const welcomeDesc = searchParams.get("welcomeDesc");
+  const welcomeDescription = welcomeDesc ? decodeURIComponent(welcomeDesc) : undefined;
   
   // Start warming the prompt cache immediately when the page loads
   // This happens in parallel with other initialization
@@ -52,5 +54,9 @@ export default function ActiveChatPage({
   }
 
   // Use the optimized loader component that implements lazy loading
-  return <OptimizedChatLoader chatInstanceId={id} chatResponseId={chatResponseId} />;
+  return <OptimizedChatLoader 
+    chatInstanceId={id} 
+    chatResponseId={chatResponseId}
+    welcomeDescription={welcomeDescription} 
+  />;
 } 

@@ -36,12 +36,14 @@ interface ExternalChatWrapperProps {
   chatInstanceId: string       // ID of the chat instance
   chatResponseId: string       // ID of the chat response record
   initialMessages: Message[]   // Initial messages to display
+  welcomeDescription?: string  // Welcome description for the banner
 }
 
 export function ExternalChatWrapper({
   chatInstanceId,
   chatResponseId,
   initialMessages,
+  welcomeDescription,
 }: ExternalChatWrapperProps) {
   const [hasError, setHasError] = useState(false);
   const [errorInfo, setErrorInfo] = useState<any>(null);
@@ -82,6 +84,7 @@ export function ExternalChatWrapper({
           chatInstanceId={chatInstanceId}
           chatResponseId={chatResponseId}
           initialMessages={initialMessages}
+          welcomeDescription={welcomeDescription}
         />
       </Suspense>
     </ErrorBoundary>

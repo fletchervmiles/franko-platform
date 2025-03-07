@@ -25,17 +25,20 @@ import { ChatInput } from "@/components/input";
 // Import the lazy version of ExternalChatProgress
 import { LazyExternalChatProgress } from "@/components/lazy-components";
 import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
+import { WelcomeBanner } from "@/components/welcome-banner";
 
 interface ExternalChatProps {
   chatInstanceId: string;
   chatResponseId: string;
   initialMessages: Message[];
+  welcomeDescription?: string;
 }
 
 export function ExternalChat({
   chatInstanceId,
   chatResponseId,
   initialMessages = [],
+  welcomeDescription,
 }: ExternalChatProps) {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,7 +64,10 @@ export function ExternalChat({
     body: { chatInstanceId, chatResponseId },
     initialMessages,
     onFinish: (message) => {
-      window.history.replaceState({}, "", `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}`);
+      // Preserve the welcomeDesc parameter when updating the URL
+      const welcomeDescParam = welcomeDescription ? 
+        `&welcomeDesc=${encodeURIComponent(welcomeDescription)}` : '';
+      window.history.replaceState({}, "", `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}${welcomeDescParam}`);
       
       const completedCalls = message.toolInvocations?.filter((call) => 
         'result' in call && 
@@ -245,9 +251,15 @@ export function ExternalChat({
 
   // All useMemo hooks have been moved to the top of the component
 
+  // Add top margin if welcome description exists
+  const topMargin = welcomeDescription ? "mt-10" : "";
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-14">
+      {/* Display the welcome banner if a description exists */}
+      <WelcomeBanner welcomeDescription={welcomeDescription} />
+      
+      <div className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin}`}>
         <div className="mx-auto max-w-4xl space-y-8 py-8">
           {/* Show all messages including the auto-greeting */}
           {messageElements}
