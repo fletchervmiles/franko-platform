@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ExternalChatWrapper } from "@/components/external-chat-wrapper";
+import { OptimizedChatLoader } from "@/components/optimized-chat-loader";
 import { queryClient } from "@/components/utilities/query-provider";
+import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
 
 export default function ActiveChatPage({
   params: { id },
@@ -12,11 +13,15 @@ export default function ActiveChatPage({
 }) {
   const searchParams = useSearchParams();
   const chatResponseId = searchParams.get("responseId");
+  
+  // Start warming the prompt cache immediately when the page loads
+  // This happens in parallel with other initialization
+  const { isWarmed, promptLength } = usePromptWarmup(id);
 
-  // Simplified prefetching strategy to ensure compatibility
+  // Enhanced prefetching strategy including prompt warmup
   useEffect(() => {
     if (chatResponseId) {
-      // Prefetch user data for greeting customization - using the standard API
+      // Prefetch user data for greeting customization
       queryClient.prefetchQuery({
         queryKey: ['chatResponse', chatResponseId, 'user'],
         queryFn: async () => {
@@ -46,13 +51,6 @@ export default function ActiveChatPage({
     );
   }
 
-  return (
-    <div className="h-screen bg-[#F9F8F6]">
-      <ExternalChatWrapper
-        chatInstanceId={id}
-        chatResponseId={chatResponseId}
-        initialMessages={[]}
-      />
-    </div>
-  );
+  // Use the optimized loader component that implements lazy loading
+  return <OptimizedChatLoader chatInstanceId={id} chatResponseId={chatResponseId} />;
 } 

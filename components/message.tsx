@@ -4,9 +4,12 @@ import { cn } from "@/lib/utils"
 import { ToolInvocation, Message as AIMessage } from "ai"
 import { motion } from "framer-motion"
 import React, { ReactNode, useMemo, useEffect, useCallback } from "react"
-import { Markdown } from "@/components/custom/markdown"
-import { ConversationPlan } from "@/components/conversation-plan"
-import { OptionButtons } from "@/components/OptionButtons"
+// Import lazy-loaded components instead of the direct ones
+import { 
+  LazyMarkdown, 
+  LazyConversationPlan, 
+  LazyOptionButtons 
+} from "@/components/lazy-components"
 
 interface MessageProps {
   content: string | ReactNode
@@ -247,9 +250,9 @@ export const Message = React.memo(function Message({
             </div>
           )}
           
-          {/* Show content if it exists */}
+          {/* Show content if it exists - use lazy loaded markdown */}
           {content && typeof content === "string" && (
-            <Markdown>{getDisplayContent(content)}</Markdown>
+            <LazyMarkdown>{getDisplayContent(content)}</LazyMarkdown>
           )}
 
           {toolInvocations && chatId && (
@@ -289,13 +292,13 @@ export const Message = React.memo(function Message({
                         {result.text && (
                           <div className="mb-2 text-sm text-gray-500">{result.text}</div>
                         )}
-                        <OptionButtons 
+                        <LazyOptionButtons 
                           options={result.options} 
                           chatId={chatId}
                         />
                       </div>
                     ) : toolName === "generateConversationPlan" ? (
-                      <ConversationPlan 
+                      <LazyConversationPlan 
                         plan={result} 
                       />
                     ) : (
@@ -307,9 +310,9 @@ export const Message = React.memo(function Message({
                 return (
                   <div key={toolCallId} className="skeleton">
                     {(toolName === "displayOptionsMultipleChoice" || toolName === "displayOptionsNumbers") ? (
-                      <OptionButtons options={[]} chatId={chatId} />
+                      <LazyOptionButtons options={[]} chatId={chatId} />
                     ) : toolName === "generateConversationPlan" ? (
-                      <ConversationPlan />
+                      <LazyConversationPlan />
                     ) : null}
                   </div>
                 );

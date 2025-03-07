@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { WelcomeForm } from "@/components/welcome-form";
 import { Loader2 } from "lucide-react";
 import { useConsolidatedChatInit } from "@/lib/hooks/use-consolidated-chat-init";
+import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
 
 export default function StartChatPage({
   params: { id },
@@ -19,6 +20,11 @@ export default function StartChatPage({
     welcomeDescription?: string;
     respondentContacts?: boolean;
   } | null>(null);
+  
+  // Start warming the prompt cache as early as possible
+  // This happens in parallel with other data fetching
+  // and ensures the prompt is ready by the time the user interacts
+  usePromptWarmup(id);
   
   // Use consolidated initialization hook that handles both
   // chat instance retrieval and chat response creation in a single API call

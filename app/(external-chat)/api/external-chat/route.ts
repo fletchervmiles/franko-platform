@@ -90,19 +90,19 @@ import {
 import { getProfile } from "@/db/queries/profiles-queries";
 import { generateUUID } from "@/lib/utils";  // Utility functions
 import { logger } from '@/lib/logger';
-
-// Cache for populated prompts, keyed by organization ID
-const promptCache = new LRUCache<string, string>({
-  max: 500, // Maximum number of items to store
-  ttl: 1000 * 60 * 60, // Items expire after 1 hour
-});
+import { 
+  populatePromptCache, 
+  invalidatePromptCache as invalidateCache,
+  invalidateAllPromptCaches as invalidateAllCaches,
+  getCachedPrompt
+} from '@/lib/prompt-cache';
 
 /**
  * Invalidates the cached prompt for a specific organization
  */
 export function invalidatePromptCache(orgId: string) {
   logger.debug('Invalidating prompt caches for organization:', { orgId });
-  promptCache.delete(orgId);
+  invalidateCache(orgId);
   invalidateConversationPlanPromptCache(orgId);
 }
 
@@ -112,83 +112,12 @@ export function invalidatePromptCache(orgId: string) {
  */
 export function invalidateAllPromptCaches() {
   logger.debug('Invalidating all prompt caches');
-  promptCache.clear();
+  invalidateAllCaches();
 }
 
-// Add this function near the top of your file
-function loadPrompt(filename: string): string {
-  // Adjust path to be relative to the project root
-  const promptPath = path.join(process.cwd(), 'agent_prompts', filename);
-  // Add error handling
-  try {
-    return fs.readFileSync(promptPath, 'utf-8');
-  } catch (error) {
-    console.error(`Error loading prompt file: ${filename}`, error);
-    throw new Error(`Failed to load prompt file: ${filename}`);
-  }
-}
-
-// Updated to use organization information from request instead of user profile
-async function getPopulatedPrompt(chatInstanceId: string): Promise<string> {
-  try {
-    // Get chat instance and organization details
-    const chatInstance = await getChatInstanceById(chatInstanceId);
-    if (!chatInstance) {
-      throw new Error(`Chat instance not found: ${chatInstanceId}`);
-    }
-    
-    const profile = await getProfile(chatInstance.userId);
-    if (!profile) {
-      throw new Error(`Profile not found for user: ${chatInstance.userId}`);
-    }
-    
-    const organizationName = profile.organisationName || '';
-    const organizationContext = profile.organisationDescription || '';
-    const conversationPlan = chatInstance.conversationPlan || {};
-    
-    // Use a cache key that includes organization and plan info
-    const cacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
-    const cachedPrompt = promptCache.get(cacheKey);
-    if (cachedPrompt) {
-      logger.debug('Using cached prompt for organization:', { organizationName });
-      return cachedPrompt;
-    }
-
-    logger.debug('Cache miss, loading prompt for organization:', { organizationName });
-    
-    const promptTemplate = loadPrompt('external_chat_prompt.md');
-
-    // Simplify conversation plan formatting
-    let formattedConversationPlan = "";
-    if (conversationPlan && Object.keys(conversationPlan).length > 0) {
-      try {
-        // Convert the conversation plan to a nicely formatted string
-        formattedConversationPlan = "```json\n" + 
-          JSON.stringify(conversationPlan, null, 2) + 
-          "\n```";
-      } catch (error) {
-        // Use logger.error instead of logger.warn as warn doesn't exist
-        logger.error('Error formatting conversation plan, using empty string:', error);
-        formattedConversationPlan = "No structured conversation plan available.";
-      }
-    } else {
-      formattedConversationPlan = "No conversation plan provided.";
-    }
-
-    // Populate the prompt template with organization details and conversation plan
-    const populatedPrompt = promptTemplate
-      .replace('{organisation_name}', organizationName)
-      .replace('{organisation_description}', organizationContext)
-      .replace('{conversation_plan}', formattedConversationPlan);
-
-    promptCache.set(cacheKey, populatedPrompt);
-    
-    return populatedPrompt;
-  } catch (error) {
-    logger.error('Error populating prompt:', error);
-    throw error;
-  }
-}
+// Add diagnostic logging to track cache status
+console.log("INIT: External chat module loaded");
+// We'll use the shared prompt cache instead of a separate cache
 
 /**
  * Message Type Definitions
@@ -275,16 +204,97 @@ export async function POST(request: Request) {
      *    - chatInstanceId: ID of the parent chat instance
      *    - chatResponseId: ID of the current chat response
      *    - organizationName and organizationContext: for prompt generation
+     *    - warmupOnly flag indicates this is just a prompt cache warmup request
      * 
      * 2. Log incoming messages:
      *    - Truncates long messages for readability
      *    - Logs message roles and content lengths
      *    - Helps with debugging and monitoring
      */
-    const { messages, id = generateUUID(), chatInstanceId, chatResponseId, organizationName = "", organizationContext = "" } = await request.json();
+    // Add better error handling for JSON parsing
+    let requestData;
+    try {
+      const text = await request.text();
+      if (!text || text.trim() === '') {
+        return new Response(JSON.stringify({ error: "Empty request body" }), { 
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      
+      requestData = JSON.parse(text);
+    } catch (parseError) {
+      logger.error(`JSON parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
     
-    // Get the system prompt for logging
-    const systemPrompt = await getPopulatedPrompt(chatInstanceId);
+    const { 
+      messages, 
+      id = generateUUID(), 
+      chatInstanceId, 
+      chatResponseId, 
+      organizationName = "", 
+      organizationContext = "",
+      warmupOnly = false  // Special flag for cache warming
+    } = requestData;
+    
+    // Handle warmup requests differently
+    if (warmupOnly) {
+      logger.info(`Processing prompt cache warmup request for: ${organizationName}`);
+      
+      try {
+        // Use the shared utility function to populate the cache
+        // This is more reliable than the previous approach
+        const prompt = await populatePromptCache(chatInstanceId);
+        
+        // Return success without running AI
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: "Prompt cache warmed successfully",
+          promptLength: prompt.length,
+          timestamp: new Date().toISOString()
+        }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`Error warming prompt cache: ${errorMessage}`);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Failed to warm prompt cache",
+          message: errorMessage
+        }), { 
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+    
+    // For normal requests, continue with standard processing
+    // We'll use our own caching logic here to bypass the user-based invalidation
+    
+    // Use the shared prompt cache utility instead of a separate cache
+    // This ensures we're using a single source of truth for prompt caching
+    
+    console.log(`PROMPT CHECK: Looking for cached prompt for org: "${organizationName}" and id: "${chatInstanceId}"`);
+    
+    // Get the cached prompt or generate a new one
+    let systemPrompt = getCachedPrompt(chatInstanceId, organizationName || 'default');
+    
+    if (!systemPrompt) {
+      console.log(`PROMPT CACHE MISS: No cached prompt found, generating new prompt`);
+      logger.info(`External chat cache miss for: ${organizationName || 'default'}`);
+      
+      // Use populatePromptCache which now stores with both key formats
+      systemPrompt = await populatePromptCache(chatInstanceId);
+      console.log(`PROMPT POPULATED: Generated new prompt of ${systemPrompt.length} chars`);
+    } else {
+      console.log(`PROMPT CACHE HIT: Found cached prompt of ${systemPrompt.length} chars`);
+      logger.info(`Using external chat cached prompt for: ${organizationName || 'default'}`);
+    }
 
     // // Detailed request logging
     // console.log('\n=== CHAT REQUEST DETAILS ===');
@@ -706,8 +716,24 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    logger.error('Error processing chat request:', error);
-    throw error;
+    // Improved error logging with better error details
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    logger.error(`Error processing chat request: ${errorMessage}`);
+    
+    if (errorStack) {
+      logger.debug(`Error stack: ${errorStack}`);
+    }
+    
+    // Return a helpful error response instead of throwing
+    return new Response(JSON.stringify({
+      error: "Failed to process chat request",
+      message: errorMessage
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
 

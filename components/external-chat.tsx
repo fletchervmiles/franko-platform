@@ -22,7 +22,8 @@ import { useRouter } from "next/navigation";
 
 import { Message as ChatMessage } from "@/components/message";
 import { ChatInput } from "@/components/input";
-import { ExternalChatProgress } from "@/components/external-chat-progress";
+// Import the lazy version of ExternalChatProgress
+import { LazyExternalChatProgress } from "@/components/lazy-components";
 import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
 
 interface ExternalChatProps {
@@ -128,7 +129,7 @@ export function ExternalChat({
     if (!showProgressBar) return null;
     
     return (
-      <ExternalChatProgress
+      <LazyExternalChatProgress
         chatResponseId={chatResponseId}
         messageCount={messages.length}
       />

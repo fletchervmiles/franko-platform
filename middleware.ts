@@ -3,40 +3,75 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
-  "/account(.*)",
-  "/workspace(.*)",
-  "/interview(.*)",
-  "/pricing(.*)",
-  "/payment(.*)",
-  "/chat",
-  "/chat/(.*)"  // This will match all chat routes
+  "/account",
+  "/account/:path*",
+  "/workspace",
+  "/workspace/:path*",
+  "/interview",
+  "/interview/:path*",
+  "/pricing",
+  "/pricing/:path*",
+  "/payment",
+  "/payment/:path*",
+  "/settings",
+  "/settings/:path*",
+  "/dashboard",
+  "/dashboard/:path*",
+  "/conversations",
+  "/conversations/:path*" 
 ]);
 
+// Protected API routes return 401 when not authenticated
 const isProtectedApiRoute = createRouteMatcher([
-  "/api/chat(.*)",      // Protect chat API endpoints
-  "/api/history(.*)",   // Protect history API endpoints
+  "/api/chat",
+  "/api/chat/:path*",
+  "/api/history",
+  "/api/history/:path*"
 ]);
 
+// Public API routes that don't require authentication
+const isPublicApiRoute = createRouteMatcher([
+  "/api/external-chat",
+  "/api/external-chat/:path*",
+  "/api/prompt-cache-warmup",
+  "/api/chat-responses/:id",
+  "/api/chat-instances/:id",
+  "/api/chat/initialize"
+]);
+
+// Public routes don't require authentication
 const isPublicRoute = createRouteMatcher([
-  "/external-chat/(.*)",
-  "/interview-complete/(.*)"
+  "/external-chat/:path*",
+  "/interview-complete/:path*"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, redirectToSignIn } = await auth();
-  const isApiRoute = isProtectedApiRoute(req);
+  // Check if the URL path contains '/chat/external/'
+  const isExternalChatUrl = req.nextUrl.pathname.includes('/chat/external/');
+  
+  // Always allow external chat routes to pass through without authentication
+  if (isExternalChatUrl) {
+    return NextResponse.next();
+  }
 
-  // Check if the route is public
-  if (isPublicRoute(req)) {
-    // Validate UUID format for public routes
-    const pathParts = req.nextUrl.pathname.split('/');
-    const uuid = pathParts[2];
-    const isValidUUID = uuid && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
-    
-    if (!isValidUUID) {
-      return NextResponse.redirect(new URL('/404', req.url));
-    }
+  // Get authentication info (may be null for public routes)
+  const { userId, redirectToSignIn } = await auth();
+  
+  // Check if the route matches our matchers
+  const isProtected = isProtectedRoute(req);
+  const isApiRoute = isProtectedApiRoute(req);
+  const isPublicApi = isPublicApiRoute(req);
+  const isPublic = isPublicRoute(req);
+
+  // Check if the route is a public API
+  if (isPublicApi) {
+    return NextResponse.next();
+  }
+
+  // Check if the route is a public UI route
+  if (isPublic) {
     return NextResponse.next();
   }
 
@@ -46,7 +81,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // For protected UI routes, redirect to sign-in
-  if (!userId && isProtectedRoute(req)) {
+  if (!userId && isProtected) {
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
