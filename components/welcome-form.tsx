@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { Gift } from "lucide-react"
 
 interface WelcomeFormProps {
   onSubmit: (data: {
@@ -12,13 +13,28 @@ interface WelcomeFormProps {
     email: string
   }) => void
   isLoading?: boolean
+  incentive_status?: boolean
+  incentive_description?: string
 }
 
-export function WelcomeForm({ onSubmit, isLoading = false }: WelcomeFormProps) {
+export function WelcomeForm({ 
+  onSubmit, 
+  isLoading = false,
+  incentive_status = false,
+  incentive_description = ""
+}: WelcomeFormProps) {
   const [formData, setFormData] = useState({
     firstName: "",
     email: "",
   })
+
+  // Debug log to check if incentive props are received
+  useEffect(() => {
+    console.log("WelcomeForm received incentive props:", {
+      status: incentive_status,
+      description: incentive_description
+    });
+  }, [incentive_status, incentive_description]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +43,20 @@ export function WelcomeForm({ onSubmit, isLoading = false }: WelcomeFormProps) {
 
   return (
     <div className="space-y-6 w-full max-w-md mx-auto">
+      {/* Debug display to check if the condition is working */}
+      {incentive_status && (
+        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <Gift className="h-5 w-5 text-indigo-500" />
+            <div>
+              <p className="text-sm text-gray-700">
+                {incentive_description || "Complete this conversation to receive an incentive!"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Name field */}
         <div className="space-y-2">

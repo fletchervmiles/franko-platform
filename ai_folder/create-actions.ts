@@ -5,13 +5,13 @@
  * It reuses functionality from the main actions.ts file but adapts it for form submission.
  */
 
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import { z } from "zod";
 import path from 'path';
 import fs from 'fs';
 import { logger } from '@/lib/logger';
-import { updateChatInstanceConversationPlan, updateChatInstanceProgress } from "@/db/queries/chat-instances-queries";
-import { o1Model } from ".";
+import { updateChatInstanceConversationPlan, updateChatInstanceProgress, updateWelcomeDescription } from "@/db/queries/chat-instances-queries";
+import { o1Model, geminiFlashModel } from ".";
 import { arrayToNumberedObjectives, type ConversationPlan, type Objective } from "@/components/conversationPlanSchema";
 import { getUserProfile } from "@/db/queries/queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
@@ -217,6 +217,19 @@ export async function generateConversationPlanFromForm({
 
         // Create and save the objective progress
         await createObjectiveProgressFromPlan(plan, chatId);
+        
+        // Non-blocking welcome description generation
+        // This runs after the conversation plan is generated but doesn't block the flow
+        Promise.resolve().then(() => {
+          generateWelcomeDescription({
+            chatId,
+            title: plan.title,
+            duration: plan.duration,
+            summary: plan.summary
+          }).catch(error => {
+            logger.error('Failed to generate welcome description:', error);
+          });
+        });
 
         return plan;
       } catch (error) {
@@ -240,5 +253,95 @@ export async function generateConversationPlanFromForm({
   } catch (error) {
     logger.error('Error generating conversation plan from form:', error);
     throw error;
+  }
+}
+
+/**
+ * Generates a welcome description for a conversation using GeminiFlash
+ * 
+ * This function is designed to be non-blocking - it handles errors internally
+ * and doesn't affect the main conversation flow if it fails.
+ * 
+ * @param params.chatId The ID of the chat instance to update
+ * @param params.title The title from the conversation plan
+ * @param params.duration The duration from the conversation plan
+ * @param params.summary The summary from the conversation plan
+ */
+export async function generateWelcomeDescription({
+  chatId,
+  title,
+  duration,
+  summary
+}: {
+  chatId: string;
+  title: string;
+  duration: string;
+  summary: string;
+}): Promise<void> {
+  try {
+    logger.debug('Generating welcome description:', { 
+      chatId,
+      title
+    });
+    
+    // Load the prompt template
+    const promptTemplate = fs.readFileSync(
+      path.join(process.cwd(), 'agent_prompts', 'welcome_description.md'),
+      'utf-8'
+    );
+
+    // Replace template variables with actual values
+    const systemPrompt = promptTemplate
+      .replace('{title}', title)
+      .replace('{duration}', duration)
+      .replace('{summary}', summary);
+    
+    // Add retry logic for the generateText call
+    const maxRetries = 2;
+    let retryCount = 0;
+    let lastError: any = null;
+
+    while (retryCount < maxRetries) {
+      try {
+        // Use generateText instead of generateObject as specified
+        const response = await generateText({
+          model: geminiFlashModel,
+          system: systemPrompt,
+          prompt: "",
+          temperature: 0.7, // A bit of creativity for engaging content
+          maxTokens: 150,   // Keep responses brief
+        });
+        
+        // Extract the text content from the response
+        const welcomeDescription = response.text || "";
+
+        // Save the welcome description to the database
+        await updateWelcomeDescription(chatId, welcomeDescription);
+        
+        logger.debug('Generated welcome description successfully', { 
+          chatId,
+          descriptionLength: welcomeDescription.length
+        });
+        
+        return;
+      } catch (error) {
+        lastError = error;
+        logger.error(`Welcome description generation attempt ${retryCount + 1} failed:`, error);
+        retryCount++;
+        
+        // If we've reached max retries, log the error but don't throw
+        if (retryCount >= maxRetries) {
+          logger.error('All welcome description generation attempts failed:', lastError);
+          return; // Don't throw, this is non-blocking
+        }
+        
+        // Wait before retrying (simple backoff)
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+      }
+    }
+  } catch (error) {
+    // Catch and log any errors but don't propagate them
+    logger.error('Error generating welcome description:', error);
+    // Don't throw - this is a non-blocking operation
   }
 }

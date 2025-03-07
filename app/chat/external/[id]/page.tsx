@@ -19,6 +19,8 @@ export default function StartChatPage({
   const [chatInstanceData, setChatInstanceData] = useState<{
     welcomeDescription?: string;
     respondentContacts?: boolean;
+    incentive_status?: boolean;
+    incentive_description?: string;
   } | null>(null);
   
   // Start warming the prompt cache as early as possible
@@ -52,7 +54,9 @@ export default function StartChatPage({
           // This ensures the UI can still render even if the API fails
           setChatInstanceData({
             welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
-            respondentContacts: false
+            respondentContacts: false,
+            incentive_status: false,
+            incentive_description: ""
           });
         } else {
           const chatInstance = await response.json();
@@ -60,13 +64,22 @@ export default function StartChatPage({
           
           // Set the instance data from the response
           setChatInstanceData(chatInstance);
+          
+          // Debug log to check incentive data
+          console.log("Incentive data:", {
+            status: chatInstance.incentive_status,
+            description: chatInstance.incentive_description,
+            code: chatInstance.incentive_code
+          });
         }
       } catch (error) {
         console.error('Failed to fetch chat instance:', error);
         // Provide fallback data even when exceptions occur
         setChatInstanceData({
           welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
-          respondentContacts: false
+          respondentContacts: false,
+          incentive_status: false,
+          incentive_description: ""
         });
       } finally {
         // Always stop the loading state, whether successful or not
@@ -149,6 +162,8 @@ export default function StartChatPage({
             <WelcomeForm 
               onSubmit={handleStartChat}
               isLoading={isInitializing}
+              incentive_status={chatInstanceData.incentive_status}
+              incentive_description={chatInstanceData.incentive_description}
             />
           ) : (
             <div className="flex justify-center">

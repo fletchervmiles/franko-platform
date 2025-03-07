@@ -26,7 +26,10 @@ export async function GET(
     // Return minimal chat instance data needed for the welcome screen
     return NextResponse.json({
       welcomeDescription: chatInstance.welcomeDescription,
-      respondentContacts: chatInstance.respondentContacts
+      respondentContacts: chatInstance.respondentContacts,
+      incentive_status: chatInstance.incentiveStatus,
+      incentive_description: chatInstance.incentiveDescription,
+      incentive_code: chatInstance.incentiveCode
     });
   } catch (error) {
     console.error("Failed to retrieve chat instance:", error);

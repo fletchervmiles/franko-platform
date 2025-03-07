@@ -430,6 +430,7 @@ export async function updateChatInstanceFields(
     incentiveDescription?: string;
     additionalDetails?: string;
     published?: boolean;
+    welcomeDescription?: string;
   }
 ): Promise<SelectChatInstance | undefined> {
   try {
@@ -439,9 +440,44 @@ export async function updateChatInstanceFields(
       .where(eq(chatInstancesTable.id, id))
       .returning();
     
+    // Update cache if available
+    if (updatedChatInstance) {
+      instanceCache.set(id, updatedChatInstance);
+    }
+    
     return updatedChatInstance;
   } catch (error) {
     console.error("Error updating chat instance fields:", error);
     throw new Error("Failed to update chat instance fields");
+  }
+}
+
+/**
+ * Updates only the welcome description field of a chat instance
+ * Used by the non-blocking welcome description generation process
+ */
+export async function updateWelcomeDescription(
+  id: string,
+  welcomeDescription: string
+): Promise<void> {
+  try {
+    await db
+      .update(chatInstancesTable)
+      .set({ welcomeDescription })
+      .where(eq(chatInstancesTable.id, id));
+    
+    // Update in the instance cache if it exists
+    const cachedInstance = instanceCache.get(id);
+    if (cachedInstance) {
+      instanceCache.set(id, {
+        ...cachedInstance,
+        welcomeDescription
+      });
+    }
+    
+    console.log(`Updated welcome description for chat ${id}`);
+  } catch (error) {
+    console.error("Error updating welcome description:", error);
+    // Don't throw - this is a non-blocking operation
   }
 } 

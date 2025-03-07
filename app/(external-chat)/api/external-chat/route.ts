@@ -393,7 +393,7 @@ export async function POST(request: Request) {
           }),
           execute: async () => ({
             message: "It's been awesome working together - redirecting you now!",
-            redirectUrl: `/conversations/${id}`,
+            redirectUrl: `/chat/external/${id}/finish`,
             delayMs: 3000
           }),
         },
