@@ -166,6 +166,10 @@ export default function StartChatPage({
               </button>
             </div>
           )}
+          
+          <div className="text-center text-sm text-gray-400 mt-4">
+            powered by franko.ai
+          </div>
         </div>
       </Card>
     </div>

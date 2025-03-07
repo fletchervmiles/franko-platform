@@ -74,10 +74,6 @@ export function WelcomeForm({ onSubmit, isLoading = false }: WelcomeFormProps) {
           )}
         </Button>
       </form>
-
-      <div className="text-center text-sm text-gray-400">
-        powered by Franko.ai
-      </div>
     </div>
   )
 } 

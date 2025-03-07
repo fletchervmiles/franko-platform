@@ -206,21 +206,14 @@ export function ExternalChat({
               const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
               
               // Submit the form with the greeting message
-              handleSubmit(mockEvent)
-                .then(() => {
-                  console.log("Initial greeting sent successfully");
-                  // Clear the input after sending
-                  setInput("");
-                })
-                .catch(err => {
-                  console.error("Failed to submit greeting:", err);
-                })
-                .finally(() => {
-                  // End initialization regardless of success/failure
-                  setIsInitializing(false);
-                });
-            } catch (submitError) {
-              console.error("Auto greeting submit error:", submitError);
+              handleSubmit(mockEvent);
+              console.log("Initial greeting sent successfully");
+              // Clear the input after sending
+              setInput("");
+            } catch (err: unknown) {
+              console.error("Failed to submit greeting:", err);
+            } finally {
+              // End initialization regardless of success/failure
               setIsInitializing(false);
             }
           }, 300); // Use a slightly longer delay to ensure all state is properly updated
@@ -284,6 +277,7 @@ export function ExternalChat({
             progressBar={progressBarElement}
             stop={stop}
           />
+          
         </div>
       </div>
     </div>

@@ -149,13 +149,13 @@ if (!global._protectedChatIds) {
  */
 const protectedChatIds = global._protectedChatIds;
 
-// Add diagnostic logging
-console.log("INIT: Prompt cache utility module loaded");
-// Log cache status periodically
-setInterval(() => {
-  console.log(`PROMPT CACHE: Has ${promptCache.size} entries`);
-  console.log(`PROTECTED IDS: Has ${protectedChatIds.size} protected IDs: ${[...protectedChatIds]}`);
-}, 15000); // Log every 15 seconds
+// // Add diagnostic logging
+// console.log("INIT: Prompt cache utility module loaded");
+// // Log cache status periodically
+// setInterval(() => {
+//   console.log(`PROMPT CACHE: Has ${promptCache.size} entries`);
+//   console.log(`PROTECTED IDS: Has ${protectedChatIds.size} protected IDs: ${[...protectedChatIds]}`);
+// }, 15000); // Log every 15 seconds
 
 /**
  * Invalidates the cached prompt for a specific organization/chat instance
