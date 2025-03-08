@@ -826,37 +826,91 @@ export async function progressBarUpdate({
           objectiveProgress = chat.chatProgress as ObjectiveProgress;
         }
         
-        logger.debug('Successfully extracted chat progress', {
-          progressType: typeof chat.chatProgress,
-          hasObjectives: objectiveProgress ? !!objectiveProgress.objectives : false
-        });
+        // Validate that the objectiveProgress has the required properties
+        if (!objectiveProgress.objectives || typeof objectiveProgress.objectives !== 'object') {
+          logger.warn('Invalid chat progress structure - missing or invalid objectives property', {
+            objectiveProgress
+          });
+          objectiveProgress = null; // Force recreation
+        } else {
+          logger.debug('Successfully extracted chat progress', {
+            progressType: typeof chat.chatProgress,
+            objectiveCount: Object.keys(objectiveProgress.objectives).length,
+            hasObjectives: !!objectiveProgress.objectives
+          });
+        }
       } catch (e) {
         logger.error('Error processing chat progress:', e);
+        objectiveProgress = null;
       }
     }
     
     // If no progress exists, get it from the chat instance and initialize it
     if (!objectiveProgress) {
-      // Get the chat instance to access objectiveProgress
+      // Get the chat instance to access objectiveProgress and conversation plan
       const chatInstance = await getChatInstanceById(chat.chatInstanceId);
       
-      if (chatInstance && chatInstance.objectiveProgress) {
-        // Use a COPY of the template from the chat instance, not a reference
-        // This ensures we don't modify the template in the chat instance
-        objectiveProgress = JSON.parse(JSON.stringify(chatInstance.objectiveProgress)) as ObjectiveProgress;
-        logger.debug('Using COPY of objectiveProgress from chat instance template');
-        
-        // Initialize this copy with the chat response
-        await updateChatResponse(chatId, { 
-          chatProgress: objectiveProgress 
+      if (chatInstance) {
+        logger.debug('Recreating chat progress - chat instance found', {
+          chatInstanceId: chatInstance.id
         });
-        logger.debug('Initialized chat_progress in chat response from template');
-      } else {
-        // Create default progress structure if nothing exists
+        
+        // First, check if we have a conversation plan to create proper progress
+        if (chatInstance.conversationPlan) {
+          let plan: ConversationPlan;
+          try {
+            // Parse the conversation plan if it's a string
+            if (typeof chatInstance.conversationPlan === 'string') {
+              plan = JSON.parse(chatInstance.conversationPlan);
+            } else {
+              plan = chatInstance.conversationPlan as any;
+            }
+            
+            logger.debug('Using conversation plan to create consistent progress structure', {
+              planObjectiveCount: plan.objectives ? (Array.isArray(plan.objectives) ? plan.objectives.length : Object.keys(plan.objectives).length) : 0
+            });
+            
+            // Use the canonical createObjectiveProgressFromPlan function to ensure consistent N-1 behavior
+            objectiveProgress = await createObjectiveProgressFromPlan(plan, chatInstance.id);
+            
+            // Initialize this copy with the chat response
+            await updateChatResponse(chatId, { 
+              chatProgress: objectiveProgress 
+            });
+            logger.debug('Created and initialized chat_progress in chat response from plan', {
+              objectiveCount: Object.keys(objectiveProgress.objectives).length
+            });
+          } catch (planError) {
+            logger.error('Error recreating progress from plan:', planError);
+            // Fall through to use objectiveProgress template if plan parsing fails
+          }
+        }
+        
+        // If we still don't have objectiveProgress, try to use the template
+        if (!objectiveProgress && chatInstance.objectiveProgress) {
+          // Use a COPY of the template from the chat instance, not a reference
+          // This ensures we don't modify the template in the chat instance
+          objectiveProgress = JSON.parse(JSON.stringify(chatInstance.objectiveProgress)) as ObjectiveProgress;
+          logger.debug('Using COPY of objectiveProgress from chat instance template', {
+            objectiveCount: Object.keys(objectiveProgress.objectives).length
+          });
+          
+          // Initialize this copy with the chat response
+          await updateChatResponse(chatId, { 
+            chatProgress: objectiveProgress 
+          });
+          logger.debug('Initialized chat_progress in chat response from template');
+        }
+      }
+      
+      // If we still don't have a progress object, create a minimal default
+      if (!objectiveProgress) {
+        logger.warn('Creating minimal default progress structure - all other methods failed');
+        // Create minimal default progress structure (just 2 objectives)
         objectiveProgress = {
           overall_turns: 0,
-          expected_total_min: 4,
-          expected_total_max: 12,
+          expected_total_min: 2,
+          expected_total_max: 6,
           objectives: {
             objective01: { 
               status: "current",
@@ -869,21 +923,14 @@ export async function progressBarUpdate({
               turns_used: 0,
               expected_min: 1,
               expected_max: 3
-            },
-            objective03: { 
-              status: "tbc",
-              turns_used: 0,
-              expected_min: 1,
-              expected_max: 3
-            },
-            objective04: { 
-              status: "tbc",
-              turns_used: 0,
-              expected_min: 1,
-              expected_max: 3
             }
           }
         };
+        
+        // Save this default to the chat response
+        await updateChatResponse(chatId, { 
+          chatProgress: objectiveProgress 
+        });
       }
     }
 
@@ -1175,14 +1222,20 @@ function parseTurnExpectation(turnString: string): { min: number; max: number } 
   return { min: exact, max: exact };
 }
 
+// We'll implement the same logic here directly to avoid circular imports
+// This function should match the one in create-actions.ts
 async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: string): Promise<ObjectiveProgress> {
   // Extract the number of objectives from the plan
   const objectiveCount = plan.objectives.length;
   
-  // Calculate totals and create progress object
+  // Create one fewer objective in the progress tracker
+  const progressObjectiveCount = Math.max(1, objectiveCount - 1);
+  
+  // Calculate totals for min/max turns
   let totalMin = 0;
   let totalMax = 0;
   
+  // Create the objective progress object
   const objectiveProgress: ObjectiveProgress = {
     overall_turns: 0,
     expected_total_min: 0,
@@ -1190,30 +1243,36 @@ async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: s
     objectives: {}
   };
   
-  // Populate the objectives with the correct status and turn expectations
-  plan.objectives.forEach((objective, index) => {
-    const { min, max } = parseTurnExpectation(objective.expectedConversationTurns);
-    const paddedIndex = String(index + 1).padStart(2, '0');
+  // Populate the objectives with the correct status and expected turns
+  for (let i = 0; i < progressObjectiveCount; i++) {
+    // Create keys like objective01, objective02, etc.
+    const paddedIndex = String(i + 1).padStart(2, '0');
     const objectiveKey = `objective${paddedIndex}`;
     
+    // Get expected turns from the plan (use the corresponding objective)
+    const planObjective = plan.objectives[i];
+    const { min, max } = parseTurnExpectation(planObjective?.expectedConversationTurns || "1");
+    
     objectiveProgress.objectives[objectiveKey] = {
-      status: index === 0 ? "current" : "tbc",
+      status: i === 0 ? "current" : "tbc",
       turns_used: 0,
       expected_min: min,
       expected_max: max
     };
     
+    // Add to totals
     totalMin += min;
     totalMax += max;
-  });
+  }
   
   // Set the total expected turns
   objectiveProgress.expected_total_min = totalMin;
   objectiveProgress.expected_total_max = totalMax;
   
-  logger.debug('Creating objective progress:', {
+  logger.debug('Creating objective progress with N-1 objectives:', {
     chatId,
     planObjectiveCount: objectiveCount,
+    progressObjectiveCount,
     expectedTotalMin: totalMin,
     expectedTotalMax: totalMax
   });

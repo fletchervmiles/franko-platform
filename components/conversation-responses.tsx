@@ -49,8 +49,10 @@ export function ConversationResponses({
             </Button>
             <TooltipProvider delayDuration={0}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <InfoIcon className="h-5 w-5 text-gray-500 cursor-pointer" />
+                <TooltipTrigger>
+                  <Button variant="ghost" size="icon" className="p-0 h-5 w-5">
+                    <InfoIcon className="h-5 w-5 text-gray-500" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right" align="center" className="bg-black text-white border-black">
                   <p>Chat with your response data</p>

@@ -223,13 +223,13 @@ export const ResponseCard = React.memo(function ResponseCard({
           </div>
 
           <Dialog>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <Button variant="outline" className="w-full">
                 <FileText className="w-4 h-4 mr-2 text-blue-600" />
-                View Transcript
+                <span>View Transcript</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white">
               <DialogHeader>
                 <DialogTitle>Conversation Transcript</DialogTitle>
                 <DialogDescription>Full transcript of the conversation with {name}</DialogDescription>

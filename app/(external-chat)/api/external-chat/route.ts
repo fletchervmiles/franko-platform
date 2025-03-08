@@ -391,11 +391,40 @@ export async function POST(request: Request) {
             // Required dummy parameter to satisfy Gemini's schema requirements
             _dummy: z.string().optional().describe("Placeholder parameter")
           }),
-          execute: async () => ({
-            message: "It's been awesome working together - redirecting you now!",
-            redirectUrl: `/chat/external/${id}/finish`,
-            delayMs: 3000
-          }),
+          execute: async () => {
+            try {
+              logger.info('Executing endConversation tool, finalizing conversation', { chatResponseId });
+              
+              // Call the finalize endpoint
+              const finalizeResponse = await fetch(new URL('/api/external-chat/finalize', request.url).toString(), {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ chatResponseId }),
+              });
+              
+              if (!finalizeResponse.ok) {
+                // Log the error but continue with the redirect
+                const errorData = await finalizeResponse.json().catch(() => ({}));
+                logger.error('Failed to finalize conversation', { 
+                  status: finalizeResponse.status,
+                  error: errorData
+                });
+              } else {
+                logger.info('Conversation finalized successfully');
+              }
+            } catch (error) {
+              // Log the error but continue with the redirect
+              logger.error('Error calling finalize endpoint:', error);
+            }
+            
+            return {
+              message: "It's been awesome working together - redirecting you now!",
+              redirectUrl: `/chat/external/${id}/finish`,
+              delayMs: 3000
+            };
+          },
         },
 
         

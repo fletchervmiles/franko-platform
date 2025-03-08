@@ -19,8 +19,10 @@ import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
 /**
  * Creates an objective progress object based on the conversation plan
  * The number of objectives in the progress tracker is one fewer than in the conversation plan
+ * 
+ * This is the authoritative implementation that is also used by actions.ts
  */
-async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: string): Promise<ObjectiveProgress> {
+export async function createObjectiveProgressFromPlan(plan: ConversationPlan, chatId: string): Promise<ObjectiveProgress> {
   // Extract the number of objectives from the plan
   const objectiveCount = plan.objectives.length;
   
@@ -284,11 +286,29 @@ export async function generateWelcomeDescription({
       title
     });
     
-    // Load the prompt template
-    const promptTemplate = fs.readFileSync(
-      path.join(process.cwd(), 'agent_prompts', 'welcome_description.md'),
-      'utf-8'
-    );
+    // Load the prompt template - first try agent_prompts directory, then try prompts directory
+    let promptTemplate;
+    try {
+      promptTemplate = fs.readFileSync(
+        path.join(process.cwd(), 'agent_prompts', 'welcome_description.md'),
+        'utf-8'
+      );
+    } catch (fileError) {
+      // Fallback to the prompts directory where the file might have been moved
+      try {
+        promptTemplate = fs.readFileSync(
+          path.join(process.cwd(), 'prompts', 'page_description.md'),
+          'utf-8'
+        );
+        logger.debug('Using page_description.md from prompts directory as fallback');
+      } catch (fallbackError) {
+        logger.error('Failed to load welcome description template from both locations', { 
+          originalError: fileError, 
+          fallbackError 
+        });
+        throw new Error('Welcome description template not found');
+      }
+    }
 
     // Replace template variables with actual values
     const systemPrompt = promptTemplate
