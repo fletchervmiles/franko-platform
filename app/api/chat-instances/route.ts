@@ -50,20 +50,30 @@ export async function GET() {
           }
         }
 
-        // Format the date
-        const lastEdited = instance.conversationPlanLastEdited 
-          ? new Date(instance.conversationPlanLastEdited).toISOString().split('T')[0]
+        // Format the date - use updatedAt to track when the instance was last modified
+        const lastEdited = instance.updatedAt 
+          ? new Date(instance.updatedAt).toISOString().split('T')[0]
           : new Date(instance.createdAt).toISOString().split('T')[0];
 
-        // Placeholder for customer words
-        const customerWords = Math.floor(Math.random() * 5000); // Placeholder value
+        // Filter to only include completed responses (like in the [id]/responses route)
+        const completedResponses = responses.filter(
+          response => response.status === 'completed'
+        );
+        
+        // Calculate total user words from completed responses
+        const customerWords = completedResponses.reduce((sum, response) => {
+          // Convert to number if stored as string, default to 0 if undefined
+          const userWords = response.user_words ? 
+            (typeof response.user_words === 'string' ? parseInt(response.user_words, 10) : response.user_words) : 0;
+          return sum + (isNaN(userWords) ? 0 : userWords);
+        }, 0);
 
         return {
           id: instance.id,
           guideName: title,
           status,
           lastEdited,
-          responses: responses.length,
+          responses: completedResponses.length, // Only show completed responses count
           customerWords,
         };
       })
@@ -74,4 +84,4 @@ export async function GET() {
     console.error("Error fetching chat instances:", error);
     return NextResponse.json({ error: "Failed to fetch chat instances" }, { status: 500 });
   }
-} 
+}

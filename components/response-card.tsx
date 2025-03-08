@@ -23,7 +23,7 @@ interface ResponseCardProps {
   transcript: string
   isLast: boolean
   completionDate: string
-  customerWords: number
+  customerWords: number // This now comes from user_words in DB, not calculated
   completionRate: number
 }
 

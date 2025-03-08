@@ -1,704 +1,706 @@
-"use client"
-
-import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Edit2, Trash2, Loader2 } from "lucide-react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card } from "@/components/ui/card"
-import dynamic from "next/dynamic"
-import type { ConversationPlan } from "@/components/conversationPlanSchema"
-import { NavSidebar } from "@/components/nav-sidebar"
-import { useSearchParams } from "next/navigation"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/components/ui/use-toast"
-import React from "react"
-
-// Dynamically import components for each tab to reduce initial bundle size
-const ShareableLink = dynamic(
-  () => import("@/components/shareable-link").then(mod => ({ default: mod.ShareableLink })),
-  {
-    loading: () => <LoadingPlaceholder />,
-    ssr: false
-  }
-)
-
-const ConversationPlanForm = dynamic(
-  () => import("@/components/conversation-plan-form"),
-  {
-    loading: () => <LoadingPlaceholder />,
-    ssr: false
-  }
-)
-
-const ConversationResponses = dynamic(
-  () => import("@/components/conversation-responses").then(mod => ({ default: mod.ConversationResponses })),
-  {
-    loading: () => <LoadingPlaceholder />,
-    ssr: false
-  }
-)
-
-const EmailNotificationSetting = dynamic(
-  () => import("@/components/email-notification-setting").then(mod => ({ default: mod.EmailNotificationSetting })),
-  {
-    loading: () => <LoadingPlaceholder />,
-    ssr: false
-  }
-)
-
-const IncentiveSetting = dynamic(
-  () => import("@/components/incentive-setting").then(mod => ({ default: mod.IncentiveSetting })),
-  {
-    loading: () => <LoadingPlaceholder />,
-    ssr: false
-  }
-)
-
-// Loading placeholder for lazy-loaded components
-const LoadingPlaceholder = () => (
-  <div className="w-full p-4 flex items-center justify-center">
-    <div className="text-center">
-      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-      <p className="mt-2 text-sm text-muted-foreground">Loading content...</p>
-    </div>
-  </div>
-)
-
-interface ConversationPageClientProps {
-  params: {
-    guideName: string
-  }
-  userId: string
-}
-
-export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
-  const searchParams = useSearchParams()
-  const tabParam = searchParams.get('tab')
-  const fromParam = searchParams.get('from')
-  const [activeTab, setActiveTab] = useState(tabParam || "plan")
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const { toast } = useToast()
-
-  // The guideName param is actually the chat instance ID
-  const chatId = params.guideName
-
-  // Check if we're coming from regeneration
-  const isFromRegenerate = fromParam === 'regenerate'
-
-  // Update active tab when URL parameter changes
-  useEffect(() => {
-    if (tabParam && ['share', 'plan', 'responses', 'settings'].includes(tabParam)) {
-      setActiveTab(tabParam)
-    }
-  }, [tabParam])
-
-  // Memoize the updateLastViewed function
-  const updateLastViewed = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/chat-instances/${chatId}/last-viewed`, {
-        method: 'POST',
-      });
-      
-      if (!response.ok) {
-        // Try to get more specific error message from the response
-        let errorMessage = 'Failed to update last viewed timestamp';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          // If we can't parse the error, use the default message
-        }
-        
-        console.error(errorMessage);
-      }
-    } catch (error) {
-      console.error('Error updating last viewed timestamp:', error);
-    }
-  }, [chatId]);
-
-  // Update lastViewed timestamp when the user views the responses tab
-  useEffect(() => {
-    if (activeTab === 'responses') {
-      updateLastViewed();
-    }
-  }, [activeTab, updateLastViewed]);
-
-  useEffect(() => {
-    async function loadConversationPlan() {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/conversation-plan?chatId=${chatId}`);
-        
-        if (!response.ok) {
-          // Try to get more specific error message from the response
-          let errorMessage = 'Failed to load conversation plan';
-          try {
-            const errorData = await response.json();
-            if (errorData.error) {
-              errorMessage = errorData.error;
-            }
-          } catch (e) {
-            // If we can't parse the error, use the default message
-          }
-          
-          throw new Error(errorMessage);
-        }
-        
-        const plan = await response.json();
-        if (plan) {
-          setConversationPlan(plan);
-        }
-      } catch (error) {
-        console.error("Error loading conversation plan:", error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation plan';
-        
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadConversationPlan();
-  }, [chatId, toast]);
-
-  // Memoize handleDelete function
-  const handleDelete = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/chat-instances/${chatId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        // Try to get more specific error message from the response
-        let errorMessage = 'Failed to delete conversation';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          // If we can't parse the error, use the default message
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      toast({
-        title: "Success",
-        description: "Conversation deleted successfully",
-      });
-      
-      // Redirect to workspace page after successful deletion
-      router.push('/workspace');
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete conversation';
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      setShowDeleteDialog(false);
-    }
-  }, [chatId, toast, router]);
-
-  // Memoize handleRename function
-  const handleRename = useCallback(async () => {
-    // Get the current title
-    const currentTitle = conversationPlan?.title || "Untitled Conversation";
-    
-    // Prompt the user for a new title
-    const newTitle = window.prompt("Enter a new title for this conversation:", currentTitle);
-    
-    // If the user cancels or enters an empty title, do nothing
-    if (!newTitle || newTitle.trim() === '') {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`/api/chat-instances/${chatId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title: newTitle }),
-      });
-      
-      if (!response.ok) {
-        // Try to get more specific error message from the response
-        let errorMessage = 'Failed to rename conversation';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          // If we can't parse the error, use the default message
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      // Update the conversation plan with the new title
-      if (conversationPlan) {
-        setConversationPlan({
-          ...conversationPlan,
-          title: newTitle,
-        });
-      }
-      
-      toast({
-        title: "Success",
-        description: "Conversation renamed successfully",
-      });
-    } catch (error) {
-      console.error("Error renaming conversation:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to rename conversation';
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  }, [chatId, conversationPlan, toast]);
-
-  // Memoize handleConversationPlanSubmit function
-  const handleConversationPlanSubmit = useCallback(async (data: ConversationPlan) => {
-    try {
-      const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        // Try to get more specific error message from the response
-        let errorMessage = 'Failed to save conversation plan';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          // If we can't parse the error, use the default message
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      setConversationPlan(data);
-      
-      toast({
-        title: "Success",
-        description: "Conversation plan saved successfully",
-      });
-    } catch (error) {
-      console.error("Error saving conversation plan:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save conversation plan';
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  }, [chatId, toast]);
-
-  // State for responses data
-  const [responsesData, setResponsesData] = useState({
-    responses: 0,
-    totalCustomerWords: 0,
-    completionRate: 0,
-    responseData: [],
-  });
-
-  // Fetch chat responses
-  useEffect(() => {
-    async function fetchChatResponses() {
-      try {
-        if (activeTab === 'responses') {
-          setIsLoading(true);
-          
-          const response = await fetch(`/api/chat-instances/${chatId}/responses`);
-          
-          if (!response.ok) {
-            let errorMessage = 'Failed to fetch chat responses';
-            try {
-              const errorData = await response.json();
-              if (errorData.error) {
-                errorMessage = errorData.error;
-              }
-            } catch (e) {
-              // If we can't parse the error, use the default message
-            }
-            
-            throw new Error(errorMessage);
-          }
-          
-          const data = await response.json();
-          
-          // Transform the data to match the expected format
-          const formattedResponses = data.responses.map((resp: any) => ({
-            name: resp.intervieweeFirstName && resp.intervieweeSecondName 
-              ? `${resp.intervieweeFirstName} ${resp.intervieweeSecondName}`
-              : resp.intervieweeFirstName || 'Anonymous',
-            email: resp.intervieweeEmail || 'No email provided',
-            completionRate: resp.completionStatus 
-              ? parseInt(resp.completionStatus.replace('%', ''), 10) 
-              : 0,
-            completionDate: resp.interviewEndTime 
-              ? new Date(resp.interviewEndTime).toISOString().split('T')[0]
-              : new Date(resp.updatedAt).toISOString().split('T')[0],
-            summary: resp.transcript_summary || '',
+"use client"
+
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Edit2, Trash2, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card } from "@/components/ui/card"
+import dynamic from "next/dynamic"
+import type { ConversationPlan } from "@/components/conversationPlanSchema"
+import { NavSidebar } from "@/components/nav-sidebar"
+import { useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import React from "react"
+
+// Dynamically import components for each tab to reduce initial bundle size
+const ShareableLink = dynamic(
+  () => import("@/components/shareable-link").then(mod => ({ default: mod.ShareableLink })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const ConversationPlanForm = dynamic(
+  () => import("@/components/conversation-plan-form"),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const ConversationResponses = dynamic(
+  () => import("@/components/conversation-responses").then(mod => ({ default: mod.ConversationResponses })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const EmailNotificationSetting = dynamic(
+  () => import("@/components/email-notification-setting").then(mod => ({ default: mod.EmailNotificationSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+const IncentiveSetting = dynamic(
+  () => import("@/components/incentive-setting").then(mod => ({ default: mod.IncentiveSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+// Loading placeholder for lazy-loaded components
+const LoadingPlaceholder = () => (
+  <div className="w-full p-4 flex items-center justify-center">
+    <div className="text-center">
+      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+      <p className="mt-2 text-sm text-muted-foreground">Loading content...</p>
+    </div>
+  </div>
+)
+
+interface ConversationPageClientProps {
+  params: {
+    guideName: string
+  }
+  userId: string
+}
+
+export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const fromParam = searchParams.get('from')
+  const [activeTab, setActiveTab] = useState(tabParam || "plan")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+
+  // The guideName param is actually the chat instance ID
+  const chatId = params.guideName
+
+  // Check if we're coming from regeneration
+  const isFromRegenerate = fromParam === 'regenerate'
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam && ['share', 'plan', 'responses', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  // Memoize the updateLastViewed function
+  const updateLastViewed = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}/last-viewed`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to update last viewed timestamp';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        console.error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error updating last viewed timestamp:', error);
+    }
+  }, [chatId]);
+
+  // Update lastViewed timestamp when the user views the responses tab
+  useEffect(() => {
+    if (activeTab === 'responses') {
+      updateLastViewed();
+    }
+  }, [activeTab, updateLastViewed]);
+
+  useEffect(() => {
+    async function loadConversationPlan() {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/conversation-plan?chatId=${chatId}`);
+        
+        if (!response.ok) {
+          // Try to get more specific error message from the response
+          let errorMessage = 'Failed to load conversation plan';
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If we can't parse the error, use the default message
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
+        const plan = await response.json();
+        if (plan) {
+          setConversationPlan(plan);
+        }
+      } catch (error) {
+        console.error("Error loading conversation plan:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation plan';
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadConversationPlan();
+  }, [chatId, toast]);
+
+  // Memoize handleDelete function
+  const handleDelete = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to delete conversation';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Conversation deleted successfully",
+      });
+      
+      // Redirect to workspace page after successful deletion
+      router.push('/workspace');
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete conversation';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      setShowDeleteDialog(false);
+    }
+  }, [chatId, toast, router]);
+
+  // Memoize handleRename function
+  const handleRename = useCallback(async () => {
+    // Get the current title
+    const currentTitle = conversationPlan?.title || "Untitled Conversation";
+    
+    // Prompt the user for a new title
+    const newTitle = window.prompt("Enter a new title for this conversation:", currentTitle);
+    
+    // If the user cancels or enters an empty title, do nothing
+    if (!newTitle || newTitle.trim() === '') {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to rename conversation';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Update the conversation plan with the new title
+      if (conversationPlan) {
+        setConversationPlan({
+          ...conversationPlan,
+          title: newTitle,
+        });
+      }
+      
+      toast({
+        title: "Success",
+        description: "Conversation renamed successfully",
+      });
+    } catch (error) {
+      console.error("Error renaming conversation:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to rename conversation';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  }, [chatId, conversationPlan, toast]);
+
+  // Memoize handleConversationPlanSubmit function
+  const handleConversationPlanSubmit = useCallback(async (data: ConversationPlan) => {
+    try {
+      const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        // Try to get more specific error message from the response
+        let errorMessage = 'Failed to save conversation plan';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      setConversationPlan(data);
+      
+      toast({
+        title: "Success",
+        description: "Conversation plan saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving conversation plan:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save conversation plan';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  }, [chatId, toast]);
+
+  // State for responses data
+  const [responsesData, setResponsesData] = useState({
+    responses: 0,
+    totalCustomerWords: 0,
+    completionRate: 0,
+    responseData: [],
+  });
+
+  // Fetch chat responses
+  useEffect(() => {
+    async function fetchChatResponses() {
+      try {
+        if (activeTab === 'responses') {
+          setIsLoading(true);
+          
+          const response = await fetch(`/api/chat-instances/${chatId}/responses`);
+          
+          if (!response.ok) {
+            let errorMessage = 'Failed to fetch chat responses';
+            try {
+              const errorData = await response.json();
+              if (errorData.error) {
+                errorMessage = errorData.error;
+              }
+            } catch (e) {
+              // If we can't parse the error, use the default message
+            }
+            
+            throw new Error(errorMessage);
+          }
+          
+          const data = await response.json();
+          
+          // Transform the data to match the expected format
+          const formattedResponses = data.responses.map((resp: any) => ({
+            name: resp.intervieweeFirstName && resp.intervieweeSecondName 
+              ? `${resp.intervieweeFirstName} ${resp.intervieweeSecondName}`
+              : resp.intervieweeFirstName || 'Anonymous',
+            email: resp.intervieweeEmail || 'No email provided',
+            completionRate: resp.completionStatus 
+              ? parseInt(resp.completionStatus.replace('%', ''), 10) 
+              : 0,
+            completionDate: resp.interviewEndTime 
+              ? new Date(resp.interviewEndTime).toISOString().split('T')[0]
+              : new Date(resp.updatedAt).toISOString().split('T')[0],
+            summary: resp.transcript_summary || '',
             transcript: resp.cleanTranscript || '',
-            user_words: resp.user_words || '0',
-          }));
-          
-          // Sort by most recent first
-          formattedResponses.sort((a: any, b: any) => 
-            new Date(b.completionDate).getTime() - new Date(a.completionDate).getTime()
-          );
-          
-          // Calculate aggregate stats
-          const totalWords = formattedResponses.reduce((total: number, resp: any) => {
-            return total + (parseInt(resp.user_words, 10) || 0);
-          }, 0);
-          
-          const avgCompletionRate = formattedResponses.length > 0
-            ? formattedResponses.reduce((sum: number, resp: any) => sum + resp.completionRate, 0) / formattedResponses.length
-            : 0;
-          
-          setResponsesData({
-            responses: formattedResponses.length,
-            totalCustomerWords: totalWords,
-            completionRate: avgCompletionRate,
-            responseData: formattedResponses,
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching chat responses:', error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load conversation responses",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    if (activeTab === 'responses') {
-      fetchChatResponses();
-    }
-  }, [chatId, activeTab, toast]);
-  
-  // Mock data for ResponseCards (fallback)
-  const mockResponses = [
-    {
-      name: "Fletcher Miles",
-      email: "fletchervmiles@gmail.com",
-      completionRate: 100,
-      completionDate: "2025-02-12",
-      summary: `
-### Cancellation Reason:  
-- Low current usage due to varied role & desire to cut subscription costs (especially AI tools).
-
-### Positive Product Perception:  
-- Fletcher likes Cursor and its core features; plans to return.
-
-### Valued Features:  
-- Agent, chat, and documentation features are key for complex tasks, boosting confidence and efficiency.
-
-### Improvement Suggestion:  
-- Better handling of recurring bugs; specifically, avoiding repeated unhelpful solutions for documentation syntax issues.
-
-### No Other Issues/Feature Requests:  
-- Cancellation is not due to dissatisfaction with features, but usage and cost.
-      `,
-      transcript: `
-**Fletcher**: Hi there  
-  
-**Franko**: Hi there! Thanks for joining this short conversation about why you decided to cancel your Cursor plan. It'll only take a few minutes. To get started, could you please provide your First Name, Last Name, and Email Address?  
-  
-**Fletcher**: Fletcher Miles, fletchervmiles@gmail.com  
-  
-**Franko**: Thanks, Fletcher! Let's dive in. So, what was the main reason you decided to cancel your Cursor subscription?  
-  
-**Fletcher**: I'm not using it much at the moment  
-  
-**Franko**: Got it, that makes sense. Could you tell me a bit more about why you're not using Cursor much at the moment?  
-  
-**Fletcher**: Yeah, basically I do lots of different stuff in my role and um. sometimes I code a lot and sometimes I focus on other things like marketing or product and so. yeah, it just my usage varies based on the time.  
-  
-**Franko**: That's understandable, your role requires flexibility. But just to double check, besides fluctuating usage, did any specific aspects of Cursor influence your decision to cancel?  
-  
-**Fletcher**: I guess just that I've got a lot of subscriptions at the moment so I cancel them whenever I can, especially new AI subscriptions which are adding up  
-  
-**Franko**: That's a really valid point, costs can add up quickly. Let's shift gears: How did Cursor's AI features, like code completion and natural language editing, meet your expectations when you were using it?  
-  
-**Fletcher**: I really like the product, it's definitely worth it and I'll be back for sure  
-  
-**Franko**: That's great to hear! When you were actively using Cursor, which features did you find most valuable or impressive?  
-  
-**Fletcher**: I use the agent a lot when I'm implementing big features of chunks of functionality. And I like the chat, just to explain things and help kind of bolster my understanding... those are the two main things and probably being able to add documentation is also helpful  
-  
-**Franko**: Oh that's really helpful feedback, thank you! I'd love to hear more about your experience when using those features. In terms of tangible benefits – can you describe some of the impacts on your own daily coding workflow? It might help to think back to your last productive coding session using Cursor.  
-  
-**Fletcher**: Well, I'm actually just finishing off some other work. Um, but then I know that I have a huge amount of functionality that I need to implement. And I know conceptually how I'm gonna do it. I'm going to write out the steps in a fair bit of detail, sort of functional and technical specification. And then with Cursor, I know I'll be able to do it pretty quickly and with a fair bit of confidence… which is great. So I'm kinda not stressed about that task and I'm not expecting it to take that long which is really awesome.  
-  
-**Franko**: That's amazing to hear – especially the confidence and reduced stress! It sounds like you've seen Cursor deliver before when you've written out detailed steps. Could you share a past working session where you used this approach and felt that same confidence and ease?  
-  
-**Fletcher**: um not anything specific but I do have a bunch of markdown files in a folder that are long implementation documents that I used whenever I need to implement a new feature or piece of functionality.  
-  
-**Franko**: That's helpful, and it sounds like a solid process. Now, let's switch gears: Are there any specific improvements or new features would you like to see in Cursor?  
-  
-**Fletcher**: I feel like it could do a better job of registering recurring bugs. I often end up having to fix the same bug or when I'm trying to fix a bug, it'll offer the same solution that has already been tried and hasn't worked. Kind of annoying  
-  
-**Franko**: That does sound annoying! Thanks for the clear example—it really helps. How often do you run into this, and are there specific bugs where it happens more often?  
-  
-**Fletcher**: Yes, it's often to do with specific documentation syntax  
-  
-**Franko**: Ah, documentation syntax—that's really helpful to know. Is there anything else, like an additional feature or integration, that might have made you reconsider canceling?  
-  
-**Fletcher**: Hmm I don't think so, nothing that comes to mind  
-  
-**Franko**: Okay, that's fine! Thanks so much for all of this incredible feedback. Just before we officially wrap up, is there anything else at all that you'd like to add?  
-  
-**Fletcher**: No, that's it  
-  
-**Franko**: Thanks so much for your time and valuable feedback, Fletcher! You are now being redirected.
-
-      `,
-    },
-    {
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-      completionRate: 95,
-      completionDate: "2025-02-15",
-      summary: `
-**Cancellation Reason:** Found a more specialized tool for their specific development needs.
-
-**Positive Aspects:** Appreciated Cursor's user interface and general AI capabilities.
-
-**Areas for Improvement:** Suggested more customization options for language-specific features.
-
-**Potential Return:** Open to reconsidering Cursor if new features align with their workflow.
-
-**Additional Feedback:** Recommended expanding the range of supported programming languages and frameworks.
-      `,
-      transcript: `
-Alex: Hello
-Franko: Hi there! Thanks for taking the time to chat about your experience with Cursor. To get started, could you please provide your First Name, Last Name, and Email Address?
-Alex: Sure, it's Alex Johnson, alex.johnson@example.com
-Franko: Thanks, Alex! Let's dive into the conversation. What was the primary reason you decided to cancel your Cursor subscription?
-Alex: I found a tool that's more tailored to my specific development needs.
-Franko: I see. Could you elaborate on what specific needs this other tool addresses that Cursor didn't?
-Alex: Well, I work primarily with a niche programming language, and the new tool has more specialized features for it.
-Franko: That makes sense. During your time using Cursor, what aspects did you find most valuable or impressive?
-Alex: I really liked Cursor's user interface and the general AI capabilities. It was intuitive to use.
-Franko: That's great to hear. Were there any features or aspects of Cursor that you felt could be improved?
-Alex: I think having more customization options for language-specific features would be beneficial.
-Franko: Thank you for that feedback. It's very helpful. Is there anything that might make you reconsider using Cursor in the future?
-Alex: If Cursor expanded its language support or introduced features that align better with my workflow, I'd definitely consider coming back.
-Franko: Noted. Before we wrap up, do you have any additional comments or suggestions for us?
-Alex: I think expanding the range of supported programming languages and frameworks could be really valuable for developers in various niches.
-Franko: That's excellent feedback, Alex. Thank you so much for your time and insights. Is there anything else you'd like to add before we conclude?
-Alex: No, that's all. Thanks for listening to my feedback.
-Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be redirected. Have a great day!
-      `,
-    },
-  ]
-
-  // Memoize mockResponsesData to prevent recalculation on each render
-  const mockResponsesData = useMemo(() => ({
-    responses: mockResponses.length,
-    totalCustomerWords: mockResponses.reduce((total, response) => total + response.transcript.split(" ").length, 0),
-    completionRate: mockResponses.reduce((sum, response) => sum + response.completionRate, 0) / mockResponses.length,
-    responseData: mockResponses,
-  }), [mockResponses]);
-
-  return (
-    <NavSidebar>
-      <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div className="overflow-hidden mr-4">
-            <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
-              {conversationPlan?.title || "Untitled Conversation"}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <img
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
-              alt="User avatar"
-              className="h-8 w-8"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="outline" size="icon" className="h-8 w-8 border-gray-200">
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 15 15"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-gray-500"
-                  >
-                    <path
-                      d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleRename}>
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  <span>Rename</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Tabs Section */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
-            <TabsTrigger
-              value="share"
-              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-            >
-              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Share</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="plan"
-              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-            >
-              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Plan</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="responses"
-              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-            >
-              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Responses</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-            >
-              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Settings</span>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="share" className="mt-10">
-            <Suspense fallback={<LoadingPlaceholder />}>
-              <ShareableLink guideName={chatId} />
-            </Suspense>
-          </TabsContent>
-          <TabsContent value="plan" className="mt-10">
-            <Card className="rounded-[6px] border shadow-sm overflow-hidden bg-[#FAFAFA]">
-              <div className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                  <div className="w-full md:max-w-[70%] mb-4 md:mb-0">
-                    <h2 className="text-2xl font-semibold mb-2 flex items-center">
-                      Conversation Plan
-                      <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto"
-                  >
-                    Regenerate Plan
-                  </Button>
-                </div>
-                <Suspense fallback={<LoadingPlaceholder />}>
-                  <ConversationPlanForm 
-                    chatId={chatId} 
-                    onSubmit={handleConversationPlanSubmit} 
-                    initialData={conversationPlan}
-                    startInEditMode={isFromRegenerate}
-                  />
-                </Suspense>
-              </div>
-            </Card>
-          </TabsContent>
-          <TabsContent value="responses" className="mt-10">
-            <Suspense fallback={<LoadingPlaceholder />}>
-              <ConversationResponses
-                responses={responsesData.responses}
-                totalCustomerWords={responsesData.totalCustomerWords}
-                completionRate={responsesData.completionRate}
-                responseData={responsesData.responseData}
-              />
-            </Suspense>
-          </TabsContent>
-          <TabsContent value="settings" className="mt-10">
-            <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
-              <div className="p-6 space-y-6">
-                <div className="bg-white rounded-[6px] shadow-sm">
-                  <Suspense fallback={<LoadingPlaceholder />}>
-                    <EmailNotificationSetting />
-                  </Suspense>
-                </div>
-                <div className="bg-white rounded-[6px] shadow-sm">
-                  <Suspense fallback={<LoadingPlaceholder />}>
-                    <IncentiveSetting />
-                  </Suspense>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>This will also delete all of your conversation responses.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </NavSidebar>
-  )
+            customerWords: parseInt(resp.user_words || '0', 10),
+          }));
+          
+          // Sort by most recent first
+          formattedResponses.sort((a: any, b: any) => 
+            new Date(b.completionDate).getTime() - new Date(a.completionDate).getTime()
+          );
+          
+          // Calculate aggregate stats
+          const totalWords = formattedResponses.reduce((total: number, resp: any) => {
+            return total + (resp.customerWords || 0);
+          }, 0);
+          
+          const avgCompletionRate = formattedResponses.length > 0
+            ? formattedResponses.reduce((sum: number, resp: any) => sum + resp.completionRate, 0) / formattedResponses.length
+            : 0;
+          
+          setResponsesData({
+            responses: formattedResponses.length,
+            totalCustomerWords: totalWords,
+            completionRate: avgCompletionRate,
+            responseData: formattedResponses,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching chat responses:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load conversation responses",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    if (activeTab === 'responses') {
+      fetchChatResponses();
+    }
+  }, [chatId, activeTab, toast]);
+  
+  // Mock data for ResponseCards (fallback)
+  const mockResponses = [
+    {
+      name: "Fletcher Miles",
+      email: "fletchervmiles@gmail.com",
+      completionRate: 100,
+      completionDate: "2025-02-12",
+      customerWords: 532, // Add customer words directly
+      summary: `
+### Cancellation Reason:  
+- Low current usage due to varied role & desire to cut subscription costs (especially AI tools).
+
+### Positive Product Perception:  
+- Fletcher likes Cursor and its core features; plans to return.
+
+### Valued Features:  
+- Agent, chat, and documentation features are key for complex tasks, boosting confidence and efficiency.
+
+### Improvement Suggestion:  
+- Better handling of recurring bugs; specifically, avoiding repeated unhelpful solutions for documentation syntax issues.
+
+### No Other Issues/Feature Requests:  
+- Cancellation is not due to dissatisfaction with features, but usage and cost.
+      `,
+      transcript: `
+**Fletcher**: Hi there  
+  
+**Franko**: Hi there! Thanks for joining this short conversation about why you decided to cancel your Cursor plan. It'll only take a few minutes. To get started, could you please provide your First Name, Last Name, and Email Address?  
+  
+**Fletcher**: Fletcher Miles, fletchervmiles@gmail.com  
+  
+**Franko**: Thanks, Fletcher! Let's dive in. So, what was the main reason you decided to cancel your Cursor subscription?  
+  
+**Fletcher**: I'm not using it much at the moment  
+  
+**Franko**: Got it, that makes sense. Could you tell me a bit more about why you're not using Cursor much at the moment?  
+  
+**Fletcher**: Yeah, basically I do lots of different stuff in my role and um. sometimes I code a lot and sometimes I focus on other things like marketing or product and so. yeah, it just my usage varies based on the time.  
+  
+**Franko**: That's understandable, your role requires flexibility. But just to double check, besides fluctuating usage, did any specific aspects of Cursor influence your decision to cancel?  
+  
+**Fletcher**: I guess just that I've got a lot of subscriptions at the moment so I cancel them whenever I can, especially new AI subscriptions which are adding up  
+  
+**Franko**: That's a really valid point, costs can add up quickly. Let's shift gears: How did Cursor's AI features, like code completion and natural language editing, meet your expectations when you were using it?  
+  
+**Fletcher**: I really like the product, it's definitely worth it and I'll be back for sure  
+  
+**Franko**: That's great to hear! When you were actively using Cursor, which features did you find most valuable or impressive?  
+  
+**Fletcher**: I use the agent a lot when I'm implementing big features of chunks of functionality. And I like the chat, just to explain things and help kind of bolster my understanding... those are the two main things and probably being able to add documentation is also helpful  
+  
+**Franko**: Oh that's really helpful feedback, thank you! I'd love to hear more about your experience when using those features. In terms of tangible benefits – can you describe some of the impacts on your own daily coding workflow? It might help to think back to your last productive coding session using Cursor.  
+  
+**Fletcher**: Well, I'm actually just finishing off some other work. Um, but then I know that I have a huge amount of functionality that I need to implement. And I know conceptually how I'm gonna do it. I'm going to write out the steps in a fair bit of detail, sort of functional and technical specification. And then with Cursor, I know I'll be able to do it pretty quickly and with a fair bit of confidence… which is great. So I'm kinda not stressed about that task and I'm not expecting it to take that long which is really awesome.  
+  
+**Franko**: That's amazing to hear – especially the confidence and reduced stress! It sounds like you've seen Cursor deliver before when you've written out detailed steps. Could you share a past working session where you used this approach and felt that same confidence and ease?  
+  
+**Fletcher**: um not anything specific but I do have a bunch of markdown files in a folder that are long implementation documents that I used whenever I need to implement a new feature or piece of functionality.  
+  
+**Franko**: That's helpful, and it sounds like a solid process. Now, let's switch gears: Are there any specific improvements or new features would you like to see in Cursor?  
+  
+**Fletcher**: I feel like it could do a better job of registering recurring bugs. I often end up having to fix the same bug or when I'm trying to fix a bug, it'll offer the same solution that has already been tried and hasn't worked. Kind of annoying  
+  
+**Franko**: That does sound annoying! Thanks for the clear example—it really helps. How often do you run into this, and are there specific bugs where it happens more often?  
+  
+**Fletcher**: Yes, it's often to do with specific documentation syntax  
+  
+**Franko**: Ah, documentation syntax—that's really helpful to know. Is there anything else, like an additional feature or integration, that might have made you reconsider canceling?  
+  
+**Fletcher**: Hmm I don't think so, nothing that comes to mind  
+  
+**Franko**: Okay, that's fine! Thanks so much for all of this incredible feedback. Just before we officially wrap up, is there anything else at all that you'd like to add?  
+  
+**Fletcher**: No, that's it  
+  
+**Franko**: Thanks so much for your time and valuable feedback, Fletcher! You are now being redirected.
+
+      `,
+    },
+    {
+      name: "Alex Johnson",
+      email: "alex.johnson@example.com",
+      completionRate: 95,
+      completionDate: "2025-02-15",
+      customerWords: 485, // Add customer words directly
+      summary: `
+**Cancellation Reason:** Found a more specialized tool for their specific development needs.
+
+**Positive Aspects:** Appreciated Cursor's user interface and general AI capabilities.
+
+**Areas for Improvement:** Suggested more customization options for language-specific features.
+
+**Potential Return:** Open to reconsidering Cursor if new features align with their workflow.
+
+**Additional Feedback:** Recommended expanding the range of supported programming languages and frameworks.
+      `,
+      transcript: `
+Alex: Hello
+Franko: Hi there! Thanks for taking the time to chat about your experience with Cursor. To get started, could you please provide your First Name, Last Name, and Email Address?
+Alex: Sure, it's Alex Johnson, alex.johnson@example.com
+Franko: Thanks, Alex! Let's dive into the conversation. What was the primary reason you decided to cancel your Cursor subscription?
+Alex: I found a tool that's more tailored to my specific development needs.
+Franko: I see. Could you elaborate on what specific needs this other tool addresses that Cursor didn't?
+Alex: Well, I work primarily with a niche programming language, and the new tool has more specialized features for it.
+Franko: That makes sense. During your time using Cursor, what aspects did you find most valuable or impressive?
+Alex: I really liked Cursor's user interface and the general AI capabilities. It was intuitive to use.
+Franko: That's great to hear. Were there any features or aspects of Cursor that you felt could be improved?
+Alex: I think having more customization options for language-specific features would be beneficial.
+Franko: Thank you for that feedback. It's very helpful. Is there anything that might make you reconsider using Cursor in the future?
+Alex: If Cursor expanded its language support or introduced features that align better with my workflow, I'd definitely consider coming back.
+Franko: Noted. Before we wrap up, do you have any additional comments or suggestions for us?
+Alex: I think expanding the range of supported programming languages and frameworks could be really valuable for developers in various niches.
+Franko: That's excellent feedback, Alex. Thank you so much for your time and insights. Is there anything else you'd like to add before we conclude?
+Alex: No, that's all. Thanks for listening to my feedback.
+Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be redirected. Have a great day!
+      `,
+    },
+  ]
+
+  // Memoize mockResponsesData to prevent recalculation on each render
+  const mockResponsesData = useMemo(() => ({
+    responses: mockResponses.length,
+    totalCustomerWords: mockResponses.reduce((total, response) => total + (response.customerWords || 0), 0),
+    completionRate: mockResponses.reduce((sum, response) => sum + response.completionRate, 0) / mockResponses.length,
+    responseData: mockResponses,
+  }), [mockResponses]);
+
+  return (
+    <NavSidebar>
+      <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div className="overflow-hidden mr-4">
+            <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
+              {conversationPlan?.title || "Untitled Conversation"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <img
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
+              alt="User avatar"
+              className="h-8 w-8"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="outline" size="icon" className="h-8 w-8 border-gray-200">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 15 15"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-gray-500"
+                  >
+                    <path
+                      d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z"
+                      fill="currentColor"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleRename}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  <span>Rename</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
+            <TabsTrigger
+              value="share"
+              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+            >
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Share</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="plan"
+              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+            >
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Plan</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="responses"
+              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+            >
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Responses</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+            >
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Settings</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="share" className="mt-10">
+            <Suspense fallback={<LoadingPlaceholder />}>
+              <ShareableLink guideName={chatId} />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="plan" className="mt-10">
+            <Card className="rounded-[6px] border shadow-sm overflow-hidden bg-[#FAFAFA]">
+              <div className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                  <div className="w-full md:max-w-[70%] mb-4 md:mb-0">
+                    <h2 className="text-2xl font-semibold mb-2 flex items-center">
+                      Conversation Plan
+                      <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto"
+                  >
+                    Regenerate Plan
+                  </Button>
+                </div>
+                <Suspense fallback={<LoadingPlaceholder />}>
+                  <ConversationPlanForm 
+                    chatId={chatId} 
+                    onSubmit={handleConversationPlanSubmit} 
+                    initialData={conversationPlan}
+                    startInEditMode={isFromRegenerate}
+                  />
+                </Suspense>
+              </div>
+            </Card>
+          </TabsContent>
+          <TabsContent value="responses" className="mt-10">
+            <Suspense fallback={<LoadingPlaceholder />}>
+              <ConversationResponses
+                responses={responsesData.responses}
+                totalCustomerWords={responsesData.totalCustomerWords}
+                completionRate={responsesData.completionRate}
+                responseData={responsesData.responseData}
+              />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="settings" className="mt-10">
+            <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
+              <div className="p-6 space-y-6">
+                <div className="bg-white rounded-[6px] shadow-sm">
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <EmailNotificationSetting />
+                  </Suspense>
+                </div>
+                <div className="bg-white rounded-[6px] shadow-sm">
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <IncentiveSetting />
+                  </Suspense>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>This will also delete all of your conversation responses.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </NavSidebar>
+  )
 });

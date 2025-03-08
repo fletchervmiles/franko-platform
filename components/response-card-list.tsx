@@ -26,7 +26,7 @@ interface Response {
   completionDate: string
   summary: string
   transcript: string
-  customerWords: number
+  customerWords: number // This now comes from user_words in DB
 }
 
 interface ResponseCardListProps {

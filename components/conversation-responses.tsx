@@ -11,6 +11,7 @@ interface Response {
   completionDate: string
   summary: string
   transcript: string
+  customerWords: number // Added user_words from DB
 }
 
 interface ConversationResponsesProps {
@@ -32,10 +33,8 @@ export function ConversationResponses({
     return "bg-red-50"
   }
 
-  // Calculate words for each response
-  const getWordCount = (text: string) => {
-    return text.split(/\s+/).filter((word) => word.length > 0).length
-  }
+  // No longer calculating words from transcript text
+  // Words are now from user_words field in DB
 
   return (
     <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
@@ -90,7 +89,6 @@ export function ConversationResponses({
               key={index}
               {...response}
               isLast={index === responseData.length - 1}
-              customerWords={getWordCount(response.transcript)}
             />
           ))}
         </div>
