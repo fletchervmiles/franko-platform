@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { InfoIcon } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ResponseCard } from "./response-card"
+import { AnalyzeResponsesButton } from "./analyze-responses-button"
 
 interface Response {
   name: string
@@ -19,6 +20,7 @@ interface ConversationResponsesProps {
   totalCustomerWords: number
   completionRate: number
   responseData: Response[]
+  chatInstanceId: string // Add chat instance ID for the analyze button
 }
 
 export function ConversationResponses({
@@ -26,6 +28,7 @@ export function ConversationResponses({
   totalCustomerWords,
   completionRate,
   responseData,
+  chatInstanceId,
 }: ConversationResponsesProps) {
   const getCompletionRateColor = (rate: number) => {
     if (rate > 90) return "bg-green-50"
@@ -43,9 +46,10 @@ export function ConversationResponses({
           <h2 className="text-2xl font-semibold">Conversation Responses</h2>
           <p className="text-sm text-gray-500">Overview of responses collected from your conversations.</p>
           <div className="pt-2 flex items-center space-x-2">
-            <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200">
-              Chat with Response Data
-            </Button>
+            <AnalyzeResponsesButton 
+              chatInstanceId={chatInstanceId} 
+              responseCount={responses}
+            />
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger>
@@ -54,7 +58,7 @@ export function ConversationResponses({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right" align="center" className="bg-black text-white border-black">
-                  <p>Chat with your response data</p>
+                  <p>Analyze your response data with AI</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

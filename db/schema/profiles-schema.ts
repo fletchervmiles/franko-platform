@@ -21,6 +21,7 @@ export const profilesTable = pgTable("profiles", {
   monthlyResponsesQuota: integer("monthly_responses_quota").default(0),
   totalChatInstancesUsed: integer("total_chat_instances_used").default(0),
   totalChatInstancesAvailable: integer("total_chat_instances_available").default(0),
+  totalInternalChatQueriesUsed: integer("total_internal_chat_queries_used").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

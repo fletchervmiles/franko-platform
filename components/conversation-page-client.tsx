@@ -665,6 +665,7 @@ Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be 
                 totalCustomerWords={responsesData.totalCustomerWords}
                 completionRate={responsesData.completionRate}
                 responseData={responsesData.responseData}
+                chatInstanceId={chatId}
               />
             </Suspense>
           </TabsContent>
