@@ -21,6 +21,8 @@ export const chatResponsesTable = pgTable("chat_responses", {
   totalInterviewMinutes: integer("total_interview_minutes"),
   messagesJson: text("messages_json"),
   cleanTranscript: text("clean_transcript"),
+  user_words: text("user_words"),
+  transcript_summary: text("transcript_summary"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

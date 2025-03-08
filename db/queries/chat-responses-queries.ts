@@ -290,3 +290,35 @@ export async function updateChatResponseInterviewTimes(
     totalInterviewMinutes
   });
 }
+
+/**
+ * Updates the transcript summary and user words analysis for a chat response
+ * 
+ * @param id The ID of the chat response
+ * @param transcript_summary The summarized transcript content
+ * @param user_words The analysis of user's words/language
+ * @returns The updated chat response
+ */
+export async function updateChatResponseAnalysis(
+  id: string,
+  transcript_summary: string,
+  user_words: string
+): Promise<SelectChatResponse | undefined> {
+  try {
+    const [updatedChatResponse] = await db
+      .update(chatResponsesTable)
+      .set({ transcript_summary, user_words })
+      .where(eq(chatResponsesTable.id, id))
+      .returning();
+      
+    // Update cache
+    if (updatedChatResponse) {
+      responseCache.set(id, updatedChatResponse);
+    }
+    
+    return updatedChatResponse;
+  } catch (error) {
+    console.error("Error updating chat response analysis:", error);
+    throw new Error("Failed to update chat response analysis");
+  }
+}
