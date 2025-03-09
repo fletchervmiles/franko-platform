@@ -106,28 +106,27 @@ import {
     ttl: 1000 * 60 * 60, // Items expire after 1 hour
   });
   
-  /* eslint-disable-next-line import/no-unused-modules */
-  /**
-   * @internal
-   * @todo: Refactor cache invalidation strategy
-   * Currently, this export is used by server actions for cache invalidation.
-   * While this violates Next.js route conventions, it's tightly coupled with
-   * the local cache implementation. Future work should consolidate all caching
-   * into a single, centralized service.
-   */
-  export function invalidatePromptCache(userId: string) {
-    logger.debug('Invalidating prompt caches for user:', { userId });
-    promptCache.delete(userId);
-    invalidateConversationPlanPromptCache(userId);
-  }
-  
-  /**
-   * Invalidates the entire prompt cache
-   * Use this for global updates or migrations
-   */
-  export function invalidateAllPromptCaches() {
-    logger.debug('Invalidating all prompt caches');
-    promptCache.clear();
+  // Wrap cache-related functions in a namespace
+  export namespace CacheControl {
+    /**
+     * @internal
+     * Invalidates the cached prompt for a specific user
+     * Call this whenever a user's profile is updated
+     */
+    export function invalidatePromptCache(userId: string) {
+      logger.debug('Invalidating prompt caches for user:', { userId });
+      promptCache.delete(userId);
+      invalidateConversationPlanPromptCache(userId);
+    }
+
+    /**
+     * Invalidates the entire prompt cache
+     * Use this for global updates or migrations
+     */
+    export function invalidateAllPromptCaches() {
+      logger.debug('Invalidating all prompt caches');
+      promptCache.clear();
+    }
   }
   
   // Add this function near the top of your file

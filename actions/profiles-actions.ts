@@ -7,12 +7,12 @@ import console from "console";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
-import { invalidatePromptCache } from "@/app/(chat)/api/chat/route";
+import { invalidatePromptCache, CacheControl } from "@/app/(chat)/api/chat/route";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
     const newProfile = await createProfile(data);
-    invalidatePromptCache(data.userId);
+    CacheControl.invalidatePromptCache(data.userId);
     revalidatePath("/profile");
     return { status: "success", message: "Profile created successfully", data: newProfile };
   } catch (error) {
