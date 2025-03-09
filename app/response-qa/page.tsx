@@ -130,12 +130,6 @@ export default async function ResponseQAPage() {
   return (
     <NavSidebar>
       <div className="h-full flex flex-col">
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold">Response Analysis</h1>
-          <p className="text-sm text-muted-foreground">
-            Ask questions about your collected responses
-          </p>
-        </div>
         <div className="flex-grow overflow-hidden">
           <ResponseQALanding userId={userId} />
         </div>

@@ -223,15 +223,14 @@ export function ResponseQALanding({
         {/* Welcome message when no messages exist yet */}
         {messages.length === 0 && !isCreatingSession && (
           <div className="py-8 text-center">
-            <h2 className="text-2xl font-bold mb-2">Response Analysis</h2>
             <p className="text-muted-foreground mb-6">
-              Select conversations below to analyze responses and identify patterns.
+            Click "Add Responses" to select the data you'd like to include in the AI context and start chatting!
             </p>
           </div>
         )}
         
         {/* Creating session indicator */}
-        {isCreatingSession && messages.length === 0 && (
+        {isCreatingSession && (
           <div className="py-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
             <p className="text-muted-foreground">
@@ -240,22 +239,9 @@ export function ResponseQALanding({
           </div>
         )}
         
-        {/* Show welcome guidance once session exists but no messages yet */}
+        {/* Session exists but no messages yet - empty state */}
         {sessionId && messages.length === 0 && !isCreatingSession && (
-          <div className="bg-muted/50 p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Ready to analyze your responses</h3>
-            <p className="text-muted-foreground mb-4">
-              Ask questions about patterns, themes, or specific details from the collected responses.
-            </p>
-            <div className="text-sm text-muted-foreground bg-background/50 p-3 rounded">
-              <p className="font-medium mb-1">Example questions:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>What are the common themes across all responses?</li>
-                <li>Summarize the key points mentioned by respondents</li>
-                <li>What did people say about [specific topic]?</li>
-              </ul>
-            </div>
-          </div>
+          <div></div>
         )}
 
         {/* Messages container */}

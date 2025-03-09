@@ -173,8 +173,20 @@ export function ChatInput({
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Allow new lines with Shift+Enter
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      
+      // Only submit if conditions are met
+      if (value.trim() && !isSubmitting && selectedConversations.length > 0) {
+        onMessageSubmit(value.trim());
+      }
+    }
+  };
+
   return (
-    <div className="w-full bg-[#F9F8F6] pt-2">
+    <div className="w-full bg-white pt-2">
       <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
         <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:border-transparent">
           {selectedConversations.length > 0 && (
@@ -194,6 +206,7 @@ export function ChatInput({
               ref={textareaRef}
               value={value}
               onChange={onChange}
+              onKeyDown={handleKeyDown}
               placeholder="Ask a question about your responses..."
               className={cn(
                 "w-full resize-none px-3 py-2.5 transition-all duration-200",

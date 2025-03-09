@@ -191,22 +191,9 @@ export function InternalChat({
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-14">
         <div className="mx-auto max-w-4xl space-y-8 py-8">
-          {/* Welcome message when no messages exist yet */}
+          {/* Empty state when no messages exist yet */}
           {messages.length === 0 && (
-            <div className="bg-muted/50 p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-medium mb-2">Ready to analyze your responses</h3>
-              <p className="text-muted-foreground mb-4">
-                Ask questions about patterns, themes, or specific details from the collected responses.
-              </p>
-              <div className="text-sm text-muted-foreground bg-background/50 p-3 rounded">
-                <p className="font-medium mb-1">Example questions:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>What are the common themes across all responses?</li>
-                  <li>Summarize the key points mentioned by respondents</li>
-                  <li>What did people say about [specific topic]?</li>
-                </ul>
-              </div>
-            </div>
+            <div></div>
           )}
 
           {/* Show all messages */}
