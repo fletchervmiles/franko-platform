@@ -3,4 +3,10 @@ declare module '@ai-sdk/openai' {
         apiKey?: string;
         compatibility?: 'strict' | 'compatible';
     }): any;
+}
+
+export interface ActionState {
+  status: 'success' | 'error';
+  message: string;
+  data?: any;
 } 
