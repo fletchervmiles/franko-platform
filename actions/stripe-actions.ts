@@ -60,15 +60,15 @@ export async function createCheckoutSession(
       email: customerEmail,
       stripeCustomerId: customer.id,
       membership: dbMembership,
-      monthlyMinutes: PLAN_MINUTES[internalPlan],
-      minutesAvailable: PLAN_MINUTES[internalPlan],
+      monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
+      totalResponsesAvailable: PLAN_MINUTES[internalPlan],
     }).onConflictDoUpdate({
       target: profilesTable.userId,
       set: {
         stripeCustomerId: customer.id,
         membership: dbMembership,
-        monthlyMinutes: PLAN_MINUTES[internalPlan],
-        minutesAvailable: PLAN_MINUTES[internalPlan],
+        monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
+        totalResponsesAvailable: PLAN_MINUTES[internalPlan],
       }
     });
 
@@ -114,8 +114,8 @@ export async function updateProfileWithSubscription(
         stripeSubscriptionId: subscriptionId,
         stripeCustomerId: customerId,
         membership: dbMembership,
-        monthlyMinutes: PLAN_MINUTES[internalPlan],
-        minutesAvailable: PLAN_MINUTES[internalPlan],
+        monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
+        totalResponsesAvailable: PLAN_MINUTES[internalPlan],
       })
       .where(eq(profilesTable.userId, userId));
   } catch (error) {
