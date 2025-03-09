@@ -39,6 +39,12 @@ export const logger = {
     }
   },
   
+  warn: (message: string, data?: unknown) => {
+    if (logConfig.info) { // Reusing info config for warnings
+      console.warn(formatLog('yellow', ' [WARN]', message, data));
+    }
+  },
+  
   ai: (message: string, data?: unknown) => {
     if (logConfig.ai) {
       console.log(formatLog('magenta', ' [AI]', message, data));

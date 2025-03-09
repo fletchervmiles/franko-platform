@@ -16,10 +16,12 @@ export async function createInternalChatSession({
   userId,
   title,
   selectedResponses,
+  contextData,
 }: {
   userId: string;
   title: string;
   selectedResponses: string[];
+  contextData?: string;
 }) {
   try {
     const id = generateUUID();
@@ -30,6 +32,7 @@ export async function createInternalChatSession({
       title,
       selectedResponses: JSON.stringify(selectedResponses),
       messagesJson: JSON.stringify([]),
+      contextData
     });
     
     const session = await getInternalChatSessionById(id);
@@ -92,6 +95,7 @@ export async function updateInternalChatSession(
     title: string;
     messagesJson: string;
     selectedResponses: string;
+    contextData: string;
   }>
 ) {
   try {

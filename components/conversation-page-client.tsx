@@ -416,132 +416,132 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     }
   }, [chatId, activeTab, toast]);
   
-  // Mock data for ResponseCards (fallback)
-  const mockResponses = [
-    {
-      name: "Fletcher Miles",
-      email: "fletchervmiles@gmail.com",
-      completionRate: 100,
-      completionDate: "2025-02-12",
-      customerWords: 532, // Add customer words directly
-      summary: `
-### Cancellation Reason:  
-- Low current usage due to varied role & desire to cut subscription costs (especially AI tools).
+//   // Mock data for ResponseCards (fallback)
+//   const mockResponses = [
+//     {
+//       name: "Fletcher Miles",
+//       email: "fletchervmiles@gmail.com",
+//       completionRate: 100,
+//       completionDate: "2025-02-12",
+//       customerWords: 532, // Add customer words directly
+//       summary: `
+// ### Cancellation Reason:  
+// - Low current usage due to varied role & desire to cut subscription costs (especially AI tools).
 
-### Positive Product Perception:  
-- Fletcher likes Cursor and its core features; plans to return.
+// ### Positive Product Perception:  
+// - Fletcher likes Cursor and its core features; plans to return.
 
-### Valued Features:  
-- Agent, chat, and documentation features are key for complex tasks, boosting confidence and efficiency.
+// ### Valued Features:  
+// - Agent, chat, and documentation features are key for complex tasks, boosting confidence and efficiency.
 
-### Improvement Suggestion:  
-- Better handling of recurring bugs; specifically, avoiding repeated unhelpful solutions for documentation syntax issues.
+// ### Improvement Suggestion:  
+// - Better handling of recurring bugs; specifically, avoiding repeated unhelpful solutions for documentation syntax issues.
 
-### No Other Issues/Feature Requests:  
-- Cancellation is not due to dissatisfaction with features, but usage and cost.
-      `,
-      transcript: `
-**Fletcher**: Hi there  
+// ### No Other Issues/Feature Requests:  
+// - Cancellation is not due to dissatisfaction with features, but usage and cost.
+//       `,
+//       transcript: `
+// **Fletcher**: Hi there  
   
-**Franko**: Hi there! Thanks for joining this short conversation about why you decided to cancel your Cursor plan. It'll only take a few minutes. To get started, could you please provide your First Name, Last Name, and Email Address?  
+// **Franko**: Hi there! Thanks for joining this short conversation about why you decided to cancel your Cursor plan. It'll only take a few minutes. To get started, could you please provide your First Name, Last Name, and Email Address?  
   
-**Fletcher**: Fletcher Miles, fletchervmiles@gmail.com  
+// **Fletcher**: Fletcher Miles, fletchervmiles@gmail.com  
   
-**Franko**: Thanks, Fletcher! Let's dive in. So, what was the main reason you decided to cancel your Cursor subscription?  
+// **Franko**: Thanks, Fletcher! Let's dive in. So, what was the main reason you decided to cancel your Cursor subscription?  
   
-**Fletcher**: I'm not using it much at the moment  
+// **Fletcher**: I'm not using it much at the moment  
   
-**Franko**: Got it, that makes sense. Could you tell me a bit more about why you're not using Cursor much at the moment?  
+// **Franko**: Got it, that makes sense. Could you tell me a bit more about why you're not using Cursor much at the moment?  
   
-**Fletcher**: Yeah, basically I do lots of different stuff in my role and um. sometimes I code a lot and sometimes I focus on other things like marketing or product and so. yeah, it just my usage varies based on the time.  
+// **Fletcher**: Yeah, basically I do lots of different stuff in my role and um. sometimes I code a lot and sometimes I focus on other things like marketing or product and so. yeah, it just my usage varies based on the time.  
   
-**Franko**: That's understandable, your role requires flexibility. But just to double check, besides fluctuating usage, did any specific aspects of Cursor influence your decision to cancel?  
+// **Franko**: That's understandable, your role requires flexibility. But just to double check, besides fluctuating usage, did any specific aspects of Cursor influence your decision to cancel?  
   
-**Fletcher**: I guess just that I've got a lot of subscriptions at the moment so I cancel them whenever I can, especially new AI subscriptions which are adding up  
+// **Fletcher**: I guess just that I've got a lot of subscriptions at the moment so I cancel them whenever I can, especially new AI subscriptions which are adding up  
   
-**Franko**: That's a really valid point, costs can add up quickly. Let's shift gears: How did Cursor's AI features, like code completion and natural language editing, meet your expectations when you were using it?  
+// **Franko**: That's a really valid point, costs can add up quickly. Let's shift gears: How did Cursor's AI features, like code completion and natural language editing, meet your expectations when you were using it?  
   
-**Fletcher**: I really like the product, it's definitely worth it and I'll be back for sure  
+// **Fletcher**: I really like the product, it's definitely worth it and I'll be back for sure  
   
-**Franko**: That's great to hear! When you were actively using Cursor, which features did you find most valuable or impressive?  
+// **Franko**: That's great to hear! When you were actively using Cursor, which features did you find most valuable or impressive?  
   
-**Fletcher**: I use the agent a lot when I'm implementing big features of chunks of functionality. And I like the chat, just to explain things and help kind of bolster my understanding... those are the two main things and probably being able to add documentation is also helpful  
+// **Fletcher**: I use the agent a lot when I'm implementing big features of chunks of functionality. And I like the chat, just to explain things and help kind of bolster my understanding... those are the two main things and probably being able to add documentation is also helpful  
   
-**Franko**: Oh that's really helpful feedback, thank you! I'd love to hear more about your experience when using those features. In terms of tangible benefits – can you describe some of the impacts on your own daily coding workflow? It might help to think back to your last productive coding session using Cursor.  
+// **Franko**: Oh that's really helpful feedback, thank you! I'd love to hear more about your experience when using those features. In terms of tangible benefits – can you describe some of the impacts on your own daily coding workflow? It might help to think back to your last productive coding session using Cursor.  
   
-**Fletcher**: Well, I'm actually just finishing off some other work. Um, but then I know that I have a huge amount of functionality that I need to implement. And I know conceptually how I'm gonna do it. I'm going to write out the steps in a fair bit of detail, sort of functional and technical specification. And then with Cursor, I know I'll be able to do it pretty quickly and with a fair bit of confidence… which is great. So I'm kinda not stressed about that task and I'm not expecting it to take that long which is really awesome.  
+// **Fletcher**: Well, I'm actually just finishing off some other work. Um, but then I know that I have a huge amount of functionality that I need to implement. And I know conceptually how I'm gonna do it. I'm going to write out the steps in a fair bit of detail, sort of functional and technical specification. And then with Cursor, I know I'll be able to do it pretty quickly and with a fair bit of confidence… which is great. So I'm kinda not stressed about that task and I'm not expecting it to take that long which is really awesome.  
   
-**Franko**: That's amazing to hear – especially the confidence and reduced stress! It sounds like you've seen Cursor deliver before when you've written out detailed steps. Could you share a past working session where you used this approach and felt that same confidence and ease?  
+// **Franko**: That's amazing to hear – especially the confidence and reduced stress! It sounds like you've seen Cursor deliver before when you've written out detailed steps. Could you share a past working session where you used this approach and felt that same confidence and ease?  
   
-**Fletcher**: um not anything specific but I do have a bunch of markdown files in a folder that are long implementation documents that I used whenever I need to implement a new feature or piece of functionality.  
+// **Fletcher**: um not anything specific but I do have a bunch of markdown files in a folder that are long implementation documents that I used whenever I need to implement a new feature or piece of functionality.  
   
-**Franko**: That's helpful, and it sounds like a solid process. Now, let's switch gears: Are there any specific improvements or new features would you like to see in Cursor?  
+// **Franko**: That's helpful, and it sounds like a solid process. Now, let's switch gears: Are there any specific improvements or new features would you like to see in Cursor?  
   
-**Fletcher**: I feel like it could do a better job of registering recurring bugs. I often end up having to fix the same bug or when I'm trying to fix a bug, it'll offer the same solution that has already been tried and hasn't worked. Kind of annoying  
+// **Fletcher**: I feel like it could do a better job of registering recurring bugs. I often end up having to fix the same bug or when I'm trying to fix a bug, it'll offer the same solution that has already been tried and hasn't worked. Kind of annoying  
   
-**Franko**: That does sound annoying! Thanks for the clear example—it really helps. How often do you run into this, and are there specific bugs where it happens more often?  
+// **Franko**: That does sound annoying! Thanks for the clear example—it really helps. How often do you run into this, and are there specific bugs where it happens more often?  
   
-**Fletcher**: Yes, it's often to do with specific documentation syntax  
+// **Fletcher**: Yes, it's often to do with specific documentation syntax  
   
-**Franko**: Ah, documentation syntax—that's really helpful to know. Is there anything else, like an additional feature or integration, that might have made you reconsider canceling?  
+// **Franko**: Ah, documentation syntax—that's really helpful to know. Is there anything else, like an additional feature or integration, that might have made you reconsider canceling?  
   
-**Fletcher**: Hmm I don't think so, nothing that comes to mind  
+// **Fletcher**: Hmm I don't think so, nothing that comes to mind  
   
-**Franko**: Okay, that's fine! Thanks so much for all of this incredible feedback. Just before we officially wrap up, is there anything else at all that you'd like to add?  
+// **Franko**: Okay, that's fine! Thanks so much for all of this incredible feedback. Just before we officially wrap up, is there anything else at all that you'd like to add?  
   
-**Fletcher**: No, that's it  
+// **Fletcher**: No, that's it  
   
-**Franko**: Thanks so much for your time and valuable feedback, Fletcher! You are now being redirected.
+// **Franko**: Thanks so much for your time and valuable feedback, Fletcher! You are now being redirected.
 
-      `,
-    },
-    {
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-      completionRate: 95,
-      completionDate: "2025-02-15",
-      customerWords: 485, // Add customer words directly
-      summary: `
-**Cancellation Reason:** Found a more specialized tool for their specific development needs.
+//       `,
+//     },
+//     {
+//       name: "Alex Johnson",
+//       email: "alex.johnson@example.com",
+//       completionRate: 95,
+//       completionDate: "2025-02-15",
+//       customerWords: 485, // Add customer words directly
+//       summary: `
+// **Cancellation Reason:** Found a more specialized tool for their specific development needs.
 
-**Positive Aspects:** Appreciated Cursor's user interface and general AI capabilities.
+// **Positive Aspects:** Appreciated Cursor's user interface and general AI capabilities.
 
-**Areas for Improvement:** Suggested more customization options for language-specific features.
+// **Areas for Improvement:** Suggested more customization options for language-specific features.
 
-**Potential Return:** Open to reconsidering Cursor if new features align with their workflow.
+// **Potential Return:** Open to reconsidering Cursor if new features align with their workflow.
 
-**Additional Feedback:** Recommended expanding the range of supported programming languages and frameworks.
-      `,
-      transcript: `
-Alex: Hello
-Franko: Hi there! Thanks for taking the time to chat about your experience with Cursor. To get started, could you please provide your First Name, Last Name, and Email Address?
-Alex: Sure, it's Alex Johnson, alex.johnson@example.com
-Franko: Thanks, Alex! Let's dive into the conversation. What was the primary reason you decided to cancel your Cursor subscription?
-Alex: I found a tool that's more tailored to my specific development needs.
-Franko: I see. Could you elaborate on what specific needs this other tool addresses that Cursor didn't?
-Alex: Well, I work primarily with a niche programming language, and the new tool has more specialized features for it.
-Franko: That makes sense. During your time using Cursor, what aspects did you find most valuable or impressive?
-Alex: I really liked Cursor's user interface and the general AI capabilities. It was intuitive to use.
-Franko: That's great to hear. Were there any features or aspects of Cursor that you felt could be improved?
-Alex: I think having more customization options for language-specific features would be beneficial.
-Franko: Thank you for that feedback. It's very helpful. Is there anything that might make you reconsider using Cursor in the future?
-Alex: If Cursor expanded its language support or introduced features that align better with my workflow, I'd definitely consider coming back.
-Franko: Noted. Before we wrap up, do you have any additional comments or suggestions for us?
-Alex: I think expanding the range of supported programming languages and frameworks could be really valuable for developers in various niches.
-Franko: That's excellent feedback, Alex. Thank you so much for your time and insights. Is there anything else you'd like to add before we conclude?
-Alex: No, that's all. Thanks for listening to my feedback.
-Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be redirected. Have a great day!
-      `,
-    },
-  ]
+// **Additional Feedback:** Recommended expanding the range of supported programming languages and frameworks.
+//       `,
+//       transcript: `
+// Alex: Hello
+// Franko: Hi there! Thanks for taking the time to chat about your experience with Cursor. To get started, could you please provide your First Name, Last Name, and Email Address?
+// Alex: Sure, it's Alex Johnson, alex.johnson@example.com
+// Franko: Thanks, Alex! Let's dive into the conversation. What was the primary reason you decided to cancel your Cursor subscription?
+// Alex: I found a tool that's more tailored to my specific development needs.
+// Franko: I see. Could you elaborate on what specific needs this other tool addresses that Cursor didn't?
+// Alex: Well, I work primarily with a niche programming language, and the new tool has more specialized features for it.
+// Franko: That makes sense. During your time using Cursor, what aspects did you find most valuable or impressive?
+// Alex: I really liked Cursor's user interface and the general AI capabilities. It was intuitive to use.
+// Franko: That's great to hear. Were there any features or aspects of Cursor that you felt could be improved?
+// Alex: I think having more customization options for language-specific features would be beneficial.
+// Franko: Thank you for that feedback. It's very helpful. Is there anything that might make you reconsider using Cursor in the future?
+// Alex: If Cursor expanded its language support or introduced features that align better with my workflow, I'd definitely consider coming back.
+// Franko: Noted. Before we wrap up, do you have any additional comments or suggestions for us?
+// Alex: I think expanding the range of supported programming languages and frameworks could be really valuable for developers in various niches.
+// Franko: That's excellent feedback, Alex. Thank you so much for your time and insights. Is there anything else you'd like to add before we conclude?
+// Alex: No, that's all. Thanks for listening to my feedback.
+// Franko: Thank you again, Alex. Your feedback is invaluable to us. You'll now be redirected. Have a great day!
+//       `,
+//     },
+//   ]
 
-  // Memoize mockResponsesData to prevent recalculation on each render
-  const mockResponsesData = useMemo(() => ({
-    responses: mockResponses.length,
-    totalCustomerWords: mockResponses.reduce((total, response) => total + (response.customerWords || 0), 0),
-    completionRate: mockResponses.reduce((sum, response) => sum + response.completionRate, 0) / mockResponses.length,
-    responseData: mockResponses,
-  }), [mockResponses]);
+//   // Memoize mockResponsesData to prevent recalculation on each render
+//   const mockResponsesData = useMemo(() => ({
+//     responses: mockResponses.length,
+//     totalCustomerWords: mockResponses.reduce((total, response) => total + (response.customerWords || 0), 0),
+//     completionRate: mockResponses.reduce((sum, response) => sum + response.completionRate, 0) / mockResponses.length,
+//     responseData: mockResponses,
+//   }), [mockResponses]);
 
   return (
     <NavSidebar>

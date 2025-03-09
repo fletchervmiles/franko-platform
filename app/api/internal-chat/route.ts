@@ -122,162 +122,22 @@ export async function POST(request: Request) {
       logger.error('Failed to update internal chat usage count', { error, userId });
     }
     
-    // Load selected responses data
-    let selectedResponses = [];
-    try {
-      if (internalChatSession.selectedResponses) {
-        selectedResponses = JSON.parse(internalChatSession.selectedResponses as string);
-      }
-    } catch (parseError) {
-      logger.error("Error parsing selectedResponses", { 
-        parseError, 
-        rawValue: internalChatSession.selectedResponses 
-      });
-      // Continue with empty array, we'll generate mock data below
-    }
+    // Get the context data from the session
+    let systemPrompt = "";
     
-    // We used to return an error here, but now we'll just log a warning and use mock data
-    if (selectedResponses.length === 0) {
-      logger.warn("No responses selected for analysis, will use mock data");
-    }
-    
-    // Gather response data for contextual analysis
-    let contextData = "";
-    let totalResponses = 0;
-    let totalWords = 0;
-    
-    try {
-      // Prepare responses data for context
-      logger.debug('Selected response IDs:', { selectedResponses });
-      
-      // Fallback to mock data if no valid responses
-      let useMockData = false;
-      
-      for (const responseId of selectedResponses) {
-        try {
-          logger.debug(`Fetching response ${responseId}`);
-          const response = await getChatResponseById(responseId);
-          
-          if (!response) {
-            logger.warn(`Response ${responseId} not found`);
-            continue;
-          }
-          
-          totalResponses++;
-          
-          // Try to get chat instance
-          let planTitle = "Conversation";
-          try {
-            if (response.chatInstanceId) {
-              const chatInstance = await getChatInstanceById(response.chatInstanceId);
-              if (chatInstance?.conversationPlan) {
-                const plan = typeof chatInstance.conversationPlan === 'string'
-                  ? JSON.parse(chatInstance.conversationPlan)
-                  : chatInstance.conversationPlan;
-                  
-                if (plan && plan.title) {
-                  planTitle = plan.title;
-                }
-              }
-            }
-          } catch (instanceError) {
-            logger.warn(`Error getting chat instance for response ${responseId}`, { instanceError });
-            // Continue with default title
-          }
-          
-          // Try to parse messages
-          let messages = [];
-          try {
-            if (response.messagesJson) {
-              messages = JSON.parse(response.messagesJson);
-            }
-          } catch (msgError) {
-            logger.warn(`Error parsing messages for response ${responseId}`, { msgError });
-            // Continue with empty messages
-          }
-          
-          // Add response data even if some parts fail
-          const responseUserWords = Number(response.user_words || "0");
-          totalWords += responseUserWords;
-          
-          // Format the conversation data
-          contextData += `--- START RESPONSE #${totalResponses} (${planTitle}) ---\n`;
-          contextData += `Respondent: ${response.intervieweeFirstName ? `${response.intervieweeFirstName} ${response.intervieweeSecondName || ''}` : "Anonymous"}\n`;
-          contextData += `Email: ${response.intervieweeEmail || "Not provided"}\n`;
-          contextData += `User Words: ${responseUserWords}\n`;
-          
-          if (response.transcript_summary) {
-            contextData += `Summary: ${response.transcript_summary}\n`;
-          }
-          
-          contextData += "Transcript:\n";
-          
-          for (const msg of messages) {
-            if (msg.role === 'user') {
-              contextData += `USER: ${msg.content || ''}\n`;
-            } else if (msg.role === 'assistant') {
-              contextData += `ASSISTANT: ${msg.content || ''}\n`;
-            }
-          }
-          
-          contextData += `--- END RESPONSE #${totalResponses} ---\n\n`;
-        } catch (responseError) {
-          logger.error(`Error processing response ${responseId}`, { responseError });
-          // Continue with next response
-        }
-      }
-      
-      // If no responses were processed, use mock data
-      if (totalResponses === 0) {
-        logger.warn('No responses could be processed, using mock data');
-        
-        // Add mock data so the API doesn't fail completely
-        contextData = `--- START RESPONSE #1 (Mock Data) ---\n`;
-        contextData += `Respondent: Anonymous\n`;
-        contextData += `Email: Not provided\n`;
-        contextData += `User Words: 150\n\n`;
-        contextData += `Transcript:\n`;
-        contextData += `USER: This is a placeholder response since we couldn't load the actual data.\n`;
-        contextData += `ASSISTANT: Thank you for your feedback. Is there anything else you'd like to share?\n`;
-        contextData += `USER: No, that's all for now.\n`;
-        contextData += `--- END RESPONSE #1 ---\n\n`;
-        
-        totalResponses = 1;
-        totalWords = 150;
-      }
-      
-      logger.info('Successfully gathered response data', { 
-        totalResponses, 
-        totalWords,
-        contextLength: contextData.length
-      });
-    } catch (error) {
-      logger.error('Error gathering response data', { error });
-      return new Response(JSON.stringify({ error: "Failed to gather response data" }), { 
-        status: 500,
+    if (!internalChatSession.contextData) {
+      logger.error('No context data found in session', { internalChatSessionId });
+      return new Response(JSON.stringify({ error: "Session has no context data. Please process context first." }), { 
+        status: 400,
         headers: { "Content-Type": "application/json" }
       });
+    } else {
+      // Use the cached context data from the session
+      systemPrompt = internalChatSession.contextData as string;
+      logger.info('Using context data from session', { 
+        contextLength: systemPrompt.length 
+      });
     }
-    
-    // Create system prompt for analysis
-    const systemPrompt = `
-You are an AI assistant helping with analysis of research conversation data. You have access to ${totalResponses} responses with a total of ${totalWords} user words.
-
-Your task is to analyze this data and provide insights based on user questions. Consider patterns, themes, and notable responses. Be concise but thorough in your analysis.
-
-The context below contains the full conversation data from these responses:
-
-${contextData}
-
-When analyzing the data:
-1. Consider both explicit statements and implicit themes
-2. Look for patterns across multiple respondents
-3. Highlight interesting contrasts or outliers
-4. Provide specific examples when relevant
-5. Summarize key findings clearly
-
-Remember that you are analyzing existing data, not conducting new interviews.
-`;
     
     // Convert messages to core format
     const coreMessages = convertToCoreMessages(messages).filter(

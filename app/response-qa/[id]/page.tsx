@@ -12,6 +12,7 @@ interface ResponseQASessionPageProps {
 }
 
 export default async function ResponseQASessionPage({ params }: ResponseQASessionPageProps) {
+  const { id } = params
   const { userId } = await auth()
   
   // Redirect to login if not authenticated
@@ -19,40 +20,16 @@ export default async function ResponseQASessionPage({ params }: ResponseQASessio
     redirect("/sign-in")
   }
   
-  const { id } = params
-  
-  // Fetch session data
+  // Fetch session data to validate it exists and belongs to the user
   const session = await getInternalChatSessionById(id)
   
-  // Redirect to main page if session not found or not owned by user
+  // Redirect if session not found or doesn't belong to this user
   if (!session || session.userId !== userId) {
+    console.error("Session not found or unauthorized", { id, userId });
     redirect("/response-qa")
   }
   
-  // Parse initial messages if any
-  let initialMessages: Message[] = []
-  if (session.messagesJson) {
-    try {
-      initialMessages = JSON.parse(session.messagesJson as string)
-    } catch (error) {
-      console.error("Error parsing messages:", error)
-      // Continue with empty messages
-    }
-  }
-  
-  return (
-    <NavSidebar>
-      <div className="h-full flex flex-col">
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold">{session.title}</h1>
-        </div>
-        <div className="flex-grow overflow-hidden">
-          <InternalChatWrapper
-            internalChatSessionId={id}
-            initialMessages={initialMessages}
-          />
-        </div>
-      </div>
-    </NavSidebar>
-  )
+  // Redirect to the main page with a session ID query parameter
+  // This allows us to maintain existing links but use our integrated approach
+  redirect(`/response-qa?sessionId=${id}`)
 }

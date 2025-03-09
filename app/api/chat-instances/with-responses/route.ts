@@ -11,19 +11,23 @@ export async function GET() {
     // Verify user is authenticated
     const { userId } = await auth();
     if (!userId) {
+      logger.info("Unauthorized access attempt to chat-instances/with-responses");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    logger.info("Fetching chat instances with responses", { userId });
+
     // Get chat instances with response counts
     const instances = await getChatInstancesWithResponses(userId);
+    
+    logger.info(`Retrieved ${instances.length} chat instances with responses`);
 
     // Transform data for client
     const conversations = instances.map(instance => {
-      // Get title from topic or conversation plan
-      let title = instance.topic || "Untitled Conversation";
+      // Try to get title from conversation plan first for consistency
+      let title = "Untitled Conversation";
       
-      // If no topic, try to get title from conversation plan
-      if (!title && instance.conversationPlan) {
+      if (instance.conversationPlan) {
         try {
           const plan = typeof instance.conversationPlan === 'string' 
             ? JSON.parse(instance.conversationPlan)
@@ -33,8 +37,16 @@ export async function GET() {
             title = plan.title;
           }
         } catch (error) {
-          // Use default title if parsing fails
+          // Use topic as fallback if parsing fails
+          title = instance.topic || title;
+          logger.info("Error parsing conversation plan", { 
+            instanceId: instance.id, 
+            error: error instanceof Error ? error.message : String(error) 
+          });
         }
+      } else {
+        // Use topic if no plan exists
+        title = instance.topic || title;
       }
 
       return {
@@ -46,13 +58,23 @@ export async function GET() {
     });
 
     // Return formatted data
+    logger.info(`Returning ${conversations.length} formatted conversations`);
     return NextResponse.json({
       conversations
     });
   } catch (error) {
-    logger.error("Error fetching chat instances with responses", { error });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    logger.error("Error fetching chat instances with responses", { 
+      error: errorMessage,
+      stack: errorStack
+    });
+    
+    console.error("API Error:", error);
+    
     return NextResponse.json(
-      { error: "Failed to fetch conversations" },
+      { error: "Failed to fetch conversations", details: errorMessage },
       { status: 500 }
     );
   }

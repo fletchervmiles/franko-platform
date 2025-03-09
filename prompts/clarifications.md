@@ -1,196 +1,148 @@
-Ok, but there's no create new from the /response-qa route?
+Ok. I think there's some confusion here.
 
-I actually wanted the response-qa route to load almost immediately. And then the user to be able to select the specific instances and responses from the internal-input.tsx component. 
+the `selected_responses` field right now in the `internal-chat-sessions-schema` is for the `chat-instance-schema` recorded.
 
-Here's the component
+Here's the hierachy. 
+
+The userID is stored in the `db\schema\profiles-schema.ts`
+
+This is the parent of the actual account holder - the top level ID. 
 
 ```typescript
-"use client"
+import { pgEnum, pgTable, text, timestamp, boolean, integer, uuid } from "drizzle-orm/pg-core";
 
-import { useState, useRef, useEffect } from "react"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Plus, ArrowUp, Loader2, Check, X } from "lucide-react"
-import { cn } from "@/lib/utils"
+export const membershipEnum = pgEnum("membership", ["free", "starter", "pro"]);
 
-interface Conversation {
-  id: number
-  name: string
-  responses: number
-  words: number
-}
+export const profilesTable = pgTable("profiles", {
+  id: uuid("id").defaultRandom().notNull(),
+  userId: text("user_id").primaryKey().notNull(),
+  email: text("email"),
+  organisationName: text("organisation_name"),
+  membership: membershipEnum("membership").default("free").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  firstName: text("first_name"),
+  secondName: text("second_name"),
+  organisationUrl: text("organisation_url"),
+  organisationDescription: text("organisation_description"),
+  organisationDescriptionCompleted: boolean("organisation_description_completed").default(false),
+  totalResponsesUsed: integer("total_responses_used").default(0),
+  totalResponsesUsedThisMonth: integer("total_responses_used_this_month").default(0),
+  totalResponsesAvailable: integer("total_responses_available").default(0),
+  monthlyResponsesQuota: integer("monthly_responses_quota").default(0),
+  totalChatInstancesUsed: integer("total_chat_instances_used").default(0),
+  totalChatInstancesAvailable: integer("total_chat_instances_available").default(0),
+  totalInternalChatQueriesUsed: integer("total_internal_chat_queries_used").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
 
-const mockConversations: Conversation[] = [
-  { id: 1, name: "Product Launch", responses: 12, words: 1240 },
-  { id: 2, name: "Customer Support", responses: 8, words: 950 },
-  { id: 3, name: "Marketing Campaign", responses: 15, words: 1800 },
-  { id: 4, name: "Technical Documentation", responses: 6, words: 2100 },
-  { id: 5, name: "Sales Pitch", responses: 10, words: 1350 },
-]
+export type InsertProfile = typeof profilesTable.$inferInsert;
+export type SelectProfile = typeof profilesTable.$inferSelect;
 
-export function ChatInput() {
-  const [value, setValue] = useState("")
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-  const [selectedConversations, setSelectedConversations] = useState<Conversation[]>([])
-  const [isLoading, setIsLoading] = useState<number | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
-  }
-
-  useEffect(() => {
-    adjustTextareaHeight()
-  }, [value])
-
-  const handleSelectConversation = (conversation: Conversation) => {
-    setIsLoading(conversation.id)
-
-    setTimeout(() => {
-      setSelectedConversations((prev) => [...prev, conversation])
-      setIsLoading(null)
-      setIsPopoverOpen(false)
-    }, 1000)
-  }
-
-  const removeConversation = (id: number) => {
-    setSelectedConversations((prev) => prev.filter((conv) => conv.id !== id))
-  }
-
-  return (
-    <div className="w-full bg-[#F9F8F6] pt-2">
-      <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
-        <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:border-transparent">
-          {selectedConversations.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-3 px-8 border-b">
-              {selectedConversations.map((conv) => (
-                <div key={conv.id} className="flex items-center gap-2 bg-gray-50 rounded-lg border px-3 py-2 text-sm">
-                  <span className="font-medium">{conv.name}</span>
-                  <span className="text-xs text-gray-500">
-                    ({conv.responses} responses, {conv.words} words)
-                  </span>
-                  <button
-                    onClick={() => removeConversation(conv.id)}
-                    className="ml-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Remove conversation</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <form className="flex flex-col gap-2 p-2 px-8">
-            <Textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Send a message..."
-              className={cn(
-                "w-full resize-none px-3 py-2.5 transition-all duration-200",
-                "border-0 outline-none focus:outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-                "bg-transparent text-base leading-relaxed",
-                "disabled:bg-gray-50 disabled:cursor-not-allowed",
-              )}
-              style={{
-                minHeight: "64px",
-                maxHeight: "200px",
-                overflowY: value.split("\n").length > 3 ? "auto" : "hidden",
-              }}
-            />
-            <div className="flex justify-end gap-2 items-center">
-              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Responses
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-4 shadow-lg" align="end" side="top" sideOffset={10}>
-                  <div className="mb-3">
-                    <h3 className="font-medium">Conversations</h3>
-                    <p className="text-sm text-muted-foreground">Select a conversation to add responses</p>
-                  </div>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                    {mockConversations.map((conversation) => (
-                      <ConversationCard
-                        key={conversation.id}
-                        conversation={conversation}
-                        onSelect={handleSelectConversation}
-                        isLoading={isLoading === conversation.id}
-                        isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
-                      />
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="submit"
-                size="icon"
-                className="h-8 w-8 rounded-lg transition-colors bg-gray-900 text-white hover:bg-gray-800"
-              >
-                <ArrowUp className="h-3 w-3" />
-                <span className="sr-only">Send message</span>
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-interface ConversationCardProps {
-  conversation: Conversation
-  onSelect: (conversation: Conversation) => void
-  isLoading: boolean
-  isSelected: boolean
-}
-
-function ConversationCard({ conversation, onSelect, isLoading, isSelected }: ConversationCardProps) {
-  return (
-    <div
-      className={cn(
-        "p-3 rounded-lg border transition-colors",
-        isSelected ? "bg-gray-50 border-gray-300" : "hover:bg-gray-50 border-gray-200",
-        "cursor-pointer shadow-sm hover:shadow",
-      )}
-      onClick={() => !isLoading && !isSelected && onSelect(conversation)}
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <h4 className="font-medium">{conversation.name}</h4>
-          <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-            <span>{conversation.responses} responses</span>
-            <span>{conversation.words} words</span>
-          </div>
-        </div>
-        <div>
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-7 text-xs",
-                isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-gray-100",
-              )}
-              disabled={isSelected}
-            >
-              {isSelected ? <Check className="h-3.5 w-3.5 mr-1" /> : null}
-              {isSelected ? "Selected" : "Select"}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+// this defines the profiles table in the database
+// it defines the columns and the types of the columns
 ```
 
-Do you understand this requirement? Is this easy to implement within our existing code structure?
+The next is the `db\schema\chat-instances-schema.ts`
+
+This schema is the parent to the individual responses. Imagine if we had a survey tool. This would be the structure of the survey. This is where we have the "conversation_plan" that we want to extract for the "context_data"
+
+```typescript
+import { pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core";
+import { profilesTable } from "./profiles-schema";
+
+// Update ObjectiveProgress interface to make comments optional
+export interface ObjectiveProgress {
+  overall_turns: number;
+  expected_total_min: number;
+  expected_total_max: number;
+  objectives: Record<string, {
+    status: "done" | "current" | "tbc";
+    comments?: string[];
+    turns_used: number;
+    expected_min: number;
+    expected_max: number;
+  }>;
+}
+
+export const chatInstancesTable = pgTable("chat_instances", {
+  id: uuid("id").defaultRandom().notNull().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => profilesTable.userId, { onDelete: "cascade" }),
+  messages: text("messages"),
+  conversationPlan: jsonb("conversation_plan"),
+  objectiveProgress: jsonb("objective_progress"),  // Add new field
+  conversationPlanLastEdited: timestamp("conversation_plan_last_edited").defaultNow().notNull(),
+  lastViewed: timestamp("last_viewed"), // Add lastViewed field to track when the user last viewed responses
+  // New fields
+  topic: text("topic"),
+  duration: text("duration"),
+  respondentContacts: boolean("respondent_contacts"),
+  incentiveStatus: boolean("incentive_status"),
+  incentiveCode: text("incentive_code"),
+  incentiveDescription: text("incentive_description"),
+  additionalDetails: text("additional_details"),
+  welcomeDescription: text("welcome_description"), // Added new field
+  published: boolean("published").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type InsertChatInstance = typeof chatInstancesTable.$inferInsert;
+export type SelectChatInstance = typeof chatInstancesTable.$inferSelect; 
+```
+
+Finally, we have the `db\schema\chat-responses-schema.ts`
+
+This is where we store the individual responses. 
+
+```typescript
+import { pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core";
+import { profilesTable } from "./profiles-schema";
+import { chatInstancesTable } from "./chat-instances-schema";
+
+export const chatResponsesTable = pgTable("chat_responses", {
+  id: uuid("id").defaultRandom().notNull().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => profilesTable.userId, { onDelete: "cascade" }),
+  chatInstanceId: uuid("chat_instance_id")
+    .notNull()
+    .references(() => chatInstancesTable.id, { onDelete: "cascade" }),
+  completionStatus: text("completion_status"),
+  status: text("status"),
+  chatProgress: jsonb("chat_progress"),
+  intervieweeFirstName: text("interviewee_first_name"),
+  intervieweeSecondName: text("interviewee_second_name"),
+  intervieweeEmail: text("interviewee_email"),
+  interviewStartTime: timestamp("interview_start_time"),
+  interviewEndTime: timestamp("interview_end_time"),
+  totalInterviewMinutes: integer("total_interview_minutes"),
+  messagesJson: text("messages_json"),
+  cleanTranscript: text("clean_transcript"),
+  user_words: text("user_words"),
+  transcript_summary: text("transcript_summary"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type InsertChatResponse = typeof chatResponsesTable.$inferInsert;
+export type SelectChatResponse = typeof chatResponsesTable.$inferSelect; 
+```
+
+---
+
+Here's how the context_data should be constructed:
+

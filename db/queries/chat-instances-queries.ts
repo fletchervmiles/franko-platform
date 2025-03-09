@@ -1,11 +1,12 @@
 'use server'
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
 import { arrayToNumberedObjectives, numberedObjectivesToArray, type ConversationPlan } from "@/components/conversationPlanSchema";
 import { revalidatePath } from "next/cache";
 import { LRUCache } from 'lru-cache';
+import { chatResponsesTable } from "../schema/chat-responses-schema";
 
 // Cache for chat instances to reduce database load
 const instanceCache = new LRUCache<string, SelectChatInstance>({
@@ -493,26 +494,57 @@ export async function updateWelcomeDescription(
  */
 export async function getChatInstancesWithResponses(userId: string) {
   try {
-    // This is a simplified implementation that returns all chat instances for the user
-    // In a real implementation, you would join with the responses table to get counts
+    console.log("Fetching chat instances with responses for user:", userId);
+    
+    // First, get all chat instances for the user
     const instances = await db
-      .select({
-        id: chatInstancesTable.id,
-        topic: chatInstancesTable.topic,        // Using topic instead of title
-        conversationPlan: chatInstancesTable.conversationPlan,
-        createdAt: chatInstancesTable.createdAt
-      })
+      .select()
       .from(chatInstancesTable)
       .where(eq(chatInstancesTable.userId, userId))
       .orderBy(desc(chatInstancesTable.createdAt));
     
-    // For demo purposes, add mock counts
-    return instances.map(instance => ({
-      ...instance,
-      // Add fake responseCount and totalWords for display purposes
-      responseCount: Math.floor(Math.random() * 10) + 1,
-      totalWords: Math.floor(Math.random() * 2000) + 500
-    }));
+    console.log(`Found ${instances.length} chat instances`);
+    
+    // For each instance, get its responses
+    const instancesWithCounts = await Promise.all(
+      instances.map(async (instance) => {
+        try {
+          // Get responses for this chat instance
+          const responses = await db
+            .select()
+            .from(chatResponsesTable)
+            .where(eq(chatResponsesTable.chatInstanceId, instance.id));
+          
+          // Filter to only include completed responses
+          const completedResponses = responses.filter(
+            response => response.status === 'completed'
+          );
+          
+          // Calculate total user words from completed responses
+          const totalWords = completedResponses.reduce((sum, response) => {
+            // Convert to number if stored as string, default to 0 if undefined
+            const userWords = response.user_words ? 
+              (typeof response.user_words === 'string' ? parseInt(response.user_words, 10) : response.user_words) : 0;
+            return sum + (isNaN(userWords) ? 0 : userWords);
+          }, 0);
+          
+          return {
+            ...instance,
+            responseCount: completedResponses.length,
+            totalWords
+          };
+        } catch (error) {
+          console.error(`Error processing responses for instance ${instance.id}:`, error);
+          return {
+            ...instance,
+            responseCount: 0,
+            totalWords: 0
+          };
+        }
+      })
+    );
+    
+    return instancesWithCounts;
   } catch (error) {
     console.error("Error getting chat instances with responses:", error);
     throw new Error("Failed to get chat instances with responses");

@@ -1,0 +1,1 @@
+ALTER TABLE "internal_chat_sessions" ADD COLUMN "context_data" text;

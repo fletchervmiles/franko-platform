@@ -5,7 +5,7 @@ import { useChat, Message } from "ai/react";
 import { Loader2 } from "lucide-react";
 
 import { Message as ChatMessage } from "@/components/message";
-import { InternalInput } from "@/components/internal-input";
+import { ChatInput } from "@/components/input";
 
 interface InternalChatProps {
   internalChatSessionId: string;
@@ -51,6 +51,37 @@ export function InternalChat({
       console.log("useChat response status:", response.status);
     },
   });
+  
+  // Check for and send initial message from sessionStorage
+  useEffect(() => {
+    // Only run once when the component mounts
+    const initialMessageKey = `initial-message-${internalChatSessionId}`;
+    const initialMessage = sessionStorage.getItem(initialMessageKey);
+    
+    if (initialMessage) {
+      console.log("📤 Found initial message in sessionStorage:", initialMessage);
+      
+      // Remove it to prevent sending it again on refresh
+      sessionStorage.removeItem(initialMessageKey);
+      console.log("🗑️ Removed initial message from sessionStorage");
+      
+      // Give a moment for the chat to initialize
+      setTimeout(() => {
+        try {
+          // Create a mock event object with preventDefault
+          const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+          
+          console.log("📤 Sending initial message from sessionStorage");
+          handleSubmit(mockEvent, { data: { message: initialMessage } });
+          console.log("✅ Initial message submitted");
+        } catch (error) {
+          console.error("❌ Error sending initial message:", error);
+        }
+      }, 500);
+    } else {
+      console.log("No initial message found in sessionStorage");
+    }
+  }, [internalChatSessionId, handleSubmit]);
   
   // Memoize the message elements to avoid re-renders
   const messageElements = useMemo(() => {
@@ -139,7 +170,7 @@ export function InternalChat({
           console.error("Direct API fetch error:", err);
         });
     }
-  }, [messages]);
+  }, [messages, apiUrl]);
 
   // Only show loading state if explicitly loading a response
   if (isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user') {
@@ -197,12 +228,13 @@ export function InternalChat({
 
       <div className="sticky bottom-0 bg-background border-t px-4 py-2 md:px-8 lg:px-12">
         <div className="mx-auto max-w-4xl">
-          <InternalInput
+          <ChatInput
             value={input}
             onChange={handleInputChange}
             onSubmit={handleSubmit}
             disabled={isLoading}
             stop={stop}
+            showProgressBar={false}
           />
         </div>
       </div>

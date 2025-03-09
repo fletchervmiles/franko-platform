@@ -7,6 +7,7 @@ export const internalChatSessionsTable = pgTable("internal_chat_sessions", {
   title: text("title").notNull(),
   messagesJson: text("messages_json"),
   selectedResponses: text("selected_responses"), // Store array of chat response IDs
+  contextData: text("context_data"), // Store the cached context data for reuse between requests
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
