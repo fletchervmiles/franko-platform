@@ -92,7 +92,6 @@ export function TopicGrid({
             }}
             disabled={isLoading}
             showProgressBar={false}
-            steps={[]}
           />
         </div>
 
