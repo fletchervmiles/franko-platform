@@ -27,6 +27,30 @@ interface ChatInputProps {
   sessionId?: string | null
 }
 
+function ConversationChip({ 
+  conversation, 
+  isLast, 
+  remainingCount 
+}: { 
+  conversation: Conversation, 
+  isLast: boolean,
+  remainingCount?: number 
+}) {
+  return (
+    <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg border px-2 py-1 text-sm">
+      <span className="font-medium truncate max-w-[200px]">{conversation.title}</span>
+      <span className="text-xs text-gray-500">
+        ({conversation.responseCount})
+      </span>
+      {isLast && remainingCount && remainingCount > 0 && (
+        <span className="ml-1 text-xs font-medium text-gray-600">
+          +{remainingCount} more
+        </span>
+      )}
+    </div>
+  )
+}
+
 export function ChatInput({
   selectedConversations,
   onConversationSelect,
@@ -185,20 +209,27 @@ export function ChatInput({
     }
   };
 
+  const renderConversationChips = () => {
+    const maxVisible = 3;
+    const remainingCount = selectedConversations.length - maxVisible;
+    
+    return selectedConversations.slice(0, maxVisible).map((conv, idx) => (
+      <ConversationChip 
+        key={conv.id} 
+        conversation={conv}
+        isLast={idx === Math.min(maxVisible - 1, selectedConversations.length - 1)}
+        remainingCount={idx === maxVisible - 1 ? remainingCount : undefined}
+      />
+    ));
+  };
+
   return (
     <div className="w-full bg-white pt-2">
       <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
         <div className="relative flex flex-col rounded-xl border bg-white shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:shadow-[0_0_15px_rgba(0,0,0,0.1)] [&:has(:focus)]:border-transparent">
           {selectedConversations.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-3 px-8 border-b">
-              {selectedConversations.map((conv) => (
-                <div key={conv.id} className="flex items-center gap-2 bg-gray-50 rounded-lg border px-3 py-2 text-sm">
-                  <span className="font-medium">{conv.title}</span>
-                  <span className="text-xs text-gray-500">
-                    ({conv.responseCount} responses, {conv.wordCount} words)
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 p-2 px-8 border-b overflow-x-auto whitespace-nowrap">
+              {renderConversationChips()}
             </div>
           )}
           <form className="flex flex-col gap-2 p-2 px-8" onSubmit={handleSubmit}>
