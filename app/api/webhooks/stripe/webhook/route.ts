@@ -1,7 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
-import { PLAN_MINUTES, type MembershipTier } from "@/lib/stripe";
+import { PLAN_RESPONSES, type MembershipTier } from "@/lib/stripe";
 import type Stripe from "stripe";
 import { mapToDBMembership } from "@/lib/stripe";
 
@@ -53,8 +53,8 @@ export async function POST(req: Request) {
         const updatedProfile = await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
           membership: dbMembership,
-          monthlyMinutes: PLAN_MINUTES[plan],
-          minutesAvailable: PLAN_MINUTES[plan],
+          monthlyResponsesQuota: PLAN_RESPONSES[plan],
+          totalResponsesAvailable: PLAN_RESPONSES[plan],
         });
 
         console.log("Updated profile result:", updatedProfile);

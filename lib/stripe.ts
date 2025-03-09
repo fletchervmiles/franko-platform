@@ -15,7 +15,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // Initialize Stripe client with API configuration
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia", // Specify Stripe API version
+  apiVersion: "2025-02-24.acacia", // Specify Stripe API version
   typescript: true,                 // Enable TypeScript support
 });
 
@@ -30,13 +30,13 @@ export type MembershipTier = "free" | "starter" | "pro" | "starter_2024" | "pro_
 // Define database-specific membership tiers (simplified version without year variants)
 export type DBMembershipTier = "free" | "starter" | "pro";
 
-// Define monthly minute allocations for each membership tier
-export const PLAN_MINUTES = {
-  free: 0,           // Free tier with no minutes
+// Define monthly response allocations for each membership tier
+export const PLAN_RESPONSES = {
+  free: 0,           // Free tier with no responses
   starter: 200,      // Legacy starter plan
-  pro: 500,          // Legacy pro plan
+  pro: 500,         // Legacy pro plan
   starter_2024: 100, // Current starter plan
-  pro_2024: 250      // Current pro plan
+  pro_2024: 250     // Current pro plan
 } as const;
 
 /**
@@ -64,5 +64,5 @@ export interface StripeSubscriptionData {
   customerId: string;      // Stripe customer identifier
   subscriptionId: string;  // Stripe subscription identifier
   membershipTier: MembershipTier; // User's current membership level
-  monthlyMinutes: number;  // Allocated minutes per month
+  monthlyResponses: number;  // Allocated responses per month
 }
