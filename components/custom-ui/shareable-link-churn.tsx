@@ -34,17 +34,17 @@ export default function ShareableLinkChurn({
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://franko.ai'
     if (userId) {
       const path = isDemoRoute ? '/demo/start-interview' : '/start-interview'
-      setShareableUrl(`${baseUrl}${path}?clientId=${userId}&company=${encodeURIComponent(profile.companyName || '')}`)
+      setShareableUrl(`${baseUrl}${path}?clientId=${userId}&company=${encodeURIComponent(profile.organisationName || '')}`)
     }
-  }, [userId, profile.companyName, isDemoRoute])
+  }, [userId, profile.organisationName, isDemoRoute])
 
   React.useEffect(() => {
-    if (profile?.companyUrl && profile?.companyName && profile?.companyDescription) {
+    if (profile?.organisationUrl && profile?.organisationName && profile?.organisationDescription) {
       setIsReady(true)
     } else {
       setIsReady(false)
     }
-  }, [profile?.companyUrl, profile?.companyName, profile?.companyDescription])
+  }, [profile?.organisationUrl, profile?.organisationName, profile?.organisationDescription])
 
   const handleCopy = async () => {
     if (!shareableUrl) return
@@ -119,7 +119,7 @@ export default function ShareableLinkChurn({
               </div>
             ) : (
               <div className="text-sm text-yellow-600">
-                Please complete all required fields (Company URL, Name, and Description) to get your shareable link.
+                Please complete all required fields (Organisation URL, Name, and Description) to get your shareable link.
               </div>
             )}
           </div>
