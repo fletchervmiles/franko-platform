@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^0.0.51",
-    "@ai-sdk/openai": "^1.1.13",
+    "@ai-sdk/openai": "^1.2.1",
     "@clerk/backend": "^1.15.6",
     "@clerk/clerk-sdk-node": "^5.0.60",
     "@clerk/nextjs": "^6.11.1",
