@@ -271,8 +271,8 @@ Remember that you are analyzing existing data, not conducting new interviews.
   // If there's existing context, append the new context
   let finalContext = systemPrompt;
   if (existingContext && existingContext.trim() !== "") {
-    // This is a simplified approach - in a real implementation, you might want to
-    // merge the contexts more intelligently to avoid duplication
+    // Simply append the new context to the existing context without checking for duplicates
+    // We're relying on the frontend to prevent duplicate selections
     finalContext = existingContext + "\n\n" + systemPrompt;
   }
 

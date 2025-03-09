@@ -24,6 +24,7 @@ interface ChatInputProps {
   firstMessageSent?: boolean
   value?: string
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  sessionId?: string | null
 }
 
 export function ChatInput({
@@ -34,14 +35,15 @@ export function ChatInput({
   isSubmitting = false,
   firstMessageSent = false,
   value = "",
-  onChange
+  onChange,
+  sessionId
 }: ChatInputProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [loadingConversationId, setLoadingConversationId] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [isLoadingAny, setIsLoadingAny] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const adjustTextareaHeight = () => {
@@ -74,7 +76,14 @@ export function ChatInput({
         console.warn("No conversations array in response:", data)
       }
       
-      setConversations(data.conversations || [])
+      // Filter out conversations that have already been selected
+      const filteredConversations = (data.conversations || []).filter(
+        (conv: Conversation) => !selectedConversations.some(
+          selected => selected.id === conv.id
+        )
+      );
+      
+      setConversations(filteredConversations)
     } catch (error) {
       console.error("Error fetching conversations:", error)
     } finally {
@@ -84,26 +93,34 @@ export function ChatInput({
 
   const handleConversationSelect = async (conversation: Conversation) => {
     setLoadingConversationId(conversation.id);
+    setIsLoadingAny(true);
+    setIsPopoverOpen(false);
     
     try {
-      // Create a new internal chat session
-      const response = await fetch("/api/internal-chat/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chatInstanceIds: [conversation.id],
-          title: conversation.title,
-        }),
-      });
+      let currentSessionId = sessionId;
+      
+      // Only create a new session if one doesn't exist yet
+      if (!currentSessionId) {
+        // Create a new internal chat session
+        const response = await fetch("/api/internal-chat/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatInstanceIds: [conversation.id],
+            title: conversation.title,
+          }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create chat session");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create chat session");
+        }
+
+        const { session } = await response.json();
+        currentSessionId = session.id;
       }
-
-      const { session } = await response.json();
       
       // Process the context data for this session
       const contextResponse = await fetch("/api/internal-chat/process-context", {
@@ -112,7 +129,7 @@ export function ChatInput({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          sessionId: session.id,
+          sessionId: currentSessionId,
           chatInstanceIds: [conversation.id],
         }),
       });
@@ -122,12 +139,9 @@ export function ChatInput({
         throw new Error(error.error || "Failed to process context data");
       }
       
-      // Set session ID and pass to parent
-      setSessionId(session.id);
-      
       // Call the parent's onConversationSelect with the session ID
       if (!selectedConversations.some(c => c.id === conversation.id)) {
-        onConversationSelect(conversation, session.id);
+        onConversationSelect(conversation, currentSessionId ?? undefined);
       }
       
     } catch (error) {
@@ -146,7 +160,7 @@ export function ChatInput({
       // Add a short delay before removing loading state to ensure UI feedback is visible
       setTimeout(() => {
         setLoadingConversationId(null);
-        setIsPopoverOpen(false);
+        setIsLoadingAny(false);
       }, 500);
     }
   }
@@ -171,21 +185,6 @@ export function ChatInput({
                   <span className="text-xs text-gray-500">
                     ({conv.responseCount} responses, {conv.wordCount} words)
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent form submission
-                      e.stopPropagation(); // Prevent event bubbling
-                      if (!firstMessageSent) {
-                        onConversationRemove(conv.id);
-                      }
-                    }}
-                    className="ml-1 text-gray-400 hover:text-gray-600"
-                    disabled={isSubmitting || firstMessageSent}
-                    type="button"
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Remove conversation</span>
-                  </button>
                 </div>
               ))}
             </div>
@@ -210,19 +209,30 @@ export function ChatInput({
               disabled={isSubmitting}
             />
             <div className="flex justify-end gap-2 items-center">
-              <Popover open={isPopoverOpen} onOpenChange={(open) => {
-                setIsPopoverOpen(open)
-                if (open) fetchConversations()
+              <Popover open={isPopoverOpen && !isLoadingAny} onOpenChange={(open) => {
+                if (!isLoadingAny) {
+                  setIsPopoverOpen(open);
+                  if (open) fetchConversations();
+                }
               }}>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="h-8 px-3 text-xs"
-                    disabled={isSubmitting || firstMessageSent}
+                    disabled={isSubmitting || isLoadingAny}
                   >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Responses
+                    {isLoadingAny ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Responses
+                      </>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4 shadow-lg" align="end" side="top" sideOffset={10}>
@@ -235,15 +245,21 @@ export function ChatInput({
                       <div className="flex items-center justify-center py-4">
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       </div>
-                    ) : conversations.map((conversation) => (
-                      <ConversationCard
-                        key={conversation.id}
-                        conversation={conversation}
-                        onSelect={handleConversationSelect}
-                        isLoading={loadingConversationId === conversation.id}
-                        isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
-                      />
-                    ))}
+                    ) : conversations.length > 0 ? (
+                      conversations.map((conversation) => (
+                        <ConversationCard
+                          key={conversation.id}
+                          conversation={conversation}
+                          onSelect={handleConversationSelect}
+                          isLoading={loadingConversationId === conversation.id}
+                          isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No additional conversations available
+                      </div>
+                    )}
                   </div>
                 </PopoverContent>
               </Popover>

@@ -40,21 +40,12 @@ export function ResponseQALanding({
   
   // Initialize with existing session if provided
   useEffect(() => {
-    console.log("🔍 Initialization effect running with:", { 
-      existingSessionId, 
-      sessionId, 
-      hasExistingConversation: !!existingConversation,
-      selectedConversationsCount: selectedConversations.length 
-    });
-    
     if (existingSessionId && !sessionId) {
-      console.log("📝 Setting session ID from existingSessionId:", existingSessionId);
       setSessionId(existingSessionId);
       setFirstMessageSent(true);
     }
     
     if (existingConversation && selectedConversations.length === 0) {
-      console.log("📝 Setting selected conversations from existingConversation");
       setSelectedConversations([existingConversation]);
     }
   }, [existingSessionId, existingConversation, sessionId, selectedConversations.length]);
@@ -73,118 +64,23 @@ export function ResponseQALanding({
     id: sessionId || undefined,
     body: {
       internalChatSessionId: sessionId
-    },
-    onResponse: (response) => {
-      console.log("🔄 useChat onResponse called:", {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      });
-    },
-    onFinish: (message) => {
-      console.log("✅ useChat onFinish called with message:", message);
-    },
-    onError: (error) => {
-      console.error("❌ useChat onError called:", error);
     }
   });
 
-  // Fix for the issue where new messages aren't being sent
-  // This manually adds a test message when a new session is created
-  useEffect(() => {
-    let isNewlyCreatedSession = false;
-    
-    // Only run this if we have a session ID, but no messages yet
-    if (sessionId && messages.length === 0 && firstMessageSent) {
-      isNewlyCreatedSession = true;
-      console.log("🔧 DEBUG: Newly created session detected:", sessionId);
-    
-      
-      // Add directly to messages
-      setMessages([
-        {
-          id: Date.now().toString(),
-          role: 'user',
-          content: testMessage
-        }
-      ]);
-    }
-    
-    // Only for debugging - remove in production
-    return () => {
-      if (isNewlyCreatedSession) {
-        console.log("🔧 DEBUG: Effect cleanup for newly created session");
-      }
-    };
-  }, [sessionId, messages.length, firstMessageSent, setMessages]);
-
-  // Log important state changes to help debug
-  useEffect(() => {
-    console.log("🔄 messages state changed:", messages.map(m => ({
-      id: m.id,
-      role: m.role,
-      contentPreview: typeof m.content === 'string' 
-        ? m.content.substring(0, 50) + (m.content.length > 50 ? '...' : '') 
-        : '[complex content]'
-    })));
-    
-    // Debug messages received from the useChat hook
-    console.log("🔍 DETAILED MESSAGES DEBUG:", {
-      messagesLength: messages.length,
-      messagesData: messages,
-      isChatLoading,
-      useChatMessages: Array.isArray(messages) ? messages : 'not an array',
-      messageComponentProps: messages.map((message, index) => ({
-        key: message.id || index,
-        content: typeof message.content === 'string' 
-          ? message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '')
-          : '[complex content]',
-        isUser: message.role === "user",
-        chatId: sessionId || '',
-        isLoading: index === messages.length - 1 && message.role === 'assistant' && isChatLoading,
-        messageIndex: index
-      }))
-    });
-  }, [messages, isChatLoading, sessionId]);
-
-  useEffect(() => {
-    console.log("🔄 isChatLoading changed to:", isChatLoading);
-  }, [isChatLoading]);
-
-  useEffect(() => {
-    console.log("🔄 sessionId changed to:", sessionId);
-  }, [sessionId]);
-
   // Memoize the message elements to avoid re-renders
   const messageElements = useMemo(() => {
-    console.log("📊 Rendering message elements, count:", messages.length);
-    
-    if (messages.length === 0) {
-      return null;
-    }
-    
-    return messages.map((message, index) => {
-      console.log(`📊 Rendering message ${index}:`, {
-        id: message.id,
-        role: message.role,
-        contentPreview: typeof message.content === 'string' 
-          ? message.content.substring(0, 30) + (message.content.length > 30 ? '...' : '')
-          : '[complex content]'
-      });
-      
-      return (
-        <MessageComponent
-          key={message.id || index}
-          content={message.content}
-          isUser={message.role === "user"}
-          chatId={sessionId || ''}
-          isLoading={index === messages.length - 1 && message.role === 'assistant' && isChatLoading}
-          messageIndex={index}
-          allMessages={messages as any}
-          isFirstInTurn={index === 0 || messages[index - 1]?.role !== message.role}
-        />
-      );
-    });
+    return messages.map((message, index) => (
+      <MessageComponent
+        key={message.id || index}
+        content={message.content}
+        isUser={message.role === "user"}
+        chatId={sessionId || ''}
+        isLoading={index === messages.length - 1 && message.role === 'assistant' && isChatLoading}
+        messageIndex={index}
+        allMessages={messages as any}
+        isFirstInTurn={index === 0 || messages[index - 1]?.role !== message.role}
+      />
+    ));
   }, [messages, sessionId, isChatLoading]);
 
   // Memoize the loading indicator
@@ -192,8 +88,6 @@ export function ResponseQALanding({
     if (!isChatLoading || messages.length === 0 || messages[messages.length - 1]?.role !== "user") {
       return null;
     }
-    
-    console.log("🔄 Rendering loading indicator");
     
     return (
       <MessageComponent
@@ -210,15 +104,10 @@ export function ResponseQALanding({
 
   // Scroll to bottom of messages when they change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages.length]);
-
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  }, [messages.length]);
 
   const handleConversationSelect = (conversation: Conversation, existingSessionId?: string) => {
     // Add to selected if not already selected
@@ -228,46 +117,32 @@ export function ResponseQALanding({
       // If a session ID was provided, set it
       if (existingSessionId) {
         setSessionId(existingSessionId)
-        setFirstMessageSent(true) // Mark as first message sent to prevent removal
+        // Don't set firstMessageSent to true here, only when an actual message is sent
       }
     }
   }
 
   const handleConversationRemove = (conversationId: string) => {
-    // Only allow removing if first message hasn't been sent
-    if (!firstMessageSent) {
-      setSelectedConversations(prev => prev.filter(c => c.id !== conversationId))
-    }
+    // Make this a no-op since we no longer want to allow removing selected conversations
+    return;
   }
 
+  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   };
 
   // Handle message submission with the AI SDK
   const handleMessageSubmit = async (message: string) => {
-    console.log("🚀 handleMessageSubmit called with message:", message);
-    
     if (selectedConversations.length === 0) {
-      console.warn("❌ No conversations selected, cannot submit message");
       return;
     }
-
-    console.log("📊 Current state before submission:", {
-      sessionId,
-      hasSession: !!sessionId,
-      selectedConversations: selectedConversations.map(c => c.id),
-      firstMessageSent
-    });
 
     // If we don't have a session yet, create one
     if (!sessionId) {
       setIsCreatingSession(true);
-      console.log("📝 No session ID found, creating new session...");
       try {
         // Create a new session
-        console.log("📤 Creating session with chat instances:", selectedConversations.map(c => c.id));
-        
         const createResponse = await fetch("/api/internal-chat/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -281,19 +156,12 @@ export function ResponseQALanding({
         
         if (!createResponse.ok) {
           const errorText = await createResponse.text();
-          console.error("❌ Session creation failed:", { 
-            status: createResponse.status, 
-            statusText: createResponse.statusText,
-            responseText: errorText
-          });
           throw new Error("Failed to create analysis session");
         }
         
         const createData = await createResponse.json();
-        console.log("✅ Session created successfully:", createData);
         
         // Process context for all selected conversations
-        console.log("📤 Processing context for session:", createData.session.id);
         const contextResponse = await fetch("/api/internal-chat/process-context", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -305,20 +173,11 @@ export function ResponseQALanding({
         
         if (!contextResponse.ok) {
           const errorText = await contextResponse.text();
-          console.error("❌ Context processing failed:", { 
-            status: contextResponse.status, 
-            statusText: contextResponse.statusText,
-            responseText: errorText
-          });
           throw new Error("Failed to process context data");
         }
         
-        const contextData = await contextResponse.json();
-        console.log("✅ Context processed successfully:", contextData);
-        
         // Set the session ID and mark first message sent
         const newSessionId = createData.session.id;
-        console.log("📝 Setting new session ID:", newSessionId);
         setSessionId(newSessionId);
         setFirstMessageSent(true);
         
@@ -338,14 +197,12 @@ export function ResponseQALanding({
         }, 300);
         
       } catch (error) {
-        console.error("❌ Error in session creation flow:", error);
+        console.error("Error in session creation:", error);
       } finally {
         setIsCreatingSession(false);
       }
     } else {
       // For an existing session, use the AI SDK directly
-      console.log("📤 Submitting message with AI SDK");
-      
       // Set the input value
       setInput(message);
       
@@ -420,100 +277,6 @@ export function ResponseQALanding({
             <p>{error.message}</p>
           </div>
         )}
-        
-        {/* Debug buttons - remove in production */}
-        <div className="text-center mt-2 space-y-2">
-          <button
-            onClick={() => {
-              console.log("🔧 DEBUG: Resetting form state");
-              setSessionId(null);
-              setFirstMessageSent(false);
-              setMessages([]);
-              setInput("");
-            }}
-            className="text-xs text-gray-400 hover:text-gray-600 mr-4"
-          >
-            Reset Form (Debug)
-          </button>
-
-          <button
-            onClick={() => {
-              if (!sessionId) {
-                console.error("No session ID available for direct API call");
-                return;
-              }
-              
-              console.log("🔧 DEBUG: Making direct API call with session:", sessionId);
-              
-              fetch("/api/internal-chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  messages: [{ role: "user", content: "Debug test message" }],
-                  internalChatSessionId: sessionId
-                })
-              })
-              .then(response => {
-                console.log("🔧 DEBUG: Direct API call response:", {
-                  status: response.status,
-                  ok: response.ok
-                });
-                return response.text();
-              })
-              .then(text => {
-                console.log("🔧 DEBUG: Response text:", text.substring(0, 100) + (text.length > 100 ? "..." : ""));
-              })
-              .catch(error => {
-                console.error("🔧 DEBUG: Direct API call error:", error);
-              });
-            }}
-            className="text-xs text-gray-400 hover:text-gray-600"
-          >
-            Test Direct API Call (Debug)
-          </button>
-          
-          <button
-            onClick={() => {
-              // Add a test message to the UI to see if message rendering works
-              console.log("🔧 DEBUG: Adding test messages to UI");
-              
-              setMessages([
-                {
-                  id: "test-user-1",
-                  role: "user",
-                  content: "This is a test user message"
-                },
-                {
-                  id: "test-assistant-1",
-                  role: "assistant",
-                  content: "This is a test assistant response"
-                }
-              ]);
-            }}
-            className="block mx-auto text-xs text-gray-400 hover:text-gray-600 mt-2"
-          >
-            Add Test Messages (Debug)
-          </button>
-
-          <button
-            onClick={() => {
-              // Force a complete reset and new useChat instance
-              console.log("🔧 DEBUG: Forcing complete reset");
-              
-              // Clear all state
-              setSessionId(null);
-              setFirstMessageSent(false);
-              setMessages([]);
-              setInput("");
-              
-              // Force a reload of the page
-              window.location.reload();
-            }}
-            className="block mx-auto text-xs text-red-400 hover:text-red-600 mt-2"
-          >
-            Force Reset & Reload (Debug)
-          </button>
-        </div>
       </div>
 
       {/* Chat input with conversation selector */}
@@ -527,6 +290,7 @@ export function ResponseQALanding({
           firstMessageSent={firstMessageSent}
           value={input}
           onChange={handleInputChange}
+          sessionId={sessionId}
         />
       </div>
     </div>
