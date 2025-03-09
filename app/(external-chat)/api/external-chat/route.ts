@@ -97,20 +97,14 @@ import {
   getCachedPrompt
 } from '@/lib/prompt-cache';
 
-/**
- * Invalidates the cached prompt for a specific organization
- */
-export function invalidatePromptCache(orgId: string) {
+// Remove exports and use internal functions instead
+function _invalidatePromptCache(orgId: string) {
   logger.debug('Invalidating prompt caches for organization:', { orgId });
   invalidateCache(orgId);
   invalidateConversationPlanPromptCache(orgId);
 }
 
-/**
- * Invalidates the entire prompt cache
- * Use this for global updates or migrations
- */
-export function invalidateAllPromptCaches() {
+function _invalidateAllPromptCaches() {
   logger.debug('Invalidating all prompt caches');
   invalidateAllCaches();
 }
