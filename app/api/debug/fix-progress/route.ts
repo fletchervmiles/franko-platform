@@ -35,6 +35,9 @@ export async function POST(request: Request) {
     
     // Initialize or fix progress
     const fixedProgress: ObjectiveProgress = {
+      overall_turns: 0,
+      expected_total_min: 5,
+      expected_total_max: 10,
       objectives: {}
     };
 
@@ -43,18 +46,20 @@ export async function POST(request: Request) {
       // Copy existing objectives with correct structure
       for (const [key, obj] of Object.entries(currentProgress.objectives)) {
         fixedProgress.objectives[key] = {
-          status: obj.status
-          // No comments field unless needed
+          status: obj.status,
+          turns_used: 0,
+          expected_min: 1,
+          expected_max: 2
         };
       }
     } else {
       // Create default progress
       fixedProgress.objectives = {
-        objective01: { status: "current" },
-        objective02: { status: "tbc" },
-        objective03: { status: "tbc" },
-        objective04: { status: "tbc" },
-        objective05: { status: "tbc" }
+        objective01: { status: "current", turns_used: 0, expected_min: 1, expected_max: 2 },
+        objective02: { status: "tbc", turns_used: 0, expected_min: 1, expected_max: 2 },
+        objective03: { status: "tbc", turns_used: 0, expected_min: 1, expected_max: 2 },
+        objective04: { status: "tbc", turns_used: 0, expected_min: 1, expected_max: 2 },
+        objective05: { status: "tbc", turns_used: 0, expected_min: 1, expected_max: 2 }
       };
     }
 
