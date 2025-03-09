@@ -106,9 +106,14 @@ import {
     ttl: 1000 * 60 * 60, // Items expire after 1 hour
   });
   
+  /* eslint-disable-next-line import/no-unused-modules */
   /**
-   * Invalidates the cached prompt for a specific user
-   * Call this whenever a user's profile is updated
+   * @internal
+   * @todo: Refactor cache invalidation strategy
+   * Currently, this export is used by server actions for cache invalidation.
+   * While this violates Next.js route conventions, it's tightly coupled with
+   * the local cache implementation. Future work should consolidate all caching
+   * into a single, centralized service.
    */
   export function invalidatePromptCache(userId: string) {
     logger.debug('Invalidating prompt caches for user:', { userId });
