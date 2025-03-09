@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# unused/legacy components
+/_legacy/
+/_unused/
+/components/custom-ui/url-submit.tsx
+/components/custom-ui/faqs.tsx
+/lib/supabase/database.types.ts
+/db/schema/interviews-schema.ts
