@@ -1,6 +1,6 @@
 "use server";
 
-import { stripe, PLAN_MINUTES, mapToDBMembership } from "@/lib/stripe";
+import { stripe, PLAN_RESPONSES, mapToDBMembership } from "@/lib/stripe";
 import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
@@ -60,15 +60,15 @@ export async function createCheckoutSession(
       email: customerEmail,
       stripeCustomerId: customer.id,
       membership: dbMembership,
-      monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
-      totalResponsesAvailable: PLAN_MINUTES[internalPlan],
+      monthlyResponsesQuota: PLAN_RESPONSES[internalPlan],
+      totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
     }).onConflictDoUpdate({
       target: profilesTable.userId,
       set: {
         stripeCustomerId: customer.id,
         membership: dbMembership,
-        monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
-        totalResponsesAvailable: PLAN_MINUTES[internalPlan],
+        monthlyResponsesQuota: PLAN_RESPONSES[internalPlan],
+        totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
       }
     });
 
@@ -114,8 +114,8 @@ export async function updateProfileWithSubscription(
         stripeSubscriptionId: subscriptionId,
         stripeCustomerId: customerId,
         membership: dbMembership,
-        monthlyResponsesQuota: PLAN_MINUTES[internalPlan],
-        totalResponsesAvailable: PLAN_MINUTES[internalPlan],
+        monthlyResponsesQuota: PLAN_RESPONSES[internalPlan],
+        totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
       })
       .where(eq(profilesTable.userId, userId));
   } catch (error) {
