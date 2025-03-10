@@ -1,7 +1,5 @@
 'use client'
 
-import RootLayout from "@/components/custom-ui/nav"
-import ContactCard from "@/components/custom-ui/contact-card"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -21,11 +19,4 @@ export default function SupportPage() {
     return null // or loading state
   }
 
-  return (
-    <RootLayout>
-      <div className="w-full">
-        <ContactCard />
-      </div>
-    </RootLayout>
-  )
 }

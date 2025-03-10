@@ -8,10 +8,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import RootLayout from "@/components/custom-ui/nav"
-import URLSubmissionForm from "@/components/custom-ui/url-submit"
-import VoiceSelectionCard from "@/components/custom-ui/voice-selector"
-import ShareableLinkChurn from "@/components/custom-ui/shareable-link-churn"
 import { SelectProfile } from "@/db/schema/profiles-schema"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from 'next/navigation'
@@ -108,24 +104,5 @@ export default function SetupPage() {
      * Render setup page components
      * Includes URL submission, shareable link generation, and voice selection
      */
-    return (
-      <RootLayout>
-        <div className="space-y-4">
-          {/* URL submission form component */}
-          <URLSubmissionForm 
-            onProfileUpdate={refreshProfile} 
-            userId={user.id}
-          />
-          {/* Conditional render of shareable link component */}
-          {profile && (
-            <ShareableLinkChurn 
-              profile={profile} 
-              userId={user.id}
-            />
-          )}
-          {/* Voice selection component */}
-          <VoiceSelectionCard userId={user.id} />
-        </div>
-      </RootLayout>
-    )
+
 }

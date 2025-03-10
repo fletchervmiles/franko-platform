@@ -1,6 +1,4 @@
-import RootLayout from "@/components/custom-ui/nav"
-import AccountSection from "@/components/custom-ui/subscription"
-import UsageOverview from "@/components/custom-ui/plan-usage"
+
 import { auth } from "@clerk/nextjs/server"
 import { getProfile } from "@/db/queries/profiles-queries"
 import { redirect } from "next/navigation"
@@ -14,16 +12,6 @@ export default async function AccountPage() {
 
     const profile = await getProfile(userId)
     
-    return (
-      <RootLayout>
-        <div className="space-y-4">
-          <UsageOverview userId={userId} />
-          <AccountSection 
-            stripeCustomerId={profile?.stripeCustomerId} 
-            userId={userId}
-          />
-        </div>
-      </RootLayout>
-    )
+
 }
 
