@@ -28,7 +28,10 @@ const isProtectedApiRoute = createRouteMatcher([
   "/api/chat",
   "/api/chat/:path*",
   "/api/history",
-  "/api/history/:path*"
+  "/api/history/:path*",
+  "/api/chat-instances",
+  "/api/chat-instances/details",
+  "/api/chat-instances/update"
 ]);
 
 // Public API routes that don't require authentication
