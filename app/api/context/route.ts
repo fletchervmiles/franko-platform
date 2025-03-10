@@ -1,3 +1,15 @@
+/**
+ * Conversation Finalizer Utility
+ * 
+ * Orchestrates the finalization of a conversation:
+ * 1. Updates end time and calculates duration
+ * 2. Cleans the transcript
+ * 3. Calculates completion status
+ * 4. Counts user words
+ * 5. Updates usage tracking if completion rate > 50%
+ * 6. Generates a summary if completion rate > 0%
+ */
+
 import { NextResponse } from "next/server";
 import Exa from "exa-js";
 import { updateProfile } from "@/db/queries/profiles-queries";
@@ -8,7 +20,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 // Helper function to load the context setter prompt
