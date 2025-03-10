@@ -7,7 +7,7 @@ interface InterviewCardProps {
   intervieweeName: string
   date: string
   duration: number
-  status: "ready for review" | "reviewed"
+  status: "new responses" | "reviewed"
   interviewType: string
   onClick: () => void
 }

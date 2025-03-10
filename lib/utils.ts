@@ -25,6 +25,12 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { type SelectChatInstance } from "@/db/schema/chat-instances-schema";
 
+// Environment detection utility
+export const getEnvironment = () => {
+  // Simple environment variable switch
+  return process.env.NEXT_PUBLIC_USE_PRODUCTION === 'true' ? 'production' : 'staging';
+};
+
 // Utility function to merge Tailwind CSS classes
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
