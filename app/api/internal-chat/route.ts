@@ -113,6 +113,19 @@ export async function POST(request: Request) {
       const profile = await getProfile(userId);
       if (profile) {
         const currentCount = profile.totalInternalChatQueriesUsed || 0;
+        const totalQuota = profile.totalInternalChatQueriesQuota || 0;
+        
+        // Check if the user has exceeded their quota
+        if (totalQuota > 0 && currentCount >= totalQuota) {
+          return new Response(JSON.stringify({
+            error: "You've used all your credits. Please upgrade your plan for additional capacity."
+          }), { 
+            status: 403,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+        
+        // If not exceeded, increment the usage count
         await updateProfile(userId, {
           totalInternalChatQueriesUsed: currentCount + 1
         });

@@ -49,7 +49,7 @@ export async function calculateUsageMetrics(userId: string): Promise<UsageMetric
     0
   );
 
-  const monthlyQuota = profile.monthlyResponsesQuota || 0;
+  const monthlyQuota = profile.totalResponsesQuota || 0;
   const remainingMinutes = Math.max(0, monthlyQuota - minutesUsedThisMonth);
 
   return {

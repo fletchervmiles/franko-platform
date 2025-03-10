@@ -15,11 +15,13 @@ import {
   MessageSquare, 
   DollarSign,
   ChevronRight,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
 import LoadingScreen from "./loading-screen"
+import { useQuotaAvailability } from "@/hooks/use-quota-availability"
 
 // Status indicator component
 const StatusDot = ({ active }: { active: boolean }) => (
@@ -287,6 +289,9 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
     "9-10 minutes (deep dive)"
   ]
 
+  // Add quota checking
+  const { hasAvailablePlanQuota, isLoading: isQuotaLoading, planQuotaPercentage } = useQuotaAvailability();
+  
   // Handle form submission
   const handleSubmit = async () => {
     if (!isFormComplete()) return
@@ -372,10 +377,18 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
     }
   }
 
-  // Update the button text based on whether we're regenerating
-  const submitButtonText = isSubmitting 
-    ? (isRegenerating ? "Regenerating Plan..." : "Generating Plan...")
-    : (isRegenerating ? "Regenerate Plan" : "Generate Plan");
+  // Update the button text based on whether we're regenerating and quota status
+  const getSubmitButtonText = () => {
+    if (isSubmitting) {
+      return isRegenerating ? "Regenerating Plan..." : "Generating Plan...";
+    }
+    
+    if (!isQuotaLoading && !hasAvailablePlanQuota) {
+      return "⚠️ You're out of generation credits!";
+    }
+    
+    return isRegenerating ? "Regenerate Plan" : "Generate Plan";
+  };
 
   return (
     <div className="space-y-8 w-full pb-16">
@@ -734,26 +747,32 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
                 Back to Plan
               </Button>
             )}
-            <Button 
+            <Button
+              type="button"
               onClick={handleSubmit}
+              disabled={isSubmitting || (!isQuotaLoading && !hasAvailablePlanQuota) || !isFormComplete()}
               className={cn(
-                isFormComplete() 
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700" 
-                  : "bg-gray-300 hover:bg-gray-400",
-                "text-white transition-all duration-200"
+                "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200",
+                !isFormComplete() && "opacity-50 cursor-not-allowed"
               )}
-              disabled={!isFormComplete() || isSubmitting}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {submitButtonText}
+                  {getSubmitButtonText()}
                 </>
               ) : (
-                submitButtonText
+                getSubmitButtonText()
               )}
             </Button>
           </div>
+          {/* Add quota exceeded message */}
+          {!isQuotaLoading && !hasAvailablePlanQuota && (
+            <div className="mt-2 text-red-500 text-sm flex items-center justify-end">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              <span>You've reached your conversation plan generation limit.</span>
+            </div>
+          )}
         </div>
       )}
     </div>

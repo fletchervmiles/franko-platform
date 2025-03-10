@@ -63,8 +63,7 @@ export function AnalyzeResponsesButton({ chatInstanceId, responseCount }: Analyz
     <Button
       onClick={handleClick}
       disabled={isLoading || responseCount === 0}
-      className="gap-2"
-      variant="outline"
+      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 gap-2"
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />

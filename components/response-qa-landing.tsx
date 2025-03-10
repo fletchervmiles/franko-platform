@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useMemo } from "react"
 import { Message, useChat } from "ai/react"
 import { ChatInput } from "@/components/response-qa-input"
 import { Message as MessageComponent } from "@/components/message"
+import { useQuotaAvailability } from "@/hooks/use-quota-availability"
+import { AlertTriangle } from "lucide-react"
 
 interface Conversation {
   id: string
@@ -29,6 +31,9 @@ export function ResponseQALanding({
   existingSessionId, 
   existingConversation 
 }: ResponseQALandingProps) {
+  // Add quota checking
+  const { hasAvailableQAQuota, isLoading: isQuotaLoading } = useQuotaAvailability();
+  
   // State for conversation selection
   const [selectedConversations, setSelectedConversations] = useState<Conversation[]>(
     existingConversation ? [existingConversation] : []
@@ -252,6 +257,18 @@ export function ResponseQALanding({
           {/* Show typing animation when waiting for AI response */}
           {loadingIndicator}
           
+          {/* Quota exceeded message */}
+          {!isQuotaLoading && !hasAvailableQAQuota && (
+            <div className="flex justify-center w-full my-8">
+              <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-md text-sm flex items-start gap-2 max-w-lg">
+                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p>You've run out of Response Q&A credits. Please upgrade your plan to continue.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* End of messages marker for scrolling */}
           <div ref={messagesEndRef} />
         </div>
@@ -267,17 +284,29 @@ export function ResponseQALanding({
 
       {/* Chat input with conversation selector */}
       <div className="sticky bottom-0">
-        <ChatInput 
-          selectedConversations={selectedConversations}
-          onConversationSelect={handleConversationSelect}
-          onConversationRemove={handleConversationRemove}
-          onMessageSubmit={handleMessageSubmit}
-          isSubmitting={isChatLoading || isCreatingSession}
-          firstMessageSent={firstMessageSent}
-          value={input}
-          onChange={handleInputChange}
-          sessionId={sessionId}
-        />
+        {!isQuotaLoading && !hasAvailableQAQuota ? (
+          <div className="py-3 px-4 bg-gray-100 text-gray-500 text-sm flex items-center justify-center border-t border-gray-200">
+            <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+            You've run out of Response Q&A credits. Please upgrade your plan to continue.
+          </div>
+        ) : (
+          <ChatInput 
+            selectedConversations={selectedConversations}
+            onConversationSelect={handleConversationSelect}
+            onConversationRemove={handleConversationRemove}
+            onMessageSubmit={(message) => {
+              // Only submit if quota is available
+              if (hasAvailableQAQuota) {
+                handleMessageSubmit(message);
+              }
+            }}
+            isSubmitting={isChatLoading || isCreatingSession}
+            firstMessageSent={firstMessageSent}
+            value={input}
+            onChange={handleInputChange}
+            sessionId={sessionId}
+          />
+        )}
       </div>
     </div>
   )
