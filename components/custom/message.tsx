@@ -103,7 +103,6 @@ export const Message = ({
                     <OptionButtons 
                     options={result.display} 
                     chatId={chatId}
-                    text={result.text}
                     />
                 ) : toolName === "generateConversationPlan" ? (
                     <ConversationPlan 
