@@ -63,13 +63,15 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     let transcript = '';
     if (refreshedChatResponse.messagesJson) {
       transcript = cleanTranscript(
-        refreshedChatResponse.messagesJson, 
-        refreshedChatResponse.intervieweeFirstName
+        refreshedChatResponse.messagesJson,
+        refreshedChatResponse.intervieweeFirstName ?? undefined
       );
     }
     
     // Calculate completion status using the refreshed chat progress
-    const completionStatus = calculateCompletionStatus(refreshedChatResponse.chatProgress);
+    const completionStatus = calculateCompletionStatus(
+      refreshedChatResponse.chatProgress as string | null
+    );
     
     // Convert completion status to a number for comparison
     const completionRate = parseInt(completionStatus.replace('%', ''), 10);
@@ -84,8 +86,8 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     if (!isNaN(completionRate) && completionRate > 0 && transcript) {
       try {
         summary = await generateSummary(
-          transcript, 
-          chatInstance.conversationPlan || {},
+          transcript,
+          chatInstance.conversationPlan as Record<string, unknown> ?? {},
           completionRate
         );
       } catch (summaryError) {
@@ -107,7 +109,6 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
           transcript_summary: summary,
           status: 'completed'
         },
-        tx
       );
     });
     
