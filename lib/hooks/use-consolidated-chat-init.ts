@@ -63,12 +63,17 @@ export function useConsolidatedChatInit() {
         return response.json();
       } catch (error) {
         // Handle abort errors specifically
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           throw new Error('Connection timed out. Please try again.');
         }
         
-        // Rethrow other errors
-        throw error;
+        // If it's already an Error instance, rethrow it
+        if (error instanceof Error) {
+          throw error;
+        }
+        
+        // Otherwise, wrap unknown error in Error instance
+        throw new Error('An unexpected error occurred');
       }
     },
     retry: 2, // Retry up to 2 times
