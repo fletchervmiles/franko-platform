@@ -518,16 +518,16 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
-                    <Button
-                      onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
+                  <Button 
+                    onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
                       disabled={isQuotaLoading || !hasAvailablePlanQuota}
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto flex items-center gap-1"
-                    >
+                  >
                       {isQuotaLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCcw className="h-3 w-3" />}
                       <span>
                         {isQuotaLoading ? "Loading..." : (!hasAvailablePlanQuota) ? "⚠️ You're out of generation credits!" : "Regenerate"}
                       </span>
-                    </Button>
+                  </Button>
                     {!isQuotaLoading && !hasAvailablePlanQuota && (
                       <div className="mt-2 text-amber-500 text-xs flex items-center">
                         <AlertTriangle className="h-3 w-3 mr-1" />

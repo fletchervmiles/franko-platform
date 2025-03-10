@@ -12,8 +12,9 @@
  * FLOW:
  * 1. Receives a chatInstanceId and optional user data
  * 2. Validates and retrieves the chat instance in a single transaction
- * 3. Creates a new chat response record in the same transaction
- * 4. Returns all necessary data for initialization in a single response
+ * 3. Checks if user has exceeded their total responses quota
+ * 4. Creates a new chat response record in the same transaction
+ * 5. Returns all necessary data for initialization in a single response
  * 
  * BENEFITS:
  * - Single network round trip instead of multiple requests
@@ -26,7 +27,8 @@ import { db } from "@/db/db";
 import { chatInstancesTable } from "@/db/schema/chat-instances-schema";
 import { chatResponsesTable } from "@/db/schema/chat-responses-schema";
 import { generateUUID } from "@/lib/utils";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
+import { getProfileByUserId } from "@/db/queries/profiles-queries";
 
 export async function POST(request: Request) {
   try {
@@ -47,6 +49,20 @@ export async function POST(request: Request) {
 
       if (!chatInstance) {
         return new NextResponse("Chat instance not found", { status: 404 });
+      }
+
+      // Check if the user has reached their total responses quota
+      const profile = await getProfileByUserId(chatInstance.userId);
+      if (!profile) {
+        return new NextResponse("User profile not found", { status: 404 });
+      }
+
+      // If the user has exceeded their quota, prevent creating a new response
+      if ((profile.totalResponsesUsed || 0) >= (profile.totalResponsesQuota || 0)) {
+        return new NextResponse(
+          "Response limit reached. This conversation is no longer accepting new submissions.",
+          { status: 403 }
+        );
       }
 
       // Create a new chat response

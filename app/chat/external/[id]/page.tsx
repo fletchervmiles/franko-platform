@@ -7,6 +7,7 @@ import { WelcomeForm } from "@/components/welcome-form";
 import { Loader2 } from "lucide-react";
 import { useConsolidatedChatInit } from "@/lib/hooks/use-consolidated-chat-init";
 import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
+import { useQuotaAvailability } from "@/hooks/use-quota-availability";
 
 export default function StartChatPage({
   params: { id },
@@ -36,6 +37,9 @@ export default function StartChatPage({
     error: initError,
     data: initData
   } = useConsolidatedChatInit();
+
+  // Fetch quota availability to check response limits
+  const { isLoading: isQuotaLoading, hasAvailableResponsesQuota } = useQuotaAvailability();
 
   // Initial load - fetch instance data via the legacy API to ensure compatibility
   useEffect(() => {
@@ -97,6 +101,12 @@ export default function StartChatPage({
     firstName: string;
     email: string;
   }) => {
+    // Check if we've hit the response limit
+    if (!hasAvailableResponsesQuota) {
+      console.log("Response limit reached, not starting chat");
+      return;
+    }
+    
     // Now we have user data, get a real chat response ID
     initializeChat(
       { 
@@ -140,34 +150,43 @@ export default function StartChatPage({
   const errorMessage = isInitializing ? null : 
     (initError instanceof Error ? initError.message : null);
 
+  // Determine if we should show the response limit message
+  const hasReachedResponseLimit = !isLoading && !isQuotaLoading && !hasAvailableResponsesQuota;
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-lg w-full p-8 bg-white shadow-lg">
         <div className="space-y-6">
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-bold">
-              Welcome! Ready to Chat?
+              {hasReachedResponseLimit ? "Response Limit Reached" : "Welcome! Ready to Chat?"}
             </h1>
-            <p className="text-gray-600">
-              {chatInstanceData?.welcomeDescription || 
-                "This will be a brief 3-4 minute chat to share your thoughts on Clerk.com's onboarding and documentation. Your feedback will help make the experience even better for developers like you!"}
-            </p>
+            {hasReachedResponseLimit ? (
+              <p className="text-gray-600">
+                Thank you for your interest—this conversation has reached its response limit and is no longer accepting new submissions.
+              </p>
+            ) : (
+              <p className="text-gray-600">
+                {chatInstanceData?.welcomeDescription || 
+                  "This will be a brief 3-4 minute chat to share your thoughts on Clerk.com's onboarding and documentation. Your feedback will help make the experience even better for developers like you!"}
+              </p>
+            )}
           </div>
           
-          {errorMessage && (
+          {errorMessage && !hasReachedResponseLimit && (
             <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm">
               {errorMessage}
             </div>
           )}
           
-          {chatInstanceData?.respondentContacts ? (
+          {!hasReachedResponseLimit && chatInstanceData?.respondentContacts ? (
             <WelcomeForm 
               onSubmit={handleStartChat}
               isLoading={isInitializing}
               incentive_status={chatInstanceData.incentive_status}
               incentive_description={chatInstanceData.incentive_description}
             />
-          ) : (
+          ) : !hasReachedResponseLimit ? (
             <div className="flex justify-center">
               <button
                 onClick={() => handleStartChat()}
@@ -182,7 +201,7 @@ export default function StartChatPage({
                 {isInitializing ? "Preparing Your Session..." : "Get Started"}
               </button>
             </div>
-          )}
+          ) : null}
           
           <div className="text-center text-sm text-gray-400 mt-4">
             powered by franko.ai
