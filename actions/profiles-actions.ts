@@ -84,7 +84,10 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
       email: email || undefined,
       membership: existingProfile?.membership || "free",
       totalResponsesAvailable: existingProfile?.totalResponsesAvailable || 20,
-      monthlyResponsesQuota: existingProfile?.monthlyResponsesQuota || 20,
+      totalResponsesQuota: existingProfile?.totalResponsesQuota || 20,
+      totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || 20,
+      totalInternalChatQueriesAvailable: existingProfile?.totalInternalChatQueriesAvailable || 20,
+      totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || 5,
     };
 
     // Preserve existing organisation data if it exists

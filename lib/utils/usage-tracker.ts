@@ -1,7 +1,7 @@
 /**
  * Usage Tracker Utility
  * 
- * Tracks usage of chat responses by incrementing the total_responses_used_this_month
+ * Tracks usage of chat responses by incrementing the totalResponsesUsed
  * field in the user's profile when a conversation has a completion rate > 50%.
  */
 
@@ -38,7 +38,7 @@ export async function updateUsageCount(
       return;
     }
     
-    // Increment the total_responses_used_this_month field
+    // Increment the totalResponsesUsed field
     await db.transaction(async (tx) => {
       // Get the current profile first
       const profile = await tx
@@ -52,23 +52,19 @@ export async function updateUsageCount(
         return;
       }
       
-      // Safely increment the counters using the existing values
+      // Safely increment the counter using the existing value
       const currentTotal = profile[0].totalResponsesUsed || 0;
-      const currentMonthly = profile[0].totalResponsesUsedThisMonth || 0;
       
       await tx.update(profilesTable)
         .set({ 
-          totalResponsesUsedThisMonth: currentMonthly + 1,
           totalResponsesUsed: currentTotal + 1
         })
         .where(eq(profilesTable.userId, userId));
         
-      logger.debug('Updated usage counters', { 
+      logger.debug('Updated usage counter', { 
         userId,
         prevTotal: currentTotal,
-        newTotal: currentTotal + 1,
-        prevMonthly: currentMonthly,
-        newMonthly: currentMonthly + 1
+        newTotal: currentTotal + 1
       });
     });
     

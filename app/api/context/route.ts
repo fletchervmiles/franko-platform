@@ -12,7 +12,7 @@
 
 import { NextResponse } from "next/server";
 import Exa from "exa-js";
-import { updateProfile } from "@/db/queries/profiles-queries";
+import { updateProfile, getProfile } from "@/db/queries/profiles-queries";
 import { o3MiniModel } from "@/ai_folder";
 import fs from 'fs';
 import path from 'path';
@@ -74,6 +74,26 @@ export async function POST(request: Request) {
       organisationName,
     });
     logger.info('Initial profile update successful');
+
+    // Non-blocking context update counter increment
+    Promise.resolve().then(async () => {
+      try {
+        const profile = await getProfile(userId);
+        if (profile) {
+          const currentCount = profile.context_update || 0;
+          await updateProfile(userId, {
+            context_update: currentCount + 1
+          });
+          logger.debug('Updated context update count:', { 
+            userId, 
+            newCount: currentCount + 1 
+          });
+        }
+      } catch (error) {
+        logger.error('Failed to update context update count:', error);
+        // Don't throw - this is non-blocking
+      }
+    });
 
     const exa = new Exa(process.env.EXA_API_KEY!);
     

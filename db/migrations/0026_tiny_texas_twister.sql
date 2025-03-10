@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" RENAME COLUMN "total_chat_instances_used" TO "total_chat_instance_generations_used";--> statement-breakpoint
+ALTER TABLE "profiles" RENAME COLUMN "total_chat_instances_available" TO "total_chat_instance_generations_available";

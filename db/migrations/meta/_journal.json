@@ -169,6 +169,41 @@
       "when": 1741491898880,
       "tag": "0023_great_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1741589928658,
+      "tag": "0024_secret_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1741590125285,
+      "tag": "0025_ordinary_wraith",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1741590343469,
+      "tag": "0026_tiny_texas_twister",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1741591920840,
+      "tag": "0027_powerful_gressill",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1741591996109,
+      "tag": "0028_massive_aaron_stack",
+      "breakpoints": true
     }
   ]
 }

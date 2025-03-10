@@ -13,8 +13,9 @@ import { logger } from '@/lib/logger';
 import { updateChatInstanceConversationPlan, updateChatInstanceProgress, updateWelcomeDescription } from "@/db/queries/chat-instances-queries";
 import { o1Model, geminiFlashModel } from ".";
 import { arrayToNumberedObjectives, type ConversationPlan, type Objective } from "@/components/conversationPlanSchema";
-import { getUserProfile } from "@/db/queries/queries";
+import { getProfile } from "@/db/queries/profiles-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
+import { updateProfile } from "@/db/queries/profiles-queries";
 
 /**
  * Creates an objective progress object based on the conversation plan
@@ -136,7 +137,7 @@ export async function generateConversationPlanFromForm({
     );
 
     // Get user profile data
-    const profile = await getUserProfile({ userId });
+    const profile = await getProfile(userId);
     if (!profile) {
       throw new Error('User profile not found');
     }
@@ -208,20 +209,33 @@ export async function generateConversationPlanFromForm({
           objectives: objectivesArray
         };
 
-        // Save the conversation plan (the conversion to numbered objectives happens in the query function)
+        // Save the conversation plan
         await updateChatInstanceConversationPlan(chatId, plan);
-
-        logger.debug('Generated conversation plan from form data:', {
-          title: plan.title,
-          duration: plan.duration,
-          objectiveCount: plan.objectives.length
-        });
 
         // Create and save the objective progress
         await createObjectiveProgressFromPlan(plan, chatId);
         
+        // Non-blocking counter update for chat instance generations
+        Promise.resolve().then(async () => {
+          try {
+            const profile = await getProfile(userId);
+            if (profile) {
+              const currentCount = profile.totalChatInstanceGenerationsUsed || 0;
+              await updateProfile(userId, {
+                totalChatInstanceGenerationsUsed: currentCount + 1
+              });
+              logger.debug('Updated chat instance generation count:', { 
+                userId, 
+                newCount: currentCount + 1 
+              });
+            }
+          } catch (error) {
+            logger.error('Failed to update chat instance generation count:', error);
+            // Don't throw - this is non-blocking
+          }
+        });
+        
         // Non-blocking welcome description generation
-        // This runs after the conversation plan is generated but doesn't block the flow
         Promise.resolve().then(() => {
           generateWelcomeDescription({
             chatId,
@@ -231,6 +245,12 @@ export async function generateConversationPlanFromForm({
           }).catch(error => {
             logger.error('Failed to generate welcome description:', error);
           });
+        });
+
+        logger.debug('Generated conversation plan from form data:', {
+          title: plan.title,
+          duration: plan.duration,
+          objectiveCount: plan.objectives.length
         });
 
         return plan;

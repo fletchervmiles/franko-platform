@@ -15,13 +15,16 @@ export const profilesTable = pgTable("profiles", {
   organisationUrl: text("organisation_url"),
   organisationDescription: text("organisation_description"),
   organisationDescriptionCompleted: boolean("organisation_description_completed").default(false),
-  totalResponsesUsed: integer("total_responses_used").default(0),
-  totalResponsesUsedThisMonth: integer("total_responses_used_this_month").default(0),
+  totalResponsesUsed: integer("total_responses_used").default(0),  // renamed from totalResponsesUsedThisMonth
   totalResponsesAvailable: integer("total_responses_available").default(0),
-  monthlyResponsesQuota: integer("monthly_responses_quota").default(0),
-  totalChatInstancesUsed: integer("total_chat_instances_used").default(0),
-  totalChatInstancesAvailable: integer("total_chat_instances_available").default(0),
+  totalResponsesQuota: integer("total_responses_quota").default(0), // renamed from monthlyResponsesQuota
+  totalChatInstanceGenerationsUsed: integer("total_chat_instance_generations_used").default(0),
+  totalChatInstanceGenerationsAvailable: integer("total_chat_instance_generations_available").default(0),
   totalInternalChatQueriesUsed: integer("total_internal_chat_queries_used").default(0),
+  totalInternalChatQueriesQuota: integer("total_internal_chat_queries_quota").default(0),
+  totalInternalChatQueriesAvailable: integer("total_internal_chat_queries_available").default(0),
+  totalChatInstanceGenerationsQuota: integer("total_chat_instance_generations_quota").default(0),
+  context_update: integer("context_update").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
