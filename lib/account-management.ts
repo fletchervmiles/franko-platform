@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { interviewsTable } from "@/db/schema/interviews-schema";
+import { chatResponsesTable } from "@/db/schema/chat-responses-schema";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { and, eq, gte } from "drizzle-orm";
 
@@ -25,31 +25,31 @@ export async function calculateUsageMetrics(userId: string): Promise<UsageMetric
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  // Get all interviews for total lifetime minutes
-  const allInterviews = await db.query.interviews.findMany({
-    where: eq(interviewsTable.userId, userId),
+  // Get all chat responses for total lifetime minutes
+  const allResponses = await db.query.chatResponses.findMany({
+    where: eq(chatResponsesTable.userId, userId),
   });
 
-  // Get interviews for current month
-  const currentMonthInterviews = await db.query.interviews.findMany({
+  // Get chat responses for current month
+  const currentMonthResponses = await db.query.chatResponses.findMany({
     where: and(
-      eq(interviewsTable.userId, userId),
-      gte(interviewsTable.dateCompleted, startOfMonth)
+      eq(chatResponsesTable.userId, userId),
+      gte(chatResponsesTable.interviewEndTime, startOfMonth)
     ),
   });
 
   // Calculate metrics
-  const totalLifetimeMinutes = allInterviews.reduce(
-    (sum, interview) => sum + (interview.totalInterviewMinutes || 0),
+  const totalLifetimeMinutes = allResponses.reduce(
+    (sum, response) => sum + (response.totalInterviewMinutes || 0),
     0
   );
 
-  const minutesUsedThisMonth = currentMonthInterviews.reduce(
-    (sum, interview) => sum + (interview.totalInterviewMinutes || 0),
+  const minutesUsedThisMonth = currentMonthResponses.reduce(
+    (sum, response) => sum + (response.totalInterviewMinutes || 0),
     0
   );
 
-  const monthlyQuota = profile.monthlyMinutes || 0;
+  const monthlyQuota = profile.monthlyResponsesQuota || 0;
   const remainingMinutes = Math.max(0, monthlyQuota - minutesUsedThisMonth);
 
   return {
