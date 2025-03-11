@@ -16,6 +16,7 @@ import {
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { useAuth } from "@clerk/nextjs"
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
@@ -33,6 +34,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { useFeedbackModal } from "./contexts/feedback-modal-context"
 
 const sidebarStyles = {
   "--sidebar-width": "16rem",
@@ -48,11 +50,6 @@ const navMainData = [
         icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
       },
       {
-        title: "Onboarding",
-        url: "/onboarding",
-        icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
-      },
-      {
         title: "Response Q&A",
         url: "/response-qa",
         icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
@@ -60,7 +57,7 @@ const navMainData = [
       {
         title: "Context Setup",
         url: "/context-setup",
-        icon: <FileText className="mr-0.5 h-4 w-4" />,
+        icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
       },
     ],
   },
@@ -109,6 +106,57 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
   item: { title: string; url: string; icon: React.ReactNode }; 
   section: { title: string } 
 }) {
+  const { signOut } = useAuth();
+  const { openModal, setModalType } = useFeedbackModal();
+  
+  // Special handling for Sign Out button
+  if (item.title === "Sign Out") {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <button 
+            className="flex items-center" 
+            onClick={() => signOut().then(() => window.location.href = "/")}
+          >
+            <span className="text-gray-500">
+              {item.icon}
+            </span>
+            <span className="ml-2 font-medium">{item.title}</span>
+          </button>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  // Handle Feedback and Support buttons
+  if (item.title === "Feedback" || item.title === "Support") {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <button 
+            className="flex items-center" 
+            onClick={() => {
+              setModalType(item.title.toLowerCase() as 'feedback' | 'support');
+              openModal();
+            }}
+          >
+            <span className="text-gray-500">
+              {item.icon}
+            </span>
+            <span className="ml-2 font-medium">{item.title}</span>
+          </button>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  // Regular menu items remain unchanged
   return (
     <SidebarMenuItem>
       <SidebarMenuButton

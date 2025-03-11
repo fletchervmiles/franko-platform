@@ -7,11 +7,32 @@ import console from "console";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
+import { sendWelcomeEmail, sendAdminNotification } from "@/app/api/send/route";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
     const newProfile = await createProfile(data);
     revalidatePath("/profile");
+    
+    // Send welcome email if we have the necessary data
+    if (data.email && data.firstName) {
+      try {
+        await sendWelcomeEmail(data.email, data.firstName);
+        console.log("Welcome email sent to:", data.email);
+        
+        // Send admin notification
+        await sendAdminNotification(
+          data.firstName, 
+          data.secondName || undefined, 
+          data.email
+        );
+        console.log("Admin notification sent for new user:", data.email);
+      } catch (emailError) {
+        console.error("Failed to send emails:", emailError);
+        // Don't fail the profile creation if email sending fails
+      }
+    }
+    
     return { status: "success", message: "Profile created successfully", data: newProfile };
   } catch (error) {
     return { status: "error", message: "Failed to create profile" };
@@ -83,10 +104,8 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
       secondName: user.lastName || undefined,
       email: email || undefined,
       membership: existingProfile?.membership || "free",
-      totalResponsesAvailable: existingProfile?.totalResponsesAvailable || 20,
       totalResponsesQuota: existingProfile?.totalResponsesQuota || 20,
       totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || 20,
-      totalInternalChatQueriesAvailable: existingProfile?.totalInternalChatQueriesAvailable || 20,
       totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || 5,
     };
 
@@ -108,6 +127,25 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
     let result;
     if (!existingProfile) {
       result = await createProfile(profileData as InsertProfile);
+      
+      // Send welcome email for new profiles
+      if (email && profileData.firstName) {
+        try {
+          await sendWelcomeEmail(email, profileData.firstName);
+          console.log("Welcome email sent to:", email);
+          
+          // Send admin notification
+          await sendAdminNotification(
+            profileData.firstName || "", 
+            profileData.secondName || undefined, 
+            email
+          );
+          console.log("Admin notification sent for new user:", email);
+        } catch (emailError) {
+          console.error("Failed to send emails:", emailError);
+          // Don't fail the profile creation if email sending fails
+        }
+      }
     } else {
       result = await updateProfile(user.id, profileData);
     }

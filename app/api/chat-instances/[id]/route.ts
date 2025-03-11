@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { deleteChatInstance, getChatInstanceById, updateChatInstance } from "@/db/queries/chat-instances-queries";
+import { db } from "@/db/db";
+import { chatInstancesTable } from "@/db/schema/chat-instances-schema";
+import { eq } from "drizzle-orm";
 
 /**
- * GET handler for retrieving a chat instance by ID
- * This endpoint is intentionally not auth-protected to support the external chat flow
+ * GET /api/chat-instances/[id]
+ * 
+ * Retrieves minimal chat instance data needed for welcome screen and settings
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const chatInstanceId = params.id;
+    const authResult = await auth();
+    const userId = authResult.userId;
 
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const chatInstanceId = params.id;
     if (!chatInstanceId) {
       return NextResponse.json({ error: "Missing chat instance ID" }, { status: 400 });
     }
@@ -23,13 +33,14 @@ export async function GET(
       return NextResponse.json({ error: "Chat instance not found" }, { status: 404 });
     }
 
-    // Return minimal chat instance data needed for the welcome screen
+    // Return chat instance data including notification settings
     return NextResponse.json({
       welcomeDescription: chatInstance.welcomeDescription,
       respondentContacts: chatInstance.respondentContacts,
       incentive_status: chatInstance.incentiveStatus,
       incentive_description: chatInstance.incentiveDescription,
-      incentive_code: chatInstance.incentiveCode
+      incentive_code: chatInstance.incentiveCode,
+      response_email_notifications: chatInstance.responseEmailNotifications
     });
   } catch (error) {
     console.error("Failed to retrieve chat instance:", error);
