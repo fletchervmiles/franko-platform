@@ -27,24 +27,25 @@ const connectionOptions = {
 // Add debug logging for connection initialization
 console.log(`Initializing database connection (Environment: ${process.env.NODE_ENV || 'development'})`);
 
+// Initialize client in a way that's compatible with ES Modules
+let pgClient;
+
 try {
-  const client = postgres(process.env.DATABASE_URL!, connectionOptions);
+  pgClient = postgres(process.env.DATABASE_URL!, connectionOptions);
   console.log("Database connection initialized successfully");
   
   // Test the connection when the module loads (doesn't block execution)
-  client`SELECT 1`.then(() => {
+  pgClient`SELECT 1`.then(() => {
     console.log("Database connection test successful");
   }).catch(err => {
     console.error("Database connection test failed:", err);
   });
-  
-  module.exports = { client };
 } catch (error) {
   console.error("Failed to initialize database client:", error);
   throw error;
 }
 
-const client = module.exports.client;
+const client = pgClient;
 
 export const db = drizzle(client, { schema });
 
