@@ -5,6 +5,10 @@ import { PLAN_RESPONSES, type MembershipTier } from "@/lib/stripe";
 import type Stripe from "stripe";
 import { mapToDBMembership } from "@/lib/stripe";
 
+// Add type safety for the plan parameter
+type UIPlan = "starter" | "pro";
+type InternalPlan = "starter_2024" | "pro_2024";
+
 export async function POST(req: Request) {
   try {
     const body = await req.text();
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
         }, null, 2));
 
         const userId = session.metadata?.userId;
-        const plan = session.metadata?.plan as MembershipTier;
+        const plan = session.metadata?.plan as InternalPlan;
         const dbMembership = mapToDBMembership(plan);
         
         if (!userId) {

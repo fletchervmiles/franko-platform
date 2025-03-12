@@ -61,12 +61,14 @@ export async function createCheckoutSession(
       stripeCustomerId: customer.id,
       membership: dbMembership,
       totalResponsesQuota: PLAN_RESPONSES[internalPlan],
+      totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
     }).onConflictDoUpdate({
       target: profilesTable.userId,
       set: {
         stripeCustomerId: customer.id,
         membership: dbMembership,
         totalResponsesQuota: PLAN_RESPONSES[internalPlan],
+        totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
       }
     });
 
@@ -102,7 +104,6 @@ export async function updateProfileWithSubscription(
   plan: "starter" | "pro"
 ) {
   try {
-    // Map to 2024 plan and then to DB membership
     const internalPlan = plan === "pro" ? "pro_2024" : "starter_2024";
     const dbMembership = mapToDBMembership(internalPlan);
 
@@ -113,6 +114,7 @@ export async function updateProfileWithSubscription(
         stripeCustomerId: customerId,
         membership: dbMembership,
         totalResponsesQuota: PLAN_RESPONSES[internalPlan],
+        totalResponsesAvailable: PLAN_RESPONSES[internalPlan],
       })
       .where(eq(profilesTable.userId, userId));
   } catch (error) {

@@ -1,5 +1,4 @@
 import { NavSidebar } from "@/components/nav-sidebar"
-import { InternalChatWrapper } from "@/components/internal-chat-wrapper"
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation"
 import { getInternalChatSessionById } from "@/db/queries/internal-chat-sessions-queries"
