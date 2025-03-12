@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { InsertProfile, profilesTable, SelectProfile } from "../schema";
 import { logger } from '@/lib/logger';
 
@@ -17,14 +17,38 @@ export const createProfile = async (data: InsertProfile) => {
 
 export const getProfileByUserId = async (userId: string) => {
   try {
+    logger.info(`Attempting to fetch profile for userId: ${userId}`);
+    
+    // Validate connection before query
+    try {
+      // Simple check if DB is available
+      const connectionTest = await db.select({ count: sql`1` });
+      logger.info(`DB connection test succeeded: ${JSON.stringify(connectionTest)}`);
+    } catch (connError) {
+      logger.error(`DB connection test failed:`, {
+        error: connError instanceof Error ? connError.message : connError,
+        stack: connError instanceof Error ? connError.stack : undefined
+      });
+    }
+    
     const profile = await db.query.profiles.findFirst({
       where: eq(profilesTable.userId, userId),
       orderBy: profilesTable.updatedAt
     });
 
+    logger.info(`Profile fetch result:`, { 
+      userId, 
+      found: !!profile,
+      profileId: profile?.id || null
+    });
+
     return profile;
   } catch (error) {
-    console.error("Error getting profile by user ID:", error);
+    logger.error(`Error getting profile by user ID: ${userId}`, {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      userId
+    });
     throw new Error("Failed to get profile");
   }
 };

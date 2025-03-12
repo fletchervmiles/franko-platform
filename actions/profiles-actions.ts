@@ -79,84 +79,124 @@ export async function deleteProfileAction(userId: string): Promise<ActionState> 
 
 export async function syncClerkProfileAction(): Promise<ActionState> {
   try {
+    console.log("Starting profile sync with Clerk");
     const authResult = await auth();
     const userId = authResult.userId;
 
     if (!userId) {
+      console.log("No user ID found in auth result");
       return { status: "error", message: "No user ID found" };
     }
+    console.log(`Auth successful, found userId: ${userId}`);
 
     const clerk = await clerkClient();
+    console.log("Clerk client initialized");
     
-    const user = await clerk.users.getUser(userId);
-    if (!user) {
-      return { status: "error", message: "No user found" };
-    }
-
-    const email = user.emailAddresses[0]?.emailAddress;
-    
-    // Get existing profile
-    const existingProfile = await getProfileByUserId(userId);
-    
-    const profileData: Partial<InsertProfile> = {
-      userId: user.id,
-      firstName: user.firstName || undefined,
-      secondName: user.lastName || undefined,
-      email: email || undefined,
-      membership: existingProfile?.membership || "free",
-      totalResponsesQuota: existingProfile?.totalResponsesQuota || 20,
-      totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || 20,
-      totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || 5,
-    };
-
-    // Preserve existing organisation data if it exists
-    if (existingProfile?.organisationName && existingProfile?.organisationUrl) {
-      profileData.organisationName = existingProfile.organisationName;
-      profileData.organisationUrl = existingProfile.organisationUrl;
-      profileData.organisationDescription = existingProfile.organisationDescription;
-      profileData.organisationDescriptionCompleted = existingProfile.organisationDescriptionCompleted;
-    } else if (email) {
-      // Only use email-derived org data if we don't have existing data
-      const orgData = processOrganisationFromEmail(email);
-      if (orgData.organisationName && orgData.organisationUrl) {
-        profileData.organisationName = orgData.organisationName;
-        profileData.organisationUrl = orgData.organisationUrl;
+    try {
+      const user = await clerk.users.getUser(userId);
+      if (!user) {
+        console.log(`No user found for userId: ${userId}`);
+        return { status: "error", message: "No user found" };
       }
-    }
+      console.log(`Retrieved Clerk user: ${user.id}, first name: ${user.firstName || 'not set'}`);
 
-    let result;
-    if (!existingProfile) {
-      result = await createProfile(profileData as InsertProfile);
+      const email = user.emailAddresses[0]?.emailAddress;
+      console.log(`User email: ${email || 'not available'}`);
       
-      // Send welcome email for new profiles
-      if (email && profileData.firstName) {
-        try {
-          await sendWelcomeEmail(email, profileData.firstName);
-          console.log("Welcome email sent to:", email);
-          
-          // Send admin notification
-          await sendAdminNotification(
-            profileData.firstName || "", 
-            profileData.secondName || undefined, 
-            email
-          );
-          console.log("Admin notification sent for new user:", email);
-        } catch (emailError) {
-          console.error("Failed to send emails:", emailError);
-          // Don't fail the profile creation if email sending fails
+      // Get existing profile
+      console.log(`Checking for existing profile for userId: ${userId}`);
+      let existingProfile;
+      try {
+        existingProfile = await getProfileByUserId(userId);
+        console.log(`Profile check result: ${existingProfile ? 'Found existing profile' : 'No profile found'}`);
+      } catch (profileError) {
+        console.error(`Error retrieving existing profile:`, profileError);
+        throw new Error(`Failed to check existing profile: ${profileError instanceof Error ? profileError.message : String(profileError)}`);
+      }
+      
+      const profileData: Partial<InsertProfile> = {
+        userId: user.id,
+        firstName: user.firstName || undefined,
+        secondName: user.lastName || undefined,
+        email: email || undefined,
+        membership: existingProfile?.membership || "free",
+        totalResponsesQuota: existingProfile?.totalResponsesQuota || 20,
+        totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || 20,
+        totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || 5,
+      };
+      console.log("Prepared profile data:", JSON.stringify(profileData, null, 2));
+
+      // Preserve existing organisation data if it exists
+      if (existingProfile?.organisationName && existingProfile?.organisationUrl) {
+        console.log("Preserving existing organisation data");
+        profileData.organisationName = existingProfile.organisationName;
+        profileData.organisationUrl = existingProfile.organisationUrl;
+        profileData.organisationDescription = existingProfile.organisationDescription;
+        profileData.organisationDescriptionCompleted = existingProfile.organisationDescriptionCompleted;
+      } else if (email) {
+        // Only use email-derived org data if we don't have existing data
+        console.log(`Processing organisation from email: ${email}`);
+        const orgData = processOrganisationFromEmail(email);
+        if (orgData.organisationName && orgData.organisationUrl) {
+          console.log(`Derived org data: ${orgData.organisationName}, ${orgData.organisationUrl}`);
+          profileData.organisationName = orgData.organisationName;
+          profileData.organisationUrl = orgData.organisationUrl;
         }
       }
-    } else {
-      result = await updateProfile(user.id, profileData);
+
+      let result;
+      if (!existingProfile) {
+        console.log("Creating new profile");
+        try {
+          result = await createProfile(profileData as InsertProfile);
+          console.log("Profile created successfully:", result ? result.id : 'unknown');
+        } catch (createError) {
+          console.error("Error creating profile:", createError);
+          throw new Error(`Failed to create profile: ${createError instanceof Error ? createError.message : String(createError)}`);
+        }
+        
+        // Send welcome email for new profiles
+        if (email && profileData.firstName) {
+          try {
+            console.log(`Sending welcome email to: ${email}`);
+            await sendWelcomeEmail(email, profileData.firstName);
+            console.log("Welcome email sent successfully");
+            
+            // Send admin notification
+            console.log("Sending admin notification");
+            await sendAdminNotification(
+              profileData.firstName || "", 
+              profileData.secondName || undefined, 
+              email
+            );
+            console.log("Admin notification sent successfully");
+          } catch (emailError) {
+            console.error("Failed to send emails:", emailError);
+            // Don't fail the profile creation if email sending fails
+          }
+        }
+      } else {
+        console.log(`Updating existing profile for user: ${user.id}`);
+        try {
+          result = await updateProfile(user.id, profileData);
+          console.log("Profile updated successfully");
+        } catch (updateError) {
+          console.error("Error updating profile:", updateError);
+          throw new Error(`Failed to update profile: ${updateError instanceof Error ? updateError.message : String(updateError)}`);
+        }
+      }
+      
+      return { 
+        status: "success", 
+        message: existingProfile ? "Profile synced with Clerk" : "Profile created and synced with Clerk", 
+        data: result 
+      };
+    } catch (clerkError) {
+      console.error("Error in Clerk operations:", clerkError);
+      return { status: "error", message: `Clerk error: ${clerkError instanceof Error ? clerkError.message : String(clerkError)}` };
     }
-    
-    return { 
-      status: "success", 
-      message: existingProfile ? "Profile synced with Clerk" : "Profile created and synced with Clerk", 
-      data: result 
-    };
   } catch (error) {
     console.error("Error syncing profile:", error);
-    return { status: "error", message: "Failed to sync profile" };
+    return { status: "error", message: `Failed to sync profile: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
