@@ -3,5 +3,16 @@
     "app/api/**/*": {
       "maxDuration": 60
     }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "development": true,
+      "feature/*": true
+    }
+  },
+  "github": {
+    "enabled": true,
+    "silent": false
   }
 } 
