@@ -157,6 +157,10 @@ export async function generateConversationPlanFromForm({
 
     while (retryCount < maxRetries) {
       try {
+        // Start timing the model request
+        const modelStartTime = new Date();
+        logger.ai(`Starting o1Model request at ${modelStartTime.toISOString()}`);
+        
         const { object: rawPlan } = await generateObject({
           model: o1Model,
           system: `${systemPrompt}`,
@@ -181,6 +185,11 @@ export async function generateConversationPlanFromForm({
             ).describe("Time-aware objectives sorted by priority")
           }),
         });
+        
+        // End timing and calculate duration
+        const modelEndTime = new Date();
+        const modelDurationSec = (modelEndTime.getTime() - modelStartTime.getTime()) / 1000;
+        logger.ai(`Completed o1Model request at ${modelEndTime.toISOString()} (duration: ${modelDurationSec.toFixed(2)}s)`);
 
         // Validate that we have at least one objective
         if (!rawPlan || !rawPlan.objectives || rawPlan.objectives.length === 0) {

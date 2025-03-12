@@ -4,6 +4,7 @@ import { db } from "@/db/db";
 import { eq, sql } from "drizzle-orm";
 import { InsertProfile, profilesTable, SelectProfile } from "../schema";
 import { logger } from '@/lib/logger';
+import { safeStringify } from '@/utils/db-utils';
 
 export const createProfile = async (data: InsertProfile) => {
   try {
@@ -22,11 +23,11 @@ export const getProfileByUserId = async (userId: string) => {
     // Validate connection before query
     try {
       // Simple check if DB is available
-      const connectionTest = await db.select({ count: sql`1` });
-      logger.info(`DB connection test succeeded: ${JSON.stringify(connectionTest)}`);
+      await db.select({ count: sql`1` });
+      logger.info(`DB connection test succeeded`);
     } catch (connError) {
       logger.error(`DB connection test failed:`, {
-        error: connError instanceof Error ? connError.message : connError,
+        error: connError instanceof Error ? connError.message : String(connError),
         stack: connError instanceof Error ? connError.stack : undefined
       });
     }
@@ -65,12 +66,15 @@ export const updateProfile = async (userId: string, data: Partial<InsertProfile>
       .where(eq(profilesTable.userId, userId))
       .returning();
     
-    if (!updatedProfile) {
+    if (!updatedProfile || updatedProfile.length === 0) {
       logger.error("No profile was updated for userId:", userId);
       throw new Error("Profile update failed - no rows updated");
     }
     
-    logger.profile("Profile successfully updated:", updatedProfile);
+    logger.info("Profile successfully updated:", {
+      userId: updatedProfile[0]?.userId,
+      id: updatedProfile[0]?.id?.toString(),
+    });
     return updatedProfile;
   } catch (error) {
     logger.error("Error updating profile:", {

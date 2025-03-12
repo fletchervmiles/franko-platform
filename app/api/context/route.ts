@@ -1,13 +1,5 @@
 /**
- * Conversation Finalizer Utility
- * 
- * Orchestrates the finalization of a conversation:
- * 1. Updates end time and calculates duration
- * 2. Cleans the transcript
- * 3. Calculates completion status
- * 4. Counts user words
- * 5. Updates usage tracking if completion rate > 50%
- * 6. Generates a summary if completion rate > 0%
+
  */
 
 import { NextResponse } from "next/server";

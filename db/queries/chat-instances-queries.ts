@@ -7,6 +7,8 @@ import { arrayToNumberedObjectives, numberedObjectivesToArray, type Conversation
 import { revalidatePath } from "next/cache";
 import { LRUCache } from 'lru-cache';
 import { chatResponsesTable } from "../schema/chat-responses-schema";
+import { logger } from "@/lib/logger";
+import { safeStringify } from '@/utils/db-utils';
 
 // Cache for chat instances to reduce database load
 const instanceCache = new LRUCache<string, SelectChatInstance>({
@@ -77,8 +79,8 @@ export async function getChatInstancesByUserId(userId: string): Promise<SelectCh
   
   try {
     // Test the database connection first
-    const connectionTest = await db.select({ one: sql`1` });
-    console.log(`Database connection test result: ${JSON.stringify(connectionTest)}`);
+    await db.select({ one: sql`1` });
+    console.log('Database connection test successful');
     
     // Add retry logic for production environment
     let retryCount = 0;
@@ -214,14 +216,16 @@ export async function updateChatInstanceConversationPlan(
 
 export async function getConversationPlan(id: string): Promise<ConversationPlan | undefined> {
   try {
+    logger.info(`Retrieving conversation plan for chat ${id}`);
+    
     // Check cache first
     const cachedPlan = conversationPlanCache.get(id);
     if (cachedPlan) {
-      console.log(`CACHE HIT: Using cached conversation plan for ${id}`);
+      logger.info(`CACHE HIT: Using cached conversation plan for ${id}`);
       return cachedPlan;
     }
     
-    console.log(`CACHE MISS: Fetching conversation plan for ${id} from database`);
+    logger.info(`CACHE MISS: Fetching conversation plan for ${id} from database`);
     
     // Optimize database query by selecting only the conversationPlan field
     // if the instance is not already cached
@@ -230,8 +234,10 @@ export async function getConversationPlan(id: string): Promise<ConversationPlan 
     if (instanceCache.has(id)) {
       // Use already cached instance
       chatInstance = instanceCache.get(id);
+      logger.info(`Using cached chat instance for ${id}`);
     } else {
       // Only select the field we need
+      logger.info(`Querying database for conversation plan ${id}`);
       const [result] = await db
         .select({ conversationPlan: chatInstancesTable.conversationPlan })
         .from(chatInstancesTable)
@@ -240,31 +246,132 @@ export async function getConversationPlan(id: string): Promise<ConversationPlan 
       
       if (result) {
         chatInstance = { id, conversationPlan: result.conversationPlan } as SelectChatInstance;
+        logger.info(`Found conversation plan in database for ${id}`);
+      } else {
+        logger.warn(`No conversation plan found in database for ${id}`);
       }
     }
     
     if (!chatInstance?.conversationPlan) {
+      logger.warn(`No conversation plan data available for ${id}`);
       return undefined;
     }
     
+    // Log the raw plan structure to help debug format issues
+    logger.info(`Raw conversation plan structure:`, {
+      chatId: id,
+      planType: typeof chatInstance.conversationPlan,
+      hasObjectives: Boolean(chatInstance.conversationPlan && (chatInstance.conversationPlan as any).objectives),
+      objectivesType: typeof (chatInstance.conversationPlan as any).objectives,
+      isObjectivesArray: Array.isArray((chatInstance.conversationPlan as any).objectives),
+      objectivesKeys: (chatInstance.conversationPlan as any).objectives ? 
+        (Array.isArray((chatInstance.conversationPlan as any).objectives) ? 
+          'array' : 
+          Object.keys((chatInstance.conversationPlan as any).objectives)) 
+        : 'none'
+    });
+    
     const dbPlan = chatInstance.conversationPlan as any;
+
+    // Validate minimum required plan structure
+    if (!dbPlan || typeof dbPlan !== 'object') {
+      logger.error(`Invalid conversation plan format for ${id} - not an object`);
+      return createFallbackPlan(id);
+    }
+
+    // Ensure required properties exist
+    if (!dbPlan.title || !dbPlan.summary || !dbPlan.duration) {
+      logger.error(`Conversation plan ${id} missing required properties`, {
+        hasTitle: Boolean(dbPlan.title),
+        hasSummary: Boolean(dbPlan.summary),
+        hasDuration: Boolean(dbPlan.duration)
+      });
+      
+      // Add missing required properties with defaults
+      if (!dbPlan.title) dbPlan.title = "Conversation Plan";
+      if (!dbPlan.summary) dbPlan.summary = "Plan details unavailable";
+      if (!dbPlan.duration) dbPlan.duration = "≈10 minutes";
+    }
     
     // Check if the objectives are already in array format (for backward compatibility)
-    const uiPlan: ConversationPlan = Array.isArray(dbPlan.objectives) 
-      ? dbPlan as ConversationPlan
-      : {
+    try {
+      let uiPlan: ConversationPlan;
+      
+      if (Array.isArray(dbPlan.objectives)) {
+        // Already in correct format
+        uiPlan = dbPlan as ConversationPlan;
+        logger.info(`Plan ${id} objectives already in array format`);
+      } else if (dbPlan.objectives && typeof dbPlan.objectives === 'object') {
+        // Convert from numbered format
+        uiPlan = {
           ...dbPlan,
           objectives: numberedObjectivesToArray(dbPlan.objectives)
         };
-    
-    // Cache the result
-    conversationPlanCache.set(id, uiPlan);
-    
-    return uiPlan;
+        logger.info(`Converted plan ${id} objectives from numbered format`);
+      } else {
+        // Create a minimal valid plan
+        logger.warn(`Plan ${id} has invalid objectives format, creating fallback`);
+        uiPlan = {
+          ...dbPlan,
+          objectives: [{
+            objective: "Complete the conversation",
+            desiredOutcome: "Successfully finish the intended discussion",
+            agentGuidance: ["Guide the conversation naturally"],
+            expectedConversationTurns: "5"
+          }]
+        };
+      }
+      
+      // Log the converted plan structure
+      logger.info(`Successfully processed conversation plan for ${id}`, {
+        title: uiPlan.title,
+        objectiveCount: uiPlan.objectives?.length || 0
+      });
+      
+      // Cache the result
+      conversationPlanCache.set(id, uiPlan);
+      
+      return uiPlan;
+    } catch (conversionError) {
+      logger.error(`Error converting objectives format for plan ${id}:`, {
+        error: conversionError instanceof Error ? conversionError.message : String(conversionError),
+        objectives: dbPlan.objectives ? JSON.stringify(dbPlan.objectives).substring(0, 200) + '...' : 'undefined'
+      });
+      
+      // Return fallback plan instead of failing completely
+      return createFallbackPlan(id);
+    }
   } catch (error) {
-    console.error("Error getting conversation plan:", error);
+    logger.error(`Error getting conversation plan for ${id}:`, {
+      errorType: error instanceof Error ? error.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
+}
+
+// Helper function to create a fallback plan when the original can't be processed
+function createFallbackPlan(chatId: string): ConversationPlan {
+  logger.info(`Creating fallback conversation plan for ${chatId}`);
+  
+  return {
+    title: "Conversation Plan",
+    duration: "10-15 minutes",
+    summary: "This is a fallback plan created when the original plan could not be processed correctly.",
+    objectives: [
+      {
+        objective: "Continue the conversation",
+        desiredOutcome: "Complete the discussion as planned",
+        agentGuidance: [
+          "Guide the conversation naturally",
+          "Focus on the original topic if possible",
+          "Wrap up when appropriate"
+        ],
+        expectedConversationTurns: "5-10"
+      }
+    ]
+  };
 }
 
 export async function updateChatInstanceProgress(

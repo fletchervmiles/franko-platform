@@ -73,9 +73,43 @@ export function arrayToNumberedObjectives(objectives: Objective[]): NumberedObje
 
 // Helper function to convert numbered object format back to array
 export function numberedObjectivesToArray(numberedObj: NumberedObjectives): Objective[] {
-  // Sort the keys to ensure correct order (objective01, objective02, etc.)
-  const sortedKeys = Object.keys(numberedObj).sort();
-  
-  return sortedKeys.map(key => numberedObj[key]);
+  try {
+    // Validate input
+    if (!numberedObj || typeof numberedObj !== 'object') {
+      console.error('Invalid numbered objectives format:', numberedObj);
+      return []; // Return empty array instead of failing
+    }
+    
+    // Sort the keys to ensure correct order (objective01, objective02, etc.)
+    const sortedKeys = Object.keys(numberedObj).sort();
+    
+    if (sortedKeys.length === 0) {
+      console.warn('No objectives found in numbered object');
+      return []; // Return empty array if no keys
+    }
+    
+    // Map and validate each objective
+    return sortedKeys.map(key => {
+      const obj = numberedObj[key];
+      
+      // Ensure each objective has the required properties or provide defaults
+      return {
+        objective: obj?.objective || "Objective description unavailable",
+        desiredOutcome: obj?.desiredOutcome || "Desired outcome unavailable",
+        agentGuidance: Array.isArray(obj?.agentGuidance) ? obj.agentGuidance : 
+          (obj?.agentGuidance ? [String(obj.agentGuidance)] : ["Guide the conversation naturally"]),
+        expectedConversationTurns: obj?.expectedConversationTurns || "1"
+      };
+    });
+  } catch (error) {
+    console.error('Error converting numbered objectives to array:', error);
+    // Return a minimal valid array to prevent complete failure
+    return [{
+      objective: "Error processing objectives",
+      desiredOutcome: "Contact support for assistance",
+      agentGuidance: ["There was an error processing the conversation plan"],
+      expectedConversationTurns: "1"
+    }];
+  }
 }
 
