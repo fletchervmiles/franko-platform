@@ -73,11 +73,56 @@ export async function getChatInstanceById(id: string): Promise<SelectChatInstanc
 }
 
 export async function getChatInstancesByUserId(userId: string): Promise<SelectChatInstance[]> {
-  return await db
-    .select()
-    .from(chatInstancesTable)
-    .where(eq(chatInstancesTable.userId, userId))
-    .orderBy(desc(chatInstancesTable.createdAt));
+  console.log(`Fetching chat instances for userId: ${userId}`);
+  
+  try {
+    // Test the database connection first
+    const connectionTest = await db.select({ one: sql`1` }).execute();
+    console.log(`Database connection test result: ${JSON.stringify(connectionTest)}`);
+    
+    // Add retry logic for production environment
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        const instances = await db
+          .select()
+          .from(chatInstancesTable)
+          .where(eq(chatInstancesTable.userId, userId))
+          .orderBy(desc(chatInstancesTable.createdAt));
+          
+        console.log(`Successfully fetched ${instances.length} chat instances for user ${userId}`);
+        return instances;
+      } catch (retryError) {
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          throw retryError; // Re-throw if we've exhausted retries
+        }
+        
+        console.log(`Retry ${retryCount}/${maxRetries} after error: ${retryError instanceof Error ? retryError.message : 'Unknown error'}`);
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+      }
+    }
+    
+    // This should never be reached due to the while loop, but TypeScript needs a return
+    return [];
+  } catch (error) {
+    console.error("Failed to get chat instances for user:", {
+      userId,
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : String(error)
+    });
+    
+    // Rethrow with more context
+    throw new Error(`Failed to get chat instances: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 export async function updateChatInstance(

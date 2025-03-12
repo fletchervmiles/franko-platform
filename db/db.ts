@@ -14,15 +14,37 @@ const schema = {
 
 // Configure connection pooling options
 const connectionOptions = {
-  max: 10,                                     // Maximum 10 connections in pool
-  idle_timeout: 30,                            // Idle connection timeout in seconds
-  max_lifetime: 60 * 60,                       // Connection lifetime in seconds (1 hour)
-  connect_timeout: 30,                         // Connection timeout in seconds
-  ssl: process.env.NODE_ENV === 'production',  // Enable SSL in production
+  max: process.env.NODE_ENV === 'production' ? 20 : 10, // Increased pool size for production
+  idle_timeout: 30,                                     // Idle connection timeout in seconds
+  max_lifetime: 60 * 60,                                // Connection lifetime in seconds (1 hour)
+  connect_timeout: 30,                                  // Connection timeout in seconds
+  ssl: process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: false }                     // Allow self-signed certs in production
+    : false,                                            // Disable SSL in development
 };
 
 // Create connection with pooling options
-const client = postgres(process.env.DATABASE_URL!, connectionOptions);
+// Add debug logging for connection initialization
+console.log(`Initializing database connection (Environment: ${process.env.NODE_ENV || 'development'})`);
+
+try {
+  const client = postgres(process.env.DATABASE_URL!, connectionOptions);
+  console.log("Database connection initialized successfully");
+  
+  // Test the connection when the module loads (doesn't block execution)
+  client`SELECT 1`.then(() => {
+    console.log("Database connection test successful");
+  }).catch(err => {
+    console.error("Database connection test failed:", err);
+  });
+  
+  module.exports = { client };
+} catch (error) {
+  console.error("Failed to initialize database client:", error);
+  throw error;
+}
+
+const client = module.exports.client;
 
 export const db = drizzle(client, { schema });
 
