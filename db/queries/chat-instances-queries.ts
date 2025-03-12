@@ -77,7 +77,7 @@ export async function getChatInstancesByUserId(userId: string): Promise<SelectCh
   
   try {
     // Test the database connection first
-    const connectionTest = await db.select({ one: sql`1` }).execute();
+    const connectionTest = await db.select({ one: sql`1` });
     console.log(`Database connection test result: ${JSON.stringify(connectionTest)}`);
     
     // Add retry logic for production environment
