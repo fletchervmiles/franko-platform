@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         const updatedProfile = await updateProfile(userId, {
           stripeCustomerId: session.customer as string,
           membership: dbMembership,
-          monthlyResponsesQuota: PLAN_RESPONSES[plan],
+          totalResponsesQuota: PLAN_RESPONSES[plan],
           totalResponsesAvailable: PLAN_RESPONSES[plan],
         });
 
