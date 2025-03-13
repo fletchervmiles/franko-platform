@@ -29,22 +29,22 @@ export async function POST(request: Request) {
       // This mapping is based on the requirements
       switch (duration) {
         case "1 minute (quick)":
-          duration = "1 minute, 4-5 turns";
+          duration = "1 minute, 5 turns";
           break;
         case "2 minutes (focused)":
-          duration = "2 minutes, 8-10 turns";
+          duration = "2 minutes, 10 turns";
           break;
         case "3-4 minutes (recommended)":
-          duration = "3-4 minutes, 12-16 turns";
+          duration = "3-4 minutes, 16 turns";
           break;
         case "5-6 minutes (balanced)":
-          duration = "5-6 minutes, 20-24 turns";
+          duration = "5-6 minutes, 24 turns";
           break;
         case "7-8 minutes (exploratory)":
-          duration = "7-8 minutes, 28-32 turns";
+          duration = "7-8 minutes, 32 turns";
           break;
         case "9-10 minutes (deep dive)":
-          duration = "9-10 minutes, 36-40 turns";
+          duration = "9-10 minutes, 40 turns";
           break;
       }
     }

@@ -11,9 +11,14 @@ import path from 'path';
 import { generateObject } from "ai";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import OpenAI from 'openai';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Helper function to load the context setter prompt
 function loadContextSetterPrompt() {
@@ -97,7 +102,7 @@ export async function POST(request: Request) {
     try {
       logger.info('Starting Exa requests...');
 
-      const [extract01, extract02, extract03] = await Promise.all([
+      const results = await Promise.allSettled([
         // First request with retry
         retryExaRequest(async () => {
           logger.info('Making Exa request 1:', { 
@@ -164,60 +169,93 @@ export async function POST(request: Request) {
       ]);
 
       clearTimeout(timeoutId);
-      logger.info('All Exa requests completed successfully');
+      logger.info('All Exa requests completed');
 
-      // Load and prepare the context setter prompt
-      let promptTemplate = loadContextSetterPrompt();
-      
-      // Log the raw Exa responses before JSON stringify
-      logger.info('Raw Exa responses:', {
-        extract01Length: extract01 ? JSON.stringify(extract01).length : 0,
-        extract02Length: extract02 ? JSON.stringify(extract02).length : 0,
-        extract03Length: extract03 ? JSON.stringify(extract03).length : 0,
-        timestamp: new Date().toISOString()
+      // Extract successful results
+      const [extract01Result, extract02Result, extract03Result] = results;
+      const extract01 = extract01Result.status === 'fulfilled' ? extract01Result.value : null;
+      const extract02 = extract02Result.status === 'fulfilled' ? extract02Result.value : null;
+      const extract03 = extract03Result.status === 'fulfilled' ? extract03Result.value : null;
+
+      // Log any failures but continue processing
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          logger.error(`Exa request ${index + 1} failed:`, {
+            error: result.reason,
+            timestamp: new Date().toISOString()
+          });
+        }
       });
+
+      // If all requests failed, then error out
+      if (!extract01 && !extract02 && !extract03) {
+        throw new Error("All Exa requests failed");
+      }
+
+      // Load the context setter prompt
+      const contextSetterPrompt = loadContextSetterPrompt();
       
-      // Replace placeholders in the prompt
-      const prompt = promptTemplate
+      // Replace all variables in the prompt
+      const filledPrompt = contextSetterPrompt
         .replace(/{organisation_name}/g, organisationName)
         .replace(/{organisation_url}/g, organisationUrl)
-        .replace('{extract01}', JSON.stringify(extract01))
-        .replace('{extract02}', JSON.stringify(extract02))
-        .replace('{extract03}', JSON.stringify(extract03));
+        .replace('{extract01}', JSON.stringify(extract01 || {}, null, 2))
+        .replace('{extract02}', JSON.stringify(extract02 || {}, null, 2))
+        .replace('{extract03}', JSON.stringify(extract03 || {}, null, 2));
 
-      // Verify the replacements worked
-      logger.info('Prompt variable replacements:', {
-        containsExtract01: prompt.includes(JSON.stringify(extract01)),
-        containsExtract02: prompt.includes(JSON.stringify(extract02)),
-        containsExtract03: prompt.includes(JSON.stringify(extract03)),
-        containsOrgName: prompt.includes(organisationName),
-        containsOrgUrl: prompt.includes(organisationUrl),
+      logger.info('Prompt preparation:', {
+        promptLength: filledPrompt.length,
+        hasExtract01: extract01 ? 'yes' : 'no',
+        hasExtract02: extract02 ? 'yes' : 'no',
+        hasExtract03: extract03 ? 'yes' : 'no',
+        hasOrgName: filledPrompt.includes(organisationName),
+        hasOrgUrl: filledPrompt.includes(organisationUrl),
         timestamp: new Date().toISOString()
       });
 
       logger.info('Making OpenAI request');
-      // Make the OpenAI request
-      const aiRequest = {
-        model: o3MiniModel,
-        prompt,
-        schema: z.object({
-          description: z.string()
-        })
-      };
+      let response: string | undefined;
+      const maxRetries = 3;
       
-      logger.info('OpenAI request configuration:', {
-        model: aiRequest.model,
-        promptLength: aiRequest.prompt.length,
-        schema: aiRequest.schema,
-        fullPrompt: aiRequest.prompt,
-        timestamp: new Date().toISOString()
-      });
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          logger.info(`OpenAI attempt ${attempt}/${maxRetries}`);
+          
+          const completion = await openai.chat.completions.create({
+            model: "o3-mini",
+            messages: [
+              { 
+                role: "user", 
+                content: filledPrompt 
+              }
+            ],
+            response_format: { type: "text" },
+            reasoning_effort: "low"
+          });
+          
+          response = completion.choices[0].message.content || "";
+          
+          if (!response.trim()) {
+            throw new Error("Generated text was empty");
+          }
+          
+          break;  // Success, exit loop
+        } catch (error) {
+          logger.error(`OpenAI attempt ${attempt} failed:`, error);
+          if (attempt === maxRetries) {
+            throw new Error("Failed to generate description after multiple attempts");
+          }
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+        }
+      }
 
-      const { object: response } = await generateObject(aiRequest);
+      if (!response) {
+        throw new Error("Failed to generate description");
+      }
       
       logger.info('OpenAI response:', { 
-        descriptionLength: response.description.length,
-        fullResponse: response.description,
+        descriptionLength: response.length,
+        fullResponse: response,
         timestamp: new Date().toISOString()
       });
 
@@ -225,7 +263,7 @@ export async function POST(request: Request) {
       const descriptionUpdate = {
         organisationUrl: initialUpdate[0].organisationUrl,
         organisationName: initialUpdate[0].organisationName,
-        organisationDescription: response.description,
+        organisationDescription: response,
         organisationDescriptionCompleted: true,
       };
       
@@ -235,7 +273,7 @@ export async function POST(request: Request) {
 
       const successResponse = { 
         success: true, 
-        description: response.description
+        description: response
       };
       
       logger.info('Sending success response:', successResponse);

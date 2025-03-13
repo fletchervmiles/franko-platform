@@ -19,6 +19,17 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isExpanded, setIsExpanded] = useState(true)
   const [wordCount, setWordCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(true)
+    setContext(initialContext)
+    // Add a small delay to show loading state
+    const timeout = setTimeout(() => {
+      setIsLoading(false)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [initialContext])
 
   useEffect(() => {
     setWordCount(context.split(/\s+/).filter(Boolean).length)
@@ -52,6 +63,7 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-semibold">AI Context</h2>
+              {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -129,12 +141,20 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
                 </div>
               ) : (
                 <div className="relative">
-                  <div className="max-h-[500px] overflow-y-auto pr-4 mb-4">
-                    <div className="prose prose-sm max-w-none">
-                      <Markdown>{context}</Markdown>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                     </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                  ) : (
+                    <>
+                      <div className="max-h-[500px] overflow-y-auto pr-4 mb-4">
+                        <div className="prose prose-sm max-w-none">
+                          <Markdown>{context}</Markdown>
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                    </>
+                  )}
                 </div>
               )}
             </motion.div>

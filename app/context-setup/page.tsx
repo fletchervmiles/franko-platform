@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation"
 import { getProfileByUserId } from "@/db/queries/profiles-queries"
 import { useToast } from "@/hooks/use-toast"
 import { ContextContainer } from "@/components/context-container"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 const contextSetupSchema = z.object({
   url: z.string()
@@ -39,18 +40,40 @@ const contextSetupSchema = z.object({
 
 type ContextSetupValues = z.infer<typeof contextSetupSchema>
 
+// Query functions
+const fetchProfile = async (userId: string) => {
+  const profile = await getProfileByUserId(userId)
+  return profile
+}
+
+const submitContext = async (data: { 
+  userId: string, 
+  organisationUrl: string, 
+  organisationName: string 
+}) => {
+  const response = await fetch('/api/context', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    const result = await response.json()
+    throw new Error(result.error || 'Failed to update context')
+  }
+  return response.json()
+}
+
 export default function ContextSetupPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [submittedValues, setSubmittedValues] = useState<ContextSetupValues | null>(null)
   const [shouldPulse, setShouldPulse] = useState(false)
-  const [hasDescription, setHasDescription] = useState(false)
   const { toast } = useToast()
-  const submissionTimeoutRef = useRef<NodeJS.Timeout>()
   const [description, setDescription] = useState<string>("")
 
   const form = useForm<ContextSetupValues>({
@@ -62,57 +85,65 @@ export default function ContextSetupPage() {
   })
 
   const { watch } = form
-
   const url = watch("url")
   const orgName = watch("orgName")
 
-  // Fetch profile data when component mounts
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.id) return
+  // Query for profile data
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: () => fetchProfile(user?.id!),
+    enabled: !!user?.id,
+  })
 
-      try {
-        // Add cache-busting timestamp
-        const timestamp = new Date().getTime()
-        const profile = await getProfileByUserId(user.id)
-        
-        if (profile) {
-          // Update form values
-          form.setValue("url", profile.organisationUrl || "")
-          form.setValue("orgName", profile.organisationName || "")
-          setHasDescription(!!profile.organisationDescription)
-          setDescription(profile.organisationDescription || "")
-          
-          // Set submitted values to match profile data
-          if (profile.organisationUrl && profile.organisationName) {
-            setSubmittedValues({
-              url: profile.organisationUrl,
-              orgName: profile.organisationName
-            })
-          }
-          
-          // If we have a URL and name but no description, show submit mode
-          if (profile.organisationUrl && profile.organisationName && !profile.organisationDescription) {
-            setIsSubmitted(false)
-            setShouldPulse(true)
-          } 
-          // If we have all three, show edit mode
-          else if (profile.organisationUrl && profile.organisationName && profile.organisationDescription) {
-            setIsSubmitted(true)
-            setIsEditing(false)
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error)
-      } finally {
-        setIsLoadingProfile(false)
+  // Mutation for submitting context
+  const { mutate, isPending } = useMutation({
+    mutationFn: submitContext,
+    onSuccess: (data) => {
+      // Update form values
+      form.setValue("url", data.organisationUrl)
+      form.setValue("orgName", data.organisationName)
+      setDescription(data.description)
+      
+      // Update submitted values
+      setSubmittedValues({
+        url: data.organisationUrl,
+        orgName: data.organisationName
+      })
+      
+      setIsEditing(false)
+      
+      // Invalidate and refetch profile data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+      
+      toast({
+        title: "Success!",
+        description: "Your context has been updated successfully.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update context. Please try again.",
+      })
+    }
+  })
+
+  // Effect to update form when profile data changes
+  useEffect(() => {
+    if (profile) {
+      form.setValue("url", profile.organisationUrl || "")
+      form.setValue("orgName", profile.organisationName || "")
+      setDescription(profile.organisationDescription || "")
+      
+      if (profile.organisationUrl && profile.organisationName) {
+        setSubmittedValues({
+          url: profile.organisationUrl,
+          orgName: profile.organisationName
+        })
       }
     }
-
-    if (isLoaded) {
-      fetchProfile()
-    }
-  }, [isLoaded, user?.id, form])
+  }, [profile, form])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -123,104 +154,21 @@ export default function ContextSetupPage() {
 
   // Update pulse effect based on field values and description status
   useEffect(() => {
-    setShouldPulse(url.length > 0 && orgName.length > 0 && !hasDescription)
-  }, [url, orgName, hasDescription])
+    setShouldPulse((url?.length || 0) > 0 && (orgName?.length || 0) > 0 && !profile?.organisationDescription)
+  }, [url, orgName, profile])
 
   const onSubmit = async (data: ContextSetupValues) => {
-    // Prevent submission if already loading
-    if (isLoading) {
-      return;
-    }
-
-    // Clear any existing timeout
-    if (submissionTimeoutRef.current) {
-      clearTimeout(submissionTimeoutRef.current);
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/context', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-        },
-        body: JSON.stringify({
-          userId: user?.id || '',
-          organisationUrl: data.url,
-          organisationName: data.orgName,
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
-        const errorMessage = result.error || 'Failed to generate description';
-        console.error('API Error:', { status: response.status, error: errorMessage });
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: typeof errorMessage === 'string' ? errorMessage : 'Failed to generate description. Please try again.',
-        });
-        return;
-      }
-
-      // Force a fresh fetch of the profile
-      if (!user?.id) {
-        throw new Error('User ID is required');
-      }
-      const updatedProfile = await getProfileByUserId(user.id);
-      
-      if (updatedProfile) {
-        // Update form values
-        form.setValue("url", updatedProfile.organisationUrl || data.url);
-        form.setValue("orgName", updatedProfile.organisationName || data.orgName);
-        setHasDescription(!!updatedProfile.organisationDescription);
-        setDescription(updatedProfile.organisationDescription || "");
-        
-        // Update submitted values
-        setSubmittedValues({
-          url: updatedProfile.organisationUrl || data.url,
-          orgName: updatedProfile.organisationName || data.orgName
-        });
-      }
-
-      setIsSubmitted(true);
-      setIsEditing(false);
-      setHasDescription(true);
-
-      // Force a router refresh to ensure we get fresh data
-      router.refresh();
-
-      toast({
-        title: "Success!",
-        description: "Your context has been updated successfully.",
-      })
-    } catch (error) {
-      console.error('Error submitting context:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update context. Please try again.",
-      })
-    } finally {
-      setIsLoading(false);
-    }
+    if (!user?.id) return
+    
+    mutate({
+      userId: user.id,
+      organisationUrl: data.url,
+      organisationName: data.orgName,
+    })
   }
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (submissionTimeoutRef.current) {
-        clearTimeout(submissionTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleEdit = () => {
     setIsEditing(true)
-    setIsSubmitted(false)
   }
 
   const handleCancel = () => {
@@ -229,7 +177,6 @@ export default function ContextSetupPage() {
       form.setValue("url", submittedValues.url)
       form.setValue("orgName", submittedValues.orgName)
     }
-    setIsSubmitted(true)
   }
 
   return (
@@ -240,7 +187,7 @@ export default function ContextSetupPage() {
             Context Setup
             <span className={cn(
               "w-2 h-2 rounded-full",
-              hasDescription ? "bg-green-500" : "bg-yellow-500"
+              profile?.organisationDescription ? "bg-green-500" : "bg-yellow-500"
             )}></span>
           </h1>
         </div>
@@ -254,7 +201,7 @@ export default function ContextSetupPage() {
                     <h2 className="text-2xl font-semibold">Organization Details</h2>
                     <p className="text-sm text-gray-500">Enter your organization's information to help the AI understand your context.</p>
                   </div>
-                  {isSubmitted && !isEditing && (
+                  {profile && !isEditing && (
                     <Button type="button" variant="outline" size="sm" onClick={handleEdit} className="h-9 text-xs px-4">
                       Edit
                     </Button>
@@ -267,6 +214,14 @@ export default function ContextSetupPage() {
                 <div className="flex flex-col items-center space-y-2 py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
                   <p className="text-sm text-gray-500">Loading your profile...</p>
+                </div>
+              ) : isPending ? (
+                <div className="flex flex-col items-center space-y-4 py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-gray-900">Analyzing your organization</p>
+                    <p className="text-sm text-gray-500">This may take up to a minute...</p>
+                  </div>
                 </div>
               ) : (
                 <Form {...form}>
@@ -290,9 +245,9 @@ export default function ContextSetupPage() {
                                   placeholder="https://..."
                                   className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900 transition-colors duration-200"
                                   {...field}
-                                  disabled={isSubmitted && !isEditing}
+                                  disabled={profile && !isEditing}
                                 />
-                                {field.value.length === 0 && !isSubmitted && (
+                                {field.value.length === 0 && !profile && (
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
                                     ✨ Step 1. Submit your company URL!
                                   </div>
@@ -322,9 +277,9 @@ export default function ContextSetupPage() {
                                   placeholder="Enter name..."
                                   className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900 transition-colors duration-200"
                                   {...field}
-                                  disabled={isSubmitted && !isEditing}
+                                  disabled={profile && !isEditing}
                                 />
-                                {field.value.length === 0 && !isSubmitted && (
+                                {field.value.length === 0 && !profile && (
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
                                     ✨ Step 2. Submit your company or product name
                                   </div>
@@ -343,21 +298,21 @@ export default function ContextSetupPage() {
                           Cancel
                         </Button>
                       )}
-                      {(!isSubmitted || isEditing) && (
+                      {(!profile || isEditing) && (
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isLoading}
+                          disabled={isPending}
                           className={cn(
                             "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
                             shouldPulse && "animate-pulse-edge",
                           )}
                         >
-                          {isLoading ? (
-                            <>
+                          {isPending ? (
+                            <div className="flex items-center">
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Submitting...
-                            </>
+                              <span>Generating...</span>
+                            </div>
                           ) : (
                             "Submit"
                           )}
@@ -368,7 +323,7 @@ export default function ContextSetupPage() {
                 </Form>
               )}
 
-              {isLoading && (
+              {isLoadingProfile && (
                 <div className="flex flex-col items-center space-y-2 py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
                   <p className="text-sm text-gray-500">Setting up your context. Please wait…</p>
@@ -377,12 +332,11 @@ export default function ContextSetupPage() {
             </CardContent>
           </Card>
 
-          {hasDescription && (
-            <ContextContainer initialContext={description} />
+          {profile?.organisationDescription && (
+            <ContextContainer initialContext={profile.organisationDescription} />
           )}
         </div>
       </div>
     </NavSidebar>
   )
 }
-
