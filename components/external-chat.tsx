@@ -16,21 +16,28 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useChat, Message } from "ai/react";
+import { Message } from "ai";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Define the extended message type here to ensure consistency
+interface ExtendedMessage extends Message {
+  objectives?: Record<string, { status: string; count?: number; target?: number; guidance?: string; }> | null;
+}
+
 import { Message as ChatMessage } from "@/components/message";
 import { ChatInput } from "@/components/input";
-// Import the lazy version of ExternalChatProgress
-import { LazyExternalChatProgress } from "@/components/lazy-components";
+// Import the lazy version of DirectProgressBar instead of ExternalChatProgress
+import { LazyDirectProgressBar } from "@/components/lazy-components";
 import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
 import { WelcomeBanner } from "@/components/welcome-banner";
+// Import our custom hook instead of useChat
+import { useExternalChat } from "@/lib/hooks/use-external-chat";
 
 interface ExternalChatProps {
   chatInstanceId: string;
   chatResponseId: string;
-  initialMessages: Message[];
+  initialMessages: ExtendedMessage[];  // Update to extended message type
   welcomeDescription?: string;
 }
 
@@ -49,6 +56,7 @@ export function ExternalChat({
   // IMPORTANT: All hooks must be called in the same order on every render
   const { data: userData, isLoading: isLoadingUserData } = useChatResponseUser(chatResponseId);
 
+  // Use our custom hook instead of useChat
   const {
     messages,
     input,
@@ -58,7 +66,7 @@ export function ExternalChat({
     setInput,
     error,
     stop,
-  } = useChat({
+  } = useExternalChat({
     api: "/api/external-chat",
     id: chatResponseId,
     body: { chatInstanceId, chatResponseId },
@@ -69,20 +77,8 @@ export function ExternalChat({
         `&welcomeDesc=${encodeURIComponent(welcomeDescription)}` : '';
       window.history.replaceState({}, "", `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}${welcomeDescParam}`);
       
-      const completedCalls = message.toolInvocations?.filter((call) => 
-        'result' in call && 
-        call.toolName === 'endConversation'
-      );
-
-      if (completedCalls?.length) {
-        const endCall = completedCalls[0];
-        if ('result' in endCall) {
-          const { redirectUrl, delayMs } = endCall.result as { redirectUrl: string; delayMs: number };
-          setTimeout(() => {
-            window.location.href = redirectUrl;
-          }, delayMs);
-        }
-      }
+      // NOTE: The endConversation tool has been removed
+      // The redirect functionality would previously happen here
     }
   });
   
@@ -135,12 +131,9 @@ export function ExternalChat({
     if (!showProgressBar) return null;
     
     return (
-      <LazyExternalChatProgress
-        chatResponseId={chatResponseId}
-        messageCount={messages.length}
-      />
+      <LazyDirectProgressBar messages={messages} />
     );
-  }, [showProgressBar, chatResponseId, messages.length]);
+  }, [showProgressBar, messages]);
 
   // Optimized auto-scroll effect with debounce
   useEffect(() => {
@@ -186,6 +179,10 @@ export function ExternalChat({
       setShowProgressBar(true);
     }
   }, [userMessageCount, showProgressBar]);
+  
+  // NOTE: Progress bar updates are currently paused in the backend
+  // This component will still render the progress bar UI, but it won't update
+  // based on conversation progress since those backend functions are disabled
   
   // Send auto greeting once at initialization
   useEffect(() => {

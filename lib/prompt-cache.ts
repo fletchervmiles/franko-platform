@@ -93,7 +93,7 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     console.log(`POPULATE: Cache miss for key "${cacheKey}"`);
     logger.debug('Cache miss, loading prompt for organization:', { organizationName });
     
-    const promptTemplate = loadPrompt('external_chat_prompt.md');
+    const promptTemplate = loadPrompt('main_agent.md');
 
     // Simplify conversation plan formatting
     let formattedConversationPlan = "";
@@ -111,11 +111,15 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
       formattedConversationPlan = "No conversation plan provided.";
     }
 
-    // Populate the prompt template with organization details and conversation plan
+    // Get demo_content from the chat instance
+    const demoContent = chatInstance.demo_content || '';
+
+    // Populate the prompt template with organization details, conversation plan, and demo content
     const populatedPrompt = promptTemplate
       .replace('{organisation_name}', organizationName)
       .replace('{organisation_description}', organizationContext)
-      .replace('{conversation_plan}', formattedConversationPlan);
+      .replace('{conversation_plan}', formattedConversationPlan)
+      .replace('{demo_content}', demoContent);
 
     // Store with both keys to ensure both lookup methods work
     promptCache.set(cacheKey, populatedPrompt);

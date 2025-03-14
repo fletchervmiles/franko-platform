@@ -54,7 +54,8 @@ import {
   
   // Core message format used internally by AI SDK
   // Simplified version of Message without UI-specific fields
-  CoreMessage,  
+  CoreMessage,
+  generateText,  
   
   // Special message type for tool executions
   // Contains:
@@ -275,6 +276,10 @@ export async function POST(request: Request) {
     
     console.log(`PROMPT CHECK: Looking for cached prompt for org: "${organizationName}" and id: "${chatInstanceId}"`);
     
+    // Force a cache miss to ensure we're using the updated prompt file
+    // Comment this out after testing to use the cache again
+    _invalidatePromptCache(organizationName || 'default');
+    
     // Get the cached prompt or generate a new one
     let systemPrompt = getCachedPrompt(chatInstanceId, organizationName || 'default');
     
@@ -349,7 +354,22 @@ export async function POST(request: Request) {
      *    - Helps track any formatting issues
      *    - Validates conversion success
      */
-    const coreMessages = convertToCoreMessages(messages).filter(
+    // First, process the messages to use fullResponse when available for assistant messages
+    const processedMessages = messages.map((message: any) => {
+      // If this is an assistant message with a fullResponse, use that instead of content
+      if (message.role === 'assistant' && message.fullResponse) {
+        console.log('Using fullResponse for message:', message.id);
+        // Create a new message using the fullResponse as the content
+        return {
+          ...message,
+          content: message.fullResponse
+        };
+      }
+      return message;
+    });
+    
+    // Then convert to core messages
+    const coreMessages = convertToCoreMessages(processedMessages).filter(
       (message) => message.content.length > 0,
     );
     
@@ -364,362 +384,147 @@ export async function POST(request: Request) {
     });
 
     /**
-     * AI Stream Configuration
+     * AI Response Configuration
      * 
      * Sets up the AI model with:
      * - System prompt loaded from file
      * - Message history (coreMessages)
-     * - Available tools for AI to use
-     * - Response streaming settings
+     * - Response generation settings
      */
-    const result = await streamText({
+
+    // Log the complete request configuration
+    console.log("\n=== FULL REQUEST DETAILS BEGIN ===");
+    console.log("System Prompt:", systemPrompt);
+    console.log("\nMessage History:", JSON.stringify(coreMessages, null, 2));
+    console.log("\nRequest Configuration:", JSON.stringify({
+      model: geminiFlashModel,
+      maxTokens: 5000,
+      temperature: 1,
+    }, null, 2));
+    console.log("=== FULL REQUEST DETAILS END ===\n");
+
+    const result = await generateText({
       model: geminiFlashModel,
       system: systemPrompt,
       messages: coreMessages,
-
-
-      tools: {
-        endConversation: {
-          description: "- **Description:** Concludes the interaction by redirecting the user to their dashboard, where they can review and edit the conversation plan. - **When to Use:** This tool is mandatory at the conversation's end when all objectives are met or when the user has no further input. It is highlighted within the final objective of the conversation plan.",
-          parameters: z.object({
-            // Required dummy parameter to satisfy Gemini's schema requirements
-            _dummy: z.string().optional().describe("Placeholder parameter")
-          }),
-          execute: async () => {
-            try {
-              logger.info('Executing endConversation tool, finalizing conversation', { chatResponseId });
-              
-              // Call the finalize endpoint
-              const finalizeResponse = await fetch(new URL('/api/external-chat/finalize', request.url).toString(), {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ chatResponseId }),
-              });
-              
-              if (!finalizeResponse.ok) {
-                // Log the error but continue with the redirect
-                const errorData = await finalizeResponse.json().catch(() => ({}));
-                logger.error('Failed to finalize conversation', { 
-                  status: finalizeResponse.status,
-                  error: errorData
-                });
-              } else {
-                logger.info('Conversation finalized successfully');
-              }
-            } catch (error) {
-              // Log the error but continue with the redirect
-              logger.error('Error calling finalize endpoint:', error);
-            }
-            
-            return {
-              message: "It's been awesome working together - redirecting you now!",
-              redirectUrl: `/chat/external/${id}/finish`,
-              delayMs: 3000
-            };
-          },
-        },
-
-        
-        searchWeb: {
-          description: "A tool to perform a web search, gathering factual information from publicly available sources like product specifications. Ideal for filling information gaps. **When to Use:** Use when there's a need for verified data or when the conversation lacks key details. Not to be overused and should be considered only if the specific objective suggests this tool.",
-          parameters: z.object({
-            query: z.string().describe("The search query to find information about"),
-            searchDepth: z
-              .enum(["basic", "advanced"])
-              .optional()
-              .describe("How deep to search. Use 'advanced' for more thorough results"),
-            topic: z
-              .enum(["general", "news"])
-              .optional()
-              .describe("Category of search, use 'news' for recent events")
-          }),
-          execute: async ({ query, searchDepth = "basic", topic = "general" }) => {
-            logger.ai('Web search tool called:', { query, searchDepth, topic });
-            const results = await performWebSearch({ query });
-            logger.ai('Web search results:', {
-              answer: results.answer,
-              resultCount: results.results.length,
-              responseTime: results.responseTime
-            });
-            return results;
-          },
-        },
-
-
-        displayOptionsMultipleChoice: {
-          description: `
-        - **Purpose:** Presents the user with contextually relevant, clickable options for selecting one or more choices based on the conversation context.  
-        - **When to Use:** DO NOT USE as the first turn in the conversation. Only use if suggested in the current objective.
-        - **Context Parameter:** Use the optional context parameter to provide additional information that will help generate more relevant and tailored options.
-          `,
-          parameters: z.object({
-            text: z.string().describe("The question or statement for which to generate selectable options"),
-            context: z.string().optional().describe("Additional context to help generate more relevant options")
-          }),
-          execute: async ({ text, context }) => {
-            try {
-              logger.debug('Executing displayOptionsMultipleChoice tool', { 
-                text, 
-                contextProvided: !!context
-              });
-              
-              // Use recent messages from conversation history automatically
-              // This simplifies the API by handling it internally
-              const recentMessages = coreMessages.slice(-5).map(m => ({
-                role: m.role,
-                content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-              }));
-              
-              const result = await generateDisplayOptions({ 
-                text, 
-                context,
-                // Use default system prompt
-                messagesHistory: recentMessages
-              });
-              
-              logger.debug('displayOptionsMultipleChoice result:', { 
-                options: result.options,
-                optionsCount: result.options.length
-              });
-              
-              return {
-                type: "options",
-                options: result.options
-              };
-            } catch (error) {
-              logger.error('Error in displayOptionsMultipleChoice tool:', error);
-              throw error;
-            }
-          },
-        },
-
-
-        thinkingHelp: {
-          description: `The ThinkPad tool allows Franko to pause and reflect internally when faced with a complex or ambiguous situation in a customer research interview. 
-          It analyzes the current challenge based on the user's last response and the full conversation history, considers multiple conversational moves, and selects the best approach for the next turn. 
-          The output is for Franko's internal use only and is not shared with the user; the main agent handles crafting the actual response. 
-          **When to use:** Franko should use the ThinkPad tool at his discretion in these specific situations:
-
-        - **Vague or unclear user responses:** When the user's answer lacks detail or clarity (e.g., "It's fine," "Maybe," or "I'm not sure").
-        - **Complex user questions:** When the user asks a question with multiple possible interpretations or layers (e.g., "How should I improve my entire workflow?").
-        - **Multiple conversational paths: When the conversation could reasonably go in several directions, and Franko needs to choose the most effective one (e.g., deepening the current topic, shifting focus, or clarifying).
-        - **Critical decision points:** When the next move could significantly impact the conversation's direction or the quality of insights gathered (e.g., transitioning to a new objective or addressing a sensitive topic).
-        - **Uncertainty about the next step:** When Franko feels unsure about the best way to proceed or needs to weigh the pros and cons of different approaches.
-
-        **Usage Notes**
-        - Discretionary Use: Use the ThinkPad sparingly, only when the conversation's complexity or ambiguity warrants deeper reflection.
-        - Internal Only: The analysis is hidden from the user and used within a multi-step turn to inform Franko's decision-making.
-        - Supports Main Agent: The Chosen Path guides the main agent in constructing the final response, leveraging its training in response style.`,
-          parameters: z.object({
-            _dummy: z.string().optional().describe("Placeholder parameter - not used")
-          }),
-          execute: async () => {
-            logger.debug('Executing thinking help tool');
-            
-            const result = await thinkingHelp({ 
-              messages: coreMessages,
-              userId: chatResponse.userId // Use userId from chatResponse
-            });
-            
-            logger.api('Thinking help tool result:', {
-              resultLength: result.length,
-              result: result.substring(0, 100) + (result.length > 100 ? '...' : '') // Log first 100 chars
-            });
-            
-            return {
-              type: 'internal-guidance',
-              text: result,
-              experimental_providerMetadata: {
-                metadata: {
-                  type: 'internal-guidance',
-                  isVisible: false
-                }
-              }
-            };
-          },
-        },
-      },
-
-      /**
-       * onFinish Callback
-       * 
-       * Purpose: Save the complete chat history after AI responds
-       * Triggers: After AI stream completes and all tools have executed
-       * Input: responseMessages - New messages from current AI response
-       */
-
-      // Save chat history after completion
-      onFinish: async ({ responseMessages }) => {
-          try {
-            // Process new messages
-            const newProcessedMessages = responseMessages.map(m => {
-              let content = m.content;
-              
-              // If it's a string, it might be wrapped in markdown and JSON
-              if (typeof content === 'string') {
-                // First remove markdown wrapping if present
-                if (content.startsWith('```json\n') && content.endsWith('\n```')) {
-                  content = content.slice(8, -4); // Remove ```json\n and \n```
-                }
-                
-                try {
-                  // Then parse the JSON content
-                  const parsed = JSON.parse(content);
-                  // Use the parsed content directly - this is the actual message
-                  return { ...m, content: parsed.content };
-                } catch (e) {
-                  // If JSON parsing fail, use content as is
-                  console.debug('Failed to parse message content as JSON:', e);
-                  return { ...m, content };
-                }
-              }
-              
-              // If it's not a string (e.g., already an array), use as is
-              return { ...m, content };
-            }).filter(m => {
-              // Filter out objective updates from UI display
-              const metadata = m.experimental_providerMetadata?.metadata;
-              return !(metadata && metadata.type === 'objective-update' && metadata.isVisible === false);
-            });
-
-          // Get existing chat response
-          const existingChatResponse = await getChatResponseById(chatResponseId);
-          if (!existingChatResponse) {
-            logger.error('Chat response not found for updating messages', { chatResponseId });
-            return;
-          }
-          
-          // Parse existing messages from messagesJson
-          const existingMessages = existingChatResponse.messagesJson ? 
-            JSON.parse(existingChatResponse.messagesJson) : 
-            [];
-            
-            // Find the latest user message from coreMessages
-            const latestUserMessage = [...coreMessages]
-              .filter(m => m.role === 'user')
-              .pop();
-            
-            // Check if this user message is already saved
-            const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
-              m.role === 'user' && 
-              m.content === latestUserMessage?.content
-            );
-            
-            // Create the updated message array
-            const allMessages = [...existingMessages];
-            
-            // Add the user message if it's not already saved
-            if (latestUserMessage && !userMessageExists) {
-              allMessages.push({
-                id: generateUUID(),
-                role: latestUserMessage.role,
-                content: latestUserMessage.content
-              });
-            }
-            
-            // Add the AI response messages
-            allMessages.push(...newProcessedMessages);
-
-            // Immediately update chat with current messages
-          await updateChatResponse(chatResponseId, {
-            messagesJson: JSON.stringify(allMessages),
-            });
-
-            // Non-blocking objective update
-            Promise.resolve().then(async () => {
-              try {
-                logger.debug('Starting objective update process');
-                
-                // Get the chat instance to ensure we have the latest progress structure
-                const chatInstance = await getChatInstanceById(chatInstanceId);
-                if (!chatInstance || !chatInstance.objectiveProgress) {
-                  logger.error('Chat instance or objectiveProgress not found', { 
-                    chatInstanceId, 
-                    hasInstance: !!chatInstance, 
-                    hasProgress: !!(chatInstance && chatInstance.objectiveProgress) 
-                  });
-                  return;
-                }
-                
-                // Ensure the chat response has the latest progress structure
-                // This ensures the chat_progress field is properly initialized
-                if (!chatResponse.chatProgress) {
-                  logger.debug('Initializing chatProgress in chat response', { chatResponseId });
-                  await updateChatResponse(chatResponseId, {
-                    chatProgress: chatInstance.objectiveProgress
-                  });
-                }
-                
-                // CRITICAL FIX: Use chatResponseId instead of chatInstanceId for objectiveUpdate
-                // objectiveUpdate function expects chatId to be a chat response ID, not a chat instance ID
-                const objectiveResult = await objectiveUpdate({
-                  messages: coreMessages,
-                  userId: chatResponse.userId,
-                  chatId: chatResponseId  // Changed from chatInstanceId to chatResponseId
-                });
-
-                // logger.api('Objective update result in route handler:', {
-                //   resultLength: objectiveResult.length,
-                //   result: objectiveResult
-                // });
-
-                // Create objective update message
-                const objectiveMessage = {
-                  role: 'tool' as const,
-                  content: objectiveResult,
-                  experimental_providerMetadata: {
-                    metadata: {
-                      type: 'objective-update',
-                      isVisible: false
-                    }
-                  }
-                };
-
-                // Add objective update to all messages
-                allMessages.push(objectiveMessage);
-
-              // Update chat response with all messages including objective update
-              await updateChatResponse(chatResponseId, {
-                messagesJson: JSON.stringify(allMessages),
-                });
-
-                // logger.debug('Objective update message added to chat history');
-
-                // After objective update is complete, update progress bar (non-blocking)
-                Promise.resolve().then(async () => {
-                  try {
-                    // Pass all messages including the new objective update
-                    await progressBarUpdate({
-                      messages: [...coreMessages, objectiveMessage as unknown as CoreMessage],
-                    chatId: chatResponseId
-                    });
-                  } catch (error) {
-                    logger.error('Failed to update progress bar:', error);
-                  }
-                });
-              } catch (error) {
-                logger.error('Failed to process objective update:', error);
-              }
-            });
-
-          logger.info('Chat updated successfully:', { chatResponseId });
-          } catch (error) {
-          logger.error('Failed to update chat:', { error, chatResponseId });
-        }
-      },
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: "stream-text",
-        onTelemetry: (telemetryData: any) => {
-          logger.ai('AI Telemetry:', telemetryData);
-        }
-      } as any,
+      maxTokens: 5000,  // Appropriate limit for responses
+      temperature: 1, // Balanced creativity
     });
 
-    logger.debug('Raw model response:', {
-      result: result.response,
+    // Log the complete, untruncated response
+    console.log("\n=== FULL AI RESPONSE BEGIN ===");
+    console.log(result.text);
+    console.log("=== FULL AI RESPONSE END ===\n");
+
+    // Extract the relevant part of the response
+    let parsedContent;
+    let displayText;
+
+    try {
+      // The result.text might be wrapped in ```json ``` or be plain JSON
+      const jsonText = result.text.includes('```json')
+        ? result.text.split('```json\n')[1].split('\n```')[0]
+        : result.text;
+        
+      parsedContent = JSON.parse(jsonText);
+      
+      // Extract just the "response" field for display
+      displayText = parsedContent.response || result.text;
+      
+      logger.debug('Successfully parsed JSON response', { 
+        responseLength: displayText.length,
+        contentSnippet: displayText.substring(0, 100) + (displayText.length > 100 ? '...' : '')
+      });
+    } catch (error) {
+      logger.error('Failed to parse JSON response:', error);
+      // Fallback to using the raw text if parsing fails
+      parsedContent = { response: result.text };
+      displayText = result.text;
+    }
+
+    // Create a complete message for database storage
+    const completeResponseMessage = {
+      id: generateUUID(),
+      role: 'assistant',
+      content: result.text, // Store the full JSON response
+      createdAt: new Date()
+    };
+
+    // Create a simulated streaming response with just the user-facing content
+    const simulatedResponseMessage = {
+      id: completeResponseMessage.id, // Use the same ID for consistency
+      role: 'assistant',
+      content: displayText, // Just the extracted "response" field
+      createdAt: new Date()
+    };
+
+    logger.debug('AI response generated and parsed:', {
+      fullResponseLength: result.text.length,
+      displayTextLength: displayText.length,
+      displayTextSnippet: displayText.substring(0, 100) + (displayText.length > 100 ? '...' : '')
+    });
+
+    // Save the message to the database (non-blocking)
+    Promise.resolve().then(async () => {
+      try {
+        // Process new messages - use result.text instead of result.messages
+        // Using the text as the content for a single message
+        const processedMessage = {
+          id: completeResponseMessage.id,
+          role: 'assistant' as const,
+          content: displayText
+        };
+
+        // Get existing chat response
+        const existingChatResponse = await getChatResponseById(chatResponseId);
+        if (!existingChatResponse) {
+          logger.error('Chat response not found for updating messages', { chatResponseId });
+          return;
+        }
+        
+        // Parse existing messages from messagesJson
+        const existingMessages = existingChatResponse.messagesJson ? 
+          JSON.parse(existingChatResponse.messagesJson) : 
+          [];
+          
+        // Find the latest user message from coreMessages
+        const latestUserMessage = [...coreMessages]
+          .filter(m => m.role === 'user')
+          .pop();
+        
+        // Check if this user message is already saved
+        const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
+          m.role === 'user' && 
+          m.content === latestUserMessage?.content
+        );
+        
+        // Create the updated message array
+        const allMessages = [...existingMessages];
+        
+        // Add the user message if it's not already saved
+        if (latestUserMessage && !userMessageExists) {
+          allMessages.push({
+            id: generateUUID(),
+            role: latestUserMessage.role,
+            content: latestUserMessage.content
+          });
+        }
+        
+        // Add the AI response message with the full JSON
+        allMessages.push(completeResponseMessage);
+
+        // Immediately update chat with current messages
+        await updateChatResponse(chatResponseId, {
+          messagesJson: JSON.stringify(allMessages),
+        });
+
+        // NOTE: Progress bar and objective updates are now removed since we're
+        // parsing objectives directly from the response in the client
+
+        logger.info('Chat updated successfully:', { chatResponseId });
+      } catch (error) {
+        logger.error('Failed to update chat:', { error, chatResponseId });
+      }
     });
 
     // Add performance logging at the end
@@ -730,14 +535,42 @@ export async function POST(request: Request) {
       duration: `${(endTime - startTime).toFixed(2)}ms`
     });
 
-    // Return streaming response
-    return result.toDataStreamResponse({
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+    // Function to chunk the text for simulated streaming
+    function chunkText(text: string, size = 4) {
+      const chunks = [];
+      let position = 0;
+      
+      while (position < text.length) {
+        // Calculate the next chunk size (variable for natural feel)
+        const variableSize = size + Math.floor(Math.random() * 3);
+        const chunk = text.slice(position, position + variableSize);
+        position += variableSize;
+        chunks.push(chunk);
       }
-    });
+      
+      return chunks;
+    }
+
+    // Return a complete response instead of streaming
+    // This simplifies the implementation and avoids SSE parsing issues
+    return new Response(
+      JSON.stringify({
+        id: simulatedResponseMessage.id,
+        role: 'assistant',
+        content: displayText,
+        // Include the objectives data explicitly for the progress bar
+        objectives: parsedContent.currentObjectives || null,
+        // Include the full raw response for preservation in message history
+        fullResponse: result.text,
+        createdAt: simulatedResponseMessage.createdAt
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      }
+    );
   } catch (error) {
     // Improved error logging with better error details
     const errorMessage = error instanceof Error ? error.message : String(error);

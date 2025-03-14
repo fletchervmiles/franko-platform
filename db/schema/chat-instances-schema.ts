@@ -34,6 +34,7 @@ export const chatInstancesTable = pgTable("chat_instances", {
   incentiveDescription: text("incentive_description"),
   additionalDetails: text("additional_details"),
   welcomeDescription: text("welcome_description"), // Added new field
+  demo_content: text("demo_content"), // Added new demo_content field
   published: boolean("published").default(false),
   responseEmailNotifications: boolean("response_email_notifications").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),

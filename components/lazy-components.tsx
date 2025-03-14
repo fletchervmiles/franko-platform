@@ -32,6 +32,16 @@ export const LazyExternalChatProgress = dynamic(
   }
 );
 
+// Lazy load the direct progress bar component
+// This is the new component that parses progress directly from responses
+export const LazyDirectProgressBar = dynamic(
+  () => import('./direct-progress-bar').then(mod => ({ default: mod.DirectProgressBar })),
+  {
+    loading: () => <ProgressBarPlaceholder />,
+    ssr: false,
+  }
+);
+
 // Lazy load the Markdown component which is used for rendering AI responses
 // This helps reduce the initial bundle size
 export const LazyMarkdown = dynamic(

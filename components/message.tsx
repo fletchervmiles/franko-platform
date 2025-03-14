@@ -15,6 +15,8 @@ interface MessageProps {
   content: string | ReactNode
   isUser?: boolean
   timestamp?: string
+  // NOTE: Tool invocations have been removed from the backend
+  // This prop is kept for backward compatibility but is currently unused
   toolInvocations?: Array<ToolInvocation>
   chatId: string
   isLoading?: boolean
@@ -255,70 +257,12 @@ export const Message = React.memo(function Message({
             <LazyMarkdown>{getDisplayContent(content)}</LazyMarkdown>
           )}
 
-          {toolInvocations && chatId && (
-            toolInvocations.map((toolInvocation) => {
-              const { toolName, toolCallId, state } = toolInvocation;
-
-              if (state === "result") {
-                const { result } = toolInvocation;
-
-                // Skip rendering for searchWeb and thinkingHelp tools
-                if (toolName === "searchWeb" || toolName === "thinkingHelp") return null;
-
-                // Special handling for endConversation tool
-                if (toolName === "endConversation") {
-                  return (
-                    <div key={toolCallId}>
-                      <p>{result.message}</p>
-                    </div>
-                  );
-                }
-
-                // Add logging to help with debugging
-                console.log(`Rendering tool result for ${toolName}:`, { 
-                  hasType: !!result?.type, 
-                  type: result?.type,
-                  hasOptions: !!result?.options,
-                  hasText: !!result?.text,
-                  toolName
-                });
-
-                return (
-                  <div key={toolCallId}>
-                    {(toolName === "displayOptionsMultipleChoice" || toolName === "displayOptionsNumbers") && 
-                     result?.type === "options" ? (
-                      <div>
-                        {/* Show text above options if provided */}
-                        {result.text && (
-                          <div className="mb-2 text-sm text-gray-500">{result.text}</div>
-                        )}
-                        <LazyOptionButtons 
-                          options={result.options} 
-                          chatId={chatId}
-                        />
-                      </div>
-                    ) : toolName === "generateConversationPlan" ? (
-                      <LazyConversationPlan 
-                        plan={result} 
-                      />
-                    ) : (
-                      <div>{JSON.stringify(result, null, 2)}</div>
-                    )}
-                  </div>
-                );
-              } else {
-                return (
-                  <div key={toolCallId} className="skeleton">
-                    {(toolName === "displayOptionsMultipleChoice" || toolName === "displayOptionsNumbers") ? (
-                      <LazyOptionButtons options={[]} chatId={chatId} />
-                    ) : toolName === "generateConversationPlan" ? (
-                      <LazyConversationPlan />
-                    ) : null}
-                  </div>
-                );
-              }
-            })
-          )}
+          {/* NOTE: Tool invocations have been removed from the backend
+              This section previously handled various tool responses like:
+              - endConversation
+              - displayOptionsMultipleChoice
+              - searchWeb
+              These may be re-implemented in a future update */}
         </div>
       </div>
     </motion.div>
