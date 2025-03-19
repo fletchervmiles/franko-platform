@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Globe, Building } from "lucide-react"
+import { Loader2, Globe, Building, InfoIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -17,6 +17,7 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries"
 import { useToast } from "@/hooks/use-toast"
 import { ContextContainer } from "@/components/context-container"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const contextSetupSchema = z.object({
   url: z.string()
@@ -198,8 +199,7 @@ export default function ContextSetupPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-semibold">Organization Details</h2>
-                    <p className="text-sm text-gray-500">Enter your organization's information to help the AI understand your context.</p>
+                    <p className="text-base text-gray-700">Tell us about your business so your AI can understand who you are and deliver personalized conversations.</p>
                   </div>
                   {profile && !isEditing && (
                     <Button type="button" variant="outline" size="sm" onClick={handleEdit} className="h-9 text-xs px-4">
@@ -233,11 +233,20 @@ export default function ContextSetupPage() {
                         render={({ field }) => (
                           <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                             <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              <Globe className="w-4 h-4 text-blue-600" />
-                              Website
+                              🌐 Website URL
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                    <p>We scan publicly available information from your website to help your AI understand your products, services, and terminology.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </FormLabel>
                             <p className="text-sm text-gray-500 mb-2">
-                              We'll use your website content to ensure the AI conducts conversations in context.
+                              We'll analyze your website content to build context.
                             </p>
                             <FormControl>
                               <div className="relative">
@@ -265,11 +274,20 @@ export default function ContextSetupPage() {
                         render={({ field }) => (
                           <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                             <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              <Building className="w-4 h-4 text-blue-600" />
-                              Company or Product Name
+                              🏷️ Company or Product Name
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                    <p>Enter your official company or brand name here, so your AI can correctly represent your business in interactions.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </FormLabel>
                             <p className="text-sm text-gray-500 mb-2">
-                              We'll use your content to ensure the AI conducts conversations in context.
+                              Used to reference your business accurately in conversations.
                             </p>
                             <FormControl>
                               <div className="relative">

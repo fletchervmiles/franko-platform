@@ -1,24 +1,10 @@
-// /**
-//  * External Chat Component
-//  * 
-//  * This client component handles the main chat interface for external users:
-//  * 1. Manages chat state using the AI SDK's useChat hook
-//  * 2. Renders messages and handles user input
-//  * 3. Processes AI responses and tool invocations
-//  * 4. Handles navigation to completion page when chat ends
-//  * 5. Shows progress indicators and loading states
-//  * 
-//  * This is the core UI component that external users interact with when
-//  * participating in a conversation. It handles all real-time chat functionality
-//  * and communicates with the backend API.
-//  */
-
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Message } from "ai";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Define the extended message type here to ensure consistency
 interface ExtendedMessage extends Message {
@@ -33,6 +19,8 @@ import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
 import { WelcomeBanner } from "@/components/welcome-banner";
 // Import our custom hook instead of useChat
 import { useExternalChat } from "@/lib/hooks/use-external-chat";
+import { FinishConversationButton } from "@/components/finish-conversation-button";
+import { hasEndingPhrases, extractResponseText } from "@/lib/utils/conversation-helper";
 
 interface ExternalChatProps {
   chatInstanceId: string;
@@ -51,6 +39,14 @@ export function ExternalChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(false);
+  const [isReadyToFinish, setIsReadyToFinish] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [isAutoFinishing, setIsAutoFinishing] = useState(false);
+  const [autoFinishCountdown, setAutoFinishCountdown] = useState(0);
+  const lastActivityTimeRef = useRef(Date.now());
+  const inactivityCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [areAllObjectivesDone, setAreAllObjectivesDone] = useState(false);
+  const [hasEndingMessage, setHasEndingMessage] = useState(false);
 
   // Use optimized hook for fetching user data
   // IMPORTANT: All hooks must be called in the same order on every render
@@ -87,6 +83,15 @@ export function ExternalChat({
   const userMessageCount = useMemo(() => {
     return messages.filter(m => m.role === 'user').length;
   }, [messages]);
+  
+  // Function to handle when all objectives are done
+  const handleAllObjectivesDone = useCallback((allDone: boolean) => {
+    if (allDone) {
+      console.log('All objectives are done');
+      setAreAllObjectivesDone(true);
+      setIsReadyToFinish(true);
+    }
+  }, []);
   
   // 2. Memoize the actual messages to avoid re-renders when only loading state changes
   const messageElements = useMemo(() => {
@@ -131,9 +136,12 @@ export function ExternalChat({
     if (!showProgressBar) return null;
     
     return (
-      <LazyDirectProgressBar messages={messages} />
+      <LazyDirectProgressBar 
+        messages={messages} 
+        onAllObjectivesDone={handleAllObjectivesDone}
+      />
     );
-  }, [showProgressBar, messages]);
+  }, [showProgressBar, messages, handleAllObjectivesDone]);
 
   // Optimized auto-scroll effect with debounce
   useEffect(() => {
@@ -180,10 +188,89 @@ export function ExternalChat({
     }
   }, [userMessageCount, showProgressBar]);
   
-  // NOTE: Progress bar updates are currently paused in the backend
+  // Function to check for end conditions
+  const checkEndConditions = useCallback(() => {
+    // If we're already finished or loading, don't check
+    if (isFinished || isLoading) return;
+    
+    // Check the last message for ending phrases
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        const content = typeof lastMessage.content === 'string' 
+          ? extractResponseText(lastMessage.content) 
+          : '';
+        
+        if (hasEndingPhrases(content)) {
+          console.log('Ending phrases detected in last message');
+          setHasEndingMessage(true);
+          setIsReadyToFinish(true);
+        }
+      }
+    }
+  }, [messages, isFinished, isLoading]);
+
+  // Check for ending phrases after each message
+  useEffect(() => {
+    checkEndConditions();
+  }, [messages, checkEndConditions]);
+
+  // Set up inactivity detection
+  useEffect(() => {
+    // Update last activity time when user sends a message
+    if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
+      lastActivityTimeRef.current = Date.now();
+    }
+    
+    // Set up interval to check for inactivity
+    const INACTIVITY_CHECK_INTERVAL = 60 * 1000; // Check every minute
+    const INACTIVITY_THRESHOLD = 60 * 60 * 1000; // 1 hour threshold
+    
+    // Clear any existing interval
+    if (inactivityCheckIntervalRef.current) {
+      clearInterval(inactivityCheckIntervalRef.current);
+    }
+    
+    // Set up new interval
+    inactivityCheckIntervalRef.current = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivityTimeRef.current;
+      
+      // If inactive for threshold, start auto finish countdown
+      if (timeSinceLastActivity >= INACTIVITY_THRESHOLD && !isFinished && !isAutoFinishing) {
+        console.log('Inactivity threshold reached, starting auto-finish countdown');
+        setIsAutoFinishing(true);
+        setAutoFinishCountdown(30); // 30 second countdown
+      }
+    }, INACTIVITY_CHECK_INTERVAL);
+    
+    // Clean up on unmount
+    return () => {
+      if (inactivityCheckIntervalRef.current) {
+        clearInterval(inactivityCheckIntervalRef.current);
+      }
+    };
+  }, [messages, isFinished, isAutoFinishing]);
+
+  // Handle auto-finish countdown
+  useEffect(() => {
+    if (isAutoFinishing && autoFinishCountdown > 0) {
+      const countdownInterval = setInterval(() => {
+        setAutoFinishCountdown((prev) => prev - 1);
+      }, 1000);
+      
+      return () => clearInterval(countdownInterval);
+    } else if (isAutoFinishing && autoFinishCountdown === 0) {
+      // Time's up, auto-finish the conversation
+      setIsFinished(true);
+      // This would be where we'd trigger finishing automatically
+    }
+  }, [isAutoFinishing, autoFinishCountdown]);
+  
+  // NOTE: Progress bar and objective updates are currently paused in the backend
   // This component will still render the progress bar UI, but it won't update
   // based on conversation progress since those backend functions are disabled
-  
+
   // Send auto greeting once at initialization
   useEffect(() => {
     // Only execute this effect once when the component mounts
@@ -232,6 +319,37 @@ export function ExternalChat({
     // Only run once on mount but include required dependencies to satisfy React
   }, [chatResponseId, isInitializing, handleSubmit, setInput]);
 
+  // Add new effect to auto-redirect when both conditions are met
+  useEffect(() => {
+    // If both conditions are true, set a timeout for auto-finish
+    if (areAllObjectivesDone && hasEndingMessage && !isFinished) {
+      console.log('Auto-finish conditions met, starting 5-second countdown');
+      
+      // Create a 5-second timeout before redirecting
+      const redirectTimeout = setTimeout(() => {
+        console.log('Auto-finishing conversation after delay');
+        
+        // FIRST: Redirect immediately
+        router.push(`/chat/external/${chatInstanceId}/finish`);
+        
+        // THEN: Update state and run background processes
+        setIsFinished(true);
+        
+        // Fire and forget - trigger finalization in the background
+        fetch('/api/external-chat/finalize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatResponseId })
+        }).catch(error => {
+          console.error('Background finalization error:', error);
+        });
+      }, 5000); // 5 seconds delay
+      
+      // Clean up timeout if component unmounts
+      return () => clearTimeout(redirectTimeout);
+    }
+  }, [areAllObjectivesDone, hasEndingMessage, isFinished, chatResponseId, chatInstanceId, router]);
+
   // Loading screen during initialization
   if (isInitializing) {
     return (
@@ -277,16 +395,29 @@ export function ExternalChat({
 
       <div className="sticky bottom-0 bg-background border-t px-4 py-2 md:px-8 lg:px-12">
         <div className="mx-auto max-w-4xl">
+          {/* Only render the button when all objectives are done */}
+          {isReadyToFinish && !isFinished && (
+            <div className="flex justify-end mb-2 pr-8">
+              <FinishConversationButton 
+                chatResponseId={chatResponseId}
+                chatInstanceId={chatInstanceId}
+                onFinishStart={() => setIsFinished(true)}
+                isAutoFinish={isAutoFinishing}
+                countdown={autoFinishCountdown}
+                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 rounded-md h-6 text-xs px-2 font-normal border-none"
+              />
+            </div>
+          )}
+          
           <ChatInput
             value={input}
             onChange={handleInputChange}
             onSubmit={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || isFinished}
             showProgressBar={showProgressBar}
             progressBar={progressBarElement}
             stop={stop}
           />
-          
         </div>
       </div>
     </div>

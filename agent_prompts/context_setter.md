@@ -8,6 +8,9 @@ Your objective is to create a **highly informative document** that equips your c
 
 As you extract information, keep track—mentally or briefly—of which source each key piece of information came from. **Formal citations are not required**, but remember that in real-world research, knowing your sources is crucial.
 
+⚠️ **OUTPUT CONSTRAINT:**  
+Do not directly reference "Extract 01," "Extract 02," or "Extract 03" in your final written text explicitly. Instead, implicitly and naturally integrate details sourced from official content, customer reviews, or other provided references.
+
 ---
 
 ## Output Instructions
@@ -23,7 +26,7 @@ You must produce **exactly 10 sections** in **Markdown** format with **strict ad
 - Provide **5–8 bullets** total.
 - Each bullet has:
   - A **bolded title** in **2–5 words** (e.g., **Streamlined Collaboration**).
-  - An explanation of **1–2 sentences** (15–30 words total) that **begins with a source anchor** (e.g., “According to Extracts 01…”).
+  - An explanation of **1–2 sentences** (15–30 words total)
   - **No sub-bullets**.
 - **Bullet format** example:  
   `- **Bolded Title (2–5 words):** Explanation with 15–30 words.`
@@ -127,7 +130,10 @@ Maintain the **exact section order**:
 
 ### Required Bullet Format
 - **Bolded Title:** 2–5 words in bold.
-- **Explanation:** 1–2 sentences (15–30 words total), beginning with **source anchoring** (e.g., “According to Extracts 01…”).
+- **Explanation:** 1–2 sentences (15–30 words total). Clearly anchor to provided sources without explicit extract references. For example, use natural anchor phrases:
+  - "The official website states…"
+  - "Customer feedback suggests…"
+  - "Industry observers highlight…"
 - **Maximum 8 bullets** per section.
 - **No sub-bullets**.
 

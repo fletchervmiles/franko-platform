@@ -5,6 +5,9 @@
  * Removes system and tool messages, preserves markdown, and formats user/assistant messages.
  */
 
+import { extractResponseText } from './conversation-helper';
+import { logger } from '@/lib/logger';
+
 /**
  * Interface for a message in the messagesJson format
  */
@@ -18,6 +21,7 @@ interface RawMessage {
       isVisible?: boolean
     }
   };
+  fullResponse?: string; // Added for our new format
 }
 
 /**
@@ -53,8 +57,25 @@ export function cleanTranscript(messagesJson: string, userName?: string): string
         // Extract the content based on its type
         let textContent: string;
         
-        if (typeof message.content === 'string') {
-          // If content is a string, use it directly
+        if (message.role === 'assistant') {
+          // For assistant messages, use our helper to extract the response field from JSON
+          if (typeof message.content === 'string') {
+            textContent = extractResponseText(message.content);
+          } else if (Array.isArray(message.content)) {
+            // If content is an array, extract text fields
+            textContent = message.content
+              .map(item => item.text || '')
+              .filter(text => text.length > 0)
+              .join('\n\n');
+          } else if (message.content && typeof message.content === 'object') {
+            // If content is an object, convert to string
+            textContent = JSON.stringify(message.content);
+          } else {
+            // Default to empty string for null/undefined
+            textContent = '';
+          }
+        } else if (typeof message.content === 'string') {
+          // For user messages, use content directly if it's a string
           textContent = message.content;
         } else if (Array.isArray(message.content)) {
           // If content is an array, extract text fields
@@ -84,7 +105,7 @@ export function cleanTranscript(messagesJson: string, userName?: string): string
     // Join messages with double newlines for readability
     return formattedMessages.join('\n\n');
   } catch (error) {
-    console.error('Error cleaning transcript:', error);
+    logger.error('Error cleaning transcript:', error);
     return `Error: Could not parse or clean transcript. ${error instanceof Error ? error.message : ''}`;
   }
 }

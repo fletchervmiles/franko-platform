@@ -6,6 +6,7 @@
  * 2. Maps objective statuses to progress bar states
  * 3. Updates automatically when new messages are received
  * 4. Maintains state across responses with parsing errors
+ * 5. Detects when all objectives are complete
  * 
  * This component provides visual feedback without requiring API calls or database lookups.
  */
@@ -16,6 +17,7 @@ import { ProgressBar, type Step } from "./progress-bar"
 import { useState, useEffect, useMemo } from "react"
 import { Message } from "ai"
 import React from "react"
+import { isAllObjectivesDone } from "@/lib/utils/conversation-helper"
 
 // Extended interface to include objectives that might be attached by our API
 interface ExtendedMessage extends Message {
@@ -23,15 +25,18 @@ interface ExtendedMessage extends Message {
 }
 
 interface DirectProgressBarProps {
-  messages: Message[] | ExtendedMessage[]  // Accept either type for backward compatibility
+  messages: Message[] | ExtendedMessage[];  // Accept either type for backward compatibility
+  onAllObjectivesDone?: (isDone: boolean) => void;
 }
 
 export const DirectProgressBar = React.memo(function DirectProgressBar({ 
-  messages 
+  messages,
+  onAllObjectivesDone
 }: DirectProgressBarProps) {
   // State to track parsed objectives
   const [objectives, setObjectives] = useState<Record<string, { status: string, count?: number, target?: number, guidance?: string }> | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [allDone, setAllDone] = useState(false);
 
   // Effect to parse objectives from messages
   useEffect(() => {
@@ -88,6 +93,20 @@ export const DirectProgressBar = React.memo(function DirectProgressBar({
       setTimeout(() => setIsUpdating(false), 300);
     }
   }, [messages]);
+
+  // Effect to check if all objectives are done
+  useEffect(() => {
+    if (objectives) {
+      // Cast to the expected type since we know the structure matches
+      const done = isAllObjectivesDone(objectives as Record<string, { status: 'done' | 'current' | 'tbc' }>);
+      setAllDone(done);
+      
+      if (done && onAllObjectivesDone) {
+        console.log('All objectives are done, notifying parent component');
+        onAllObjectivesDone(true);
+      }
+    }
+  }, [objectives, onAllObjectivesDone]);
 
   // Convert objectives to steps for the progress bar
   const steps = useMemo(() => {

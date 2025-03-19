@@ -62,15 +62,15 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">AI Context</h2>
+              <h2 className="text-2xl font-semibold">✨ Your AI Knowledge Base</h2>
               {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <InfoIcon className="h-5 w-5 text-gray-500 cursor-pointer" />
                   </TooltipTrigger>
-                  <TooltipContent side="right" align="center" className="bg-black text-white border-black">
-                    <p>This context helps the AI understand your organization</p>
+                  <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                    <p>This information is automatically generated from your provided details and website, ensuring your AI provides accurate, consistent, and tailored conversations.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -86,7 +86,7 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
               </Button>
             </div>
           </div>
-          <p className="text-sm text-gray-500">AI-generated context based on your organization's details.</p>
+          <p className="text-sm text-gray-500">Your customized set of insights that guides AI conversations.</p>
           <div className="pt-2 flex items-center space-x-2">
             <div className="bg-white p-2 rounded-lg border flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-600" />

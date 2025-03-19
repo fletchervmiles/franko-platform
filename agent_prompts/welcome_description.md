@@ -50,7 +50,7 @@ You will generate a short, user-friendly introduction sentence for users about t
 }
 ```
 **Correct Output Example:**  
-_"~1-min chat about your PayEase checkout experience."_
+~1-min chat about your PayEase checkout experience.
 
 ---
 
@@ -63,7 +63,7 @@ _"~1-min chat about your PayEase checkout experience."_
 }
 ```
 **Correct Output Example:**  
-_"~2-min chat about your StreamNow video browsing experience."_
+~2-min chat about your StreamNow video browsing experience.
 
 ---
 
@@ -76,24 +76,24 @@ _"~2-min chat about your StreamNow video browsing experience."_
 }
 ```
 **Correct Output Example:**  
-_"~4-min chat about FreshBasket's grocery delivery experience."_
+~4-min chat about FreshBasket's grocery delivery experience.
 
 ---
 
 ### Additional Examples clearly demonstrating expected style:
 
-- "~1-min chat about your SnapPay app signup experience."
-- "~2-min chat about QuickLab’s online payment experience."
-- "~4-min chat about your PetPal app usage experience."
-- "~6-min chat to improve BookNest's site search experience."
-- "~8-min chat about your FitTrack app experience."
-- "~10-min chat about improving your experience with BankEasy."
-- "~1-min chat about StreamHub’s video playback features."
-- "~2-min chat about ShopEase checkout experience improvement."
-- "~4-min chat about upgrading FreshTable meal-ordering flow."
-- "~6-min chat to enhance usage of PetPal’s mobile app."
-- "~8-min chat about QuikPay's mobile payment experience."
-- "~10-min chat reviewing your experience with BankEasy security."
+- ~1-min chat about your SnapPay app signup experience.
+- ~2-min chat about QuickLab’s online payment experience.
+- ~4-min chat about your PetPal app usage experience.
+- ~6-min chat to improve BookNest's site search experience.
+- ~8-min chat about your FitTrack app experience.
+- ~10-min chat about improving your experience with BankEasy.
+- ~1-min chat about StreamHub’s video playback features.
+- ~2-min chat about ShopEase checkout experience improvement.
+- ~4-min chat about upgrading FreshTable meal-ordering flow.
+- ~6-min chat to enhance usage of PetPal’s mobile app.
+- ~8-min chat about QuikPay's mobile payment experience.
+- ~10-min chat reviewing your experience with BankEasy security.
 
 ---
 

@@ -5,6 +5,8 @@
  * Only counts words from user messages, not from assistant or system messages.
  */
 
+import { logger } from '@/lib/logger';
+
 /**
  * Interface for a message in the messagesJson format
  */
@@ -59,7 +61,7 @@ export function countUserWords(messagesJson: string): number {
     
     return totalWordCount;
   } catch (error) {
-    console.error('Error counting user words:', error);
+    logger.error('Error counting user words:', error);
     return 0;
   }
 }

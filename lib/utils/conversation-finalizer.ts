@@ -22,6 +22,7 @@ import { updateUsageCount } from "./usage-tracker";
 import { generateSummary } from "./summary-generator";
 import { logger } from "@/lib/logger";
 import { sendResponseNotification } from "@/app/api/send/route";
+import { getLatestObjectives } from "./conversation-helper";
 
 /**
  * Finalizes a conversation by updating various metrics, generating a summary, and sending notification
@@ -52,36 +53,37 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
       (interviewEndTime.getTime() - startTime.getTime()) / (1000 * 60)
     );
     
-    // Add a short delay to ensure objective updates have completed
-    logger.debug('Adding delay before finalizing conversation to ensure objective updates are complete');
-    await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
-    
-    // Refresh chat response data to get the latest chat progress
-    const refreshedChatResponse = await getChatResponseById(chatResponseId);
-    if (!refreshedChatResponse) {
-      throw new Error(`Chat response not found after delay: ${chatResponseId}`);
-    }
-    
     // Clean the transcript
     let transcript = '';
-    if (refreshedChatResponse.messagesJson) {
+    if (chatResponse.messagesJson) {
       transcript = cleanTranscript(
-        refreshedChatResponse.messagesJson,
-        refreshedChatResponse.intervieweeFirstName ?? undefined
+        chatResponse.messagesJson,
+        chatResponse.intervieweeFirstName ?? undefined
       );
     }
     
-    // Calculate completion status using the refreshed chat progress
-    const completionStatus = calculateCompletionStatus(
-      refreshedChatResponse.chatProgress as string | null
-    );
+    // Calculate completion status using objectives from the latest message
+    let completionStatus = '0%';
+    if (chatResponse.messagesJson) {
+      try {
+        const objectives = getLatestObjectives(chatResponse.messagesJson);
+        if (objectives) {
+          completionStatus = calculateCompletionStatus(objectives);
+          logger.debug('Calculated completion status:', { completionStatus, objectiveCount: Object.keys(objectives).length });
+        } else {
+          logger.warn('No objectives found for completion calculation');
+        }
+      } catch (error) {
+        logger.error('Error calculating completion status:', error);
+      }
+    }
     
     // Convert completion status to a number for comparison
     const completionRate = parseInt(completionStatus.replace('%', ''), 10);
     
     // Count user words
-    const userWords = refreshedChatResponse.messagesJson ? 
-      countUserWords(refreshedChatResponse.messagesJson).toString() : 
+    const userWords = chatResponse.messagesJson ? 
+      countUserWords(chatResponse.messagesJson).toString() : 
       '0';
     
     // Generate summary if completion rate > 0%
@@ -118,7 +120,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     // Update usage count if completion rate > 50% (non-blocking)
     if (!isNaN(completionRate) && completionRate > 50) {
       try {
-        await updateUsageCount(refreshedChatResponse.userId, completionRate);
+        await updateUsageCount(chatResponse.userId, completionRate);
       } catch (usageError) {
         logger.error('Error updating usage count:', usageError);
         // Continue even if usage update fails
@@ -140,7 +142,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
         }
         
         // Get user profile to get email and name
-        const userProfile = await getProfileByUserId(refreshedChatResponse.userId);
+        const userProfile = await getProfileByUserId(chatResponse.userId);
         if (userProfile && userProfile.email && userProfile.firstName) {
           logger.info('Sending response notification email', { 
             email: userProfile.email,
@@ -158,7 +160,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
           logger.info('Response notification email sent successfully');
         } else {
           logger.warn('Could not send response notification: User profile incomplete', {
-            userId: refreshedChatResponse.userId
+            userId: chatResponse.userId
           });
         }
       } catch (emailError) {
