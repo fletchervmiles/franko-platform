@@ -25,10 +25,83 @@ const customStyles = `
   to { opacity: 0; }
 }
 .fade-in {
-  animation: fadeIn 0.5s ease-in forwards;
+  animation: fadeIn 0.15s ease-in forwards;
 }
 .fade-out {
-  animation: fadeOut 0.5s ease-out forwards;
+  animation: fadeOut 0.15s ease-out forwards;
+}
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D1D5DB;
+  margin: 0 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 30;
+}
+.nav-dot.active {
+  background-color: #6366F1;
+  transform: scale(1.2);
+}
+.nav-dots-container {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 20;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  width: fit-content;
+  margin: 0 auto;
+}
+.mobile-nav-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #D1D5DB;
+  margin: 0 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 50;
+}
+.mobile-nav-dot.active {
+  background-color: #6366F1;
+  transform: scale(1.2);
+}
+.mobile-nav-dots-container {
+  position: absolute;
+  bottom: 20px; 
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  width: fit-content;
+  margin: 0 auto;
+}
+.mobile-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D1D5DB;
+  margin: 0 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 105;
+}
+.mobile-nav-dot.active {
+  background-color: #6366F1;
+  transform: scale(1.2);
 }
 `;
 
@@ -195,48 +268,26 @@ function DesktopPanel({ section }: { section: (typeof sections)[0] }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const isPaused = useRef(false)
-
-  // Handle image rotation for sections with multiple images
-  useEffect(() => {
-    if (section.content.hasRotatingImages && Array.isArray(section.content.image.desktop)) {
-      const startRotation = () => {
-        rotationIntervalRef.current = setInterval(() => {
-          if (!isPaused.current) {
-            setIsTransitioning(true)
-            setTimeout(() => {
-              setCurrentImageIndex(prev => 
-                (prev + 1) % section.content.image.desktop.length
-              )
-              setIsTransitioning(false)
-            }, 500) // Match fade-out animation duration
-          }
-        }, 6000)
-      }
-
-      startRotation()
-      
-      return () => {
-        if (rotationIntervalRef.current) {
-          clearInterval(rotationIntervalRef.current)
-        }
-      }
-    }
-  }, [section.content.hasRotatingImages])
-
-  // Handle pause on hover
-  const handleMouseEnter = () => {
-    isPaused.current = true
-  }
-
-  const handleMouseLeave = () => {
-    isPaused.current = false
-  }
+  
+  // Determine if we have multiple images
+  const hasMultipleImages = section.content.hasRotatingImages && 
+    Array.isArray(section.content.image.desktop) && 
+    section.content.image.desktop.length > 1;
+  
+  // Handle navigation dot click
+  const handleDotClick = (index: number) => {
+    if (index === currentImageIndex) return;
+    
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex(index);
+      setIsTransitioning(false);
+    }, 150); // Faster transition duration
+  };
 
   // Determine the correct image source
   const getImageSrc = () => {
-    if (section.content.hasRotatingImages && Array.isArray(section.content.image.desktop)) {
+    if (hasMultipleImages) {
       return section.content.image.desktop[currentImageIndex] as string;
     }
     return section.content.image.desktop as string;
@@ -252,8 +303,6 @@ function DesktopPanel({ section }: { section: (typeof sections)[0] }) {
         style={{ 
           paddingBottom: "calc(48% + 1rem)" // Further reduced height ratio with more padding
         }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {!imageLoaded && (
           <div className="absolute inset-0 flex items-center justify-center p-8">
@@ -278,6 +327,19 @@ function DesktopPanel({ section }: { section: (typeof sections)[0] }) {
             onLoadingComplete={() => setImageLoaded(true)}
           />
         </div>
+        
+        {/* Navigation dots for multiple images */}
+        {hasMultipleImages && (
+          <div className="nav-dots-container">
+            {(section.content.image.desktop as string[]).map((_, index) => (
+              <div 
+                key={index}
+                className={`nav-dot ${index === currentImageIndex ? 'active' : ''}`}
+                onClick={() => handleDotClick(index)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -288,62 +350,94 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const isPaused = useRef(false)
-
-  // Handle image rotation for sections with multiple images
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [showDots, setShowDots] = useState(true)
+  
+  // Determine if we have multiple images
+  const hasMultipleImages = section.content.hasRotatingImages && 
+    Array.isArray(section.content.image.mobile) && 
+    section.content.image.mobile.length > 1;
+    
+  // Debug logging for review plan section
   useEffect(() => {
-    if (section.content.hasRotatingImages && Array.isArray(section.content.image.mobile)) {
-      const startRotation = () => {
-        rotationIntervalRef.current = setInterval(() => {
-          if (!isPaused.current) {
-            setIsTransitioning(true)
-            setTimeout(() => {
-              setCurrentImageIndex(prev => 
-                (prev + 1) % section.content.image.mobile.length
-              )
-              setIsTransitioning(false)
-            }, 500) // Match fade-out animation duration
-          }
-        }, 6000)
-      }
-
-      startRotation()
-      
-      return () => {
-        if (rotationIntervalRef.current) {
-          clearInterval(rotationIntervalRef.current)
-        }
-      }
+    if (section.id === "review-plan") {
+      console.log("Mobile review-plan:", {
+        hasRotatingImages: section.content.hasRotatingImages,
+        isArray: Array.isArray(section.content.image.mobile),
+        imageCount: Array.isArray(section.content.image.mobile) ? section.content.image.mobile.length : 0,
+        hasMultipleImages
+      });
     }
-  }, [section.content.hasRotatingImages])
+  }, [section, hasMultipleImages]);
 
-  // Handle pause on tap/touch
-  const handleTouchStart = () => {
-    isPaused.current = true
+  // Handle navigation dot click
+  const handleDotClick = (index: number) => {
+    console.log("Dot clicked:", index);
+    if (index === currentImageIndex) return;
+    
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex(index);
+      setIsTransitioning(false);
+    }, 150); // Faster transition duration
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
   }
 
   const handleTouchEnd = () => {
-    isPaused.current = false
+    if (!touchStart || !touchEnd || !hasMultipleImages) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && currentImageIndex < (section.content.image.mobile as string[]).length - 1) {
+      handleDotClick(currentImageIndex + 1);
+    } else if (isRightSwipe && currentImageIndex > 0) {
+      handleDotClick(currentImageIndex - 1);
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
   }
 
   // Determine the correct image source
   const getImageSrc = () => {
-    if (section.content.hasRotatingImages && Array.isArray(section.content.image.mobile)) {
+    if (hasMultipleImages) {
       return section.content.image.mobile[currentImageIndex] as string;
     }
     return section.content.image.mobile as string;
   }
 
+  const toggleImage = () => {
+    if (hasMultipleImages) {
+      const nextIndex = (currentImageIndex + 1) % (section.content.image.mobile as string[]).length;
+      handleDotClick(nextIndex);
+    }
+  };
+
+  // Special handling for review-plan section
+  const isReviewPlan = section.id === "review-plan";
+
   return (
     <div className="rounded-b-lg overflow-hidden">
-      {/* Temporarily hiding the heading and description section */}
       <div 
         className="relative w-full bg-black grid-background03-dark py-8 px-4"
         style={{ 
-          paddingBottom: "calc(100% + 4rem)" // Further increased vertical padding for mobile
+          paddingBottom: "calc(100% + 4rem)", // Further increased vertical padding for mobile
+          position: "relative",
+          overflow: "visible" // Make sure nothing gets clipped
         }}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {!imageLoaded && (
@@ -369,6 +463,43 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
             onLoadingComplete={() => setImageLoaded(true)}
           />
         </div>
+        
+        {/* Direct dot buttons for review-plan section */}
+        {isReviewPlan && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: '20px',
+              left: '0',
+              right: '0',
+              display: 'flex',
+              justifyContent: 'center',
+              zIndex: 50,
+              padding: '8px',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '20px',
+              width: 'fit-content',
+              margin: '0 auto'
+            }}
+          >
+            {[0, 1].map((index) => (
+              <div 
+                key={index}
+                onClick={() => handleDotClick(index)}
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: index === currentImageIndex ? '#6366F1' : '#D1D5DB',
+                  margin: '0 4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  transform: index === currentImageIndex ? 'scale(1.2)' : 'scale(1)'
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
