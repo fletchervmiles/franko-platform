@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Plus, ArrowUp, Loader2, Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { MessageSquare, FileText } from "lucide-react"
 
 interface Conversation {
   id: string
@@ -40,7 +42,7 @@ function ConversationChip({
     <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg border px-2 py-1 text-sm">
       <span className="font-medium truncate max-w-[200px]">{conversation.title}</span>
       <span className="text-xs text-gray-500">
-        ({conversation.responseCount})
+        {conversation.responseCount} Responses
       </span>
       {isLast && remainingCount && remainingCount > 0 && (
         <span className="ml-1 text-xs font-medium text-gray-600">
@@ -223,6 +225,7 @@ export function ChatInput({
     ));
   };
 
+
   return (
     <div className="w-full bg-white pt-2">
       <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-12 pb-4">
@@ -279,32 +282,37 @@ export function ChatInput({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-4 shadow-lg" align="end" side="top" sideOffset={10}>
-                  <div className="mb-3">
-                    <h3 className="font-medium">Conversations</h3>
-                    <p className="text-sm text-muted-foreground">Select a conversation to add responses</p>
+                <PopoverContent className="w-[400px] p-0 shadow-lg" align="end" side="top" sideOffset={10}>
+                  {/* Header */}
+                  <div className="p-4 border-b">
+                    <h3 className="text-lg font-normal text-gray-800">Your Conversation Data</h3>
+                    <p className="text-sm text-gray-500">Select the conversation data you want to bring into your AI chat context</p>
                   </div>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                    {isLoadingConversations ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      </div>
-                    ) : conversations.length > 0 ? (
-                      conversations.map((conversation) => (
-                        <ConversationCard
-                          key={conversation.id}
-                          conversation={conversation}
-                          onSelect={handleConversationSelect}
-                          isLoading={loadingConversationId === conversation.id}
-                          isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No additional conversations available
-                      </div>
-                    )}
-                  </div>
+                  
+                  {/* Conversation List */}
+                  <ScrollArea className="h-[320px] py-4">
+                    <div className="px-4 space-y-4">
+                      {isLoadingConversations ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        </div>
+                      ) : conversations.length > 0 ? (
+                        conversations.map((conversation) => (
+                          <ConversationCard
+                            key={conversation.id}
+                            conversation={conversation}
+                            onSelect={handleConversationSelect}
+                            isLoading={loadingConversationId === conversation.id}
+                            isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          No additional conversations available
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </PopoverContent>
               </Popover>
               <Button
@@ -339,38 +347,45 @@ function ConversationCard({ conversation, onSelect, isLoading, isSelected }: Con
   return (
     <div
       className={cn(
-        "p-3 rounded-lg border transition-colors",
-        isSelected ? "bg-gray-50 border-gray-300" : "hover:bg-gray-50 border-gray-200",
-        "cursor-pointer shadow-sm hover:shadow",
+        "p-3 rounded-md transition-all cursor-pointer border border-gray-200",
+        isSelected ? "bg-blue-50" : "hover:bg-gray-50",
       )}
       onClick={() => !isLoading && !isSelected && onSelect(conversation)}
     >
       <div className="flex justify-between items-start">
-        <div>
-          <h4 className="font-medium">{conversation.title}</h4>
-          <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-            <span>{conversation.responseCount} responses</span>
-            <span>{conversation.wordCount} words</span>
+        <div className="flex-1 pr-3">
+          <h4 className="text-xs font-semibold text-gray-700 mb-2 leading-tight">{conversation.title}</h4>
+          
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <MessageSquare className="h-3 w-3 text-blue-600" />
+              <span>{conversation.responseCount} responses</span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <FileText className="h-3 w-3 text-blue-600" />
+              <span>{conversation.wordCount} words</span>
+            </div>
           </div>
         </div>
-        <div>
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-7 text-xs",
-                isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-gray-100",
-              )}
-              disabled={isSelected}
-            >
-              {isSelected ? <Check className="h-3.5 w-3.5 mr-1" /> : null}
-              {isSelected ? "Selected" : "Select"}
-            </Button>
-          )}
-        </div>
+        
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-7 px-2 text-xs",
+              isSelected
+                ? "text-blue-500 hover:text-blue-600 hover:bg-blue-50/50"
+                : "text-gray-500",
+            )}
+            disabled={isSelected}
+          >
+            {isSelected ? "Selected" : "Select"}
+          </Button>
+        )}
       </div>
     </div>
   )

@@ -19,7 +19,7 @@ import * as console from 'console';
 import { LRUCache } from 'lru-cache';
 
 // Import custom modules and functions
-import { geminiFlashModel } from "@/ai_folder";
+import { geminiFlashModel, geminiProModel } from "@/ai_folder";
 import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { getChatResponseById } from "@/db/queries/chat-responses-queries";
 import { 
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
     
     // Stream response from AI
     const result = await streamText({
-      model: geminiFlashModel,
+      model: geminiProModel,
       system: systemPrompt,
       messages: coreMessages,
       

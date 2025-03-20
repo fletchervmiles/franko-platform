@@ -37,7 +37,7 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
   }, [loadingMessages.length])
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90 z-50">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
       <div className="relative">
         {/* Loading indicator - using Loader2 for consistency */}
         <div className="mb-6 flex justify-center">

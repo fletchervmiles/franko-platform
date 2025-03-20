@@ -35,31 +35,34 @@ export function FinishConversationButton({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // This function should be named handleClick to avoid name conflicts
-  const handleClick = async () => {
+  // Prioritize immediate navigation by deferring other operations
+  const handleClick = () => { // Remove async
     try {
-      // Show minimal loading state just for button click feedback
-      setIsLoading(true);
-      
-      if (onFinishStart) {
-        onFinishStart();
-      }
-      
-      // Immediately redirect the user without waiting
+      // FIRST: Immediately redirect without waiting for anything else
       router.push(`/chat/external/${chatInstanceId}/finish`);
       
-      // Fire and forget - trigger finalization in the background
-      fetch('/api/external-chat/finalize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatResponseId })
-      }).then(() => {
-        if (onFinishComplete) {
-          onFinishComplete();
+      // THEN: Use setTimeout to push these to next event loop cycle
+      setTimeout(() => {
+        // Set loading state (rarely seen due to navigation)
+        setIsLoading(true);
+        
+        if (onFinishStart) {
+          onFinishStart();
         }
-      }).catch(error => {
-        console.error('Background finalization error:', error);
-      });
+        
+        // Fire and forget - trigger finalization in the background
+        fetch('/api/external-chat/finalize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatResponseId })
+        }).then(() => {
+          if (onFinishComplete) {
+            onFinishComplete();
+          }
+        }).catch(error => {
+          console.error('Background finalization error:', error);
+        });
+      }, 0);
     } catch (error) {
       console.error('Error during redirection:', error);
       setError(error instanceof Error ? error.message : 'Failed to finish conversation');

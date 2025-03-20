@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react"
 import { Message, useChat } from "ai/react"
 import { ChatInput } from "@/components/response-qa-input"
-import { Message as MessageComponent } from "@/components/message"
+import { Message as MessageComponent } from "@/components/message-responses"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
 import { AlertTriangle } from "lucide-react"
 

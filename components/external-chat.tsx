@@ -329,20 +329,23 @@ export function ExternalChat({
       const redirectTimeout = setTimeout(() => {
         console.log('Auto-finishing conversation after delay');
         
-        // FIRST: Redirect immediately
+        // FIRST: Immediate redirect with highest priority
         router.push(`/chat/external/${chatInstanceId}/finish`);
         
-        // THEN: Update state and run background processes
-        setIsFinished(true);
-        
-        // Fire and forget - trigger finalization in the background
-        fetch('/api/external-chat/finalize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chatResponseId })
-        }).catch(error => {
-          console.error('Background finalization error:', error);
-        });
+        // THEN: Defer all other operations to next event cycle
+        setTimeout(() => {
+          // Update state
+          setIsFinished(true);
+          
+          // Fire and forget - trigger finalization in the background
+          fetch('/api/external-chat/finalize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatResponseId })
+          }).catch(error => {
+            console.error('Background finalization error:', error);
+          });
+        }, 0);
       }, 5000); // 5 seconds delay
       
       // Clean up timeout if component unmounts

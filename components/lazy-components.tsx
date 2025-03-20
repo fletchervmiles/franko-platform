@@ -7,6 +7,8 @@
 
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 // Simple loading placeholder
 const SimpleLoadingPlaceholder = () => (
@@ -45,7 +47,16 @@ export const LazyDirectProgressBar = dynamic(
 // Lazy load the Markdown component which is used for rendering AI responses
 // This helps reduce the initial bundle size
 export const LazyMarkdown = dynamic(
-  () => import('./custom/markdown').then(mod => ({ default: mod.Markdown })),
+  () => import('./markdown').then(mod => {
+    // Create a wrapped component that applies our options
+    const MarkdownWithOptions = (props: any) => (
+      <mod.Markdown 
+        {...props}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+      />
+    );
+    return { default: MarkdownWithOptions };
+  }),
   {
     loading: () => <SimpleLoadingPlaceholder />,
     ssr: false,
