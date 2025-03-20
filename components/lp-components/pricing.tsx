@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Check, Zap, Rocket, Clock } from 'lucide-react'
+import { Check, Zap, Rocket, Clock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import TestimonialCard from './pricing-testimonial'
 
@@ -26,9 +26,69 @@ const analysisFeatures = [
   'Recommendations / actions'
 ];
 
+const freeFeatures = [
+  {
+    feature: 'Up to <b>10</b> Conversation Responses',
+    description: 'Completed customer conversations conducted by your AI agent'
+  },
+  {
+    feature: 'Up to <b>3</b> Conversation Plans',
+    description: 'Generated conversation plans to guide your agent'
+  },
+  {
+    feature: 'Up to <b>10</b> Response Q&A',
+    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+  }
+];
+
+const starterFeatures = [
+  {
+    feature: 'Up to <b>40</b> Conversation Responses',
+    description: 'Completed customer conversations conducted by your AI agent'
+  },
+  {
+    feature: 'Up to <b>10</b> Conversation Plans',
+    description: 'Generated conversation plans to guide your agent'
+  },
+  {
+    feature: 'Up to <b>40</b> Response Q&A',
+    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+  }
+];
+
+const proFeatures = [
+  {
+    feature: 'Up to <b>100</b> Conversation Responses',
+    description: 'Completed customer conversations conducted by your AI agent'
+  },
+  {
+    feature: 'Up to <b>20</b> Conversation Plans',
+    description: 'Generated conversation plans to guide your agent'
+  },
+  {
+    feature: 'Up to <b>100</b> Response Q&A',
+    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+  }
+];
+
+const businessFeatures = [
+  {
+    feature: 'Up to <b>500</b> Conversation Responses',
+    description: 'Completed customer conversations conducted by your AI agent'
+  },
+  {
+    feature: 'Up to <b>50</b> Conversation Plans',
+    description: 'Generated conversation plans to guide your agent'
+  },
+  {
+    feature: 'Up to <b>500</b> Response Q&A',
+    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+  }
+];
+
 export default function Pricing() {
   return (
-    <div>
+    <div className="py-20">
       <div className="text-center mb-12">
         <div className="flex justify-center mb-6">
           <Badge variant="outline" className="px-4 py-1.5">
@@ -36,167 +96,224 @@ export default function Pricing() {
           </Badge>
         </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mb-6">
-          Figure out the WHY behind<br />
-          your churn, fast!
+        Explore Plans
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-        <Card className="w-full p-6 grid-background03">
-          <CardHeader className="space-y-8">
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-blue-400">Starter</Badge>
-              <Badge variant="destructive" className="bg-red-400">Early Adopter Pricing</Badge>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <Card className="w-full p-4 grid-background03 flex flex-col">
+          <CardHeader className="space-y-6 px-3 py-2">
+            <div>
+              <h3 className="text-xl md:text-2xl font-mono font-semibold">
+                Free
+              </h3>
             </div>
 
-            <div>
-              <h3 className="text-base font-semibold mb-3">
-                100 minutes of interview credits
-                <div className="text-sm text-muted-foreground">
-                  (≈10-20 customer interviews)
-                </div>
-              </h3>
-
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold">$48.50</span>
-                    <span className="text-base font-semibold text-gray-600">
-                      <span className="line-through">$97</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>50% Off</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>Valid through 2024</span>
-                  </div>
-                </div>
+            <div className="p-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">$0</span>
+                <span className="text-base text-gray-500">/ once off</span>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            <Link href="/sign-up" className="w-full block">
-              <Button className="w-full bg-black text-white hover:bg-gray-800 font-bold" size="lg">
-                Reduce Churn - Pay As You Go
-                <span aria-hidden="true" className="ml-2">→</span>
-              </Button>
-            </Link>
-
-            <p className="text-sm text-muted-foreground">
-              Ideal for businesses starting to dive into customer churn analysis.
+          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
+            <p className="text-sm text-gray-700 h-14 flex items-center">
+              Get a feel for Franko
             </p>
 
-            <div>
-              <div className="font-bold mb-4 text-sm">Benefits</div>
+            <div className="flex-grow">
               <ul className="space-y-3">
-                {features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-[#0070f3] flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600 text-sm">
-                      {feature}
-                      {feature === 'Comprehensive Per-Interview Analysis including:' && (
-                        <ul className="mt-2 space-y-2 pl-4">
-                          {analysisFeatures.map((subFeature, subIndex) => (
-                            <li key={subIndex} className="flex items-start gap-3">
-                              <span className="text-gray-600 text-sm before:content-['-'] before:mr-2">{subFeature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </span>
+                {freeFeatures.map((item, index) => (
+                  <li key={index} className="flex flex-col">
+                    <div className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                    </div>
+                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
+                      {item.description}
+                    </div>
                   </li>
                 ))}
               </ul>
-              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
+            </div>
+
+            <div className="pt-3 mt-auto">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
+                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
+                  Try for free
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="w-full p-4 grid-background03 flex flex-col">
+          <CardHeader className="space-y-6 px-3 py-2">
+            <div>
+              <h3 className="text-xl md:text-2xl font-mono font-semibold">
+                Starter
+              </h3>
+            </div>
+
+            <div className="p-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">$29</span>
+                <span className="text-base text-gray-500">/ per month</span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
+            <p className="text-sm text-gray-700 h-14 flex items-center">
+              Start capturing customer conversations
+            </p>
+
+            <div className="flex-grow">
+              <ul className="space-y-3">
+                {starterFeatures.map((item, index) => (
+                  <li key={index} className="flex flex-col">
+                    <div className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                    </div>
+                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
+                      {item.description}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="pt-3 mt-auto">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
+                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
+                  Get started
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="w-full p-6 bg-black text-white grid-background03-dark">
-          <CardHeader className="space-y-8">
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-blue-400">Pro</Badge>
-              <Badge variant="destructive" className="bg-red-400">Early Adopter Pricing</Badge>
+        <Card className="w-full p-4 bg-black text-white grid-background03-dark flex flex-col">
+          <CardHeader className="space-y-6 px-3 py-2">
+            <div>
+              <h3 className="text-xl md:text-2xl font-mono font-semibold text-white">
+                Pro
+              </h3>
             </div>
 
-            <div>
-              <h3 className="text-base font-semibold mb-3 text-white">
-                250 minutes of interview credits
-                <div className="text-sm text-gray-400">
-                  (≈25-50 customer interviews)
-                </div>
-              </h3>
-
-              <div className="bg-gray-900 p-4 rounded-lg">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white">$98.50</span>
-                    <span className="text-base font-semibold text-gray-400">
-                      <span className="line-through">$197</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span>50% Off</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-400">
-                    <Clock className="h-4 w-4" />
-                    <span>Valid through 2024</span>
-                  </div>
-                </div>
+            <div className="p-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-white">$59</span>
+                <span className="text-base text-gray-400">/ per month</span>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            <Link href="/sign-up" className="w-full block">
-              <Button className="w-full bg-white text-black hover:bg-gray-100 font-bold" size="lg">
-                Reduce Churn - Pay As You Go
-                <span aria-hidden="true" className="ml-2">→</span>
-              </Button>
-            </Link>
-
-            <TestimonialCard 
-              name="Ben Goodman"
-              role="Co-Founder and CEO"
-              company="AgeMate"
-              testimonial="Instrumental in improving our retention and understanding churn customer segments."
-              avatarUrl="/assets/ben-agemate.png"
-              avatarFallback="BG"
-            />
-
-            <p className="text-sm text-gray-400">
-              Designed for companies committed to minimizing churn through extensive customer feedback.
+          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
+            <p className="text-sm text-gray-300 h-14 flex items-center">
+              Get serious about growing your customer conversation dataset
             </p>
 
-            <div>
-              <div className="font-bold mb-4 text-sm text-white">Benefits</div>
+            <div className="flex-grow">
               <ul className="space-y-3">
-                {features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300 text-sm">
-                      {feature}
-                      {feature === 'Comprehensive Per-Interview Analysis including:' && (
-                        <ul className="mt-2 space-y-2 pl-4">
-                          {analysisFeatures.map((subFeature, subIndex) => (
-                            <li key={subIndex} className="flex items-start gap-3">
-                              <span className="text-gray-300 text-sm before:content-['-'] before:mr-2">{subFeature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </span>
+                {proFeatures.map((item, index) => (
+                  <li key={index} className="flex flex-col">
+                    <div className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-200 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                    </div>
+                    <div className="ml-8 text-xs text-gray-400 italic mt-1">
+                      {item.description}
+                    </div>
                   </li>
                 ))}
               </ul>
-              <p className="text-sm text-gray-500 mt-4">Note: Customer interview incentives are not included.</p>
+            </div>
+
+            <div className="pt-3 mt-auto">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
+                <Link href="/sign-up" className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
+                  Get started
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="w-full p-4 grid-background03 flex flex-col">
+          <CardHeader className="space-y-6 px-3 py-2">
+            <div>
+              <h3 className="text-xl md:text-2xl font-mono font-semibold">
+                Business
+              </h3>
+            </div>
+
+            <div className="p-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">$199</span>
+                <span className="text-base text-gray-500">/ per month</span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
+            <p className="text-sm text-gray-700 h-14 flex items-center">
+              Scale conversations across your entire customer journey
+            </p>
+
+            <div className="flex-grow">
+              <ul className="space-y-3">
+                {businessFeatures.map((item, index) => (
+                  <li key={index} className="flex flex-col">
+                    <div className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                    </div>
+                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
+                      {item.description}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="pt-3 mt-auto">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
+                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
+                  Get started
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        
+        .shimmer-effect {
+          animation: shimmer 5s infinite;
+          animation-timing-function: ease-in-out;
+          opacity: 0.3;
+        }
+        
+        .shimmer-bg {
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   )
 }

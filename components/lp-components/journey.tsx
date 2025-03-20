@@ -109,7 +109,7 @@ const sections = [
   {
     id: "context-setup",
     title: "Context Setup",
-    icon: <Settings className="mr-2 h-4 w-4" />,
+    icon: <Settings className="mr-1 h-3 w-3" />,
     content: {
       title: "1. Build Your AI Agent's Context in Seconds",
       description: "Submit your URL to generate an AI knowledge base—giving your conversational agent the context is needs to understand your business.",
@@ -122,7 +122,7 @@ const sections = [
   {
     id: "conversation-plan",
     title: "Generate Plan",
-    icon: <ClipboardList className="mr-2 h-4 w-4" />,
+    icon: <ClipboardList className="mr-1 h-3 w-3" />,
     content: {
       title: "Generate Plan",
       description: "Plan and structure your conversation flows for optimal engagement.",
@@ -135,7 +135,7 @@ const sections = [
   {
     id: "review-plan",
     title: "Review Plan",
-    icon: <CheckCircle className="mr-2 h-4 w-4" />,
+    icon: <CheckCircle className="mr-1 h-3 w-3" />,
     content: {
       title: "Review Plan",
       description: "Review and refine your generated conversation plan.",
@@ -155,7 +155,7 @@ const sections = [
   {
     id: "shareable-link",
     title: "Share",
-    icon: <Link className="mr-2 h-4 w-4" />,
+    icon: <Link className="mr-1 h-3 w-3" />,
     content: {
       title: "Share",
       description: "Generate and manage shareable links for your conversations.",
@@ -168,40 +168,63 @@ const sections = [
   {
     id: "customer-chat",
     title: "Customer",
-    icon: <MessageSquare className="mr-2 h-4 w-4" />,
+    icon: <MessageSquare className="mr-1 h-3 w-3" />,
     content: {
       title: "Customer",
       description: "Monitor and manage customer chat interactions in real-time.",
       image: {
-        desktop: "/placeholder.svg?height=400&width=800",
-        mobile: "/placeholder.svg?height=400&width=800"
+        desktop: [
+          "/assets/journey/customer-chat-desktop-1.png",
+          "/assets/journey/customer-chat-desktop-2.png"
+        ],
+        mobile: [
+          "/assets/journey/customer-chat-mobile-1.png",
+          "/assets/journey/customer-chat-mobile-2.png"
+        ]
       },
+      hasRotatingImages: true,
     },
   },
   {
     id: "response-review",
     title: "Responses",
-    icon: <CheckCircle className="mr-2 h-4 w-4" />,
+    icon: <CheckCircle className="mr-1 h-3 w-3" />,
     content: {
       title: "Review Responses",
       description: "Review and analyze conversation responses for quality assurance.",
       image: {
-        desktop: "/placeholder.svg?height=400&width=800",
-        mobile: "/placeholder.svg?height=400&width=800"
+        desktop: [
+          "/assets/journey/response-review-desktop-1.png",
+          "/assets/journey/response-review-desktop-2.png"
+        ],
+        mobile: [
+          "/assets/journey/response-review-mobile-1.png",
+          "/assets/journey/response-review-mobile-2.png"
+        ]
       },
+      hasRotatingImages: true,
     },
   },
   {
     id: "response-chat",
     title: "Chat with Data",
-    icon: <BarChart2 className="mr-2 h-4 w-4" />,
+    icon: <BarChart2 className="mr-1 h-3 w-3" />,
     content: {
       title: "Chat with Data",
       description: "Manage and optimize automated response patterns in your chats.",
       image: {
-        desktop: "/placeholder.svg?height=400&width=800",
-        mobile: "/placeholder.svg?height=400&width=800"
+        desktop: [
+          "/assets/journey/response-chat-desktop-1.png",
+          "/assets/journey/response-chat-desktop-2.png",
+          "/assets/journey/response-chat-desktop-3.png"
+        ],
+        mobile: [
+            "/assets/journey/response-chat-mobile-1.png",
+            "/assets/journey/response-chat-mobile-2.png",
+            "/assets/journey/response-chat-mobile-3.png"
+        ]
       },
+      hasRotatingImages: true,
     },
   },
 ]
@@ -220,14 +243,14 @@ export default function Journey() {
       {!isMobile ? (
         // Desktop view with tabs
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full flex bg-transparent rounded-none h-12">
+          <TabsList className="w-full flex bg-transparent rounded-none h-10">
             {sections.map((section) => (
               <TabsTrigger
                 key={section.id}
                 value={section.id}
-                className="flex-1 flex items-center justify-center group relative rounded-none h-12 data-[state=active]:shadow-none data-[state=active]:font-medium data-[state=active]:text-black transition-colors duration-200 ease-in-out"
+                className="flex-1 flex items-center justify-center group relative rounded-none h-10 px-1 data-[state=active]:shadow-none data-[state=active]:font-medium data-[state=active]:text-white transition-colors duration-200 ease-in-out"
               >
-                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap">
+                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-indigo-600 flex items-center justify-center gap-1 text-xs text-black group-hover:text-white whitespace-nowrap transition-all duration-200">
                   {section.icon}
                   {section.title}
                 </span>
@@ -247,9 +270,9 @@ export default function Journey() {
           {sections.map((section) => (
             <Card key={section.id} className="w-full shadow-md hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-center pb-5 border-b">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {section.icon}
-                  <CardTitle className="text-sm">{section.title}</CardTitle>
+                  <CardTitle className="text-xs">{section.title}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -495,8 +518,8 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
           />
         </div>
         
-        {/* Direct dot buttons for review-plan section */}
-        {isReviewPlan && (
+        {/* Navigation dots for all sections with multiple images */}
+        {hasMultipleImages && (
           <div 
             style={{
               position: 'absolute',
@@ -513,7 +536,7 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
               margin: '0 auto'
             }}
           >
-            {[0, 1].map((index) => (
+            {Array.from({ length: (section.content.image.mobile as string[]).length }).map((_, index) => (
               <div 
                 key={index}
                 onClick={() => handleDotClick(index)}

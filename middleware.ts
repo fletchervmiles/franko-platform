@@ -11,8 +11,6 @@ const isProtectedRoute = createRouteMatcher([
   "/workspace/:path*",
   "/interview",
   "/interview/:path*",
-  "/pricing",
-  "/pricing/:path*",
   "/payment",
   "/payment/:path*",
   "/settings",
