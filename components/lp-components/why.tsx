@@ -8,19 +8,20 @@ export default function Why() {
           <div className="flex justify-center mb-16">
             <span className="inline-flex items-center rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white border border-gray-700 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 mr-2 flex-shrink-0"></span>
-              The real AI advantage: owned customer intelligence.
+              <span className="hidden sm:inline">The real AI advantage: owned customer intelligence.</span>
+              <span className="sm:hidden">The real AI advantage.</span>
             </span>
           </div>
           
           <div className="space-y-16 max-w-5xl mx-auto">
-            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-loose">
+            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-tight sm:leading-loose">
               <p>
                 AI is general knowledge—but insights about how customers perceive your product and why they 
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 font-medium"> choose you</span>, exist uniquely within your customers' minds.
               </p>
             </div>
             
-            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-loose">
+            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-tight sm:leading-loose">
               <p>
                 Gathering 
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 font-medium"> 1000s </span> 

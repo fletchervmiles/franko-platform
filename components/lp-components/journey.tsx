@@ -352,6 +352,7 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [swipeOffset, setSwipeOffset] = useState(0)
   const [showDots, setShowDots] = useState(true)
   
   // Determine if we have multiple images
@@ -373,10 +374,10 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
 
   // Handle navigation dot click
   const handleDotClick = (index: number) => {
-    console.log("Dot clicked:", index);
     if (index === currentImageIndex) return;
     
     setIsTransitioning(true);
+    setSwipeOffset(0); // Reset any swipe offset
     setTimeout(() => {
       setCurrentImageIndex(index);
       setIsTransitioning(false);
@@ -385,24 +386,59 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (!hasMultipleImages) return;
     setTouchStart(e.targetTouches[0].clientX);
+    setTouchEnd(null); // Reset touchEnd
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!touchStart || !hasMultipleImages) return;
+    
+    const currentTouch = e.targetTouches[0].clientX;
+    setTouchEnd(currentTouch);
+    
+    // Calculate swipe distance
+    const distance = touchStart - currentTouch;
+    
+    // If at the first image and swiping right (negative distance) or
+    // at the last image and swiping left (positive distance), reduce the effect
+    const imageCount = (section.content.image.mobile as string[]).length;
+    let restrictedDistance = distance;
+    
+    if ((currentImageIndex === 0 && distance < 0) || 
+        (currentImageIndex === imageCount - 1 && distance > 0)) {
+      // Reduce the effect by 70% when trying to swipe beyond bounds
+      restrictedDistance = distance * 0.3;
+    }
+    
+    // Cap the max swipe offset to prevent excessive movement
+    const maxOffset = 100;
+    const cappedOffset = Math.max(Math.min(restrictedDistance, maxOffset), -maxOffset);
+    
+    // Set the swipe offset for visual feedback
+    setSwipeOffset(-cappedOffset);
   }
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd || !hasMultipleImages) return;
+    if (!touchStart || !touchEnd || !hasMultipleImages) {
+      // Reset offset if touch cancelled
+      setSwipeOffset(0);
+      return;
+    }
     
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const swipeThreshold = 40; // Lower threshold to make swipe more sensitive
+    const isLeftSwipe = distance > swipeThreshold;
+    const isRightSwipe = distance < -swipeThreshold;
+    const imageCount = (section.content.image.mobile as string[]).length;
     
-    if (isLeftSwipe && currentImageIndex < (section.content.image.mobile as string[]).length - 1) {
+    if (isLeftSwipe && currentImageIndex < imageCount - 1) {
       handleDotClick(currentImageIndex + 1);
     } else if (isRightSwipe && currentImageIndex > 0) {
       handleDotClick(currentImageIndex - 1);
+    } else {
+      // If no navigation occurs, animate back to center
+      setSwipeOffset(0);
     }
     
     setTouchStart(null);
@@ -416,13 +452,6 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
     }
     return section.content.image.mobile as string;
   }
-
-  const toggleImage = () => {
-    if (hasMultipleImages) {
-      const nextIndex = (currentImageIndex + 1) % (section.content.image.mobile as string[]).length;
-      handleDotClick(nextIndex);
-    }
-  };
 
   // Special handling for review-plan section
   const isReviewPlan = section.id === "review-plan";
@@ -457,7 +486,9 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
             unoptimized={true}
             style={{ 
               objectFit: "contain",
-              borderRadius: "0.75rem" // 12px rounded corners (equivalent to rounded-xl)
+              borderRadius: "0.75rem", // 12px rounded corners (equivalent to rounded-xl)
+              transform: hasMultipleImages ? `translateX(${swipeOffset}px)` : 'none',
+              transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
             }}
             className={`rounded-xl ${!imageLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'} ${isTransitioning ? 'fade-out' : 'fade-in'}`}
             onLoadingComplete={() => setImageLoaded(true)}
