@@ -13,27 +13,80 @@ export async function createCheckoutSession(
   try {
     if (!stripe) throw new Error("Stripe not initialized");
     
-    // Get the user's profile to check for existing Stripe customer
+    let customerId: string;
+    
+    // Step 1: Check our database for existing customer ID
     const existingProfile = await db.query.profiles.findFirst({
       where: eq(profilesTable.userId, userId)
     });
     
-    let customerId: string;
-    
-    // Check if user already has a Stripe customer ID
     if (existingProfile?.stripeCustomerId) {
-      console.log(`Using existing Stripe customer: ${existingProfile.stripeCustomerId}`);
+      console.log(`Using existing Stripe customer from profile: ${existingProfile.stripeCustomerId}`);
       customerId = existingProfile.stripeCustomerId;
     } else {
-      // Only create a new customer if one doesn't exist
-      console.log(`Creating new Stripe customer for user: ${userId}`);
-      const customer = await stripe.customers.create({
+      // Step 2: If not in our DB, search Stripe for existing customers with this email
+      const existingCustomers = await stripe.customers.list({
         email: customerEmail,
-        metadata: {
-          userId,
-        },
+        limit: 1
       });
-      customerId = customer.id;
+      
+      if (existingCustomers.data.length > 0) {
+        // Use the first matching customer
+        customerId = existingCustomers.data[0].id;
+        console.log(`Found existing Stripe customer by email: ${customerId}`);
+        
+        // Update their metadata with our userId if needed
+        if (!existingCustomers.data[0].metadata?.userId) {
+          await stripe.customers.update(customerId, {
+            metadata: { userId }
+          });
+          console.log(`Updated existing customer with userId: ${userId}`);
+        }
+        
+        // Update our profile with this customer ID immediately
+        if (existingProfile) {
+          await db.update(profilesTable)
+            .set({ stripeCustomerId: customerId })
+            .where(eq(profilesTable.userId, userId));
+          console.log(`Updated profile with existing customer ID: ${customerId}`);
+        } else {
+          // Create minimal profile if none exists
+          await db.insert(profilesTable).values({
+            userId,
+            email: customerEmail,
+            stripeCustomerId: customerId,
+            membership: "free"
+          });
+          console.log(`Created new profile with existing customer ID: ${customerId}`);
+        }
+      } else {
+        // Step 3: Only create a new customer if no existing customer found
+        console.log(`Creating new Stripe customer for user: ${userId}`);
+        const customer = await stripe.customers.create({
+          email: customerEmail,
+          metadata: {
+            userId,
+          },
+        });
+        customerId = customer.id;
+        
+        // Immediately update our profile with this new customer ID
+        if (existingProfile) {
+          await db.update(profilesTable)
+            .set({ stripeCustomerId: customerId })
+            .where(eq(profilesTable.userId, userId));
+          console.log(`Updated profile with new customer ID: ${customerId}`);
+        } else {
+          // Create minimal profile if none exists
+          await db.insert(profilesTable).values({
+            userId,
+            email: customerEmail,
+            stripeCustomerId: customerId,
+            membership: "free"
+          });
+          console.log(`Created new profile with new customer ID: ${customerId}`);
+        }
+      }
     }
 
     // Get the correct price ID for current plans

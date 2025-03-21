@@ -62,7 +62,7 @@ async function updateUserCredits(
   }
   
   if (currentProfile) {
-    // Calculate remaining credits
+    // Calculate remaining credits - simply what's left unused
     const responseCreditsRemaining = Math.max(0, 
       (currentProfile.totalResponsesQuota || 0) - (currentProfile.totalResponsesUsed || 0)
     );
