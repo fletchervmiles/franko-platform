@@ -225,6 +225,13 @@
       "when": 1741863539665,
       "tag": "0031_perfect_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1742539928117,
+      "tag": "0032_flimsy_madame_masque",
+      "breakpoints": true
     }
   ]
 }

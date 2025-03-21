@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
 import { sendWelcomeEmail, sendAdminNotification } from "@/app/api/send/route";
+import { PLAN_RESPONSES, PLAN_INTERNAL_CHAT_QUERIES, PLAN_CHAT_INSTANCE_GENERATIONS } from "@/lib/stripe";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
@@ -120,9 +121,12 @@ export async function syncClerkProfileAction(): Promise<ActionState> {
         secondName: user.lastName || undefined,
         email: email || undefined,
         membership: existingProfile?.membership || "free",
-        totalResponsesQuota: existingProfile?.totalResponsesQuota || 20,
-        totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || 20,
-        totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || 5,
+        totalResponsesQuota: existingProfile?.totalResponsesQuota || PLAN_RESPONSES.free,
+        totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || PLAN_INTERNAL_CHAT_QUERIES.free,
+        totalChatInstanceGenerationsQuota: existingProfile?.totalChatInstanceGenerationsQuota || PLAN_CHAT_INSTANCE_GENERATIONS.free,
+        totalResponsesAvailable: existingProfile?.totalResponsesAvailable || PLAN_RESPONSES.free,
+        totalInternalChatQueriesAvailable: existingProfile?.totalInternalChatQueriesAvailable || PLAN_INTERNAL_CHAT_QUERIES.free,
+        totalChatInstanceGenerationsAvailable: existingProfile?.totalChatInstanceGenerationsAvailable || PLAN_CHAT_INSTANCE_GENERATIONS.free,
       };
       console.log("Prepared profile data:", JSON.stringify(profileData, null, 2));
 

@@ -66,32 +66,32 @@ const navMainData = [
     items: [
       {
         title: "Update Plan",
-        url: "/account/update-plan",
+        url: "/upgrade",
         icon: <CreditCard className="mr-0.5 h-4 w-4" />,
       },
       {
         title: "Usage",
-        url: "/account/usage",
+        url: "/usage",
         icon: <BarChart className="mr-0.5 h-4 w-4" />,
       },
       {
         title: "Support",
-        url: "/account/support",
+        url: "/support",
         icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
       },
       {
         title: "Feedback",
-        url: "/account/feedback",
+        url: "/feedback",
         icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
       },
       {
         title: "User Profile",
-        url: "/account/profile",
+        url: "/profile",
         icon: <User className="mr-0.5 h-4 w-4" />,
       },
       {
         title: "Sign Out",
-        url: "/account/signout",
+        url: "/signout",
         icon: <LogOut className="mr-0.5 h-4 w-4" />,
       },
     ],

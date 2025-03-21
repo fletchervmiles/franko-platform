@@ -43,7 +43,7 @@ export default async function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <UsageCard
-            title="API Responses"
+            title="Conversation Responses"
             used={usageData.responses.used}
             total={usageData.responses.total}
             percentage={usageData.responses.percentage}

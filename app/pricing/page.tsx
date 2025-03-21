@@ -5,11 +5,6 @@ import Footer from "@/components/lp-components/footer-pricing";
 import Pricing from "@/components/lp-components/pricing";
 
 export default async function PricingPage() {
-  const { userId } = await auth();
-  
-  if (!userId) {
-    redirect('/sign-up');
-  }
 
   return (
     <>
