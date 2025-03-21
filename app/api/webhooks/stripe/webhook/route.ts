@@ -17,8 +17,41 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * Helper function to calculate and update credit allocations
- * Centralizes the logic to prevent inconsistencies
+ * Helper function to reset usage counters and set fixed quotas for monthly billing
+ * Used when a subscription renewal payment is processed
+ */
+async function resetMonthlyCounts(
+  userId: string,
+  plan: "starter_2024" | "pro_2024" | "business_2024" | "free"
+) {
+  console.log(`[Monthly Reset] Resetting usage for user ${userId} on plan ${plan}`);
+  
+  // Prepare update data with fixed plan values
+  const updatedProfile = {
+    // Reset used fields to zero
+    totalResponsesUsed: 0,
+    totalInternalChatQueriesUsed: 0,
+    totalChatInstanceGenerationsUsed: 0,
+    
+    // Set quotas to plan values for the new cycle - no carryover
+    totalResponsesQuota: PLAN_RESPONSES[plan],
+    totalResponsesAvailable: PLAN_RESPONSES[plan],
+    totalInternalChatQueriesQuota: PLAN_INTERNAL_CHAT_QUERIES[plan],
+    totalInternalChatQueriesAvailable: PLAN_INTERNAL_CHAT_QUERIES[plan],
+    totalChatInstanceGenerationsQuota: PLAN_CHAT_INSTANCE_GENERATIONS[plan],
+    totalChatInstanceGenerationsAvailable: PLAN_CHAT_INSTANCE_GENERATIONS[plan],
+  };
+  
+  // Update profile
+  await updateProfile(userId, updatedProfile);
+  console.log(`[Monthly Reset] Reset completed for user ${userId}`);
+  
+  return { success: true };
+}
+
+/**
+ * Helper function to calculate and update credit allocations during plan changes
+ * Adds remaining credits from previous plan to new plan allocation
  */
 async function updateUserCredits(
   userId: string, 
@@ -122,6 +155,11 @@ async function updateUserCredits(
   return { success: true, updatedProfile };
 }
 
+/**
+ * Helper function to track processed subscription IDs to prevent double processing
+ */
+const processedSubscriptions = new Set<string>();
+
 // Disable automatic body parsing
 export async function POST(req: Request) {
   try {
@@ -172,6 +210,23 @@ export async function POST(req: Request) {
           subscription: session.subscription,
         });
 
+        // Skip if not a subscription or already processed
+        if (!session.subscription || session.mode !== 'subscription') {
+          console.log("[Webhook] Not a subscription checkout or missing subscription ID, skipping");
+          break;
+        }
+
+        const subscriptionId = session.subscription as string;
+        
+        // Check if this subscription has already been processed
+        if (processedSubscriptions.has(subscriptionId)) {
+          console.log(`[Webhook] Subscription ${subscriptionId} already processed, skipping`);
+          break;
+        }
+        
+        // Mark as processed
+        processedSubscriptions.add(subscriptionId);
+
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan as InternalPlan;
         
@@ -185,12 +240,13 @@ export async function POST(req: Request) {
           throw new Error("No plan found in session metadata");
         }
 
-        // Use our centralized credit update function
+        // For initial subscription, we process credits (carryover + new plan)
+        // This is the ONLY place we do credit calculations for new subscriptions
         await updateUserCredits(
           userId, 
           plan, 
           session.customer as string,
-          session.subscription as string
+          subscriptionId
         );
         
         break;
@@ -199,18 +255,46 @@ export async function POST(req: Request) {
       // Handle subscription updates
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+        const previousAttributes = event.data.previous_attributes as any;
         const customerId = subscription.customer as string;
+        const subscriptionId = subscription.id;
         const subscriptionStatus = subscription.status;
-        const userId = subscription.metadata.userId;
+        const userId = subscription.metadata?.userId;
         
         console.log("[Webhook] Subscription updated:", {
-          id: subscription.id,
+          id: subscriptionId,
           customer: customerId,
           status: subscriptionStatus,
-          userId: userId
+          userId: userId,
+          previous_attributes: previousAttributes ? Object.keys(previousAttributes) : 'none'
         });
         
-        if (!userId) {
+        // If this is a new subscription (created within a few minutes), we skip
+        // because checkout.session.completed already processed it
+        if (
+          processedSubscriptions.has(subscriptionId) &&
+          !previousAttributes?.items
+        ) {
+          console.log(`[Webhook] Subscription ${subscriptionId} recently created and already processed, skipping`);
+          break;
+        }
+        
+        // Check for actual plan changes
+        const isPlanChange = Boolean(
+          previousAttributes?.items?.data?.[0]?.price?.id ||
+          previousAttributes?.items?.data?.[0]?.plan?.id
+        );
+        
+        // Skip if just a status update (not a real plan change) and not a cancellation
+        if (!isPlanChange && subscriptionStatus !== 'canceled' && subscriptionStatus !== 'unpaid') {
+          console.log(`[Webhook] Not a plan change or cancellation, skipping`);
+          break;
+        }
+
+        // Find the user ID if not in metadata
+        let effectiveUserId = userId;
+        
+        if (!effectiveUserId) {
           console.error("[Webhook] No userId found in subscription metadata");
           
           // Try to find profile by customer ID
@@ -228,47 +312,16 @@ export async function POST(req: Request) {
           }
           
           // Use the first profile found
-          const userIdFromProfile = profiles[0].userId;
-          console.log(`[Webhook] Using userId from profile: ${userIdFromProfile}`);
-          
-          // Handle plan changes based on subscription status
-          if (subscriptionStatus === 'active') {
-            console.log(`[Webhook] Subscription ${subscription.id} is active`);
-            
-            // Check if this is a plan change by looking at subscription items
-            if (subscription.items?.data?.length > 0) {
-              const currentPriceId = subscription.items.data[0].price.id;
-              
-              // Determine which plan this price ID corresponds to
-              let newPlan: "starter_2024" | "pro_2024" | "business_2024" | "free" = "free";
-              
-              if (currentPriceId === process.env.STARTER_PRICE_ID) {
-                newPlan = "starter_2024";
-              } else if (currentPriceId === process.env.PRO_PRICE_ID) {
-                newPlan = "pro_2024";
-              } else if (currentPriceId === process.env.BUSINESS_PRICE_ID) {
-                newPlan = "business_2024";
-              }
-              
-              console.log(`[Webhook] Plan change detected to ${newPlan} (Price ID: ${currentPriceId})`);
-              
-              // Update the profile with the new plan
-              await updateUserCredits(userIdFromProfile, newPlan, customerId, subscription.id);
-            }
-          } else if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid') {
-            // Downgrade to free plan if subscription is canceled
-            console.log(`[Webhook] Subscription ${subscription.id} is ${subscriptionStatus}, downgrading to free plan`);
-            await updateUserCredits(userIdFromProfile, "free");
-          }
-          
-          break;
+          effectiveUserId = profiles[0].userId;
+          console.log(`[Webhook] Using userId from profile: ${effectiveUserId}`);
         }
-        
-        // Handle plan changes based on subscription status
-        if (subscriptionStatus === 'active') {
-          console.log(`[Webhook] Subscription ${subscription.id} is active`);
+
+        // Handle plan changes or cancellation
+        if (subscriptionStatus === 'active' && isPlanChange) {
+          // This is a genuine plan change
+          console.log(`[Webhook] Real plan change detected for subscription ${subscriptionId}`);
           
-          // Check if this is a plan change by looking at subscription items
+          // Check current price ID
           if (subscription.items?.data?.length > 0) {
             const currentPriceId = subscription.items.data[0].price.id;
             
@@ -283,15 +336,21 @@ export async function POST(req: Request) {
               newPlan = "business_2024";
             }
             
-            console.log(`[Webhook] Plan change detected to ${newPlan} (Price ID: ${currentPriceId})`);
+            console.log(`[Webhook] Plan change to ${newPlan} (Price ID: ${currentPriceId})`);
             
             // Update the profile with the new plan
-            await updateUserCredits(userId, newPlan, customerId, subscription.id);
+            await updateUserCredits(effectiveUserId, newPlan, customerId, subscriptionId);
+            
+            // Mark as processed
+            processedSubscriptions.add(subscriptionId);
           }
         } else if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid') {
           // Downgrade to free plan if subscription is canceled
-          console.log(`[Webhook] Subscription ${subscription.id} is ${subscriptionStatus}, downgrading to free plan`);
-          await updateUserCredits(userId, "free");
+          console.log(`[Webhook] Subscription ${subscriptionId} is ${subscriptionStatus}, downgrading to free plan`);
+          await updateUserCredits(effectiveUserId, "free");
+          
+          // Mark as processed
+          processedSubscriptions.add(subscriptionId);
         }
         
         break;
@@ -301,16 +360,24 @@ export async function POST(req: Request) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         
+        // Only process recurring subscription invoices, not the first one
+        if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
+          console.log("[Webhook] Not a renewal invoice, skipping");
+          break;
+        }
+        
         console.log("[Webhook] Invoice payment succeeded:", {
           id: invoice.id,
           subscription: invoice.subscription,
           status: invoice.status,
-          customer: invoice.customer
+          customer: invoice.customer,
+          billing_reason: invoice.billing_reason
         });
         
-        // Only process subscription invoices
-        if (invoice.subscription && invoice.status === 'paid') {
-          console.log(`[Webhook] Processing paid invoice for subscription: ${invoice.subscription}`);
+        // Process subscription renewals
+        if (invoice.subscription && invoice.status === 'paid' && 
+            (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription')) {
+          console.log(`[Webhook] Processing renewal for subscription: ${invoice.subscription}`);
           
           try {
             // Find the subscription for this invoice
@@ -322,9 +389,12 @@ export async function POST(req: Request) {
               customer: subscription.customer
             });
             
-            const userId = subscription.metadata.userId;
+            const userId = subscription.metadata?.userId;
             
-            if (!userId) {
+            // Find the user ID if not in metadata
+            let effectiveUserId = userId;
+            
+            if (!effectiveUserId) {
               console.error("[Webhook] No userId in subscription metadata");
               
               // Try to find profile by customer ID
@@ -342,45 +412,8 @@ export async function POST(req: Request) {
               }
               
               // Use the first profile found
-              const userIdFromProfile = profiles[0].userId;
-              console.log(`[Webhook] Using userId from profile: ${userIdFromProfile}`);
-              
-              // Get current plan for this subscription
-              let currentPlan: "starter_2024" | "pro_2024" | "business_2024" | "free" = "free";
-              
-              if (subscription.items.data.length > 0) {
-                const currentPriceId = subscription.items.data[0]?.price.id;
-                
-                if (currentPriceId === process.env.STARTER_PRICE_ID) {
-                  currentPlan = "starter_2024";
-                } else if (currentPriceId === process.env.PRO_PRICE_ID) {
-                  currentPlan = "pro_2024";
-                } else if (currentPriceId === process.env.BUSINESS_PRICE_ID) {
-                  currentPlan = "business_2024";
-                }
-              }
-              
-              console.log(`[Webhook] Monthly renewal for plan: ${currentPlan}`);
-              
-              // Reset usage counters for the new billing cycle
-              // For renewal, we don't carry over credits - we just reset to the plan values
-              await updateProfile(userIdFromProfile, {
-                // Reset used fields to zero
-                totalResponsesUsed: 0,
-                totalInternalChatQueriesUsed: 0,
-                totalChatInstanceGenerationsUsed: 0,
-                
-                // Set quotas to plan values for the new cycle
-                totalResponsesQuota: PLAN_RESPONSES[currentPlan],
-                totalResponsesAvailable: PLAN_RESPONSES[currentPlan],
-                totalInternalChatQueriesQuota: PLAN_INTERNAL_CHAT_QUERIES[currentPlan],
-                totalInternalChatQueriesAvailable: PLAN_INTERNAL_CHAT_QUERIES[currentPlan],
-                totalChatInstanceGenerationsQuota: PLAN_CHAT_INSTANCE_GENERATIONS[currentPlan],
-                totalChatInstanceGenerationsAvailable: PLAN_CHAT_INSTANCE_GENERATIONS[currentPlan],
-              });
-              
-              console.log(`[Webhook] Reset usage counters for user ${userIdFromProfile} - new billing cycle started`);
-              break;
+              effectiveUserId = profiles[0].userId;
+              console.log(`[Webhook] Using userId from profile: ${effectiveUserId}`);
             }
             
             // Get current plan for this subscription
@@ -402,22 +435,8 @@ export async function POST(req: Request) {
             
             // Reset usage counters for the new billing cycle
             // For renewal, we don't carry over credits - we just reset to the plan values
-            await updateProfile(userId, {
-              // Reset used fields to zero
-              totalResponsesUsed: 0,
-              totalInternalChatQueriesUsed: 0,
-              totalChatInstanceGenerationsUsed: 0,
-              
-              // Set quotas to plan values for the new cycle
-              totalResponsesQuota: PLAN_RESPONSES[currentPlan],
-              totalResponsesAvailable: PLAN_RESPONSES[currentPlan],
-              totalInternalChatQueriesQuota: PLAN_INTERNAL_CHAT_QUERIES[currentPlan],
-              totalInternalChatQueriesAvailable: PLAN_INTERNAL_CHAT_QUERIES[currentPlan],
-              totalChatInstanceGenerationsQuota: PLAN_CHAT_INSTANCE_GENERATIONS[currentPlan],
-              totalChatInstanceGenerationsAvailable: PLAN_CHAT_INSTANCE_GENERATIONS[currentPlan],
-            });
+            await resetMonthlyCounts(effectiveUserId, currentPlan);
             
-            console.log(`[Webhook] Reset usage counters for user ${userId} - new billing cycle started`);
           } catch (error) {
             console.error("[Webhook] Error processing invoice payment:", error);
           }
