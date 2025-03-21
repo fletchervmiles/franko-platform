@@ -9,7 +9,7 @@ export default function Hero() {
       </div>
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight text-black sm:leading-tight">
+          <h1 className="text-[42px] sm:text-6xl md:text-7xl font-medium tracking-tight text-black sm:leading-tight">
             Stop Surveying,<br />
             Start Conversing.
           </h1>
