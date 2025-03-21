@@ -9,13 +9,11 @@ import { mapToDBMembership } from "@/lib/stripe";
 type UIPlan = "starter" | "pro" | "business";
 type InternalPlan = "starter_2024" | "pro_2024" | "business_2024";
 
-// Disable automatic body parsing
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Use the new App Router configuration syntax
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
+// Disable automatic body parsing
 export async function POST(req: Request) {
   try {
     const body = await req.text();
