@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Check, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useAuth } from "@clerk/nextjs"
 
 const starterFeatures = [
   {
@@ -50,6 +52,58 @@ const businessFeatures = [
 ];
 
 export default function PricingUpgrade() {
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { userId, isSignedIn } = useAuth()
+
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (!isSignedIn || !userId) {
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentPlan(data.membership || 'free')
+        } else {
+          console.error('Failed to fetch user profile')
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserProfile()
+  }, [isSignedIn, userId])
+
+  // Helper function to generate button text
+  const getButtonText = (planName: string) => {
+    if (!isSignedIn) return `Upgrade to ${planName}`
+    if (isLoading) return 'Loading...'
+
+    const planMap: Record<string, string> = {
+      'starter': 'Starter',
+      'pro': 'Pro',
+      'business': 'Business'
+    }
+
+    if (currentPlan === planName.toLowerCase()) {
+      return `Current Plan`
+    }
+    
+    return `Upgrade to ${planName}`
+  }
+
+  // Helper to check if a button should be disabled
+  const isButtonDisabled = (planName: string) => {
+    return currentPlan === planName.toLowerCase()
+  }
+
   return (
     <div className="pt-6">
       <div className="text-center mb-10">
@@ -97,10 +151,14 @@ export default function PricingUpgrade() {
             </div>
 
             <div className="pt-3 mt-auto">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/api/upgrade/starter" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Upgrade to Starter
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('starter') ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
+                <Link 
+                  href={isButtonDisabled('starter') ? '#' : "/api/upgrade/starter"} 
+                  className={`rounded-lg ${isButtonDisabled('starter') ? 'bg-gray-100 text-gray-700 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
+                  onClick={(e) => isButtonDisabled('starter') && e.preventDefault()}
+                >
+                  {getButtonText('Starter')}
+                  {!isButtonDisabled('starter') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
                 </Link>
               </div>
             </div>
@@ -145,10 +203,14 @@ export default function PricingUpgrade() {
             </div>
 
             <div className="pt-3 mt-auto">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/api/upgrade/pro" className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Upgrade to Pro
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('pro') ? 'bg-gray-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
+                <Link 
+                  href={isButtonDisabled('pro') ? '#' : "/api/upgrade/pro"}
+                  className={`rounded-lg ${isButtonDisabled('pro') ? 'bg-gray-800 text-gray-400 cursor-default' : 'bg-white text-black hover:bg-gray-100'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
+                  onClick={(e) => isButtonDisabled('pro') && e.preventDefault()}
+                >
+                  {getButtonText('Pro')}
+                  {!isButtonDisabled('pro') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
                 </Link>
               </div>
             </div>
@@ -193,10 +255,14 @@ export default function PricingUpgrade() {
             </div>
 
             <div className="pt-3 mt-auto">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/api/upgrade/business" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Upgrade to Business
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('business') ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
+                <Link 
+                  href={isButtonDisabled('business') ? '#' : "/api/upgrade/business"}
+                  className={`rounded-lg ${isButtonDisabled('business') ? 'bg-gray-100 text-gray-700 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
+                  onClick={(e) => isButtonDisabled('business') && e.preventDefault()}
+                >
+                  {getButtonText('Business')}
+                  {!isButtonDisabled('business') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
                 </Link>
               </div>
             </div>
