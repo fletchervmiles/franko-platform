@@ -508,8 +508,33 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!')
       }
       
-      // Navigate to the conversations route with the plan tab active
-      router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`)
+      // After generating the plan successfully:
+      const planData = await planResponse.json(); // Save the plan data
+      let checkAttempts = 0;
+
+      async function checkAndRedirect() {
+        try {
+          const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
+          if (checkResponse.ok) {
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+          } else if (checkAttempts < 5) {
+            checkAttempts++;
+            setTimeout(checkAndRedirect, 1000);
+          } else {
+            // Fallback after 5 failed attempts
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+          }
+        } catch (error) {
+          if (checkAttempts < 5) {
+            checkAttempts++;
+            setTimeout(checkAndRedirect, 1000);
+          } else {
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+          }
+        }
+      }
+
+      checkAndRedirect();
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')
