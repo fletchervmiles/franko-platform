@@ -3,6 +3,30 @@ import { NextResponse } from "next/server";
 import { getConversationPlan, updateChatInstanceConversationPlan } from "@/db/queries/chat-instances-queries";
 import { logger } from "@/lib/logger";
 
+// Helper function to retry database operations with exponential backoff
+async function retryOperation<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Wait longer between each retry (exponential backoff)
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+      }
+      
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      logger.warn(`Operation failed, attempt ${attempt + 1}/${maxRetries}`, { 
+        errorType: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function GET(request: Request) {
   try {
     logger.info('GET conversation-plan request received');
@@ -24,11 +48,21 @@ export async function GET(request: Request) {
     logger.info('Fetching conversation plan', { userId, chatId });
     
     try {
-      const plan = await getConversationPlan(chatId);
+      // Add retries for the database query
+      const plan = await retryOperation(() => getConversationPlan(chatId));
       
       if (!plan) {
         logger.warn('No conversation plan found', { chatId });
-        return new NextResponse("Conversation plan not found", { status: 404 });
+        
+        // Return a 404 with a more specific message
+        return new NextResponse(JSON.stringify({
+          error: "Conversation plan not found",
+          chatId,
+          timestamp: new Date().toISOString()
+        }), { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       // Check plan structure to ensure it's valid
@@ -49,7 +83,14 @@ export async function GET(request: Request) {
         errorStack: planError instanceof Error ? planError.stack : undefined
       });
       
-      return new NextResponse(`Error retrieving conversation plan: ${planError instanceof Error ? planError.message : 'Unknown error'}`, { status: 500 });
+      return new NextResponse(JSON.stringify({
+        error: `Error retrieving conversation plan: ${planError instanceof Error ? planError.message : 'Unknown error'}`,
+        chatId,
+        timestamp: new Date().toISOString()
+      }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
   } catch (error) {
     logger.error('Unhandled error in conversation-plan GET endpoint', {
@@ -58,7 +99,13 @@ export async function GET(request: Request) {
       errorStack: error instanceof Error ? error.stack : undefined
     });
     
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse(JSON.stringify({
+      error: "Internal Server Error",
+      timestamp: new Date().toISOString()
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -77,10 +124,18 @@ export async function PUT(request: Request) {
     }
 
     const data = await request.json();
-    const updatedPlan = await updateChatInstanceConversationPlan(chatId, data);
+    
+    // Add retries for the database update
+    const updatedPlan = await retryOperation(() => updateChatInstanceConversationPlan(chatId, data));
     return NextResponse.json(updatedPlan);
   } catch (error) {
     console.error("Error updating conversation plan:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse(JSON.stringify({
+      error: "Internal Server Error",
+      timestamp: new Date().toISOString()
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 } 
