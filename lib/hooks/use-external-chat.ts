@@ -58,12 +58,12 @@ export function useExternalChat({
       
       // Don't submit empty messages
       if (!input.trim()) {
-        return;
+        return false;
       }
 
       // Don't allow new submissions while loading
       if (isLoading) {
-        return;
+        return false;
       }
       
       // For auto-greetings, check sessionStorage to prevent duplicates
@@ -71,7 +71,7 @@ export function useExternalChat({
         const greetingKey = `sent-greeting-${id}`;
         if (sessionStorage.getItem(greetingKey)) {
           console.log('Preventing duplicate auto-greeting for chat:', id);
-          return;
+          return false;
         }
         // Mark this greeting as sent in session storage
         sessionStorage.setItem(greetingKey, 'true');
@@ -147,10 +147,12 @@ export function useExternalChat({
         if (onFinish) {
           await onFinish(assistantMessage);
         }
+        
+        return true;
       } catch (err) {
         // Ignore abort errors
         if ((err as Error).name === 'AbortError') {
-          return;
+          return false;
         }
         
         const error = err as Error;
@@ -160,6 +162,8 @@ export function useExternalChat({
         if (onError) {
           await onError(error);
         }
+        
+        return false;
       } finally {
         // Reset loading state and abort controller
         setIsLoading(false);

@@ -293,7 +293,7 @@ export function ExternalChat({
           setInput(greeting);
           
           // Use a single timeout with proper error handling
-          const timeoutId = setTimeout(() => {
+          const timeoutId = setTimeout(async () => {
             try {
               // Create a mock form event with auto-greeting flag
               const mockEvent = { 
@@ -302,14 +302,22 @@ export function ExternalChat({
               } as React.FormEvent<HTMLFormElement> & { isAutoGreeting: boolean };
               
               // Submit the form with the greeting message
-              handleSubmit(mockEvent);
-              console.log("Initial greeting sent successfully");
+              // and check if it was actually submitted or skipped
+              const submitted = await handleSubmit(mockEvent);
+              
+              // Log appropriate message based on whether it was sent or skipped
+              if (submitted === true) {
+                console.log("Initial greeting sent successfully");
+              } else {
+                console.log("Initial greeting skipped (already sent previously)");
+              }
+              
               // Clear the input after sending
               setInput("");
             } catch (err: unknown) {
               console.error("Failed to submit greeting:", err);
             } finally {
-              // End initialization regardless of success/failure
+              // End initialization regardless of success/failure or skipping
               setIsInitializing(false);
             }
           }, 300);
