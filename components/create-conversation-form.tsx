@@ -435,6 +435,9 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   // Add quota checking
   const { hasAvailablePlanQuota, isLoading: isQuotaLoading, planQuotaPercentage } = useQuotaAvailability();
   
+  // Replace the loading message state with a progress state
+  const [loadingProgress, setLoadingProgress] = useState("");
+  
   // Handle form submission
   const handleSubmit = async () => {
     if (!isFormComplete()) return
@@ -512,7 +515,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
       // After generating the plan successfully:
       const planData = await planResponse.json();
 
-      // Store the plan data in localStorage (simplified)
+      // Store the plan data in localStorage as fallback
       try {
         localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
           data: planData,
@@ -522,10 +525,58 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         console.error('Error storing plan data in localStorage:', e);
       }
 
-      // Small delay before redirect to ensure UI updates
-      setTimeout(() => {
-        router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
-      }, 500);
+      // Show success message
+      toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
+
+      // Update loading message
+      setLoadingProgress("Preparing your conversation. Please wait...");
+
+      // Poll until plan is confirmed to exist in database
+      let attempts = 0;
+      const maxAttempts = 10;
+      const checkInterval = 1500; // 1.5 seconds
+
+      async function checkAndRedirect() {
+        try {
+          // Update loading message to show progress
+          setLoadingProgress(`Verifying plan (${attempts + 1}/${maxAttempts})...`);
+          
+          const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
+          
+          if (checkResponse.ok) {
+            // Plan exists in read replica, safe to redirect
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+            return;
+          }
+          
+          // Plan not found yet
+          attempts++;
+          
+          if (attempts >= maxAttempts) {
+            // If we exceed max attempts, redirect anyway with localStorage flag
+            console.warn(`Plan verification timed out after ${maxAttempts} attempts`);
+            router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+            return;
+          }
+          
+          // Try again after delay
+          setTimeout(checkAndRedirect, checkInterval);
+        } catch (error) {
+          console.error('Error checking plan availability:', error);
+          attempts++;
+          
+          if (attempts >= maxAttempts) {
+            // Fallback to localStorage approach
+            router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+            return;
+          }
+          
+          setTimeout(checkAndRedirect, checkInterval);
+        }
+      }
+
+      // Start checking
+      checkAndRedirect();
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')
@@ -550,7 +601,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
 
   return (
     <div className="space-y-12 w-full pb-20">
-      {showLoadingScreen && <LoadingScreen />}
+      {showLoadingScreen && <LoadingScreen progress={loadingProgress} />}
       
       {/* Card 1: Topic */}
       <div ref={cardRefs.card1}>
