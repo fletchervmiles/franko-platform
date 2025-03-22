@@ -511,12 +511,18 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
       
       // After generating the plan successfully:
       const planData = await planResponse.json();
+      console.log('Generated plan data:', planData?.title);
 
-      // Store the plan data in localStorage
-      localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
-        data: planData,
-        timestamp: Date.now()
-      }));
+      // Store the plan data in localStorage with detailed logging
+      try {
+        localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
+          data: planData,
+          timestamp: Date.now()
+        }));
+        console.log('Plan data stored in localStorage');
+      } catch (e) {
+        console.error('Error storing plan data in localStorage:', e);
+      }
 
       // Redirect with the useLocal flag
       router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
