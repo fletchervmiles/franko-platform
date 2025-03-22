@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Bell, Loader2, Check } from "lucide-react"
+import { Bell, Loader2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
 
@@ -50,8 +51,8 @@ export function EmailNotificationSetting() {
   const chatId = Array.isArray(params.guideName) ? params.guideName[0] : params.guideName;
   
   const [enabled, setEnabled] = useState(false)
+  const [initialEnabled, setInitialEnabled] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   // Load the current setting when the component mounts
@@ -61,6 +62,7 @@ export function EmailNotificationSetting() {
         setIsLoading(true);
         const currentSetting = await getEmailNotificationSetting(chatId);
         setEnabled(currentSetting);
+        setInitialEnabled(currentSetting);
       } catch (error) {
         console.error("Failed to load notification setting:", error);
         toast.error("Failed to load notification settings");
@@ -74,67 +76,85 @@ export function EmailNotificationSetting() {
     }
   }, [chatId]);
 
-  const handleToggle = async (checked: boolean) => {
+  const handleToggleChange = (checked: boolean) => {
     setEnabled(checked);
+  }
+
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      await saveEmailNotification(chatId, checked);
-      setIsSaved(true);
-      toast.success(`Email notifications ${checked ? 'enabled' : 'disabled'}`);
-      setTimeout(() => setIsSaved(false), 2000);
+      await saveEmailNotification(chatId, enabled);
+      setInitialEnabled(enabled);
+      toast.success(`Email notifications ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
       console.error("Failed to save email notification setting:", error);
       toast.error("Failed to save notification settings");
       // Revert the toggle if saving fails
-      setEnabled(!checked);
+      setEnabled(initialEnabled);
     } finally {
       setIsSaving(false);
     }
   }
 
+  // Check if form has changes to enable/disable save button
+  const hasChanges = () => {
+    if (isLoading) return false;
+    return enabled !== initialEnabled;
+  }
+
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Bell className="w-4 h-4 text-blue-600" />
+    <Card className="border-none shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold flex items-center">
+          <Bell className="h-4 w-4 mr-2 text-blue-600" />
           Email Notifications
-        </h3>
-        <p className="text-sm text-gray-500">Receive email notifications when new responses are submitted.</p>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label htmlFor="email-notifications">Enable email notifications</Label>
-        </div>
+        </CardTitle>
+        <CardDescription>
+          Receive email notifications when new responses are submitted.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
         ) : (
-          <Switch
-            id="email-notifications"
-            checked={enabled}
-            onCheckedChange={handleToggle}
-            disabled={isSaving}
-            aria-label="Toggle email notifications"
-            className="data-[state=checked]:bg-green-500"
-          />
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-notifications" className="text-sm font-medium">
+                Enable email notifications
+              </Label>
+              <Switch
+                id="email-notifications"
+                checked={enabled}
+                onCheckedChange={handleToggleChange}
+                disabled={isSaving}
+                aria-label="Toggle email notifications"
+              />
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving || !hasChanges()}
+                variant="outline"
+                size="sm"
+                className={`h-8 text-xs px-4 transition-all duration-300 ease-in-out ${hasChanges() ? 'bg-black text-white hover:bg-gray-800' : ''}`}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
+          </div>
         )}
-      </div>
-      {(isSaving || isSaved) && (
-        <div className="mt-2 text-sm">
-          {isSaving && (
-            <Button variant="outline" size="sm" disabled className="pointer-events-none">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </Button>
-          )}
-          {isSaved && (
-            <Button variant="outline" size="sm" className="pointer-events-none text-green-600">
-              <Check className="mr-2 h-4 w-4" />
-              Saved
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -106,36 +106,62 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
     
-    // Get the new title from the request body
+    // Get the data from the request body
     const body = await request.json();
-    const { title } = body;
+    const { title, incentiveStatus, incentiveCode, incentiveDescription } = body;
     
-    if (!title || typeof title !== 'string' || title.trim() === '') {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    // If we have incentive settings in the request
+    if (incentiveStatus !== undefined) {
+      // Update the incentive settings
+      const updates = {
+        incentiveStatus,
+        incentiveCode: incentiveCode || "",
+        incentiveDescription: incentiveDescription || "",
+        updatedAt: new Date(),
+      };
+
+      const updatedChatInstance = await updateChatInstance(id, updates);
+      
+      return NextResponse.json({ 
+        success: true,
+        id: id,
+        incentiveStatus: updatedChatInstance?.incentiveStatus,
+        incentiveCode: updatedChatInstance?.incentiveCode,
+        incentiveDescription: updatedChatInstance?.incentiveDescription
+      });
     }
     
-    // Update the conversation plan with the new title
-    const conversationPlan = chatInstance.conversationPlan as any;
-    if (!conversationPlan) {
-      return NextResponse.json({ error: "Conversation plan not found" }, { status: 404 });
+    // Handle title update (original functionality)
+    if (title) {
+      if (typeof title !== 'string' || title.trim() === '') {
+        return NextResponse.json({ error: "Title is required" }, { status: 400 });
+      }
+      
+      // Update the conversation plan with the new title
+      const conversationPlan = chatInstance.conversationPlan as any;
+      if (!conversationPlan) {
+        return NextResponse.json({ error: "Conversation plan not found" }, { status: 404 });
+      }
+      
+      // Update the title in the conversation plan
+      conversationPlan.title = title;
+      
+      // Update the chat instance with the new conversation plan
+      const updatedChatInstance = await updateChatInstance(id, {
+        conversationPlan,
+        conversationPlanLastEdited: new Date(),
+      });
+      
+      return NextResponse.json({ 
+        success: true,
+        title: title,
+        id: id
+      });
     }
     
-    // Update the title in the conversation plan
-    conversationPlan.title = title;
-    
-    // Update the chat instance with the new conversation plan
-    const updatedChatInstance = await updateChatInstance(id, {
-      conversationPlan,
-      conversationPlanLastEdited: new Date(),
-    });
-    
-    return NextResponse.json({ 
-      success: true,
-      title: title,
-      id: id
-    });
+    return NextResponse.json({ error: "No valid update parameters provided" }, { status: 400 });
   } catch (error) {
-    console.error("Error renaming chat instance:", error);
-    return NextResponse.json({ error: "Failed to rename chat instance" }, { status: 500 });
+    console.error("Error updating chat instance:", error);
+    return NextResponse.json({ error: "Failed to update chat instance" }, { status: 500 });
   }
 }

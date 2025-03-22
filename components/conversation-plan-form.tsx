@@ -556,7 +556,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData, st
                     className="flex items-center gap-2 cursor-pointer" 
                     onClick={() => toggleSection(`guidance-${index}`)}
                   >
-                    {expandedSections[`guidance-${index}`] ? (
+                    {expandedSections[`guidance-${index}`] !== false ? (
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     ) : (
                       <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -576,7 +576,7 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData, st
                     </FormLabel>
                   </div>
 
-                  {expandedSections[`guidance-${index}`] && (
+                  {(expandedSections[`guidance-${index}`] !== false) && (
                   <FormField
                     control={control}
                     name={`objectives.${index}.agentGuidance`}

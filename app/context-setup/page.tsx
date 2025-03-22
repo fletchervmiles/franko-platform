@@ -257,7 +257,7 @@ export default function ContextSetupPage() {
                                   disabled={profile && !isEditing}
                                 />
                                 {field.value.length === 0 && !profile && (
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
                                     ✨ Step 1. Submit your company URL!
                                   </div>
                                 )}
@@ -298,7 +298,7 @@ export default function ContextSetupPage() {
                                   disabled={profile && !isEditing}
                                 />
                                 {field.value.length === 0 && !profile && (
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse bg-indigo-50 px-3 py-1 rounded-full">
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
                                     ✨ Step 2. Submit your company or product name
                                   </div>
                                 )}
@@ -339,13 +339,6 @@ export default function ContextSetupPage() {
                     </div>
                   </form>
                 </Form>
-              )}
-
-              {isLoadingProfile && (
-                <div className="flex flex-col items-center space-y-2 py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
-                  <p className="text-sm text-gray-500">Setting up your context. Please wait…</p>
-                </div>
               )}
             </CardContent>
           </Card>
