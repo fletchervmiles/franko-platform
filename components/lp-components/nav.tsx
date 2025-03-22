@@ -7,9 +7,8 @@ import { MenuIcon, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 const navigation = [
-  { name: 'How it Works', href: '#how-it-works' },
-  { name: 'Demo', href: '#demo' },
-  { name: 'Pricing', href: '#pricing' },
+  { name: 'Pricing', href: '/pricing' },
+  { name: 'FAQs', href: '/faqs' },
 ]
 
 export default function Nav() {

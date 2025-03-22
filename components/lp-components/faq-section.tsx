@@ -15,28 +15,20 @@ interface FAQSectionProps {
 
 const faqItems = (companyName: string): FAQItem[] => [
   {
-    question: "How does the interview agent work?",
-    answer: "Our agent is designed to conduct exploratory, narrative-driven interviews focused on understanding customer churn. It uses advanced interviewing techniques to engage customers in open, meaningful conversations. The agent is contextualized to your business, ensuring that each interview is centered on your specific needs."
+    question: "How does the conversation agent work?",
+    answer: "Our agents are designed to conduct exploratory, narrative-driven interviews focused on diving deep with your customers. It uses advanced interviewing techniques to engage customers in open, meaningful conversations. The agent is contextualized to your business, plus the Conversation Plan you'll create when setting up a new Converation, ensuring that each customer conversation is centered on your specific needs."
   },
   {
-    question: "How long does each interview last?",
-    answer: "Each interview will go for approximately 5-7 minutes."
-  },
-  {
-    question: "What kind of insights can I expect from the per-interview analysis?",
-    answer: "Each interview comes with an analysis that includes: reasons for cancellation or potential cancellation, unmet expectations, areas for product/service improvement, customer suggestions, identification of win-back opportunities, and recommended next steps to reduce churn."
-  },
-  {
-    question: "Are customer incentives included in the plans?",
-    answer: "No, customer interview incentives are not included in the plans. You'll need to offer incentives to encourage customer participation."
+    question: "How long does each conversation last?",
+    answer: "When you create a new Converation Plan, you'll have the option to select your desired duration, usually between 1 and 10 minutes."
   },
   {
     question: "How do I invite customers to participate in interviews?",
-    answer: "In the setup tab of the dashboard, you'll find a unique URL that you can share with your customers via email or wherever is best. This link directs them to a very short form where they can initiate the phone call."
+    answer: "In the Share tab of each Conversation Plan, you'll find a unique URL that you can share with your customers via email. Similar to sending out a survey."
   },
   {
     question: "Can I customize the interview questions or focus areas?",
-    answer: "Not right now, but that is on our roadmap. If you've got a use case you want to get started on ASAP, please email fletcher@franko.ai."
+    answer: "Yes, you can! When you generate a new Conversation Plan, we will create an initial plan based on your inputs. Once it's been generated, you're free to edit it as much as you like."
   },
   {
     question: "Is there a contract or commitment period for the plans?",
@@ -44,7 +36,7 @@ const faqItems = (companyName: string): FAQItem[] => [
   },
   {
     question: "Do you offer support if I have questions or need assistance?",
-    answer: "Yes, please email fletcher@franko.ai for support, and we'll get back to you ASAP. A phone number is also available within the contact section of your dashboard."
+    answer: "Yes, please email fletcher@franko.ai for support, and I'll get back to you ASAP.."
   },
   {
     question: "What is your refund policy?",
@@ -52,11 +44,12 @@ const faqItems = (companyName: string): FAQItem[] => [
   }
 ]
 
+
 export function FAQSection({ companyName }: FAQSectionProps) {
   const faqs = React.useMemo(() => faqItems(companyName), [companyName])
 
   return (
-    <Card className="w-full bg-white transition-all duration-300 ease-in-out p-2 shadow-none">
+    <Card className="w-full bg-white transition-all duration-300 ease-in-out p-2 shadow-none border-0">
       <CardHeader className="pb-6">
         <div className="flex justify-center mb-6">
           <span className="inline-flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black border border-gray-200 shadow-sm">

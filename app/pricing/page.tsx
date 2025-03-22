@@ -1,4 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
+'use client'
+
 import { redirect } from "next/navigation";
 import Nav from "@/components/lp-components/nav";
 import Footer from "@/components/lp-components/footer-pricing";
