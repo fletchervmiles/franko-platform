@@ -53,16 +53,7 @@ export async function GET(request: Request) {
       
       if (!plan) {
         logger.warn('No conversation plan found', { chatId });
-        
-        // Return a 404 with a more specific message
-        return new NextResponse(JSON.stringify({
-          error: "Conversation plan not found",
-          chatId,
-          timestamp: new Date().toISOString()
-        }), { 
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return new NextResponse("Conversation plan not found", { status: 404 });
       }
       
       // Check plan structure to ensure it's valid
@@ -83,14 +74,7 @@ export async function GET(request: Request) {
         errorStack: planError instanceof Error ? planError.stack : undefined
       });
       
-      return new NextResponse(JSON.stringify({
-        error: `Error retrieving conversation plan: ${planError instanceof Error ? planError.message : 'Unknown error'}`,
-        chatId,
-        timestamp: new Date().toISOString()
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new NextResponse("Error retrieving conversation plan", { status: 500 });
     }
   } catch (error) {
     logger.error('Unhandled error in conversation-plan GET endpoint', {
@@ -99,13 +83,7 @@ export async function GET(request: Request) {
       errorStack: error instanceof Error ? error.stack : undefined
     });
     
-    return new NextResponse(JSON.stringify({
-      error: "Internal Server Error",
-      timestamp: new Date().toISOString()
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
@@ -130,12 +108,6 @@ export async function PUT(request: Request) {
     return NextResponse.json(updatedPlan);
   } catch (error) {
     console.error("Error updating conversation plan:", error);
-    return new NextResponse(JSON.stringify({
-      error: "Internal Server Error",
-      timestamp: new Date().toISOString()
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 } 

@@ -506,26 +506,26 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         // Don't throw error here, we'll still navigate
         toast.success('Conversation details saved successfully!')
       } else {
-        toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!')
+        toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
       }
       
       // After generating the plan successfully:
       const planData = await planResponse.json();
-      console.log('Generated plan data:', planData?.title);
 
-      // Store the plan data in localStorage with detailed logging
+      // Store the plan data in localStorage (simplified)
       try {
         localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
           data: planData,
           timestamp: Date.now()
         }));
-        console.log('Plan data stored in localStorage');
       } catch (e) {
         console.error('Error storing plan data in localStorage:', e);
       }
 
-      // Redirect with the useLocal flag
-      router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+      // Small delay before redirect to ensure UI updates
+      setTimeout(() => {
+        router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+      }, 500);
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')
