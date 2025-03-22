@@ -166,89 +166,117 @@ export async function POST(request: Request) {
       }))
     });
     
-    // Stream response from AI
-    const result = await streamText({
-      model: geminiProModel,
-      system: systemPrompt,
-      messages: coreMessages,
-      
-      // Empty tools array to satisfy typings
-      tools: [] as any,
-      
-      // Save chat history
-      onFinish: async ({ responseMessages }) => {
-        try {
-          // Process response messages
-          const newProcessedMessages = responseMessages.map(m => {
-            return { ...m, content: m.content };
-          });
+    // Stream response from AI with fallback mechanism
+    const maxRetries = 2;
+    let retryCount = 0;
+    let lastError: any = null;
+    
+    while (retryCount < maxRetries) {
+      try {
+        // Select model based on retry count
+        const model = retryCount === 0 ? geminiProModel : geminiFlashModel;
+        logger.info(`Using ${retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel'} for internal chat request`);
+        
+        const result = await streamText({
+          model: model,
+          system: systemPrompt,
+          messages: coreMessages,
           
-          // Get existing chat
-          const existingSession = await getInternalChatSessionById(internalChatSessionId);
-          if (!existingSession) {
-            logger.error('Internal chat session not found for updating messages', { internalChatSessionId });
-            return;
+          // Empty tools array to satisfy typings
+          tools: [] as any,
+          
+          // Save chat history
+          onFinish: async ({ responseMessages }) => {
+            try {
+              // Process response messages
+              const newProcessedMessages = responseMessages.map(m => {
+                return { ...m, content: m.content };
+              });
+              
+              // Get existing chat
+              const existingSession = await getInternalChatSessionById(internalChatSessionId);
+              if (!existingSession) {
+                logger.error('Internal chat session not found for updating messages', { internalChatSessionId });
+                return;
+              }
+              
+              // Parse existing messages
+              const existingMessages = existingSession.messagesJson ? 
+                JSON.parse(existingSession.messagesJson as string) : 
+                [];
+                
+              // Find the latest user message
+              const latestUserMessage = [...coreMessages]
+                .filter(m => m.role === 'user')
+                .pop();
+              
+              // Check if this user message is already saved
+              const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
+                m.role === 'user' && 
+                m.content === latestUserMessage?.content
+              );
+              
+              // Create the updated message array
+              const allMessages = [...existingMessages];
+              
+              // Add the user message if it's not already saved
+              if (latestUserMessage && !userMessageExists) {
+                allMessages.push({
+                  id: generateUUID(),
+                  role: latestUserMessage.role,
+                  content: latestUserMessage.content
+                });
+              }
+              
+              // Add the AI response messages
+              allMessages.push(...newProcessedMessages);
+              
+              // Update the session with new messages
+              await updateInternalChatSession(internalChatSessionId, {
+                messagesJson: JSON.stringify(allMessages),
+              });
+              
+              logger.info('Internal chat session updated successfully:', { internalChatSessionId });
+            } catch (error) {
+              logger.error('Failed to update internal chat session:', { error, internalChatSessionId });
+            }
+          },
+        });
+        
+        // Log performance
+        const endTime = performance.now();
+        logger.info('Internal chat request completed', {
+          id,
+          internalChatSessionId,
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          model: retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel'
+        });
+        
+        // Return streaming response
+        return result.toDataStreamResponse({
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
           }
-          
-          // Parse existing messages
-          const existingMessages = existingSession.messagesJson ? 
-            JSON.parse(existingSession.messagesJson as string) : 
-            [];
-            
-          // Find the latest user message
-          const latestUserMessage = [...coreMessages]
-            .filter(m => m.role === 'user')
-            .pop();
-          
-          // Check if this user message is already saved
-          const userMessageExists = existingMessages.some((m: { role: string; content: string }) => 
-            m.role === 'user' && 
-            m.content === latestUserMessage?.content
-          );
-          
-          // Create the updated message array
-          const allMessages = [...existingMessages];
-          
-          // Add the user message if it's not already saved
-          if (latestUserMessage && !userMessageExists) {
-            allMessages.push({
-              id: generateUUID(),
-              role: latestUserMessage.role,
-              content: latestUserMessage.content
-            });
-          }
-          
-          // Add the AI response messages
-          allMessages.push(...newProcessedMessages);
-          
-          // Update the session with new messages
-          await updateInternalChatSession(internalChatSessionId, {
-            messagesJson: JSON.stringify(allMessages),
-          });
-          
-          logger.info('Internal chat session updated successfully:', { internalChatSessionId });
-        } catch (error) {
-          logger.error('Failed to update internal chat session:', { error, internalChatSessionId });
+        });
+      } catch (error) {
+        lastError = error;
+        logger.warn(`Internal chat model attempt ${retryCount + 1} failed:`, error);
+        retryCount++;
+        
+        // If we've tried all models and still getting errors, throw the last error
+        if (retryCount >= maxRetries) {
+          throw lastError;
         }
-      },
-    });
-    
-    // Log performance
-    const endTime = performance.now();
-    logger.info('Internal chat request completed', {
-      id,
-      internalChatSessionId,
-      duration: `${(endTime - startTime).toFixed(2)}ms`
-    });
-    
-    // Return streaming response
-    return result.toDataStreamResponse({
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+        
+        // Simple backoff before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-    });
+    }
+    
+    // This should never be reached due to the return in the retry loop
+    throw new Error('Unexpected error in model fallback mechanism');
   } catch (error) {
     // Error handling
     const errorMessage = error instanceof Error ? error.message : String(error);

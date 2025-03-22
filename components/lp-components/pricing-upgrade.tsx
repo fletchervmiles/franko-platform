@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, Info } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAuth } from "@clerk/nextjs"
@@ -268,6 +268,13 @@ export default function PricingUpgrade() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="text-center mt-10">
+        <p className="text-sm text-gray-500 flex items-center justify-center gap-1.5">
+          <Info className="h-4 w-4" />
+          When you upgrade, your existing credits will be carried over to the next month.
+        </p>
       </div>
     </div>
   )
