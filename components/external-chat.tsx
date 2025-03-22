@@ -282,6 +282,9 @@ export function ExternalChat({
       // Mark as sent immediately to prevent race conditions
       initialGreetingSentRef.current = true;
       
+      // Create a flag to track if greeting has been sent
+      let greetingProcessed = false;
+      
       const sendGreeting = async () => {
         try {
           // Default greeting that doesn't depend on user data
@@ -289,45 +292,54 @@ export function ExternalChat({
           
           console.log(`Preparing to send greeting: "${greeting}"`);
           
-          // Use a single timeout with proper error handling
-          const timeoutId = setTimeout(async () => {
-            try {
-              // Create a mock form event with auto-greeting flag
-              const mockEvent = { 
-                preventDefault: () => {},
-                isAutoGreeting: true 
-              } as React.FormEvent<HTMLFormElement> & { isAutoGreeting: boolean };
-              
-              // Submit the form with the greeting message using forcedContent parameter
-              // instead of relying on the input state which may not be updated yet
-              const submitted = await handleSubmit(mockEvent, greeting);
-              
-              // Log appropriate message based on whether it was sent or skipped
-              if (submitted === true) {
-                console.log("Initial greeting sent successfully");
-              } else {
-                console.log("Initial greeting skipped (already sent previously)");
-              }
-            } catch (err: unknown) {
-              console.error("Failed to submit greeting:", err);
-            } finally {
-              // End initialization regardless of success/failure or skipping
-              setIsInitializing(false);
-            }
-          }, 300);
+          // Create a mock form event with auto-greeting flag
+          const mockEvent = { 
+            preventDefault: () => {},
+            isAutoGreeting: true 
+          } as React.FormEvent<HTMLFormElement> & { isAutoGreeting: boolean };
           
-          return () => clearTimeout(timeoutId);
+          try {
+            // Submit the form with the greeting message directly
+            console.log('Calling handleSubmit with greeting');
+            const submitted = await handleSubmit(mockEvent, greeting);
+            greetingProcessed = true;
+            
+            // Log appropriate message based on whether it was sent or skipped
+            if (submitted === true) {
+              console.log("Initial greeting sent successfully");
+            } else {
+              console.log("Initial greeting skipped (already sent previously)");
+            }
+          } catch (err) {
+            console.error("Failed to submit greeting:", err);
+            greetingProcessed = true;
+          } finally {
+            // Only end initialization if we've actually processed the greeting
+            if (greetingProcessed) {
+              console.log('Setting isInitializing to false');
+              setIsInitializing(false);
+            } else {
+              console.warn('Greeting was not processed properly');
+              // Force it to finish anyway after a timeout to prevent UI lockup
+              setTimeout(() => {
+                console.log('Forcing initialization to complete after timeout');
+                setIsInitializing(false);
+              }, 2000);
+            }
+          }
         } catch (error) {
           console.error("Auto greeting failed:", error);
           setIsInitializing(false);
         }
       };
       
-      // Single timeout with cleanup
-      const initialTimeoutId = setTimeout(sendGreeting, 500);
-      return () => clearTimeout(initialTimeoutId);
+      // Execute the greeting function immediately without delay
+      sendGreeting().catch(err => {
+        console.error("Unhandled error in sendGreeting:", err);
+        setIsInitializing(false);
+      });
     }
-  }, [chatResponseId, isInitializing, handleSubmit, setInput]);
+  }, [chatResponseId, isInitializing, handleSubmit]);
 
   // Add new effect to auto-redirect when both conditions are met
   useEffect(() => {

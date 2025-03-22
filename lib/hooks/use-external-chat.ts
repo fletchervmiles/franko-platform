@@ -56,28 +56,42 @@ export function useExternalChat({
       // Check if this is an auto-greeting
       const isAutoGreeting = 'isAutoGreeting' in e;
       
+      if (isAutoGreeting) {
+        console.log('Processing auto-greeting submission');
+      }
+      
       // Use the forced content (for auto-greetings) or input state
       const messageContent = forcedContent || input;
       
       // Don't submit empty messages (unless we have forced content)
       if (!forcedContent && !input.trim()) {
+        console.log('Rejecting empty message submission');
         return false;
       }
 
       // Don't allow new submissions while loading
       if (isLoading) {
+        console.log('Rejecting submission while already loading');
         return false;
       }
       
       // For auto-greetings, check sessionStorage to prevent duplicates
       if (isAutoGreeting) {
         const greetingKey = `sent-greeting-${id}`;
-        if (sessionStorage.getItem(greetingKey)) {
-          console.log('Preventing duplicate auto-greeting for chat:', id);
-          return false;
+        try {
+          // Try to get from sessionStorage, handling potential exceptions
+          const existing = sessionStorage.getItem(greetingKey);
+          if (existing) {
+            console.log('Preventing duplicate auto-greeting for chat:', id);
+            return false;
+          }
+          // Mark this greeting as sent in session storage
+          sessionStorage.setItem(greetingKey, 'true');
+          console.log('Marked greeting as sent in sessionStorage:', greetingKey);
+        } catch (storageError) {
+          // If sessionStorage fails (e.g., private browsing), log and continue
+          console.warn('SessionStorage error, proceeding anyway:', storageError);
         }
-        // Mark this greeting as sent in session storage
-        sessionStorage.setItem(greetingKey, 'true');
       }
 
       // Create user message with either forced content or input
@@ -86,6 +100,11 @@ export function useExternalChat({
         role: 'user',
         content: messageContent,
       };
+
+      console.log('Created user message:', {
+        id: userMessage.id,
+        content: userMessage.content.substring(0, 50) + (userMessage.content.length > 50 ? '...' : '')
+      });
 
       // Update messages state
       setMessages((messages) => [...messages, userMessage]);
@@ -103,6 +122,8 @@ export function useExternalChat({
       abortControllerRef.current = new AbortController();
 
       try {
+        console.log('Sending API request to:', api);
+        
         // Make the API call
         const response = await fetch(api, {
           method: 'POST',
@@ -117,6 +138,8 @@ export function useExternalChat({
           signal: abortControllerRef.current.signal,
         });
 
+        console.log('Received API response, status:', response.status);
+
         // Call onResponse callback if provided
         if (onResponse) {
           await onResponse(response);
@@ -130,6 +153,7 @@ export function useExternalChat({
 
         // Parse the JSON response
         const data = await response.json();
+        console.log('Successfully parsed response data');
         
         // Create the assistant message with both objectives and fullResponse
         const assistantMessage: ExtendedMessage & { fullResponse?: string } = {
@@ -157,10 +181,12 @@ export function useExternalChat({
       } catch (err) {
         // Ignore abort errors
         if ((err as Error).name === 'AbortError') {
+          console.log('Request was aborted');
           return false;
         }
         
         const error = err as Error;
+        console.error('Error in handleSubmit:', error);
         setError(error);
         
         // Call onError callback if provided
@@ -170,6 +196,7 @@ export function useExternalChat({
         
         return false;
       } finally {
+        console.log('Finishing request, resetting loading state');
         // Reset loading state and abort controller
         setIsLoading(false);
         abortControllerRef.current = null;
