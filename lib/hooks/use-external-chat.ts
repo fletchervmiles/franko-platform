@@ -50,14 +50,17 @@ export function useExternalChat({
 
   // Handle form submission
   const handleSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>, forcedContent?: string) => {
       e.preventDefault();
 
       // Check if this is an auto-greeting
       const isAutoGreeting = 'isAutoGreeting' in e;
       
-      // Don't submit empty messages
-      if (!input.trim()) {
+      // Use the forced content (for auto-greetings) or input state
+      const messageContent = forcedContent || input;
+      
+      // Don't submit empty messages (unless we have forced content)
+      if (!forcedContent && !input.trim()) {
         return false;
       }
 
@@ -77,18 +80,20 @@ export function useExternalChat({
         sessionStorage.setItem(greetingKey, 'true');
       }
 
-      // Create user message
+      // Create user message with either forced content or input
       const userMessage: ExtendedMessage = {
         id: generateUUID(),
         role: 'user',
-        content: input,
+        content: messageContent,
       };
 
       // Update messages state
       setMessages((messages) => [...messages, userMessage]);
       
-      // Clear input
-      setInput('');
+      // Clear input (only if we used the actual input field)
+      if (!forcedContent) {
+        setInput('');
+      }
       
       // Set loading state
       setIsLoading(true);

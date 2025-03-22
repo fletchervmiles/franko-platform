@@ -287,10 +287,7 @@ export function ExternalChat({
           // Default greeting that doesn't depend on user data
           const greeting = "Hi, I'm ready!";
           
-          console.log(`Sending greeting: "${greeting}"`);
-          
-          // Set the input value
-          setInput(greeting);
+          console.log(`Preparing to send greeting: "${greeting}"`);
           
           // Use a single timeout with proper error handling
           const timeoutId = setTimeout(async () => {
@@ -301,9 +298,9 @@ export function ExternalChat({
                 isAutoGreeting: true 
               } as React.FormEvent<HTMLFormElement> & { isAutoGreeting: boolean };
               
-              // Submit the form with the greeting message
-              // and check if it was actually submitted or skipped
-              const submitted = await handleSubmit(mockEvent);
+              // Submit the form with the greeting message using forcedContent parameter
+              // instead of relying on the input state which may not be updated yet
+              const submitted = await handleSubmit(mockEvent, greeting);
               
               // Log appropriate message based on whether it was sent or skipped
               if (submitted === true) {
@@ -311,9 +308,6 @@ export function ExternalChat({
               } else {
                 console.log("Initial greeting skipped (already sent previously)");
               }
-              
-              // Clear the input after sending
-              setInput("");
             } catch (err: unknown) {
               console.error("Failed to submit greeting:", err);
             } finally {
