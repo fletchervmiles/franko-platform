@@ -155,11 +155,58 @@ export function useExternalChat({
         const data = await response.json();
         console.log('Successfully parsed response data');
         
+        // Helper function to extract response from potentially formatted content
+        const extractDisplayContent = (content: any): string => {
+          // If it's not a string, convert it to string
+          if (typeof content !== 'string') {
+            return String(content);
+          }
+          
+          // Check for JSON wrapped in markdown code blocks
+          if (content.includes('```json') && content.includes('```')) {
+            try {
+              const jsonText = content.split('```json\n')[1]?.split('\n```')[0];
+              if (jsonText) {
+                const parsed = JSON.parse(jsonText);
+                return parsed.response || content;
+              }
+            } catch (e) {
+              console.error('Error parsing JSON in markdown blocks:', e);
+            }
+          }
+          
+          // Check if the content itself is a JSON string
+          if ((content.startsWith('{') && content.endsWith('}')) || 
+              (content.startsWith('[') && content.endsWith(']'))) {
+            try {
+              const parsed = JSON.parse(content);
+              if (parsed.response) {
+                return parsed.response;
+              }
+            } catch (e) {
+              // Not valid JSON - just use the content as is
+              console.log('Content is not valid JSON, using as is');
+            }
+          }
+          
+          // If we have a separate response field at the top level, use that
+          if (data.response && typeof data.response === 'string') {
+            return data.response;
+          }
+          
+          // Default to the original content
+          return content;
+        };
+        
+        // Get the display content
+        const displayContent = extractDisplayContent(data.content);
+        console.log('Extracted display content:', displayContent.substring(0, 50) + '...');
+        
         // Create the assistant message with both objectives and fullResponse
         const assistantMessage: ExtendedMessage & { fullResponse?: string } = {
           id: data.id || generateUUID(),
           role: 'assistant',
-          content: data.content,
+          content: displayContent,
           // Include objectives data for the progress bar
           objectives: data.objectives || null,
           // Store the full response for future turns
