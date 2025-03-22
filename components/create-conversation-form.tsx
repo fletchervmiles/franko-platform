@@ -491,6 +491,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         throw new Error('Failed to save conversation details')
       }
       
+      // Update the plan generation and handling section
       // Generate conversation plan
       const planResponse = await fetch(`/api/conversation-plan/generate?chatId=${targetChatId}`, {
         method: 'POST',
@@ -502,81 +503,95 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
           duration,
           additionalDetails,
         }),
-      })
+      });
       
       if (!planResponse.ok) {
-        console.error('Failed to generate conversation plan, but continuing')
+        console.error('Failed to generate conversation plan, but continuing');
         // Don't throw error here, we'll still navigate
-        toast.success('Conversation details saved successfully!')
+        toast.success('Conversation details saved successfully!');
+        
+        // Redirect with delay
+        setTimeout(() => {
+          router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+        }, 2000);
       } else {
-        toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
-      }
-      
-      // After generating the plan successfully:
-      const planData = await planResponse.json();
-
-      // Store the plan data in localStorage as fallback
-      try {
-        localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
-          data: planData,
-          timestamp: Date.now()
-        }));
-      } catch (e) {
-        console.error('Error storing plan data in localStorage:', e);
-      }
-
-      // Show success message
-      toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
-
-      // Update loading message
-      setLoadingProgress("Preparing your conversation. Please wait...");
-
-      // Poll until plan is confirmed to exist in database
-      let attempts = 0;
-      const maxAttempts = 10;
-      const checkInterval = 1500; // 1.5 seconds
-
-      async function checkAndRedirect() {
+        // Wait for the full response body
+        const planData = await planResponse.json();
+        
+        // Store the plan data in localStorage as fallback
         try {
-          // Update loading message to show progress
-          setLoadingProgress(`Verifying plan (${attempts + 1}/${maxAttempts})...`);
-          
-          const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
-          
-          if (checkResponse.ok) {
-            // Plan exists in read replica, safe to redirect
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
-            return;
-          }
-          
-          // Plan not found yet
-          attempts++;
-          
-          if (attempts >= maxAttempts) {
-            // If we exceed max attempts, redirect anyway with localStorage flag
-            console.warn(`Plan verification timed out after ${maxAttempts} attempts`);
-            router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
-            return;
-          }
-          
-          // Try again after delay
-          setTimeout(checkAndRedirect, checkInterval);
-        } catch (error) {
-          console.error('Error checking plan availability:', error);
-          attempts++;
-          
-          if (attempts >= maxAttempts) {
-            // Fallback to localStorage approach
-            router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
-            return;
-          }
-          
-          setTimeout(checkAndRedirect, checkInterval);
+          localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
+            data: planData,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          console.error('Error storing plan data in localStorage:', e);
         }
+        
+        // Show success message
+        toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
+        
+        // If plan was verified on server, we can redirect with minimal delay
+        if (planData._verified === true) {
+          setLoadingProgress("Plan verified! Redirecting...");
+          setTimeout(() => {
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+          }, 1000);
+          return;
+        }
+        
+        // Plan needs polling - add initial delay before starting
+        setLoadingProgress("Waiting for plan to be available...");
+        
+        // Wait 5 seconds before starting to poll
+        setTimeout(() => {
+          // Then set up polling
+          let attempts = 0;
+          const maxAttempts = 15;
+          const checkInterval = 2000; // 2 seconds between checks
+          
+          async function checkAndRedirect() {
+            try {
+              setLoadingProgress(`Verifying plan (${attempts + 1}/${maxAttempts})...`);
+              
+              const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
+              
+              if (checkResponse.ok) {
+                // Plan exists in read replica, safe to redirect
+                router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+                return;
+              }
+              
+              // Plan not found yet
+              attempts++;
+              
+              if (attempts >= maxAttempts) {
+                // If we exceed max attempts, redirect anyway with localStorage flag
+                console.warn(`Plan verification timed out after ${maxAttempts} attempts`);
+                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+                return;
+              }
+              
+              // Try again after delay
+              setTimeout(checkAndRedirect, checkInterval);
+            } catch (error) {
+              console.error('Error checking plan availability:', error);
+              attempts++;
+              
+              if (attempts >= maxAttempts) {
+                // Fallback to localStorage approach
+                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+                return;
+              }
+              
+              setTimeout(checkAndRedirect, checkInterval);
+            }
+          }
+          
+          // Start polling after initial delay
+          checkAndRedirect();
+        }, 5000);
       }
-
-      // Start checking
-      checkAndRedirect();
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')

@@ -5,12 +5,14 @@ import { generateConversationPlanFromForm } from "@/ai_folder/create-actions";
 import { getConversationPlan } from "@/db/queries/chat-instances-queries";
 
 // Helper function to wait and verify plan existence
-async function verifyPlanExists(chatId: string, maxAttempts = 3): Promise<boolean> {
+async function verifyPlanExists(chatId: string, maxAttempts = 10): Promise<boolean> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      // Wait between attempts
+      // Wait between attempts - increase delay significantly
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(1.5, attempt)));
+        const delay = 1000 * Math.pow(2, Math.min(attempt, 5)); // Max ~32 seconds
+        logger.info(`Waiting ${delay}ms before verification attempt ${attempt + 1}`, { chatId });
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
       
       const plan = await getConversationPlan(chatId);
@@ -77,15 +79,25 @@ export async function POST(request: Request) {
       objectiveCount: plan.objectives.length
     });
     
-    // Verify that the plan was properly saved to the database
+    // Verify that the plan was properly saved to the database with increased attempts
+    logger.info('Starting plan verification process', { chatId });
     const verified = await verifyPlanExists(chatId);
+    
     if (!verified) {
-      logger.warn('Generated plan may not be properly saved in the database', { chatId });
+      logger.warn('Could not verify plan was saved to database after multiple attempts', { chatId });
+      // Don't fail the request, but inform the client it will need to retry
+      return NextResponse.json({
+        ...plan,
+        _verified: false,
+        _message: "Plan generation completed but verification failed. Client should delay before fetching."
+      });
     }
     
+    // Plan has been verified to exist in the database
+    logger.info('Plan successfully verified in database', { chatId });
     return NextResponse.json({
       ...plan,
-      _verified: verified
+      _verified: true
     });
   } catch (error) {
     logger.error('Error generating conversation plan:', error);
