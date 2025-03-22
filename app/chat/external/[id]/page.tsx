@@ -101,8 +101,9 @@ export default function StartChatPage({
     firstName: string;
     email: string;
   }) => {
-    // Check if we've hit the response limit
-    if (!hasAvailableResponsesQuota) {
+    // Only block if we definitely know there's no quota available
+    // In incognito/unauthenticated scenarios, proceed anyway
+    if (!isQuotaLoading && hasAvailableResponsesQuota === false) {
       console.log("Response limit reached, not starting chat");
       return;
     }
