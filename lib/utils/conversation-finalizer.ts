@@ -34,6 +34,11 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
   try {
     logger.info('Finalizing conversation:', { chatResponseId });
     
+    // Add a delay to ensure the latest messages have been saved to the database
+    // This helps prevent race conditions with asynchronous message saving
+    logger.debug('Waiting for latest messages to be saved before finalizing');
+    await new Promise(resolve => setTimeout(resolve, 9000)); // 9-second delay
+    
     // Fetch the chat response
     const chatResponse = await getChatResponseById(chatResponseId);
     if (!chatResponse) {
