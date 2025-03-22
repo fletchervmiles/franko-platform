@@ -53,6 +53,9 @@ export function useExternalChat({
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
+      // Check if this is an auto-greeting
+      const isAutoGreeting = 'isAutoGreeting' in e;
+      
       // Don't submit empty messages
       if (!input.trim()) {
         return;
@@ -61,6 +64,17 @@ export function useExternalChat({
       // Don't allow new submissions while loading
       if (isLoading) {
         return;
+      }
+      
+      // For auto-greetings, check sessionStorage to prevent duplicates
+      if (isAutoGreeting) {
+        const greetingKey = `sent-greeting-${id}`;
+        if (sessionStorage.getItem(greetingKey)) {
+          console.log('Preventing duplicate auto-greeting for chat:', id);
+          return;
+        }
+        // Mark this greeting as sent in session storage
+        sessionStorage.setItem(greetingKey, 'true');
       }
 
       // Create user message

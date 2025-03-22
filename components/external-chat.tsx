@@ -47,6 +47,8 @@ export function ExternalChat({
   const inactivityCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [areAllObjectivesDone, setAreAllObjectivesDone] = useState(false);
   const [hasEndingMessage, setHasEndingMessage] = useState(false);
+  // Add ref to track if initial greeting was sent
+  const initialGreetingSentRef = useRef(false);
 
   // Use optimized hook for fetching user data
   // IMPORTANT: All hooks must be called in the same order on every render
@@ -273,12 +275,13 @@ export function ExternalChat({
 
   // Send auto greeting once at initialization
   useEffect(() => {
-    // Only execute this effect once when the component mounts
-    // Make sure we have a chat response ID and we're in initializing state
-    if (isInitializing && chatResponseId) {
+    // Only execute if not already sent AND we're initializing
+    if (isInitializing && chatResponseId && !initialGreetingSentRef.current) {
       console.log("Starting auto-greeting process");
       
-      // Use a simpler approach that's more reliable
+      // Mark as sent immediately to prevent race conditions
+      initialGreetingSentRef.current = true;
+      
       const sendGreeting = async () => {
         try {
           // Default greeting that doesn't depend on user data
@@ -289,11 +292,14 @@ export function ExternalChat({
           // Set the input value
           setInput(greeting);
           
-          // Small delay to ensure state is updated
-          setTimeout(() => {
+          // Use a single timeout with proper error handling
+          const timeoutId = setTimeout(() => {
             try {
-              // Create a mock form event
-              const mockEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+              // Create a mock form event with auto-greeting flag
+              const mockEvent = { 
+                preventDefault: () => {},
+                isAutoGreeting: true 
+              } as React.FormEvent<HTMLFormElement> & { isAutoGreeting: boolean };
               
               // Submit the form with the greeting message
               handleSubmit(mockEvent);
@@ -306,17 +312,19 @@ export function ExternalChat({
               // End initialization regardless of success/failure
               setIsInitializing(false);
             }
-          }, 300); // Use a slightly longer delay to ensure all state is properly updated
+          }, 300);
+          
+          return () => clearTimeout(timeoutId);
         } catch (error) {
           console.error("Auto greeting failed:", error);
           setIsInitializing(false);
         }
       };
       
-      // Wait a moment for everything to be ready
-      setTimeout(sendGreeting, 500);
+      // Single timeout with cleanup
+      const initialTimeoutId = setTimeout(sendGreeting, 500);
+      return () => clearTimeout(initialTimeoutId);
     }
-    // Only run once on mount but include required dependencies to satisfy React
   }, [chatResponseId, isInitializing, handleSubmit, setInput]);
 
   // Add new effect to auto-redirect when both conditions are met
