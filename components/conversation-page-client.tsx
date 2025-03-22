@@ -144,10 +144,35 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     async function loadConversationPlan() {
       try {
         setIsLoading(true);
+        
+        // Check if we should use localStorage data first
+        const useLocal = searchParams.get('useLocal') === 'true';
+        let localPlanData = null;
+        
+        if (useLocal) {
+          try {
+            const storedData = localStorage.getItem(`plan_${chatId}`);
+            if (storedData) {
+              const parsed = JSON.parse(storedData);
+              // Only use fresh data (less than 10 minutes old)
+              if (parsed.data && Date.now() - parsed.timestamp < 600000) {
+                localPlanData = parsed.data;
+                setConversationPlan(localPlanData);
+              }
+            }
+          } catch (e) {
+            console.error('Error reading from localStorage:', e);
+          }
+        }
+        
+        // Always try API fetch (either as backup or to update localStorage)
         const response = await fetch(`/api/conversation-plan?chatId=${chatId}`);
         
-        if (!response.ok) {
-          // Try to get more specific error message from the response
+        if (response.ok) {
+          const plan = await response.json();
+          setConversationPlan(plan);
+        } else if (!localPlanData) {
+          // Only show error if we don't have localStorage data
           let errorMessage = 'Failed to load conversation plan';
           try {
             const errorData = await response.json();
@@ -160,26 +185,22 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
           
           throw new Error(errorMessage);
         }
-        
-        const plan = await response.json();
-        if (plan) {
-          setConversationPlan(plan);
-        }
       } catch (error) {
         console.error("Error loading conversation plan:", error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation plan';
-        
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        if (!conversationPlan) { // Only show toast if we have no data at all
+          const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation plan';
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       } finally {
         setIsLoading(false);
       }
     }
     loadConversationPlan();
-  }, [chatId, toast]);
+  }, [chatId, toast, searchParams]);
 
   // Memoize handleDelete function
   const handleDelete = useCallback(async () => {
