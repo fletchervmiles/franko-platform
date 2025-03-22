@@ -85,8 +85,8 @@ const navMainData = [
         icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
       },
       {
-        title: "User Profile",
-        url: "/profile",
+        title: "Account",
+        url: "/account",
         icon: <User className="mr-0.5 h-4 w-4" />,
       },
       {
