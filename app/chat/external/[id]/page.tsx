@@ -151,7 +151,9 @@ export default function StartChatPage({
     (initError instanceof Error ? initError.message : null);
 
   // Determine if we should show the response limit message
-  const hasReachedResponseLimit = !isLoading && !isQuotaLoading && !hasAvailableResponsesQuota;
+  // Modified to assume quota is available when in unauthenticated context (like incognito mode)
+  const hasReachedResponseLimit = !isLoading && !isQuotaLoading && 
+    (isQuotaLoading === false && hasAvailableResponsesQuota === false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
