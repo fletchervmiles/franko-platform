@@ -17,7 +17,7 @@ import {
   Loader2,
   AlertTriangle
 } from "lucide-react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import LoadingScreen from "./loading-screen"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
@@ -142,6 +142,7 @@ interface CreateConversationFormProps {
 export const CreateConversationForm = React.memo(function CreateConversationForm({ isNew = false, chatId: propChatId, isRegenerating = false }: CreateConversationFormProps) {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   // Use the prop chatId if provided, otherwise try to get it from params
   const chatId = propChatId || (params?.id as string)
   
@@ -509,32 +510,16 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
       }
       
       // After generating the plan successfully:
-      const planData = await planResponse.json(); // Save the plan data
-      let checkAttempts = 0;
+      const planData = await planResponse.json();
 
-      async function checkAndRedirect() {
-        try {
-          const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
-          if (checkResponse.ok) {
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
-          } else if (checkAttempts < 5) {
-            checkAttempts++;
-            setTimeout(checkAndRedirect, 1000);
-          } else {
-            // Fallback after 5 failed attempts
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
-          }
-        } catch (error) {
-          if (checkAttempts < 5) {
-            checkAttempts++;
-            setTimeout(checkAndRedirect, 1000);
-          } else {
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
-          }
-        }
-      }
+      // Store the plan data in localStorage
+      localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
+        data: planData,
+        timestamp: Date.now()
+      }));
 
-      checkAndRedirect();
+      // Redirect with the useLocal flag
+      router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
     } catch (error) {
       console.error('Error saving conversation details:', error)
       toast.error('Failed to save conversation details. Please try again.')
