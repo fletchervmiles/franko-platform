@@ -59,6 +59,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Bypass auth for external chat pages and their API endpoints
   if (url.includes('/chat/external/') || 
       url === '/api/usage' || 
+      url.startsWith('/api/external-chat/history') ||
       url.startsWith('/api/chat-responses/') ||
       (url.startsWith('/api/chat-instances/') && url.split('/').length === 4)) {
     return NextResponse.next();
