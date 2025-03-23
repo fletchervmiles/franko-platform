@@ -68,6 +68,7 @@ export function ExternalChat({
 }: ExternalChatProps) {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [isReadyToFinish, setIsReadyToFinish] = useState(false);
@@ -80,6 +81,8 @@ export function ExternalChat({
   const [hasEndingMessage, setHasEndingMessage] = useState(false);
   // Add ref to track if initial greeting was sent
   const initialGreetingSentRef = useRef(false);
+  // Track if we're on mobile
+  const [isMobile, setIsMobile] = useState(false);
 
   // Use optimized hook for fetching user data
   // IMPORTANT: All hooks must be called in the same order on every render
@@ -176,74 +179,100 @@ export function ExternalChat({
     );
   }, [showProgressBar, messages, handleAllObjectivesDone]);
 
-  // Optimized auto-scroll effect with debounce
+  // Detect mobile on mount and on resize
   useEffect(() => {
-    // Only scroll when messages change and we have a reference
-    if (!messagesEndRef.current) return;
-    
-    // Use requestAnimationFrame to schedule the scroll for the next frame
-    // This is more efficient than doing it on every render
-    let scrollTimeoutId: number;
-    
-    const scrollToBottom = () => {
-      scrollTimeoutId = requestAnimationFrame(() => {
-        // Get viewport height and content height to make smarter scroll decisions
-        const viewportHeight = window.innerHeight;
-        const container = messagesEndRef.current?.parentElement?.parentElement;
-        
-        if (!container) return;
-        
-        const { scrollHeight } = container;
-        
-        // Check if we're on mobile or desktop by checking the flex direction
-        // On mobile we use flex-col-reverse
-        const isMobile = window.innerWidth < 768;
-        
-        if (isMobile) {
-          // On mobile with reversed layout, scroll to top (which is visually the bottom)
-          container.scrollTop = 0;
-        } else {
-          // Only force scroll if content exceeds viewport height on desktop
-          // This prevents scrolling when there's not enough content
-          if (scrollHeight > viewportHeight * 0.9) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-          }
-        }
-      });
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
     
-    // Only scroll if we're at or near the bottom already
-    // This prevents interrupting the user if they're scrolling up to read
-    const shouldScroll = () => {
-      const container = messagesEndRef.current?.parentElement?.parentElement;
-      if (!container) return true;
-      
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isMobile = window.innerWidth < 768;
-      
-      // If content doesn't fill the viewport, don't auto-scroll
-      if (scrollHeight <= clientHeight) return false;
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+  
+  // Optimized auto-scroll effect using IntersectionObserver
+  useEffect(() => {
+    if (!messagesEndRef.current || !messagesContainerRef.current) return;
+    
+    // Create an observer for the end marker
+    const options = {
+      root: messagesContainerRef.current,
+      threshold: 0.1
+    };
+    
+    let shouldAutoScroll = true;
+    
+    const observer = new IntersectionObserver((entries) => {
+      // If end marker is visible (intersecting), we're at the end
+      shouldAutoScroll = entries[0].isIntersecting;
+    }, options);
+    
+    // Observe the end marker
+    observer.observe(messagesEndRef.current);
+    
+    // Scroll function based on mobile vs desktop
+    const scrollToLatestMessage = () => {
+      if (!messagesContainerRef.current) return;
       
       if (isMobile) {
-        // On mobile with flex-col-reverse, being at the "bottom" means scrollTop is close to 0
-        return scrollTop < 100;
+        // On mobile, scroll to top (which shows bottom messages in reversed layout)
+        messagesContainerRef.current.scrollTop = 0;
       } else {
-        // On desktop, being at the bottom means scrollTop + clientHeight is close to scrollHeight
-        return scrollHeight - scrollTop - clientHeight < 100;
+        // On desktop, scroll to bottom
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
       }
     };
     
-    if (shouldScroll()) {
-      scrollToBottom();
+    // If we should auto-scroll and have messages, do it
+    if (shouldAutoScroll && messages.length > 0) {
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(scrollToLatestMessage);
     }
     
     // Cleanup
     return () => {
-      if (scrollTimeoutId) {
-        cancelAnimationFrame(scrollTimeoutId);
+      if (messagesEndRef.current) {
+        observer.unobserve(messagesEndRef.current);
+      }
+      observer.disconnect();
+    };
+  }, [messages.length, isMobile]);
+  
+  // Prevent zoom using touch events on mobile
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
       }
     };
-  }, [messages.length]);
+    
+    // Add touch event listeners
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('touchmove', preventZoom, { passive: false });
+    
+    // Safari-specific gesture event
+    const preventGesture = (e: Event) => {
+      e.preventDefault();
+    };
+    
+    // @ts-ignore - TypeScript doesn't recognize gesturestart
+    document.addEventListener('gesturestart', preventGesture, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('touchmove', preventZoom);
+      // @ts-ignore
+      document.removeEventListener('gesturestart', preventGesture);
+    };
+  }, [isMobile]);
   
   // Only update UI when user message count changes
   useEffect(() => {
@@ -460,14 +489,26 @@ export function ExternalChat({
   const topMargin = welcomeDescription ? "mt-10" : "";
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none">
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none" style={{ touchAction: "pan-x pan-y" }}>
       {/* Display the welcome banner if a description exists */}
       <WelcomeBanner welcomeDescription={welcomeDescription} />
       
-      <div className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} overscroll-none flex flex-col-reverse md:flex-col justify-end md:justify-start`}>
-        <div className="mx-auto max-w-4xl space-y-4 md:space-y-8 py-4 md:py-8 w-full">
-          {/* Show all messages including the auto-greeting */}
-          {messageElements}
+      <div 
+        ref={messagesContainerRef}
+        className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} overscroll-none`}
+        style={{ 
+          WebkitOverflowScrolling: "touch",
+          position: "relative"
+        }}
+      >
+        <div 
+          className={`mx-auto max-w-4xl w-full py-4 md:py-8 ${isMobile ? 'absolute bottom-0 space-y-4' : 'space-y-8'}`}
+        >
+          {/* On mobile, reverse the messages array for bottom-up display */}
+          {isMobile 
+            ? [...messageElements].reverse() 
+            : messageElements
+          }
 
           {/* Show typing animation when waiting for AI response */}
           {loadingIndicator}
@@ -479,7 +520,7 @@ export function ExternalChat({
             </div>
           )}
 
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-1" />
         </div>
       </div>
 
