@@ -3,8 +3,26 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { formatProfileToUiUsageData } from "@/lib/utils/usage-formatter";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Check if this is an external chat request
+    const referer = request.headers.get('referer') || '';
+    const isExternalRequest = referer.includes('/chat/external/');
+    
+    // For external chat requests, return minimal usage data
+    if (isExternalRequest) {
+      return NextResponse.json({
+        data: {
+          // Return default usage data for external users
+          totalResponsesUsed: 0,
+          totalResponsesQuota: 100,
+          isPro: false
+        },
+        lastUpdated: new Date().toISOString()
+      });
+    }
+    
+    // For authenticated requests, continue with normal flow
     // Get the current user ID from auth
     const { userId } = await auth();
     

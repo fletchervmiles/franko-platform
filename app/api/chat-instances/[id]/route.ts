@@ -15,16 +15,23 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authResult = await auth();
-    const userId = authResult.userId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const chatInstanceId = params.id;
     if (!chatInstanceId) {
       return NextResponse.json({ error: "Missing chat instance ID" }, { status: 400 });
+    }
+    
+    // Check if this is an external chat request
+    const referer = request.headers.get('referer') || '';
+    const isExternalRequest = referer.includes('/chat/external/');
+    
+    // Only check authentication for non-external requests
+    if (!isExternalRequest) {
+      const authResult = await auth();
+      const userId = authResult.userId;
+
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const chatInstance = await getChatInstanceById(chatInstanceId);
