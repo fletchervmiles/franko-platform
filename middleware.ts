@@ -53,14 +53,13 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Check if the request is for external chat resources (both page and API)
-  const isExternalChatPage = req.nextUrl.pathname.includes('/chat/external/');
-  const isExternalChatApi = req.nextUrl.pathname.startsWith('/api/chat-instances/') && 
-                            req.nextUrl.pathname.length > '/api/chat-instances/'.length;
-  const isUsageApi = req.nextUrl.pathname === '/api/usage';
+  // Explicit bypasses for specific routes
+  const url = req.nextUrl.pathname;
   
-  // Allow external chat resources to pass through without authentication
-  if (isExternalChatPage || isExternalChatApi || isUsageApi) {
+  // Bypass auth for external chat pages and their API endpoints
+  if (url.includes('/chat/external/') || 
+      url === '/api/usage' || 
+      (url.startsWith('/api/chat-instances/') && url.split('/').length === 4)) {
     return NextResponse.next();
   }
 
@@ -99,7 +98,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    '/((?!.+\\.[\\w]+$|_next).*)',
+    '/((?!.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage).*)',
     '/',
     '/(api|trpc)(.*)'
   ]
