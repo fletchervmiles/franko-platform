@@ -489,7 +489,7 @@ export function ExternalChat({
   const topMargin = welcomeDescription ? "mt-10" : "";
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none" style={{ touchAction: "pan-x pan-y" }}>
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none" style={{ touchAction: "pan-x pan-y", overscrollBehavior: "none" }}>
       {/* Display the welcome banner if a description exists */}
       <WelcomeBanner welcomeDescription={welcomeDescription} />
       
@@ -498,17 +498,15 @@ export function ExternalChat({
         className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} overscroll-none`}
         style={{ 
           WebkitOverflowScrolling: "touch",
-          position: "relative"
+          position: "relative",
+          overscrollBehavior: "none"
         }}
       >
         <div 
-          className={`mx-auto max-w-4xl w-full py-4 md:py-8 ${isMobile ? 'absolute bottom-0 space-y-4' : 'space-y-8'}`}
+          className={`mx-auto max-w-4xl w-full py-4 md:py-8 ${isMobile ? 'h-full flex flex-col justify-end space-y-4' : 'space-y-8'}`}
         >
-          {/* On mobile, reverse the messages array for bottom-up display */}
-          {isMobile 
-            ? [...messageElements].reverse() 
-            : messageElements
-          }
+          {/* Show messages in correct order, but position them at the bottom on mobile */}
+          {messageElements}
 
           {/* Show typing animation when waiting for AI response */}
           {loadingIndicator}
