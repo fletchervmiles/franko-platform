@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
-import { formatProfileToUiUsageData } from "@/lib/utils/usage-formatter";
+import { formatProfileToUiUsageData, UiUsageData } from "@/lib/utils/usage-formatter";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -9,15 +9,29 @@ export async function GET(request: Request) {
     const referer = request.headers.get('referer') || '';
     const isExternalRequest = referer.includes('/chat/external/');
     
-    // For external chat requests, return minimal usage data
+    // For external chat requests, return minimal usage data with correct structure
     if (isExternalRequest) {
-      return NextResponse.json({
-        data: {
-          // Return default usage data for external users
-          totalResponsesUsed: 0,
-          totalResponsesQuota: 100,
-          isPro: false
+      // Create a mock usage data object that matches the expected UiUsageData structure
+      const mockUsageData: UiUsageData = {
+        responses: {
+          used: 0,
+          total: 100,
+          percentage: 0
         },
+        conversationPlans: {
+          used: 0,
+          total: 10,
+          percentage: 0
+        },
+        qaMessages: {
+          used: 0,
+          total: 100,
+          percentage: 0
+        }
+      };
+      
+      return NextResponse.json({ 
+        data: mockUsageData,
         lastUpdated: new Date().toISOString()
       });
     }
