@@ -83,6 +83,8 @@ export function ExternalChat({
   const initialGreetingSentRef = useRef(false);
   // Track if we're on mobile
   const [isMobile, setIsMobile] = useState(false);
+  // Detect Safari browser
+  const [isSafari, setIsSafari] = useState(false);
 
   // Use optimized hook for fetching user data
   // IMPORTANT: All hooks must be called in the same order on every render
@@ -469,30 +471,72 @@ export function ExternalChat({
   // Use the custom hook to prevent zooming
   usePreventZoom();
 
-  // Prevent pull-to-refresh on document level
+  // Detect Safari browser
   useEffect(() => {
-    // Prevent pull-to-refresh on the entire document
+    // Detect Safari
+    const ua = navigator.userAgent.toLowerCase();
+    setIsSafari(
+      /safari/.test(ua) && 
+      !/chrome/.test(ua) && 
+      !/firefox/.test(ua) &&
+      !/edg/.test(ua)
+    );
+  }, []);
+
+  // More aggressive pull-to-refresh prevention, especially for Safari
+  useEffect(() => {
+    // Apply these styles immediately to prevent any pull-to-refresh
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
     document.body.style.overscrollBehavior = 'none';
     
-    // Safari-specific handling
-    const preventPullToRefresh = (e: TouchEvent) => {
-      // Allow scrolling within elements but prevent body pull-to-refresh
-      const touchY = e.touches[0].clientY;
-      const touchX = e.touches[0].clientX;
-      
-      // Only prevent if touch starts from top edge and going down
-      if (touchY < 50 && e.type === 'touchstart') {
-        e.preventDefault();
+    // Capture all touch moves to prevent Safari overscroll
+    const preventOverscroll = (e: TouchEvent) => {
+      // If we're at the top of the container and trying to scroll up, prevent it
+      if (messagesContainerRef.current) {
+        if (messagesContainerRef.current.scrollTop <= 0 && 
+            e.touches[0].screenY > e.touches[0].clientY) {
+          e.preventDefault();
+        }
       }
     };
     
+    // Different technique for Safari vs. other browsers
+    const preventPullToRefresh = (e: TouchEvent) => {
+      if (isSafari) {
+        // More aggressive prevention for Safari
+        const touchY = e.touches[0].clientY;
+        // Prevent all downward pulls from anywhere in the top 150px of the screen
+        if (touchY < 150) {
+          e.preventDefault();
+        }
+      } else {
+        // Other browsers - only prevent at the very top
+        const touchY = e.touches[0].clientY;
+        if (touchY < 50 && e.type === 'touchstart') {
+          e.preventDefault();
+        }
+      }
+    };
+
     document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
+    document.addEventListener('touchmove', preventOverscroll, { passive: false });
     
     return () => {
+      // Clean up styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
       document.body.style.overscrollBehavior = '';
+      
+      // Remove event listeners
       document.removeEventListener('touchstart', preventPullToRefresh);
+      document.removeEventListener('touchmove', preventOverscroll);
     };
-  }, []);
+  }, [isSafari]);
 
   // Loading screen during initialization
   if (isInitializing) {
@@ -517,7 +561,19 @@ export function ExternalChat({
   const bottomPadding = isMobile ? "pb-32" : "pb-40";
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden" style={{ touchAction: "manipulation" }}>
+    <div 
+      className="flex h-[100dvh] w-full flex-col overflow-hidden" 
+      style={{ 
+        touchAction: "manipulation",
+        position: isSafari ? 'fixed' : 'relative',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        overscrollBehavior: 'none'
+      }}
+    >
       {/* Display the welcome banner if a description exists */}
       <WelcomeBanner welcomeDescription={welcomeDescription} />
       
@@ -528,7 +584,9 @@ export function ExternalChat({
           WebkitOverflowScrolling: "touch",
           position: "relative",
           WebkitTouchCallout: "none",
-          overscrollBehavior: "none"
+          overscrollBehavior: "none",
+          ["WebkitOverscrollBehavior" as any]: "none",
+          touchAction: "pan-y",
         }}
       >
         <div 
