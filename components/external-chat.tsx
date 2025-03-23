@@ -158,16 +158,25 @@ export function ExternalChat({
       scrollTimeoutId = requestAnimationFrame(() => {
         // Get viewport height and content height to make smarter scroll decisions
         const viewportHeight = window.innerHeight;
-        const container = messagesEndRef.current?.parentElement;
+        const container = messagesEndRef.current?.parentElement?.parentElement;
         
         if (!container) return;
         
         const { scrollHeight } = container;
         
-        // Only force scroll if content exceeds viewport height
-        // This prevents scrolling on mobile when there's not enough content
-        if (scrollHeight > viewportHeight * 0.9) {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        // Check if we're on mobile or desktop by checking the flex direction
+        // On mobile we use flex-col-reverse
+        const isMobile = window.innerWidth < 768;
+        
+        if (isMobile) {
+          // On mobile with reversed layout, scroll to top (which is visually the bottom)
+          container.scrollTop = 0;
+        } else {
+          // Only force scroll if content exceeds viewport height on desktop
+          // This prevents scrolling when there's not enough content
+          if (scrollHeight > viewportHeight * 0.9) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }
         }
       });
     };
@@ -175,16 +184,22 @@ export function ExternalChat({
     // Only scroll if we're at or near the bottom already
     // This prevents interrupting the user if they're scrolling up to read
     const shouldScroll = () => {
-      const container = messagesEndRef.current?.parentElement;
+      const container = messagesEndRef.current?.parentElement?.parentElement;
       if (!container) return true;
       
       const { scrollTop, scrollHeight, clientHeight } = container;
+      const isMobile = window.innerWidth < 768;
       
       // If content doesn't fill the viewport, don't auto-scroll
       if (scrollHeight <= clientHeight) return false;
       
-      // If we're within 100px of the bottom, auto-scroll
-      return scrollHeight - scrollTop - clientHeight < 100;
+      if (isMobile) {
+        // On mobile with flex-col-reverse, being at the "bottom" means scrollTop is close to 0
+        return scrollTop < 100;
+      } else {
+        // On desktop, being at the bottom means scrollTop + clientHeight is close to scrollHeight
+        return scrollHeight - scrollTop - clientHeight < 100;
+      }
     };
     
     if (shouldScroll()) {
@@ -411,12 +426,12 @@ export function ExternalChat({
   const topMargin = welcomeDescription ? "mt-10" : "";
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none">
       {/* Display the welcome banner if a description exists */}
       <WelcomeBanner welcomeDescription={welcomeDescription} />
       
-      <div className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin}`}>
-        <div className="mx-auto max-w-4xl space-y-8 py-8">
+      <div className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} overscroll-none flex flex-col-reverse md:flex-col justify-end md:justify-start`}>
+        <div className="mx-auto max-w-4xl space-y-4 md:space-y-8 py-4 md:py-8 w-full">
           {/* Show all messages including the auto-greeting */}
           {messageElements}
 
@@ -434,11 +449,11 @@ export function ExternalChat({
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-background border-t px-4 py-2 md:px-8 lg:px-12">
+      <div className="sticky bottom-0 bg-background border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
         <div className="mx-auto max-w-4xl">
           {/* Only render the button when all objectives are done */}
           {isReadyToFinish && !isFinished && (
-            <div className="flex justify-end mb-2 pr-8">
+            <div className="flex justify-end mb-1 md:mb-2 pr-8">
               <FinishConversationButton 
                 chatResponseId={chatResponseId}
                 chatInstanceId={chatInstanceId}

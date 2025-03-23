@@ -44,7 +44,7 @@ export function OptimizedChatLoader({
   welcomeDescription,
 }: OptimizedChatLoaderProps) {
   return (
-    <div className="h-screen bg-[#F9F8F6]">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#F9F8F6] touch-none">
       <Suspense fallback={<InitialLoadingState />}>
         <DynamicExternalChatWrapper
           chatInstanceId={chatInstanceId}
