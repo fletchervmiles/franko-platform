@@ -634,6 +634,7 @@ export function ExternalChat({
             showProgressBar={showProgressBar}
             progressBar={progressBarElement}
             stop={stop}
+            messageContainerRef={messagesContainerRef}
           />
         </div>
       </div>

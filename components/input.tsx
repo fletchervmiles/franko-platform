@@ -15,6 +15,7 @@ interface ChatInputProps {
   showProgressBar?: boolean
   progressBar?: React.ReactNode
   stop?: () => void
+  messageContainerRef?: React.RefObject<HTMLDivElement>
 }
 
 function ChatInputComponent({ 
@@ -24,7 +25,8 @@ function ChatInputComponent({
   disabled,
   showProgressBar = false,
   progressBar,
-  stop
+  stop,
+  messageContainerRef
 }: ChatInputProps,
 ref: ForwardedRef<HTMLTextAreaElement>) {
   const localRef = useRef<HTMLTextAreaElement>(null)
@@ -50,24 +52,38 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     };
   }, []);
 
-  // Function to scroll to the bottom
+  // Function to scroll to the bottom - more robust implementation
   const scrollToBottom = useCallback(() => {
-    // Only run on mobile
-    if (!isMobile) return;
-    
-    // Get the main message container
-    const messageContainer = document.querySelector('[data-message-container="true"]');
-    
-    if (messageContainer) {
-      if (isMobile) {
+    // Implementation for mobile
+    if (isMobile) {
+      // First try the direct ref from props if available
+      if (messageContainerRef?.current) {
+        console.log('Using direct ref to scroll container');
+        messageContainerRef.current.scrollTop = 0;
+        return;
+      }
+      
+      // Try multiple selectors to find the message container
+      const messageContainers = [
+        document.querySelector('[data-message-container="true"]'),
+        document.querySelector('.overflow-y-auto'),
+        // Fallback to any scrollable container in the body
+        ...Array.from(document.querySelectorAll('.overflow-y-auto')),
+      ].filter(Boolean) as Element[];
+      
+      console.log('Found message containers:', messageContainers.length);
+      
+      // Try to scroll the first available container
+      if (messageContainers.length > 0) {
+        const container = messageContainers[0];
+        console.log('Scrolling container to top', container);
         // On mobile, scroll to top (since we have reversed layout)
-        messageContainer.scrollTop = 0;
+        container.scrollTop = 0;
       } else {
-        // On desktop, scroll to bottom
-        messageContainer.scrollTop = messageContainer.scrollHeight;
+        console.warn('No scrollable container found for mobile scroll');
       }
     }
-  }, [isMobile]);
+  }, [isMobile, messageContainerRef]);
 
   // Handle click on the textarea
   const handleTextareaClick = useCallback(() => {
