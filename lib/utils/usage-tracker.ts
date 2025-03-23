@@ -9,6 +9,7 @@ import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { safeAuth } from "@/lib/utils/safe-auth";
 
 /**
  * Updates the usage count for a user based on the completion rate

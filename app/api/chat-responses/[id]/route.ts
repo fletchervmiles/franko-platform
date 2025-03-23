@@ -20,6 +20,7 @@
 
 import { NextResponse } from "next/server";
 import { getChatResponseUserInfoById } from "@/db/queries/chat-responses-queries";
+import { safeAuth } from "@/lib/utils/safe-auth";
 
 /**
  * GET handler for retrieving a chat response by ID
@@ -34,6 +35,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Use safeAuth instead of auth() to handle excluded routes
+    await safeAuth();
+    
     const chatResponseId = params.id;
 
     if (!chatResponseId) {

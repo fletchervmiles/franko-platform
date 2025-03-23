@@ -6,6 +6,7 @@ import { ActionState } from "@/types";
 import console from "console";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { safeAuth } from "@/lib/utils/safe-auth";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
 import { sendWelcomeEmail, sendAdminNotification } from "@/app/api/send/route";
 import { PLAN_RESPONSES, PLAN_INTERNAL_CHAT_QUERIES, PLAN_CHAT_INSTANCE_GENERATIONS } from "@/lib/stripe";
@@ -81,7 +82,7 @@ export async function deleteProfileAction(userId: string): Promise<ActionState> 
 export async function syncClerkProfileAction(): Promise<ActionState> {
   try {
     console.log("Starting profile sync with Clerk");
-    const authResult = await auth();
+    const authResult = await safeAuth();
     const userId = authResult.userId;
 
     if (!userId) {
