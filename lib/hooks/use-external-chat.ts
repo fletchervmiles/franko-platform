@@ -5,6 +5,8 @@ import { generateUUID } from '@/lib/utils';
 // Extended Message interface to include objectives data
 interface ExtendedMessage extends Message {
   objectives?: Record<string, { status: string, count?: number, target?: number, guidance?: string }> | null;
+  fullContent?: string;
+  displayContent?: string;
 }
 
 interface UseExternalChatOptions {
@@ -124,14 +126,44 @@ export function useExternalChat({
       try {
         console.log('Sending API request to:', api);
         
-        // Make the API call
+        // Prepare messages with original content when available
+        const apiMessages = messages.map(message => {
+          // If it's an assistant message with fullContent, use the original content
+          if (message.role === 'assistant' && 'fullContent' in message) {
+            return {
+              ...message,
+              content: message.fullContent
+            };
+          }
+          return message;
+        });
+
+        // Log the API messages for debugging
+        console.log('Sending messages to API:');
+        apiMessages.forEach((message, index) => {
+          if (message.role === 'assistant') {
+            const hasFullContent = 'fullContent' in message && typeof message.fullContent === 'string';
+            const originalContent = hasFullContent ? (message as any).fullContent : message.content;
+            const sentContent = message.content;
+            
+            console.log(`Assistant message ${index}:`, {
+              id: message.id,
+              hasFullContent,
+              originalLength: hasFullContent ? originalContent.length : 0,
+              sentLength: typeof sentContent === 'string' ? sentContent.length : 0,
+              usingFullContent: hasFullContent && sentContent === originalContent
+            });
+          }
+        });
+
+        // Make the API call with full content preserved
         const response = await fetch(api, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            messages: [...messages, userMessage],
+            messages: [...apiMessages, userMessage],
             id,
             ...body,
           }),

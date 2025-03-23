@@ -274,7 +274,7 @@ export async function POST(request: Request) {
     // Use the shared prompt cache utility instead of a separate cache
     // This ensures we're using a single source of truth for prompt caching
     
-    console.log(`PROMPT CHECK: Looking for cached prompt for org: "${organizationName}" and id: "${chatInstanceId}"`);
+    // console.log(`PROMPT CHECK: Looking for cached prompt for org: "${organizationName}" and id: "${chatInstanceId}"`);
     
     // Force a cache miss to ensure we're using the updated prompt file
     // Comment this out after testing to use the cache again
@@ -289,9 +289,9 @@ export async function POST(request: Request) {
       
       // Use populatePromptCache which now stores with both key formats
       systemPrompt = await populatePromptCache(chatInstanceId);
-      console.log(`PROMPT POPULATED: Generated new prompt of ${systemPrompt.length} chars`);
+      // console.log(`PROMPT POPULATED: Generated new prompt of ${systemPrompt.length} chars`);
     } else {
-      console.log(`PROMPT CACHE HIT: Found cached prompt of ${systemPrompt.length} chars`);
+      // console.log(`PROMPT CACHE HIT: Found cached prompt of ${systemPrompt.length} chars`);
       logger.info(`Using external chat cached prompt for: ${organizationName || 'default'}`);
     }
 
@@ -354,12 +354,19 @@ export async function POST(request: Request) {
      *    - Helps track any formatting issues
      *    - Validates conversion success
      */
-    // First, process the messages to use fullResponse when available for assistant messages
+    // First, process the messages to use the full content format when available
     const processedMessages = messages.map((message: any) => {
-      // If this is an assistant message with a fullResponse, use that instead of content
-      if (message.role === 'assistant' && message.fullResponse) {
+      // If this is an assistant message with fullContent from history, use that
+      if (message.role === 'assistant' && message.fullContent) {
+        console.log('Using fullContent for message:', message.id);
+        return {
+          ...message,
+          content: message.fullContent
+        };
+      }
+      // For backward compatibility - check for fullResponse too
+      else if (message.role === 'assistant' && message.fullResponse) {
         console.log('Using fullResponse for message:', message.id);
-        // Create a new message using the fullResponse as the content
         return {
           ...message,
           content: message.fullResponse
@@ -381,6 +388,28 @@ export async function POST(request: Request) {
         contentLength: typeof m.content === 'string' ? m.content.length : 0,
         content: typeof m.content === 'string' ? m.content : ''
       }))
+    });
+
+    // After processing the messages, add this logging code
+
+    // Log the processed messages for debugging
+    console.log('Messages after processing:');
+    processedMessages.forEach((message: any, index: number) => {
+      if (message.role === 'assistant') {
+        const contentType = typeof message.content;
+        const contentLength = contentType === 'string' ? message.content.length : 0;
+        const contentSnippet = contentType === 'string' ? 
+          `${message.content.substring(0, 50)}${contentLength > 50 ? '...' : ''}` : 
+          'non-string content';
+        
+        console.log(`Assistant message ${index}:`, {
+          id: message.id,
+          contentLength,
+          contentSnippet,
+          source: message.fullContent ? 'fullContent' : 
+                  message.fullResponse ? 'fullResponse' : 'original'
+        });
+      }
     });
 
     /**

@@ -609,7 +609,7 @@ export function ExternalChat({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
         <div className="mx-auto max-w-4xl">
           {/* Only render the button when all objectives are done */}
           {isReadyToFinish && !isFinished && (

@@ -17,15 +17,21 @@ import React, { Suspense, useState, useEffect } from "react"
 import { Message } from "ai"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
+import { ExternalChat } from '@/components/external-chat'
+import { useChatHistory } from '@/lib/hooks/use-chat-history'
+import { ErrorBoundary } from '@/components/error-boundary'
 
-// Dynamically import the ExternalChat component for code splitting
-const ExternalChat = dynamic(
+// Import types from ExternalChat
+import { ExternalChat as ExternalChatType } from '@/components/external-chat'
+
+// Dynamically import the ExternalChat component
+const DynamicExternalChat = dynamic(
   () => import("@/components/external-chat").then((mod) => ({ default: mod.ExternalChat })),
   {
     loading: () => (
       <div className="h-full flex flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-        <p className="text-sm text-gray-500 mt-2">Preparing conversation interface...</p>
+        <p className="text-sm text-gray-500 mt-2">Loading chat interface...</p>
       </div>
     ),
     ssr: false,
@@ -35,10 +41,13 @@ const ExternalChat = dynamic(
 interface ExternalChatWrapperProps {
   chatInstanceId: string       // ID of the chat instance
   chatResponseId: string       // ID of the chat response record
-  initialMessages: Message[]   // Initial messages to display
+  initialMessages: any[]       // Initial messages to display
   welcomeDescription?: string  // Welcome description for the banner
 }
 
+/**
+ * Wrapper component that fetches chat history and passes it to ExternalChat
+ */
 export function ExternalChatWrapper({
   chatInstanceId,
   chatResponseId,
@@ -47,13 +56,62 @@ export function ExternalChatWrapper({
 }: ExternalChatWrapperProps) {
   const [hasError, setHasError] = useState(false);
   const [errorInfo, setErrorInfo] = useState<any>(null);
-
+  
+  // Track if we're loading for the first time
+  const [initialLoad, setInitialLoad] = useState(true);
+  
+  // Use our custom hook to fetch chat history
+  const { 
+    messages: historyMessages, 
+    isLoading: isLoadingHistory,
+    error: historyError
+  } = useChatHistory({ 
+    chatResponseId,
+    enabled: true
+  });
+  
+  // Once history is loaded, set initialLoad to false
+  useEffect(() => {
+    if (historyMessages.length > 0 || (!isLoadingHistory && initialLoad)) {
+      setInitialLoad(false);
+    }
+  }, [historyMessages, isLoadingHistory, initialLoad]);
+  
+  // Error handler for the component
   const handleError = (error: Error) => {
     console.error("Error in ExternalChat:", error);
     setHasError(true);
     setErrorInfo(error);
   };
-
+  
+  // Show loading spinner during initial load
+  if (isLoadingHistory && initialLoad) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Loading conversation history...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show error message if loading fails
+  if (historyError && initialLoad) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <p className="text-destructive font-medium">Error loading chat history</p>
+          <p className="text-sm text-muted-foreground mt-1">{historyError.message}</p>
+          <p className="text-sm mt-4">Starting new conversation...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show component error state if it fails to render
   if (hasError) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-4">
@@ -69,7 +127,8 @@ export function ExternalChatWrapper({
       </div>
     );
   }
-
+  
+  // Pass the loaded messages to ExternalChat
   return (
     <ErrorBoundary onError={handleError}>
       <Suspense
@@ -80,27 +139,13 @@ export function ExternalChatWrapper({
           </div>
         }
       >
-        <ExternalChat
+        <DynamicExternalChat
           chatInstanceId={chatInstanceId}
           chatResponseId={chatResponseId}
-          initialMessages={initialMessages}
+          initialMessages={historyMessages.length > 0 ? historyMessages : initialMessages}
           welcomeDescription={welcomeDescription}
         />
       </Suspense>
     </ErrorBoundary>
   );
-}
-
-// Error boundary component to catch and display errors
-class ErrorBoundary extends React.Component<{
-  children: React.ReactNode;
-  onError: (error: Error) => void;
-}> {
-  componentDidCatch(error: Error) {
-    this.props.onError(error);
-  }
-
-  render() {
-    return this.props.children;
-  }
 }
