@@ -198,75 +198,46 @@ export function ExternalChat({
     };
   }, []);
   
-  // Enhanced scroll behavior for immediate scrolling on user message submission
+  // Single, comprehensive auto-scroll effect that handles all cases
   useEffect(() => {
-    // This effect specifically handles auto-scrolling when isLoading changes
-    // (which happens right after user submits a message)
-    if (isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'user') {
-      // Immediate scroll to show loading indicator
-      if (messagesContainerRef.current) {
-        if (isMobile) {
-          // On mobile, scroll to top with slight delay to ensure rendering
-          setTimeout(() => {
-            if (messagesContainerRef.current) {
-              messagesContainerRef.current.scrollTop = 0;
-            }
-          }, 50);
-        } else {
-          // On desktop, scroll to bottom
-          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-        }
-      }
-    }
-  }, [isLoading, messages, isMobile]);
-  
-  // Original auto-scroll effect using IntersectionObserver (keep this too)
-  useEffect(() => {
-    if (!messagesEndRef.current || !messagesContainerRef.current) return;
+    // Skip if we don't have refs yet
+    if (!messagesContainerRef.current) return;
     
-    // Create an observer for the end marker
-    const options = {
-      root: messagesContainerRef.current,
-      threshold: 0.1
-    };
-    
-    let shouldAutoScroll = true;
-    
-    const observer = new IntersectionObserver((entries) => {
-      // If end marker is visible (intersecting), we're at the end
-      shouldAutoScroll = entries[0].isIntersecting;
-    }, options);
-    
-    // Observe the end marker
-    observer.observe(messagesEndRef.current);
-    
-    // Scroll function based on mobile vs desktop
+    // Function to scroll to latest message 
     const scrollToLatestMessage = () => {
       if (!messagesContainerRef.current) return;
       
       if (isMobile) {
-        // On mobile, scroll to top (which shows bottom messages in reversed layout)
-        messagesContainerRef.current.scrollTop = 0;
+        // On mobile, force scroll to top (100ms should be enough for rendering)
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = 0;
+            console.log("Mobile scroll executed to top", { scrollTop: messagesContainerRef.current.scrollTop });
+          }
+        }, 100);
       } else {
-        // On desktop, scroll to bottom
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        // On desktop, force scroll to bottom with a short delay
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            console.log("Desktop scroll executed to bottom", { 
+              scrollTop: messagesContainerRef.current.scrollTop,
+              scrollHeight: messagesContainerRef.current.scrollHeight
+            });
+          }
+        }, 100);
       }
     };
     
-    // If we should auto-scroll and have messages, do it
-    if (shouldAutoScroll && messages.length > 0) {
-      // Use requestAnimationFrame for better performance
-      requestAnimationFrame(scrollToLatestMessage);
+    // Trigger scroll immediately after messages change
+    scrollToLatestMessage();
+    
+    // Also handle new user input and loading state changes separately
+    if (isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'user') {
+      scrollToLatestMessage();
     }
     
-    // Cleanup
-    return () => {
-      if (messagesEndRef.current) {
-        observer.unobserve(messagesEndRef.current);
-      }
-      observer.disconnect();
-    };
-  }, [messages.length, isMobile]);
+  }, [messages, isMobile, isLoading]); // Depend on messages array, not just length
   
   // Prevent zoom using touch events on mobile
   useEffect(() => {
