@@ -35,7 +35,13 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     if (textareaRef.current) {
       textareaRef.current.style.height = "inherit"
       const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 64), 200)}px`
+      
+      // Use smaller heights on mobile
+      const isMobile = window.innerWidth < 768;
+      const minHeight = isMobile ? 48 : 64;
+      const maxHeight = isMobile ? 140 : 200;
+      
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, minHeight), maxHeight)}px`
     }
   }, [textareaRef]);
 
