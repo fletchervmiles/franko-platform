@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState } from "react";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -43,38 +43,6 @@ export function OptimizedChatLoader({
   chatResponseId,
   welcomeDescription,
 }: OptimizedChatLoaderProps) {
-  // State to hold potentially recovered welcome description
-  const [recoveredDescription, setRecoveredDescription] = useState<string | undefined>(welcomeDescription);
-  
-  // Try to recover the welcome description if it wasn't passed down
-  useEffect(() => {
-    if (!welcomeDescription && typeof window !== 'undefined') {
-      console.log("OptimizedChatLoader: Attempting to recover missing welcome description");
-      
-      // Try different storage locations
-      const fromStandardStorage = localStorage.getItem(`chat_${chatInstanceId}_welcome`);
-      const fromSessionStorage = sessionStorage.getItem(`chat_${chatInstanceId}_welcome`);
-      const fromGenericStorage = localStorage.getItem('latest_welcome_desc');
-      
-      // Log what we found
-      console.log("Recovery attempts:", {
-        fromStandardStorage,
-        fromSessionStorage,
-        fromGenericStorage
-      });
-      
-      // Use the first available description
-      const recoveredValue = fromStandardStorage || fromSessionStorage || fromGenericStorage;
-      
-      if (recoveredValue) {
-        console.log("Successfully recovered welcome description:", recoveredValue);
-        setRecoveredDescription(recoveredValue);
-      } else {
-        console.log("Failed to recover welcome description");
-      }
-    }
-  }, [welcomeDescription, chatInstanceId]);
-  
   return (
     <div className="h-screen bg-[#F9F8F6]">
       <Suspense fallback={<InitialLoadingState />}>
@@ -82,7 +50,7 @@ export function OptimizedChatLoader({
           chatInstanceId={chatInstanceId}
           chatResponseId={chatResponseId}
           initialMessages={[]}
-          welcomeDescription={recoveredDescription}
+          welcomeDescription={welcomeDescription}
         />
       </Suspense>
     </div>

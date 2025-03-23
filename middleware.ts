@@ -53,11 +53,14 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Check if the URL path contains '/chat/external/'
-  const isExternalChatUrl = req.nextUrl.pathname.includes('/chat/external/');
+  // Check if the request is for external chat resources (both page and API)
+  const isExternalChatPage = req.nextUrl.pathname.includes('/chat/external/');
+  const isExternalChatApi = req.nextUrl.pathname.startsWith('/api/chat-instances/') && 
+                            req.nextUrl.pathname.length > '/api/chat-instances/'.length;
+  const isUsageApi = req.nextUrl.pathname === '/api/usage';
   
-  // Always allow external chat routes to pass through without authentication
-  if (isExternalChatUrl) {
+  // Allow external chat resources to pass through without authentication
+  if (isExternalChatPage || isExternalChatApi || isUsageApi) {
     return NextResponse.next();
   }
 
