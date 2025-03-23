@@ -156,7 +156,19 @@ export function ExternalChat({
     
     const scrollToBottom = () => {
       scrollTimeoutId = requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        // Get viewport height and content height to make smarter scroll decisions
+        const viewportHeight = window.innerHeight;
+        const container = messagesEndRef.current?.parentElement;
+        
+        if (!container) return;
+        
+        const { scrollHeight } = container;
+        
+        // Only force scroll if content exceeds viewport height
+        // This prevents scrolling on mobile when there's not enough content
+        if (scrollHeight > viewportHeight * 0.9) {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
       });
     };
     
@@ -167,6 +179,10 @@ export function ExternalChat({
       if (!container) return true;
       
       const { scrollTop, scrollHeight, clientHeight } = container;
+      
+      // If content doesn't fill the viewport, don't auto-scroll
+      if (scrollHeight <= clientHeight) return false;
+      
       // If we're within 100px of the bottom, auto-scroll
       return scrollHeight - scrollTop - clientHeight < 100;
     };
