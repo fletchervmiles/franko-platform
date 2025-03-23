@@ -469,6 +469,31 @@ export function ExternalChat({
   // Use the custom hook to prevent zooming
   usePreventZoom();
 
+  // Prevent pull-to-refresh on document level
+  useEffect(() => {
+    // Prevent pull-to-refresh on the entire document
+    document.body.style.overscrollBehavior = 'none';
+    
+    // Safari-specific handling
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Allow scrolling within elements but prevent body pull-to-refresh
+      const touchY = e.touches[0].clientY;
+      const touchX = e.touches[0].clientX;
+      
+      // Only prevent if touch starts from top edge and going down
+      if (touchY < 50 && e.type === 'touchstart') {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
+    
+    return () => {
+      document.body.style.overscrollBehavior = '';
+      document.removeEventListener('touchstart', preventPullToRefresh);
+    };
+  }, []);
+
   // Loading screen during initialization
   if (isInitializing) {
     return (
@@ -487,23 +512,27 @@ export function ExternalChat({
 
   // Add top margin if welcome description exists
   const topMargin = welcomeDescription ? "mt-10" : "";
+  
+  // Calculate bottom padding to account for input container height
+  const bottomPadding = isMobile ? "pb-32" : "pb-40";
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden touch-none" style={{ touchAction: "pan-x pan-y", overscrollBehavior: "none" }}>
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden" style={{ touchAction: "manipulation" }}>
       {/* Display the welcome banner if a description exists */}
       <WelcomeBanner welcomeDescription={welcomeDescription} />
       
       <div 
         ref={messagesContainerRef}
-        className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} overscroll-none`}
+        className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} ${bottomPadding}`}
         style={{ 
           WebkitOverflowScrolling: "touch",
           position: "relative",
+          WebkitTouchCallout: "none",
           overscrollBehavior: "none"
         }}
       >
         <div 
-          className={`mx-auto max-w-4xl w-full py-4 md:py-8 ${isMobile ? 'h-full flex flex-col justify-end space-y-4' : 'space-y-8'}`}
+          className={`mx-auto max-w-4xl w-full py-4 md:py-8 ${isMobile ? 'min-h-full flex flex-col justify-end space-y-4' : 'space-y-8'}`}
         >
           {/* Show messages in correct order, but position them at the bottom on mobile */}
           {messageElements}
@@ -522,7 +551,7 @@ export function ExternalChat({
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-background border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
         <div className="mx-auto max-w-4xl">
           {/* Only render the button when all objectives are done */}
           {isReadyToFinish && !isFinished && (
