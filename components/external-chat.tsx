@@ -71,9 +71,22 @@ export function ExternalChat({
     initialMessages,
     onFinish: (message) => {
       // Preserve the welcomeDesc parameter when updating the URL
-      const welcomeDescParam = welcomeDescription ? 
-        `&welcomeDesc=${encodeURIComponent(welcomeDescription)}` : '';
-      window.history.replaceState({}, "", `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}${welcomeDescParam}`);
+      // Use a shorter URL on mobile devices to prevent URL truncation issues
+      const isMobile = window.innerWidth < 768;
+      let updatedUrl = `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}`;
+      
+      // On mobile, don't add the welcome description to the URL to avoid length issues
+      // It will be retrieved from localStorage instead
+      if (!isMobile && welcomeDescription) {
+        updatedUrl += `&welcomeDesc=${encodeURIComponent(welcomeDescription)}`;
+      }
+      
+      // Ensure the description is saved to localStorage in all cases
+      if (welcomeDescription && typeof window !== 'undefined') {
+        localStorage.setItem(`chat_${chatInstanceId}_welcome`, welcomeDescription);
+      }
+      
+      window.history.replaceState({}, "", updatedUrl);
       
       // NOTE: The endConversation tool has been removed
       // The redirect functionality would previously happen here

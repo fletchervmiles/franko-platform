@@ -117,6 +117,13 @@ export default function StartChatPage({
       {
         onSuccess: (data) => {
           setIsNavigating(true);
+          
+          // Store welcome description in localStorage for mobile fallback
+          if (chatInstanceData?.welcomeDescription && typeof window !== 'undefined') {
+            localStorage.setItem(`chat_${id}_welcome`, chatInstanceData.welcomeDescription);
+            console.log("Stored welcome description in localStorage:", chatInstanceData.welcomeDescription);
+          }
+          
           const welcomeDesc = chatInstanceData?.welcomeDescription ? 
             encodeURIComponent(chatInstanceData.welcomeDescription) : '';
           router.push(`/chat/external/${id}/active?responseId=${data.chatResponseId}&welcomeDesc=${welcomeDesc}`);

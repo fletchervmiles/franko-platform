@@ -14,7 +14,31 @@ export default function ActiveChatPage({
   const searchParams = useSearchParams();
   const chatResponseId = searchParams.get("responseId");
   const welcomeDesc = searchParams.get("welcomeDesc");
-  const welcomeDescription = welcomeDesc ? decodeURIComponent(welcomeDesc) : undefined;
+  
+  // Try to get welcome description from URL, then fallback to localStorage
+  const storedWelcomeDesc = typeof window !== 'undefined' 
+    ? localStorage.getItem(`chat_${id}_welcome`) 
+    : null;
+  
+  // Prioritize URL param, then localStorage fallback
+  const welcomeDescription = welcomeDesc 
+    ? decodeURIComponent(welcomeDesc) 
+    : storedWelcomeDesc || undefined;
+  
+  // Add debug logging to track welcome description status
+  useEffect(() => {
+    console.log("Welcome Description Status:", {
+      fromUrl: welcomeDesc ? true : false,
+      fromStorage: !welcomeDesc && storedWelcomeDesc ? true : false,
+      finalValue: welcomeDescription,
+      userAgent: navigator.userAgent
+    });
+    
+    // If we have a welcome description from URL, store it for future fallback
+    if (welcomeDesc && typeof window !== 'undefined') {
+      localStorage.setItem(`chat_${id}_welcome`, decodeURIComponent(welcomeDesc));
+    }
+  }, [welcomeDesc, storedWelcomeDesc, welcomeDescription, id]);
   
   // Start warming the prompt cache immediately when the page loads
   // This happens in parallel with other initialization
