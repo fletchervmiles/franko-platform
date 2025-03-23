@@ -59,7 +59,8 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
       // First try the direct ref from props if available
       if (messageContainerRef?.current) {
         console.log('Using direct ref to scroll container');
-        messageContainerRef.current.scrollTop = 0;
+        // Scroll to bottom, not top
+        messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
         return;
       }
       
@@ -76,9 +77,9 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
       // Try to scroll the first available container
       if (messageContainers.length > 0) {
         const container = messageContainers[0];
-        console.log('Scrolling container to top', container);
-        // On mobile, scroll to top (since we have reversed layout)
-        container.scrollTop = 0;
+        console.log('Scrolling container to bottom', container);
+        // Scroll to bottom of container
+        container.scrollTop = container.scrollHeight;
       } else {
         console.warn('No scrollable container found for mobile scroll');
       }

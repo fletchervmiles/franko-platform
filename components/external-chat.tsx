@@ -222,13 +222,8 @@ export function ExternalChat({
     const scrollToLatestMessage = () => {
       if (!messagesContainerRef.current) return;
       
-      if (isMobile) {
-        // On mobile, scroll to top (which shows bottom messages in reversed layout)
-        messagesContainerRef.current.scrollTop = 0;
-      } else {
-        // On desktop, scroll to bottom
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      }
+      // Always scroll to bottom, whether mobile or desktop
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     };
     
     // If we should auto-scroll and have messages, do it
