@@ -38,8 +38,8 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
       
       // Use smaller heights on mobile
       const isMobile = window.innerWidth < 768;
-      const minHeight = isMobile ? 48 : 64;
-      const maxHeight = isMobile ? 140 : 200;
+      const minHeight = isMobile ? 56 : 64;
+      const maxHeight = isMobile ? 160 : 200;
       
       textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, minHeight), maxHeight)}px`
     }
@@ -96,7 +96,7 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     <div className="w-full bg-[#F9F8F6] pt-1 md:pt-2" style={{ backgroundColor: "#F9F8F6", opacity: 1 }}>
       <div className="mx-auto max-w-4xl px-2 md:px-4 lg:px-8 pb-2 md:pb-4">
         <div className="relative flex flex-col rounded-lg md:rounded-xl border bg-white shadow-sm md:shadow-[0_0_15px_rgba(0,0,0,0.1)]" style={{ backgroundColor: "white", opacity: 1 }}>
-          <form onSubmit={handleFormSubmit} className="flex items-start gap-2 p-1 md:p-2 px-3 md:px-8">
+          <form onSubmit={handleFormSubmit} className="flex items-start gap-2 p-1.5 md:p-2 px-3 md:px-8">
             <Textarea
               ref={textareaRef}
               value={value}
@@ -105,12 +105,12 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               rows={1}
               placeholder="Send a message..."
               className={cn(
-                "w-full resize-none px-2 md:px-3 py-1.5 md:py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-sm md:text-base leading-relaxed",
+                "w-full resize-none px-2.5 md:px-3 py-2 md:py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-sm md:text-base leading-relaxed",
                 disabled && "bg-gray-50 cursor-not-allowed",
               )}
               style={{
-                minHeight: "48px",
-                maxHeight: "140px",
+                minHeight: "56px",
+                maxHeight: "160px",
                 overflowY: value.split('\n').length > 3 ? "auto" : "hidden"
               }}
               disabled={disabled}
@@ -123,23 +123,23 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
                   stop()
                 }}
                 className={cn(
-                  "p-1.5 md:p-2 rounded-lg transition-colors self-end mb-0 md:mb-1",
+                  "p-2 rounded-lg transition-colors self-end mb-0 md:mb-1",
                   "bg-gray-900 text-white hover:bg-gray-800"
                 )}
               >
-                <StopCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <StopCircle className="h-4 w-4" />
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={!hasContent || disabled}
                 className={cn(
-                  "p-1.5 md:p-2 rounded-lg transition-colors self-end mb-0 md:mb-1",
+                  "p-2 rounded-lg transition-colors self-end mb-0 md:mb-1",
                   hasContent ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-100 text-gray-400",
                   disabled && "opacity-50 cursor-not-allowed",
                 )}
               >
-                <ArrowUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <ArrowUp className="h-4 w-4" />
               </button>
             )}
           </form>

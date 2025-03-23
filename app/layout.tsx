@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: '%s | Customer Research',
     default: 'Franko'
   },
-  description: 'Participate in our customer research interviews',
+  description: 'Ready for a quick chat?!',
   manifest: '/favicon/site.webmanifest',
   icons: {
     icon: [
