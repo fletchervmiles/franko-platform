@@ -50,6 +50,18 @@ export function useExternalChat({
     setError(null);
   }, [initialMessages, stop]);
 
+  // Add useEffect to handle initialMessages updates on page reload
+  useEffect(() => {
+    // Only update if:
+    // 1. initialMessages has data (loaded from history)
+    // 2. Current messages array is empty (fresh page load)
+    // 3. Not currently loading a message
+    if (initialMessages.length > 0 && messages.length === 0 && !isLoading) {
+      console.log('Loading conversation history:', initialMessages.length, 'messages');
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, messages.length, isLoading]);
+
   // Handle form submission
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>, forcedContent?: string) => {
