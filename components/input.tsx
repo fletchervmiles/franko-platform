@@ -2,7 +2,7 @@
 
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowUp, StopCircle } from "lucide-react"
-import { useRef, useEffect, forwardRef, type ForwardedRef, useCallback } from "react"
+import { useRef, useEffect, forwardRef, type ForwardedRef, useCallback, useState } from "react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import React from "react"
@@ -29,6 +29,51 @@ function ChatInputComponent({
 ref: ForwardedRef<HTMLTextAreaElement>) {
   const localRef = useRef<HTMLTextAreaElement>(null)
   const textareaRef = (ref || localRef) as React.RefObject<HTMLTextAreaElement>
+  
+  // Get window width to determine if we're on mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Set up isMobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  // Function to scroll to the bottom
+  const scrollToBottom = useCallback(() => {
+    // Only run on mobile
+    if (!isMobile) return;
+    
+    // Get the main message container
+    const messageContainer = document.querySelector('[data-message-container="true"]');
+    
+    if (messageContainer) {
+      if (isMobile) {
+        // On mobile, scroll to top (since we have reversed layout)
+        messageContainer.scrollTop = 0;
+      } else {
+        // On desktop, scroll to bottom
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      }
+    }
+  }, [isMobile]);
+
+  // Handle click on the textarea
+  const handleTextareaClick = useCallback(() => {
+    // Scroll to bottom when user clicks on the input
+    scrollToBottom();
+  }, [scrollToBottom]);
 
   // Memoize the height adjustment function
   const adjustHeight = useCallback(() => {
@@ -37,13 +82,12 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
       const scrollHeight = textareaRef.current.scrollHeight
       
       // Use smaller heights on mobile
-      const isMobile = window.innerWidth < 768;
       const minHeight = isMobile ? 56 : 64;
       const maxHeight = isMobile ? 160 : 200;
       
       textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, minHeight), maxHeight)}px`
     }
-  }, [textareaRef]);
+  }, [textareaRef, isMobile]);
 
   // Update textarea height when value changes
   useEffect(() => {
@@ -88,7 +132,12 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
     console.log("Form values:", { value });
     console.log("Is disabled:", disabled);
     onSubmit(e);
-  }, [onSubmit, value, disabled]);
+    
+    // Scroll to the bottom when sending a message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100); // Small delay to ensure UI updates first
+  }, [onSubmit, value, disabled, scrollToBottom]);
 
   const hasContent = value.trim().length > 0
 
@@ -102,6 +151,7 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               value={value}
               onChange={onChange}
               onKeyDown={handleKeyDown}
+              onClick={handleTextareaClick}
               rows={1}
               placeholder="Send a message..."
               className={cn(

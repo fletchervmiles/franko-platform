@@ -198,29 +198,7 @@ export function ExternalChat({
     };
   }, []);
   
-  // Enhanced scroll behavior for immediate scrolling on user message submission
-  useEffect(() => {
-    // This effect specifically handles auto-scrolling when isLoading changes
-    // (which happens right after user submits a message)
-    if (isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'user') {
-      // Immediate scroll to show loading indicator
-      if (messagesContainerRef.current) {
-        if (isMobile) {
-          // On mobile, scroll to top with slight delay to ensure rendering
-          setTimeout(() => {
-            if (messagesContainerRef.current) {
-              messagesContainerRef.current.scrollTop = 0;
-            }
-          }, 50);
-        } else {
-          // On desktop, scroll to bottom
-          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-        }
-      }
-    }
-  }, [isLoading, messages, isMobile]);
-  
-  // Original auto-scroll effect using IntersectionObserver (keep this too)
+  // Original auto-scroll effect using IntersectionObserver (keep this for desktop)
   useEffect(() => {
     if (!messagesEndRef.current || !messagesContainerRef.current) return;
     
@@ -601,6 +579,7 @@ export function ExternalChat({
       
       <div 
         ref={messagesContainerRef}
+        data-message-container="true"
         className={`flex-1 overflow-y-auto px-4 md:px-8 lg:px-14 ${topMargin} ${bottomPadding}`}
         style={{ 
           WebkitOverflowScrolling: "touch",
