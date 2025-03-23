@@ -27,16 +27,45 @@ export default function ActiveChatPage({
   
   // Add debug logging to track welcome description status
   useEffect(() => {
-    console.log("Welcome Description Status:", {
+    const isMobile = 
+      typeof navigator !== 'undefined' ? 
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : 
+      false;
+    
+    console.log("Welcome Description Status (detailed):", {
       fromUrl: welcomeDesc ? true : false,
       fromStorage: !welcomeDesc && storedWelcomeDesc ? true : false,
       finalValue: welcomeDescription,
-      userAgent: navigator.userAgent
+      valueLength: welcomeDescription?.length || 0,
+      userAgent: navigator.userAgent,
+      isMobile,
+      urlParamLength: welcomeDesc?.length || 0,
+      storageValue: storedWelcomeDesc
     });
     
-    // If we have a welcome description from URL, store it for future fallback
-    if (welcomeDesc && typeof window !== 'undefined') {
-      localStorage.setItem(`chat_${id}_welcome`, decodeURIComponent(welcomeDesc));
+    // Use more resilient storage method for mobile
+    if (typeof window !== 'undefined') {
+      try {
+        // For debugging - always try to read from storage first
+        const existingStorage = localStorage.getItem(`chat_${id}_welcome`);
+        console.log("Current localStorage value:", existingStorage);
+        
+        // More aggressively store welcome description in multiple ways
+        if (welcomeDescription) {
+          // Try standard localStorage
+          localStorage.setItem(`chat_${id}_welcome`, welcomeDescription);
+          
+          // Also store in sessionStorage as backup
+          sessionStorage.setItem(`chat_${id}_welcome`, welcomeDescription);
+          
+          // Store without chat ID prefix as another fallback
+          localStorage.setItem('latest_welcome_desc', welcomeDescription);
+          
+          console.log("Stored welcome description in multiple storage locations");
+        }
+      } catch (error) {
+        console.error("Storage error:", error);
+      }
     }
   }, [welcomeDesc, storedWelcomeDesc, welcomeDescription, id]);
   

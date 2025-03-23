@@ -70,9 +70,19 @@ export function ExternalChat({
     body: { chatInstanceId, chatResponseId },
     initialMessages,
     onFinish: (message) => {
+      // More reliable mobile detection
+      const isMobile = typeof navigator !== 'undefined' && 
+        (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
+      
+      // Log what we're detecting
+      console.log("External Chat Device Detection:", {
+        isMobile,
+        userAgent: navigator.userAgent,
+        screenWidth: window.innerWidth,
+        welcomeDescription: welcomeDescription?.substring(0, 20) + (welcomeDescription && welcomeDescription.length > 20 ? '...' : '')
+      });
+      
       // Preserve the welcomeDesc parameter when updating the URL
-      // Use a shorter URL on mobile devices to prevent URL truncation issues
-      const isMobile = window.innerWidth < 768;
       let updatedUrl = `/chat/external/${chatInstanceId}/active?responseId=${chatResponseId}`;
       
       // On mobile, don't add the welcome description to the URL to avoid length issues
@@ -83,7 +93,15 @@ export function ExternalChat({
       
       // Ensure the description is saved to localStorage in all cases
       if (welcomeDescription && typeof window !== 'undefined') {
-        localStorage.setItem(`chat_${chatInstanceId}_welcome`, welcomeDescription);
+        try {
+          // Try multiple storage strategies for better cross-browser compatibility
+          localStorage.setItem(`chat_${chatInstanceId}_welcome`, welcomeDescription);
+          sessionStorage.setItem(`chat_${chatInstanceId}_welcome`, welcomeDescription);
+          localStorage.setItem('latest_welcome_desc', welcomeDescription);
+          console.log("Stored welcome description in multiple locations");
+        } catch (error) {
+          console.error("Storage error:", error);
+        }
       }
       
       window.history.replaceState({}, "", updatedUrl);
