@@ -3,7 +3,6 @@
 import { Trash2, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import InterviewStatus from "./interview-status"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import React from "react"
 import Link from "next/link"
@@ -24,7 +23,6 @@ import { useToast } from "@/components/ui/use-toast"
 interface Workspace {
   id: string
   guideName: string
-  status: "new responses" | "reviewed"
   lastEdited: string
   responses: number
   customerWords: number
@@ -275,14 +273,11 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
           <Link
             href={`/conversations/${encodeURIComponent(workspace.id)}`}
             key={workspace.id}
-            className={`flex flex-col gap-4 p-4 hover:bg-muted/50 lg:grid lg:grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] lg:items-center ${
+            className={`flex flex-col gap-4 p-4 hover:bg-muted/50 lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-center ${
               index !== workspaces.length - 1 ? "border-b" : ""
             }`}
           >
             <span className="text-sm font-semibold text-foreground order-1">{workspace.guideName}</span>
-            <div className="order-2 w-full lg:w-auto">
-              <InterviewStatus initialStatus={workspace.status} />
-            </div>
             <div className="order-3">
               <span className="text-sm text-muted-foreground">Responses</span>
               <p className="text-sm font-light text-foreground">{workspace.responses.toLocaleString()}</p>
