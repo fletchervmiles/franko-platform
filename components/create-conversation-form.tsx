@@ -527,7 +527,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
             What do you want to learn from your customers?
             <StatusDot active={hasContent(1)} />
           </h3>
-          <p className="text-sm text-gray-500 mb-6">Select a topic below to start—edit freely, it's just a starting point.</p>
+          <p className="text-sm text-gray-500 mb-6">Select an example topic below to start—edit freely, it's just a starting point.</p>
           
           <div className="space-y-6 mb-8">
             <div className="flex flex-wrap gap-3">
