@@ -100,6 +100,9 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // Check if we're coming from regeneration
   const isFromRegenerate = fromParam === 'regenerate'
 
+  // Add state for Share tab notification dot
+  const [showShareNotification, setShowShareNotification] = useState(isFromRegenerate)
+
   // Update active tab when URL parameter changes
   useEffect(() => {
     if (tabParam && ['share', 'plan', 'responses', 'settings'].includes(tabParam)) {
@@ -526,8 +529,14 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
             <TabsTrigger
               value="share"
               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+              onClick={() => setShowShareNotification(false)}
             >
-              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Share</span>
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                Share
+                {showShareNotification && (
+                  <span className="ml-1.5 h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="plan"
@@ -590,7 +599,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                     chatId={chatId} 
                     onSubmit={handleConversationPlanSubmit} 
                     initialData={conversationPlan}
-                    startInEditMode={isFromRegenerate}
+                    startInEditMode={true}
                   />
                 </Suspense>
               </div>

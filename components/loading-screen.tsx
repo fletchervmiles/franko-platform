@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 
 interface LoadingScreenProps {
   message?: string;
@@ -9,55 +10,108 @@ interface LoadingScreenProps {
   disableCycling?: boolean;
 }
 
-export function LoadingScreen({ message, progress, disableCycling }: LoadingScreenProps) {
-  const defaultMessages = [
-    "Analyzing your objectives and context to design a tailored conversation plan...",
-    "Defining an exploratory structure based on your desired outcomes...",
-    "Crafting the guide to ensure an expert-level, discovery-focused approach...",
-    "Aligning question style and tone to your organization's branding and voice...",
-    "Almost ready—we're putting the final touches on your personalized conversation plan..."
-  ];
+export function LoadingScreen({ message }: LoadingScreenProps) {
+  const [progress, setProgress] = useState(0)
+  const [isComplete, setIsComplete] = useState(false)
+  const [dots, setDots] = useState(".")
   
-  const loadingMessages = (message && disableCycling) 
-    ? [message]
-    : message 
-      ? [message, ...defaultMessages]
-      : defaultMessages;
-
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
-  const [fadeState, setFadeState] = useState("fade-in")
-
+  // Handle progress bar filling over 30 seconds
   useEffect(() => {
-    if (loadingMessages.length <= 1) return;
+    const startTime = Date.now()
+    const duration = 30000 // 30 seconds
     
     const interval = setInterval(() => {
-      setFadeState("fade-out")
-      setTimeout(() => {
-        setCurrentMessageIndex((prevIndex) => (prevIndex === loadingMessages.length - 1 ? 0 : prevIndex + 1))
-        setFadeState("fade-in")
+      const elapsed = Date.now() - startTime
+      const newProgress = Math.min(100, Math.floor((elapsed / duration) * 100))
+      
+      setProgress(newProgress)
+      
+      if (newProgress >= 100) {
+        setIsComplete(true)
+        clearInterval(interval)
+      }
+    }, 100)
+    
+    return () => clearInterval(interval)
+  }, [])
+  
+  // Handle animated dots after completion
+  useEffect(() => {
+    if (!isComplete) return
+    
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === ".") return ".."
+        if (prev === "..") return "..."
+        return "."
+      })
       }, 500)
-    }, 4000)
 
     return () => clearInterval(interval)
-  }, [loadingMessages.length])
+  }, [isComplete])
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
-      <div className="relative">
-        <div className="mb-6 flex justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-gray-600" />
+      <div className="max-w-xl mx-auto p-8 rounded-lg shadow-sm border bg-card text-card-foreground">
+        <div className="flex flex-col items-center space-y-8">
+          <div className="flex items-center justify-center w-full">
+            <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+          </div>
+
+          <h2 className="text-2xl font-semibold text-center">
+            {!isComplete ? "Generating your Conversation Plan..." : `Finalising now${dots}`}
+          </h2>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p className="mb-6">
+              Your plan will include step-by-step instructions to help guide your conversational agent, including:
+            </p>
+
+            <div className="flex justify-center w-full">
+              <div className="inline-block space-y-4 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-white" />
+                  </div>
+                  <span>Conversation Objectives</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-white" />
+                  </div>
+                  <span>Desired learning outcomes</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-white" />
+                  </div>
+                  <span>Agent guidance</span>
+                </div>
+              </div>
+            </div>
         </div>
 
-        <div
-          className={`text-center transition-opacity duration-500 min-h-[28px] ${
-            fadeState === "fade-in" ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <p className="text-gray-700">{loadingMessages[currentMessageIndex]}</p>
-          
-          {progress && (
-            <p className="text-sm text-gray-500 mt-4">{progress}</p>
-          )}
+          <div className="text-center text-sm text-muted-foreground space-y-4 w-full px-4">
+            <p>You'll be able to review and edit before sending.</p>
+
+            <p>
+              Once ready, get your shareable link under the <span className="font-medium text-blue-500">Share</span>{" "}
+              tab—ready to send to your customers.
+            </p>
+          </div>
+
+          <div className="w-full space-y-2 pt-4">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Progress:</span>
+              <span>{progress}%</span>
+            </div>
+            <Progress
+              value={progress}
+              className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
+            />
+          </div>
         </div>
       </div>
     </div>
