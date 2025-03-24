@@ -3,6 +3,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Simple rate limit tracking with a basic counter
+const ratelimitCache = new Map();
+
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   "/account",
@@ -62,6 +65,38 @@ export default clerkMiddleware(async (auth, req) => {
       url.startsWith('/api/external-chat/history') ||
       url.startsWith('/api/chat-responses/') ||
       (url.startsWith('/api/chat-instances/') && url.split('/').length === 4)) {
+    
+    // Apply rate limiting to public endpoints
+    // Skip rate limiting for webhook route which might have high traffic from Stripe
+    if (!url.includes('/api/webhooks/')) {
+      const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+      const now = Date.now();
+      
+      // Get or initialize tracking for this IP
+      const ipData = ratelimitCache.get(ip) || { count: 0, resetTime: now + 10000 };
+      
+      // Reset counter if window expired
+      if (now > ipData.resetTime) {
+        ipData.count = 0;
+        ipData.resetTime = now + 10000;
+      }
+      
+      // Increment count
+      ipData.count++;
+      ratelimitCache.set(ip, ipData);
+      
+      // Apply rate limit (15 requests per 10 seconds)
+      if (ipData.count > 15) {
+        return new Response(JSON.stringify({ error: 'Too many requests' }), { 
+          status: 429,
+          headers: {
+            'Retry-After': '10',
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    }
+    
     return NextResponse.next();
   }
 
@@ -76,6 +111,37 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Check if the route is a public API
   if (isPublicApi) {
+    // Apply rate limiting to public API routes
+    // Skip rate limiting for webhook route which might have high traffic from Stripe
+    if (!url.includes('/api/webhooks/')) {
+      const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+      const now = Date.now();
+      
+      // Get or initialize tracking for this IP
+      const ipData = ratelimitCache.get(ip) || { count: 0, resetTime: now + 10000 };
+      
+      // Reset counter if window expired
+      if (now > ipData.resetTime) {
+        ipData.count = 0;
+        ipData.resetTime = now + 10000;
+      }
+      
+      // Increment count
+      ipData.count++;
+      ratelimitCache.set(ip, ipData);
+      
+      // Apply rate limit (15 requests per 10 seconds)
+      if (ipData.count > 15) {
+        return new Response(JSON.stringify({ error: 'Too many requests' }), { 
+          status: 429,
+          headers: {
+            'Retry-After': '10',
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    }
+    
     return NextResponse.next();
   }
 
