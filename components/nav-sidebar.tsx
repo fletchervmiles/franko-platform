@@ -35,6 +35,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { useFeedbackModal } from "./contexts/feedback-modal-context"
+import { useProfile } from "./contexts/profile-context"
 
 const sidebarStyles = {
   "--sidebar-width": "16rem",
@@ -108,6 +109,7 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
 }) {
   const { signOut } = useAuth();
   const { openModal, setModalType } = useFeedbackModal();
+  const { hasContext, contextCompleted, isLoading } = useProfile();
   
   // Special handling for Sign Out button
   if (item.title === "Sign Out") {
@@ -156,20 +158,28 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     );
   }
 
-  // Regular menu items remain unchanged
+  // Regular menu items
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
       >
-        <Link href={item.url} className="flex items-center">
+        <Link href={item.url} className="flex items-center relative">
           <span
             className={`${section.title === "Account" ? "text-gray-500" : "text-gray-800"}`}
           >
             {item.icon}
           </span>
           <span className="ml-2 font-medium">{item.title}</span>
+          
+          {/* Add pulsating yellow dot for Context Setup when not completed */}
+          {item.title === "Context Setup" && !isLoading && !contextCompleted && (
+            <span 
+              className="ml-2 h-2 w-2 rounded-full bg-yellow-400 animate-pulse"
+              aria-hidden="true"
+            />
+          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>

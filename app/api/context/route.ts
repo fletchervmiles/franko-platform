@@ -304,4 +304,69 @@ export async function POST(request: Request) {
       error: "Failed to update profile" 
     }, { status: 500 });
   }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    logger.info('Manual context update request:', body);
+    const { userId, organisationDescription, organisationUrl, organisationName } = body;
+    
+    if (!userId) {
+      logger.error('Missing userId parameter');
+      return NextResponse.json({ 
+        success: false, 
+        error: "Missing required parameters" 
+      }, { status: 400 });
+    }
+
+    const updateData: any = {};
+
+    // Update organization URL if provided
+    if (organisationUrl) {
+      updateData.organisationUrl = organisationUrl;
+    }
+
+    // Update organization name if provided
+    if (organisationName) {
+      updateData.organisationName = organisationName;
+    }
+
+    // Update description if provided
+    if (organisationDescription) {
+      updateData.organisationDescription = organisationDescription;
+      updateData.organisationDescriptionCompleted = true;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      logger.error('No update data provided');
+      return NextResponse.json({ 
+        success: false, 
+        error: "No update data provided" 
+      }, { status: 400 });
+    }
+
+    // Update the profile
+    logger.info('Updating profile with manual data:', updateData);
+    const updatedProfile = await updateProfile(userId, updateData);
+    logger.info('Profile update successful');
+
+    return NextResponse.json({ 
+      success: true,
+      organisationUrl: updatedProfile[0].organisationUrl,
+      organisationName: updatedProfile[0].organisationName,
+      description: updatedProfile[0].organisationDescription
+    });
+    
+  } catch (error) {
+    logger.error('Manual context update error:', {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    return NextResponse.json({ 
+      success: false, 
+      error: "Failed to update context" 
+    }, { status: 500 });
+  }
 } 

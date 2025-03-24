@@ -8,12 +8,18 @@ import { Loader2, Check, ChevronDown, ChevronUp, InfoIcon, Bot } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Markdown from "react-markdown"
+import { useUser } from "@clerk/nextjs"
+import { useToast } from "@/hooks/use-toast"
 
 interface ContextContainerProps {
   initialContext: string
+  userId?: string
+  onContextUpdated?: (updatedContext: string) => void
 }
 
-export function ContextContainer({ initialContext }: ContextContainerProps) {
+export function ContextContainer({ initialContext, userId, onContextUpdated }: ContextContainerProps) {
+  const { user } = useUser()
+  const { toast } = useToast()
   const [context, setContext] = useState(initialContext)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -41,10 +47,51 @@ export function ContextContainer({ initialContext }: ContextContainerProps) {
 
   const handleSave = async () => {
     setIsSaving(true)
-    // Simulate API call to save the context
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsEditing(false)
-    setIsSaving(false)
+    
+    try {
+      const currentUserId = userId || user?.id
+      
+      if (!currentUserId) {
+        throw new Error("User ID not available")
+      }
+      
+      const response = await fetch('/api/context', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+          organisationDescription: context
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to save context")
+      }
+      
+      const data = await response.json()
+      
+      if (onContextUpdated) {
+        onContextUpdated(context)
+      }
+      
+      toast({
+        title: "Success!",
+        description: "Your knowledge base has been updated successfully.",
+      })
+      
+      setIsEditing(false)
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save your changes. Please try again.",
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {

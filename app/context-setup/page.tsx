@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Globe, Building, InfoIcon } from "lucide-react"
+import { Loader2, Globe, Building, InfoIcon, Edit, Check, PlusCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -67,13 +67,38 @@ const submitContext = async (data: {
   return response.json()
 }
 
+// Function to save individual field
+const saveField = async (data: {
+  userId: string,
+  organisationUrl?: string,
+  organisationName?: string
+}) => {
+  const response = await fetch('/api/context', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    const result = await response.json()
+    throw new Error(result.error || 'Failed to update field')
+  }
+  return response.json()
+}
+
 export default function ContextSetupPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [isEditing, setIsEditing] = useState(false)
+  const [isCardEditing, setIsCardEditing] = useState(false)
+  const [isEditingUrl, setIsEditingUrl] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [isSavingUrl, setIsSavingUrl] = useState(false)
+  const [isSavingName, setIsSavingName] = useState(false)
   const [submittedValues, setSubmittedValues] = useState<ContextSetupValues | null>(null)
   const [shouldPulse, setShouldPulse] = useState(false)
+  const [showManualContext, setShowManualContext] = useState(false)
   const { toast } = useToast()
   const [description, setDescription] = useState<string>("")
 
@@ -96,7 +121,7 @@ export default function ContextSetupPage() {
     enabled: !!user?.id,
   })
 
-  // Mutation for submitting context
+  // Mutation for submitting context (full process)
   const { mutate, isPending } = useMutation({
     mutationFn: submitContext,
     onSuccess: (data) => {
@@ -111,7 +136,10 @@ export default function ContextSetupPage() {
         orgName: data.organisationName
       })
       
-      setIsEditing(false)
+      // Reset all editing states to return to view mode
+      setIsCardEditing(false)
+      setIsEditingUrl(false)
+      setIsEditingName(false)
       
       // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
@@ -130,6 +158,49 @@ export default function ContextSetupPage() {
     }
   })
 
+  // Mutation for saving individual fields
+  const { mutate: saveFieldMutation, isPending: isSavingField } = useMutation({
+    mutationFn: saveField,
+    onSuccess: (data) => {
+      // Update form values if they're returned
+      if (data.organisationUrl) {
+        form.setValue("url", data.organisationUrl)
+      }
+      if (data.organisationName) {
+        form.setValue("orgName", data.organisationName)
+      }
+      
+      // Update submitted values
+      setSubmittedValues({
+        url: data.organisationUrl || (submittedValues?.url || ""),
+        orgName: data.organisationName || (submittedValues?.orgName || "")
+      })
+      
+      // Reset edit states
+      setIsEditingUrl(false)
+      setIsEditingName(false)
+      setIsSavingUrl(false)
+      setIsSavingName(false)
+      
+      // Invalidate and refetch profile data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+      
+      toast({
+        title: "Success!",
+        description: "Field updated successfully.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update field. Please try again.",
+      })
+      setIsSavingUrl(false)
+      setIsSavingName(false)
+    }
+  })
+
   // Effect to update form when profile data changes
   useEffect(() => {
     if (profile) {
@@ -142,6 +213,18 @@ export default function ContextSetupPage() {
           url: profile.organisationUrl,
           orgName: profile.organisationName
         })
+      }
+      
+      // Auto-enable card edit mode if description is incomplete
+      // If description is complete, ensure we're in view mode
+      if (!profile.organisationDescriptionCompleted) {
+        setIsCardEditing(true)
+        setIsEditingUrl(profile.organisationUrl ? false : true)
+        setIsEditingName(profile.organisationName ? false : true)
+      } else {
+        setIsCardEditing(false)
+        setIsEditingUrl(false)
+        setIsEditingName(false)
       }
     }
   }, [profile, form])
@@ -168,16 +251,85 @@ export default function ContextSetupPage() {
     })
   }
 
-  const handleEdit = () => {
-    setIsEditing(true)
+  const handleSaveUrl = () => {
+    if (!user?.id) return
+    
+    const urlValue = form.getValues("url")
+    if (!urlValue) {
+      form.setError("url", { message: "URL is required" })
+      return
+    }
+    
+    setIsSavingUrl(true)
+    saveFieldMutation({
+      userId: user.id,
+      organisationUrl: urlValue
+    })
   }
 
-  const handleCancel = () => {
-    setIsEditing(false)
+  const handleSaveName = () => {
+    if (!user?.id) return
+    
+    const nameValue = form.getValues("orgName")
+    if (!nameValue) {
+      form.setError("orgName", { message: "Organisation name is required" })
+      return
+    }
+    
+    setIsSavingName(true)
+    saveFieldMutation({
+      userId: user.id,
+      organisationName: nameValue
+    })
+  }
+
+  const handleEditCard = () => {
+    setIsCardEditing(true)
+  }
+
+  const handleCancelCard = () => {
+    setIsCardEditing(false)
+    setIsEditingUrl(false)
+    setIsEditingName(false)
+    
+    // Reset form values to last submitted values
     if (submittedValues) {
       form.setValue("url", submittedValues.url)
       form.setValue("orgName", submittedValues.orgName)
     }
+  }
+
+  const handleEditUrl = () => {
+    setIsEditingUrl(true)
+  }
+
+  const handleEditName = () => {
+    setIsEditingName(true)
+  }
+
+  const handleCancelUrl = () => {
+    setIsEditingUrl(false)
+    if (submittedValues?.url) {
+      form.setValue("url", submittedValues.url)
+    }
+  }
+
+  const handleCancelName = () => {
+    setIsEditingName(false)
+    if (submittedValues?.orgName) {
+      form.setValue("orgName", submittedValues.orgName)
+    }
+  }
+
+  const handleAddManualContext = () => {
+    setShowManualContext(true)
+  }
+
+  const handleContextUpdated = (updatedContext: string) => {
+    setDescription(updatedContext)
+    setIsCardEditing(false)
+    // Refetch profile data to update UI
+    queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
   }
 
   return (
@@ -201,11 +353,18 @@ export default function ContextSetupPage() {
                   <div>
                     <p className="text-base text-gray-700">Tell us about your business so your AI can understand who you are and deliver personalized conversations.</p>
                   </div>
-                  {profile && !isEditing && (
-                    <Button type="button" variant="outline" size="sm" onClick={handleEdit} className="h-9 text-xs px-4">
-                      Edit
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!isCardEditing && profile && (
+                      <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
+                        Edit
+                      </Button>
+                    )}
+                    {isCardEditing && (
+                      <Button onClick={handleCancelCard} variant="outline" size="sm" className="h-8 text-xs px-4">
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -248,21 +407,71 @@ export default function ContextSetupPage() {
                             <p className="text-sm text-gray-500 mb-2">
                               We'll analyze your website content to build context.
                             </p>
-                            <FormControl>
-                              <div className="relative">
-                                <Input
-                                  placeholder="https://..."
-                                  className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900 transition-colors duration-200"
-                                  {...field}
-                                  disabled={profile && !isEditing}
-                                />
-                                {field.value.length === 0 && !profile && (
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
-                                    ✨ Step 1. Submit your company URL!
-                                  </div>
-                                )}
-                              </div>
-                            </FormControl>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <div className="relative w-full">
+                                  <Input
+                                    placeholder="https://..."
+                                    className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                    {...field}
+                                    disabled={!isEditingUrl}
+                                  />
+                                  {field.value.length === 0 && !profile?.organisationUrl && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
+                                      ✨ Enter your company URL
+                                    </div>
+                                  )}
+                                </div>
+                              </FormControl>
+                              {isCardEditing && (
+                                <>
+                                  {isEditingUrl ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={handleCancelUrl}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        size="sm"
+                                        onClick={handleSaveUrl}
+                                        disabled={isSavingUrl || !field.value}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        {isSavingUrl ? (
+                                          <>
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            Save
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="mr-1 h-3 w-3" />
+                                            Save
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    field.value && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleEditUrl}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Edit className="h-3 w-3 text-gray-500" />
+                                      </Button>
+                                    )
+                                  )}
+                                </>
+                              )}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -289,38 +498,106 @@ export default function ContextSetupPage() {
                             <p className="text-sm text-gray-500 mb-2">
                               Used to reference your business accurately in conversations.
                             </p>
-                            <FormControl>
-                              <div className="relative">
-                                <Input
-                                  placeholder="Enter name..."
-                                  className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-900 transition-colors duration-200"
-                                  {...field}
-                                  disabled={profile && !isEditing}
-                                />
-                                {field.value.length === 0 && !profile && (
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
-                                    ✨ Step 2. Submit your company or product name
-                                  </div>
-                                )}
-                              </div>
-                            </FormControl>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <div className="relative w-full">
+                                  <Input
+                                    placeholder="Enter name..."
+                                    className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                    {...field}
+                                    disabled={!isEditingName}
+                                  />
+                                  {field.value.length === 0 && !profile?.organisationName && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
+                                      ✨ Enter your company or product name
+                                    </div>
+                                  )}
+                                </div>
+                              </FormControl>
+                              {isCardEditing && (
+                                <>
+                                  {isEditingName ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={handleCancelName}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        size="sm"
+                                        onClick={handleSaveName}
+                                        disabled={isSavingName || !field.value}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        {isSavingName ? (
+                                          <>
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            Save
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="mr-1 h-3 w-3" />
+                                            Save
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    field.value && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleEditName}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Edit className="h-3 w-3 text-gray-500" />
+                                      </Button>
+                                    )
+                                  )}
+                                </>
+                              )}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    <div className="flex justify-end space-x-2">
-                      {isEditing && (
-                        <Button type="button" variant="outline" size="sm" onClick={handleCancel} className="h-9 text-xs px-4">
-                          Cancel
-                        </Button>
-                      )}
-                      {(!profile || isEditing) && (
+                    <div className="flex flex-wrap justify-end gap-3">
+                      {/* Show resubmit button when in edit mode and both URL and company name exist */}
+                      {isCardEditing && profile?.organisationUrl && profile?.organisationName && profile?.organisationDescription && (
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isPending}
+                          disabled={isPending || isEditingUrl || isEditingName}
+                          className="h-9 px-4 flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                        >
+                          {isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <span>Regenerating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4" />
+                              Regenerate AI Context
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      
+                      {/* Show extract context button if URL and name entered but no description yet */}
+                      {(url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={isPending || isEditingUrl || isEditingName}
                           className={cn(
                             "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
                             shouldPulse && "animate-pulse-edge",
@@ -332,8 +609,22 @@ export default function ContextSetupPage() {
                               <span>Generating...</span>
                             </div>
                           ) : (
-                            "Submit"
+                            "Extract context from website"
                           )}
+                        </Button>
+                      )}
+                      
+                      {/* Show Add Context Manually button if we have URL and name but no description yet */}
+                      {!showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={handleAddManualContext}
+                          className="h-9 px-4 flex items-center gap-2"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Add context manually
                         </Button>
                       )}
                     </div>
@@ -343,8 +634,13 @@ export default function ContextSetupPage() {
             </CardContent>
           </Card>
 
-          {profile?.organisationDescription && (
-            <ContextContainer initialContext={profile.organisationDescription} />
+          {/* Show context container if there's content or showing manual context entry */}
+          {(profile?.organisationDescription || showManualContext) && (
+            <ContextContainer 
+              initialContext={profile?.organisationDescription || ""} 
+              userId={user?.id}
+              onContextUpdated={handleContextUpdated}
+            />
           )}
         </div>
       </div>
