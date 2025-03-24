@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Globe, Building, InfoIcon, Edit, Check, PlusCircle, RefreshCw } from "lucide-react"
+import { Loader2, Globe, Building, InfoIcon, Edit, Check, PlusCircle, RefreshCw, Link, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -392,7 +392,7 @@ export default function ContextSetupPage() {
                         render={({ field }) => (
                           <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                             <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              🌐 Website URL
+                              <Link className="h-4 w-4 text-blue-500" /> Website URL
                               <TooltipProvider delayDuration={0}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -483,7 +483,7 @@ export default function ContextSetupPage() {
                         render={({ field }) => (
                           <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                             <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              🏷️ Company or Product Name
+                              <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
                               <TooltipProvider delayDuration={0}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>

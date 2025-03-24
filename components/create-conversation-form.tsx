@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import ReactMarkdown from 'react-markdown'
 import { 
   Users, 
   Target, 
@@ -15,12 +16,41 @@ import {
   DollarSign,
   ChevronRight,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  PenLine,
+  Sunrise,
+  Clock,
+  Lightbulb,
+  LogOut
 } from "lucide-react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import LoadingScreen from "./loading-screen"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
+
+// Custom hook to fetch organisation name
+const useOrganisationName = () => {
+  const [organisationName, setOrganisationName] = useState<string>("product")
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    async function fetchOrganisationName() {
+      try {
+        const response = await fetch("/api/profile")
+        const data = await response.json()
+        setOrganisationName(data.organisationName || "product")
+      } catch (error) {
+        console.error("Error fetching organisation name:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchOrganisationName()
+  }, [])
+  
+  return { organisationName, isLoading }
+}
 
 // Status indicator component
 const StatusDot = ({ active }: { active: boolean }) => (
@@ -31,106 +61,6 @@ const StatusDot = ({ active }: { active: boolean }) => (
     )} 
   />
 )
-
-// Template interface
-interface Template {
-  title: string
-  prompt: string
-  icon: React.ComponentType<{ className?: string }>
-}
-
-// Templates for each category
-const productTemplates: Template[] = [
-  {
-    title: "Product-Market Fit Discovery",
-    prompt: "I want to find out \n- how disappointed customers would be if they could no longer use our product\n- figure out the key benefit or reason that they use our product (figure out in what circumstances they use it, i.e. persona)\n- discover in their own words who our customers think is the ideal user of our product \n- uncover improvements that are likely to increase customer satisfaction and retention",
-    icon: Target
-  },
-  {
-    title: "Feature Importance & Prioritization",
-    prompt: "I want to understand exactly which features customers value most (and least)—so we can clearly prioritize future improvements and strategically shape our product roadmap.",
-    icon: BarChart2
-  },
-  {
-    title: "Usability & Friction Points",
-    prompt: "I want clear insights into what parts of our product's user experience cause confusion, frustration, or friction, so we know exactly where to smooth the experience and improve usability.",
-    icon: MessageSquare
-  },
-  {
-    title: "Customer \"Aha!\" Moments",
-    prompt: "I want to discover the specific moments or experiences where customers first find meaningful value in our product—so we can clearly optimize onboarding and activation flows around these experiences.",
-    icon: Users
-  },
-  {
-    title: "Expectations vs. Reality",
-    prompt: "I want to learn how customer expectations before using our product compare to their actual experience—revealing any gaps or mismatches that we can solve through better messaging or targeted improvements.",
-    icon: DollarSign
-  }
-]
-
-const marketingTemplates: Template[] = [
-  {
-    title: "Competitive Differentiation & Switching Drivers",
-    prompt: "I want to clearly understand why customers choose our product over competitors, what unique advantages they see in us, and what might cause them to switch—giving us deep clarity to strengthen our unique positioning.",
-    icon: Target
-  },
-  {
-    title: "Messaging & Clarity Check",
-    prompt: "I want to learn directly from customers what parts of our messaging resonate clearly and what might feel confusing or vague—so we can sharpen our core communication.",
-    icon: BarChart2
-  },
-  {
-    title: "Brand Perception & Authenticity",
-    prompt: "I want to understand how customers genuinely perceive our brand personality and identity, uncovering opportunities to build greater authenticity and alignment.",
-    icon: Users
-  },
-  {
-    title: "Decision Drivers & Buying Criteria",
-    prompt: "I want to pinpoint the exact criteria and motivations customers used when selecting our product—so we can reinforce these core drivers clearly in marketing and sales.",
-    icon: MessageSquare
-  }
-]
-
-const salesTemplates: Template[] = [
-  {
-    title: "Price Sensitivity & Willingness-To-Pay",
-    prompt: "I want to understand how our customers perceive the value of our product and clearly learn their true willingness-to-pay—so we can price strategically and confidently.",
-    icon: MessageSquare
-  },
-  {
-    title: "Feature Value Analysis",
-    prompt: "I want to identify the product features customers truly value most (and least)—helping us align pricing tiers, justify pricing changes, and ensure we're maximizing impact.",
-    icon: DollarSign
-  },
-  {
-    title: "Competitive Price Anchoring",
-    prompt: "I want to discover which competitors or alternatives customers compare us to when evaluating price—so we can clearly position our product's value and pricing strategy.",
-    icon: Target
-  },
-  {
-    title: "Pricing Objections & Friction",
-    prompt: "I want to uncover where, when, and why customers hesitate or object to our pricing, giving us clear opportunities to remove barriers and better align perceived value.",
-    icon: BarChart2
-  },
-  {
-    title: "ROI & Perceived Impact",
-    prompt: "I want to learn how customers evaluate the impact and ROI our product delivers, allowing us to clarify the connection between our pricing and the clear value we provide.",
-    icon: Users
-  }
-]
-
-const supportTemplates: Template[] = [
-  {
-    title: "Support Experience",
-    prompt: "I want to gather feedback on our customer support experience",
-    icon: UserPlus
-  },
-  {
-    title: "Issue Resolution",
-    prompt: "I need to understand how effectively we're resolving customer issues",
-    icon: Users
-  }
-]
 
 // Update the component props interface
 interface CreateConversationFormProps {
@@ -145,6 +75,9 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const searchParams = useSearchParams()
   // Use the prop chatId if provided, otherwise try to get it from params
   const chatId = propChatId || (params?.id as string)
+  
+  // Fetch organisation name
+  const { organisationName } = useOrganisationName()
   
   // Add refs for each card
   const cardRefs = {
@@ -161,7 +94,8 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   }, [chatId, isNew])
   
   // State for form values
-  const [topic, setTopic] = useState("")
+  const [topic, setTopic] = useState<string | undefined>(undefined)
+  const [selectedTemplate, setSelectedTemplate] = useState<string | undefined>(undefined)
   const [duration, setDuration] = useState("")
   const [respondentContacts, setRespondentContacts] = useState<boolean | null>(null)
   const [incentiveStatus, setIncentiveStatus] = useState<boolean | null>(null)
@@ -175,6 +109,61 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   
   // State for visible cards
   const [visibleCards, setVisibleCards] = useState(isRegenerating ? 5 : 1)
+  
+  // Conversation templates with icons
+  const conversationTemplates = useMemo(() => [
+    {
+      title: "Acquisition & First Impressions",
+      prompt: `I want to understand:
+
+- how customers first discovered ${organisationName};
+- the circumstances, motivations, or challenges that led them to search for a solution like ${organisationName};
+- what specifically convinced them to try us; and
+- their impressions so far.
+
+I'll send this to new leads who've recently signed up to ${organisationName}.`,
+      icon: Sunrise
+    },
+    {
+      title: "Time to Value",
+      prompt: `I want to understand:
+
+- the key benefit or value customers originally hoped to achieve when they signed up for ${organisationName};
+- how long it took them to experience their first "aha" moment or meaningful value;
+- the specific feature or experience that delivered this initial value;
+- whether their initial expectations have been met (and if not, what's missing);
+- what they've found most valuable or enjoyable so far; and
+- any early areas of friction, confusion, or opportunities we have to improve their experience.
+
+I'll send this to customers who've recently completed onboarding and experienced their first interactions with ${organisationName}.`,
+      icon: Clock
+    },
+    {
+      title: "Product-Market Fit Engine",
+      prompt: `I want to understand:
+
+- the customer's role, key responsibilities, and context in which they're using ${organisationName};
+- how customers would feel if they could no longer use ${organisationName} (very disappointed, somewhat disappointed, not disappointed) - and explore why!;
+- the types of people or roles they believe get the most benefit from ${organisationName};
+- the most important benefit or value they've personally experienced using ${organisationName}; and
+- specific ways we could improve ${organisationName} and provide more value.
+
+I'll send this to customers who actively use ${organisationName}, to assess overall product-market fit and inform our product roadmap.`,
+      icon: Lightbulb
+    },
+    {
+      title: "Churn & Exit Insights",
+      prompt: `I want to understand:
+
+- the primary reasons customers decided to stop using ${organisationName};
+- any key gaps between their initial expectations and the actual value they experienced;
+- specific frustrations, issues, or limitations that contributed directly to their decision to leave; and
+- any immediate or obvious improvements they would suggest to better meet their expectations in future.
+
+I'll send this to customers who've recently churned or canceled their ${organisationName} account.`,
+      icon: LogOut
+    }
+  ], [organisationName]);
   
   // Add effect to load existing data when regenerating
   useEffect(() => {
@@ -195,9 +184,9 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
             if (formattedDuration.includes("1 minute")) {
               formattedDuration = "1 minute (quick)";
             } else if (formattedDuration.includes("2 minutes")) {
-              formattedDuration = "2 minutes (focused)";
+              formattedDuration = "2 minutes (recommended)";
             } else if (formattedDuration.includes("3-4 minutes")) {
-              formattedDuration = "3-4 minutes (recommended)";
+              formattedDuration = "3-4 minutes (focused)";
             } else if (formattedDuration.includes("5-6 minutes")) {
               formattedDuration = "5-6 minutes (balanced)";
             } else if (formattedDuration.includes("7-8 minutes")) {
@@ -255,7 +244,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const hasContent = (cardIndex: number) => {
     switch (cardIndex) {
       case 1:
-        return topic.trim().length > 0
+        return topic !== undefined && topic.trim().length > 0
       case 2:
         return duration.trim().length > 0
       case 3:
@@ -276,9 +265,25 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
     }
   }
   
-  // Template selection handler
+  // Handle template selection
   const handleTemplateSelect = (prompt: string) => {
     setTopic(prompt)
+    setSelectedTemplate(prompt)
+  }
+
+  // Handle "Start from Scratch"
+  const handleStartFromScratch = () => {
+    const scratchPrompt = "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+    setTopic(scratchPrompt)
+    setSelectedTemplate(scratchPrompt)
+    // Focus the textarea
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        textarea.focus();
+        textarea.select(); // Select all text for easy replacement
+      }
+    }, 100);
   }
 
   // Handle duration selection with auto-progression
@@ -290,109 +295,6 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
         showNextCard()
       }, 300)
     }
-  }
-
-  // Add state for active category
-  const [activeCategory, setActiveCategory] = useState("churn")
-
-  // Category definitions with emoji icons and labels
-  const categories = [
-    { id: "churn", icon: "🔄", label: "Churn & Retention" },
-    { id: "growth", icon: "📈", label: "Growth & Acquisition" },
-    { id: "product", icon: "✨", label: "Product Experience & Perception" },
-    { id: "problems", icon: "📌", label: "Customer Problems & Needs" },
-    { id: "pricing", icon: "💸", label: "Pricing & Value Proposition" },
-    { id: "positioning", icon: "📢", label: "Positioning & Differentiation" },
-  ]
-
-  // Define template type for TypeScript
-  type TemplateType = {
-    title: string;
-    prompt: string;
-    icon: React.ComponentType<{ className?: string }>;
-  };
-
-  // Content options for each category (using existing templates)
-  const categoryTemplates: Record<string, TemplateType[]> = {
-    churn: [
-      {
-        title: "Churn Reasons & Product Gaps",
-        prompt: "I want clear insights into why customers stopped using our product—including where expectations weren't met, what frustrations they encountered, and what gaps caused them to leave—so we can quickly prioritize changes to reduce churn.",
-        icon: Users
-      },
-      {
-        title: "Early Warning Signs & Risk Factors",
-        prompt: "I want to learn exactly what early signals or risk factors predict customer churn—allowing us to act proactively and improve retention.",
-        icon: Target
-      },
-      {
-        title: "Stickiness & Retention Drivers",
-        prompt: "I want to discover precisely what keeps our most satisfied customers staying engaged long-term—helping us reinforce those value experiences clearly across all customers.",
-        icon: BarChart2
-      },
-      {
-        title: "Competitive Switching Insights",
-        prompt: "I want clarity around if customers switch to competitors, understanding the exact reasons they'd leave us for an alternative solution—so we can address gaps and enhance competitive strengths.",
-        icon: MessageSquare
-      }
-    ],
-    growth: [
-      {
-        title: "Customer Acquisition Channels",
-        prompt: "I want to clearly learn exactly how customers initially discover and hear about our product—so we can double down on the channels that drive real growth.",
-        icon: UserPlus
-      },
-      {
-        title: "Activation & Conversion Moments",
-        prompt: "I want to clearly pinpoint the specific experiences and features that first convince new users our product is valuable—so we can improve onboarding and activation.",
-        icon: BarChart2
-      },
-      {
-        title: "Referral & Word-of-Mouth Drivers",
-        prompt: "I want to understand exactly which product experiences or outcomes excite customers enough to recommend us to others, clearly identifying opportunities to boost organic growth.",
-        icon: Users
-      },
-      {
-        title: "Growth Barriers & Friction Points",
-        prompt: "I want clear feedback on any current obstacles or barriers customers encounter that prevent them from fully adopting or recommending our product—so we can remove blocks to growth and improve their journey.",
-        icon: Target
-      },
-      {
-        title: "Activation & Conversion Opportunities",
-        prompt: "I want to pinpoint the exact moments when customers clearly perceive value after signing up—so we know precisely what to emphasize to boost conversion rates and engagement.",
-        icon: MessageSquare
-      }
-    ],
-    product: productTemplates,
-    problems: [
-      {
-        title: "Product Pain Points & Friction",
-        prompt: "I want to clearly understand the frustrations, frictions, and ongoing pain points customers experience using our product—including how frequent and urgent these issues are—so we can quickly prioritize improvements.",
-        icon: Target
-      },
-      {
-        title: "Unmet Needs & Workarounds",
-        prompt: "I want to uncover emerging needs, gaps, or problems our product isn't addressing fully—including alternative tools or workarounds customers currently use alongside us—so we can expand our product's value.",
-        icon: MessageSquare
-      },
-      {
-        title: "Customer Goals & Jobs-to-be-Done",
-        prompt: "I want a clear understanding of the core tasks (\"jobs\") customers are trying to accomplish, and which outcomes (\"gains\") they most value—helping us better align our product's value proposition to their needs.",
-        icon: Users
-      },
-      {
-        title: "Root Cause Discovery",
-        prompt: "I want to explore and identify the exact underlying causes behind customer pain points, going beyond surface-level issues—so we understand precisely why frustrations arise and prioritize meaningful solutions.",
-        icon: BarChart2
-      },
-      {
-        title: "Customer Persona Insights",
-        prompt: "I want to develop a deeper understanding of our customer personas—including their motivations, challenges, goals, and behaviors—so we can better tailor our product and messaging to their specific needs.",
-        icon: UserPlus
-      }
-    ],
-    pricing: salesTemplates,
-    positioning: marketingTemplates
   }
 
   // Handle respondent contacts selection with auto-progression
@@ -425,8 +327,8 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   // Duration options
   const durationOptions = [
     "1 minute (quick)",
-    "2 minutes (focused)",
-    "3-4 minutes (recommended)",
+    "2 minutes (recommended)",
+    "3-4 minutes (focused)",
     "5-6 minutes (balanced)",
     "7-8 minutes (exploratory)",
     "9-10 minutes (deep dive)"
@@ -622,82 +524,58 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
       <div ref={cardRefs.card1}>
         <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
           <h3 className="text-base font-medium mb-2 flex items-center">
-            Describe Your Conversation Goal
+            What do you want to learn from your customers?
             <StatusDot active={hasContent(1)} />
           </h3>
-          <p className="text-sm text-gray-500 mb-6">Help us understand your goal—what do you want to learn from your customers?</p>
+          <p className="text-sm text-gray-500 mb-6">Select a topic below to start—edit freely, it's just a starting point.</p>
           
-          <Textarea
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g., I want to learn why customers decide to cancel—so we can reduce churn."
-            className="mb-8 min-h-[120px] bg-white"
-          />
-          
-          <div className="space-y-6">
-            <label className="text-sm font-medium">Select a Conversation Category (optional):</label>
-            <div className="flex flex-wrap gap-3 pb-2">
-              {categories.map((category) => (
+          <div className="space-y-6 mb-8">
+            <div className="flex flex-wrap gap-3">
+              {conversationTemplates.map((template, index) => (
                 <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
+                  key={index}
+                  onClick={() => handleTemplateSelect(template.prompt)}
                   className={cn(
-                    "px-4 py-2 text-sm rounded-full transition-all shadow-sm",
-                    activeCategory === category.id
+                    "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
+                    selectedTemplate === template.prompt
                       ? "bg-black text-white shadow-sm"
                       : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
                   )}
                 >
-                  <span className="mr-2">{category.icon}</span>
-                  <span>{category.label}</span>
+                  {template.icon && <template.icon className="w-3.5 h-3.5 text-blue-500 mr-2" />}
+                  {template.title}
                 </button>
               ))}
-            </div>
-            
-            <div className="pt-6 border-t mt-6">
-              <div className="mb-6">
-                <h3 className="text-sm font-medium">
-                  Select a topic template for:{" "}
-                  <span className="text-black font-semibold">{categories.find((c) => c.id === activeCategory)?.label}</span>
-                </h3>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 max-w-3xl">
-                {categoryTemplates[activeCategory as keyof typeof categoryTemplates].map((template) => (
-                  <button
-                    key={template.title}
-                    onClick={() => handleTemplateSelect(template.prompt)}
-                    className={cn(
-                      "p-3.5 rounded-lg border border-gray-200 bg-white",
-                      topic === template.prompt 
-                        ? "border-gray-400 shadow-md" 
-                        : "hover:shadow-sm hover:border-gray-300",
-                      "transition-all duration-200",
-                      "text-left flex items-center gap-3",
-                      "focus:outline-none focus:ring-1 focus:ring-gray-200",
-                      "shadow-sm",
-                      "group"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                      topic === template.prompt
-                        ? "bg-gray-200 text-gray-700"
-                        : "bg-gray-100 text-gray-500"
-                    )}>
-                      <template.icon className="h-3.5 w-3.5" />
-                    </div>
-                    <h3 className={cn(
-                      "text-sm",
-                      topic === template.prompt ? "font-medium" : "text-gray-700"
-                    )}>
-                      {template.title}
-                    </h3>
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={handleStartFromScratch}
+                className={cn(
+                  "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
+                  selectedTemplate === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+                    ? "bg-black text-white shadow-sm"
+                    : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
+                )}
+              >
+                <PenLine className="w-3.5 h-3.5 text-blue-500 mr-2" />
+                Start from Scratch
+              </button>
             </div>
           </div>
+          
+          {selectedTemplate && (
+            <>
+              <h3 className="text-base font-medium mb-2 flex items-center">
+                Your Instructions
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Briefly describe what you're looking to learn. This can be anything you want—you're not limited to the topics above.</p>
+              
+              <Textarea
+                value={topic || ""}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., I want to learn why customers decide to cancel—so we can reduce churn."
+                className="mb-2 min-h-[300px] bg-white"
+              />
+            </>
+          )}
         </div>
         
         {visibleCards === 1 && (
@@ -705,6 +583,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
             <Button 
               onClick={showNextCard} 
               className="bg-black text-white hover:bg-gray-800 h-9 text-xs px-5"
+              disabled={!hasContent(1)}
             >
               Next <ChevronRight className="ml-1 h-3 w-3" />
             </Button>

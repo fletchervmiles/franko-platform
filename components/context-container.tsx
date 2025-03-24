@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Loader2, Check, ChevronDown, ChevronUp, InfoIcon, Bot } from "lucide-react"
+import { Loader2, Check, ChevronDown, ChevronUp, InfoIcon, Bot, Database } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Markdown from "react-markdown"
@@ -109,7 +109,9 @@ export function ContextContainer({ initialContext, userId, onContextUpdated }: C
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">✨ Your AI Knowledge Base</h2>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Database className="h-5 w-5 text-blue-500" /> Your AI Knowledge Base
+              </h2>
               {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
                 <Tooltip>

@@ -2,12 +2,10 @@ import * as React from 'react';
 
 interface EmailTemplateProps {
   firstName: string;
-  unsubscribeUrl?: string;
 }
 
 export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
   firstName,
-  unsubscribeUrl = 'https://example.com/unsubscribe',
 }) => (
   <div style={{
     fontFamily: 'sans-serif',
@@ -17,13 +15,8 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
     padding: '20px',
     fontSize: '14px',
     lineHeight: '21px',
+    textAlign: 'left',
   }}>
-    <div style={{
-      marginBottom: '20px',
-    }}>
-      <h2 style={{ color: '#4F46E5', margin: '0' }}>Franko</h2>
-    </div>
-    
     <div style={{
       marginBottom: '20px',
     }}>
@@ -32,7 +25,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
       </p>
       
       <p style={{ margin: '14px 0' }}>
-        I'm Fletcher, thanks for signing up!
+        My name is Fletcher - I'm the founder of Franko.
       </p>
       
       <p style={{ margin: '14px 0' }}>
@@ -62,21 +55,6 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
       <p style={{ margin: '14px 0' }}>
         Best,<br />
         Fletcher
-      </p>
-    </div>
-    
-    <div style={{
-      color: '#6b7280',
-      fontSize: '12px',
-      marginTop: '20px',
-      borderTop: '1px solid #eee',
-      paddingTop: '10px',
-    }}>
-      <p>© {new Date().getFullYear()} Franko AI. All rights reserved.</p>
-      <p>
-        <a href={unsubscribeUrl} style={{ color: '#6b7280', textDecoration: 'underline' }}>
-          Unsubscribe
-        </a>
       </p>
     </div>
   </div>

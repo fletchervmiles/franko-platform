@@ -41,11 +41,10 @@ function EmptyState() {
       </div>
       <h1 className="text-2xl font-semibold mb-3">Create Conversation</h1>
       <p className="text-sm text-gray-600 mb-6 max-w-md">
-        Quick chat to set context and learning objectives for your customer conversations. This plan guides the
-        Conversation Agent.
+      Answer a few short questions to set context and objectives for a new customer conversation. We'll use your answers to create a personalized plan that guides your Conversation Agent.
       </p>
       <CreateChatButton />
-    </div>
+    </div>  
   )
 }
 
