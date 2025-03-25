@@ -70,6 +70,8 @@ export function ExternalChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  // Add a new state for the fade-in animation
+  const [visible, setVisible] = useState(false);
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [isReadyToFinish, setIsReadyToFinish] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -197,6 +199,17 @@ export function ExternalChat({
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
+  
+  // Add effect for fade-in animation when initialization completes
+  useEffect(() => {
+    if (!isInitializing) {
+      // Short delay before starting the fade-in (feels more natural)
+      const timer = setTimeout(() => {
+        setVisible(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitializing]);
   
   // Original auto-scroll effect using IntersectionObserver (keep this for desktop)
   useEffect(() => {
@@ -555,6 +568,12 @@ export function ExternalChat({
   // Calculate bottom padding to account for input container height
   const bottomPadding = isMobile ? "pb-32" : "pb-40";
 
+  // Create fade-in effect CSS style
+  const fadeStyle = {
+    opacity: visible ? 1 : 0,
+    transition: 'opacity 0.5s ease-in-out'
+  };
+
   return (
     <div 
       className="flex h-[100dvh] w-full flex-col overflow-hidden" 
@@ -566,7 +585,8 @@ export function ExternalChat({
         right: 0,
         bottom: 0,
         width: '100%',
-        overscrollBehavior: 'none'
+        overscrollBehavior: 'none',
+        ...fadeStyle
       }}
     >
       {/* Display the welcome banner if a description exists */}

@@ -99,10 +99,25 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
 
   // Check if we're coming from regeneration
   const isFromRegenerate = fromParam === 'regenerate'
-  const isFirstGeneration = fromParam === 'create'
 
   // Add state for Share tab notification dot
-  const [showShareNotification, setShowShareNotification] = useState(isFromRegenerate || isFirstGeneration)
+  const [showShareNotification, setShowShareNotification] = useState(false)
+
+  // Show notification for either new conversation or regeneration
+  useEffect(() => {
+    // Show notification for regeneration (has from=regenerate parameter)
+    if (isFromRegenerate) {
+      setShowShareNotification(true)
+      return
+    }
+    
+    // For new conversation creation - check if no previous tab parameter exists
+    // If this is a user's first visit to this conversation page and not from a specific tab,
+    // we can assume it's a new creation
+    if (!tabParam) {
+      setShowShareNotification(true)
+    }
+  }, [isFromRegenerate, tabParam])
 
   // Update active tab when URL parameter changes
   useEffect(() => {
@@ -480,7 +495,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         <div className="flex items-center justify-between">
           <div className="overflow-hidden mr-4">
             <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
-              {conversationPlan?.title || "Untitled Conversation"}
+              {conversationPlan?.title || "Loading..."}
             </h1>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">

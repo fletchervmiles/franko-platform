@@ -18,7 +18,7 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
   // Handle progress bar filling over 30 seconds
   useEffect(() => {
     const startTime = Date.now()
-    const duration = 30000 // 30 seconds
+    const duration = 50000 // 50 seconds
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime

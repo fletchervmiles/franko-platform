@@ -39,10 +39,10 @@ const getEmailNotificationSetting = async (chatId: string): Promise<boolean> => 
       throw new Error('Failed to fetch chat instance');
     }
     const data = await response.json();
-    return data.response_email_notifications || false;
+    return data.response_email_notifications !== false; // Default to true unless explicitly false
   } catch (error) {
     console.error("Error fetching email notification setting:", error);
-    return false; // Default to false if there's an error
+    return true; // Default to true if there's an error
   }
 }
 
@@ -50,8 +50,8 @@ export function EmailNotificationSetting() {
   const params = useParams();
   const chatId = Array.isArray(params.guideName) ? params.guideName[0] : params.guideName;
   
-  const [enabled, setEnabled] = useState(false)
-  const [initialEnabled, setInitialEnabled] = useState(false)
+  const [enabled, setEnabled] = useState(true)
+  const [initialEnabled, setInitialEnabled] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
