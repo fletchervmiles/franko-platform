@@ -530,6 +530,26 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           <p className="text-sm text-gray-500 mb-6">Select an example topic below to start—edit freely, it's just a starting point.</p>
           
           <div className="space-y-6 mb-8">
+            {/* Start from Scratch button on its own line */}
+            <div className="flex justify-start">
+              <button
+                onClick={handleStartFromScratch}
+                className={cn(
+                  "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
+                  selectedTemplate === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+                    ? "bg-black text-white shadow-sm"
+                    : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
+                )}
+              >
+                <PenLine className="w-3.5 h-3.5 text-blue-500 mr-2" />
+                Start from Scratch
+              </button>
+            </div>
+            
+            {/* Or divider */}
+            <div className="text-xs text-gray-500 pl-2">or</div>
+            
+            {/* Template options */}
             <div className="flex flex-wrap gap-3">
               {conversationTemplates.map((template, index) => (
                 <button
@@ -546,18 +566,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                   {template.title}
                 </button>
               ))}
-              <button
-                onClick={handleStartFromScratch}
-                className={cn(
-                  "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                  selectedTemplate === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
-                    ? "bg-black text-white shadow-sm"
-                    : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
-                )}
-              >
-                <PenLine className="w-3.5 h-3.5 text-blue-500 mr-2" />
-                Start from Scratch
-              </button>
             </div>
           </div>
           
