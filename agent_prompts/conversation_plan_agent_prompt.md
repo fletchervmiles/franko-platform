@@ -107,6 +107,7 @@ Always weave in **specific details**—like unique selling propositions or known
 
 ```organisationDescription
 {organisation_description}
+{organisation_description_demo_only}
 ```
 
 

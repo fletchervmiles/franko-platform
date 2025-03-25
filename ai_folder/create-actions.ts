@@ -148,7 +148,17 @@ export async function generateConversationPlanFromForm({
       .replace('{converastion_duration}', duration)
       .replace('{additional_details}', additionalDetails || 'None provided')
       .replace('{organisation_name}', profile.organisationName || '')
-      .replace('{organisation_description}', profile.organisationDescription || '');
+      .replace('{organisation_description}', profile.organisationDescription || '')
+      .replace('{organisation_description_demo_only}', profile.organisationDescriptionDemoOnly || '');
+    
+    // Log the populated prompt for debugging
+    console.log('\n=== CONVERSATION PLAN PROMPT ===');
+    console.log('ChatId:', chatId);
+    console.log('Topic:', topic);
+    console.log('Organisation:', profile.organisationName);
+    console.log('\nFull Prompt:');
+    console.log(systemPrompt);
+    console.log('=== END CONVERSATION PLAN PROMPT ===\n');
     
     // Add retry logic for the generateObject call
     const maxRetries = 3;

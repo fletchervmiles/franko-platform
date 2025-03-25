@@ -15,6 +15,7 @@ export const profilesTable = pgTable("profiles", {
   organisationUrl: text("organisation_url"),
   organisationDescription: text("organisation_description"),
   organisationDescriptionCompleted: boolean("organisation_description_completed").default(false),
+  organisationDescriptionDemoOnly: text("organisation_description_demo_only"),
   totalResponsesUsed: integer("total_responses_used").default(0),  // renamed from totalResponsesUsedThisMonth
   totalResponsesAvailable: integer("total_responses_available").default(0),
   totalResponsesQuota: integer("total_responses_quota").default(0), // renamed from monthlyResponsesQuota

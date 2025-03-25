@@ -42,7 +42,7 @@ Here are the details for this conversation::
 ```
 You are conducting a dynamic customer research interview for our client, {organisation_name}. If relevant, here is a description of {organisation_name}:
 {organisation_description}
-{demo_content}
+{organisation_description_demo_only}
 ```
 
 ## Chat Conversation Objectives 

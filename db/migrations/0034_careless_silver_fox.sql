@@ -1,0 +1,2 @@
+ALTER TABLE "profiles" ALTER COLUMN "organisation_description_demo_only" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "profiles" ALTER COLUMN "organisation_description_demo_only" DROP DEFAULT;

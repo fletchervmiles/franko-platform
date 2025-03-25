@@ -72,6 +72,7 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     const organizationName = profile.organisationName || '';
     const organizationContext = profile.organisationDescription || '';
     const conversationPlan = chatInstance.conversationPlan || {};
+    const organisationDescriptionDemoOnly = profile.organisationDescriptionDemoOnly || '';
     
     // We need a standardized way to create cache keys to ensure consistency
     // Create two keys - one for the regular cache, one for the external request format
@@ -111,15 +112,12 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
       formattedConversationPlan = "No conversation plan provided.";
     }
 
-    // Get demo_content from the chat instance
-    const demoContent = chatInstance.demo_content || '';
-
     // Populate the prompt template with organization details, conversation plan, and demo content
     const populatedPrompt = promptTemplate
       .replace('{organisation_name}', organizationName)
       .replace('{organisation_description}', organizationContext)
       .replace('{conversation_plan}', formattedConversationPlan)
-      .replace('{demo_content}', demoContent);
+      .replace('{organisation_description_demo_only}', organisationDescriptionDemoOnly);
 
     // Store with both keys to ensure both lookup methods work
     promptCache.set(cacheKey, populatedPrompt);

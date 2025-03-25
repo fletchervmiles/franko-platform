@@ -232,6 +232,20 @@
       "when": 1742539928117,
       "tag": "0032_flimsy_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1742875633819,
+      "tag": "0033_illegal_runaways",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1742875762405,
+      "tag": "0034_careless_silver_fox",
+      "breakpoints": true
     }
   ]
 }

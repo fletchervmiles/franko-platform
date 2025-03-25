@@ -99,9 +99,10 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
 
   // Check if we're coming from regeneration
   const isFromRegenerate = fromParam === 'regenerate'
+  const isFirstGeneration = fromParam === 'create'
 
   // Add state for Share tab notification dot
-  const [showShareNotification, setShowShareNotification] = useState(isFromRegenerate)
+  const [showShareNotification, setShowShareNotification] = useState(isFromRegenerate || isFirstGeneration)
 
   // Update active tab when URL parameter changes
   useEffect(() => {
@@ -279,7 +280,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // Memoize handleRename function
   const handleRename = useCallback(async () => {
     // Get the current title
-    const currentTitle = conversationPlan?.title || "Untitled Conversation";
+    const currentTitle = conversationPlan?.title || "Loading...";
     
     // Prompt the user for a new title
     const newTitle = window.prompt("Enter a new title for this conversation:", currentTitle);
