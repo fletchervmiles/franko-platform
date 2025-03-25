@@ -414,7 +414,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         
         // Redirect with delay
         setTimeout(() => {
-          router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+          router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
         }, 2000);
       } else {
         // Wait for the full response body
@@ -437,7 +437,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         if (planData._verified === true) {
           setLoadingProgress("Plan verified! Redirecting...");
           setTimeout(() => {
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
           }, 1000);
           return;
         }
@@ -460,7 +460,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               
               if (checkResponse.ok) {
                 // Plan exists in read replica, safe to redirect
-                router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : ''}`);
+                router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               
@@ -470,7 +470,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               if (attempts >= maxAttempts) {
                 // If we exceed max attempts, redirect anyway with localStorage flag
                 console.warn(`Plan verification timed out after ${maxAttempts} attempts`);
-                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               
@@ -482,7 +482,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               
               if (attempts >= maxAttempts) {
                 // Fallback to localStorage approach
-                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : ''}`);
+                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               

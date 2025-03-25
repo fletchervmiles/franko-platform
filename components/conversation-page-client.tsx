@@ -97,27 +97,13 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // The guideName param is actually the chat instance ID
   const chatId = params.guideName
 
-  // Check if we're coming from regeneration
+  // Check if we're coming from generation or regeneration
   const isFromRegenerate = fromParam === 'regenerate'
+  const isFromGenerate = fromParam === 'generate'
+  const isNewOrRegenerated = isFromRegenerate || isFromGenerate
 
   // Add state for Share tab notification dot
-  const [showShareNotification, setShowShareNotification] = useState(false)
-
-  // Show notification for either new conversation or regeneration
-  useEffect(() => {
-    // Show notification for regeneration (has from=regenerate parameter)
-    if (isFromRegenerate) {
-      setShowShareNotification(true)
-      return
-    }
-    
-    // For new conversation creation - check if no previous tab parameter exists
-    // If this is a user's first visit to this conversation page and not from a specific tab,
-    // we can assume it's a new creation
-    if (!tabParam) {
-      setShowShareNotification(true)
-    }
-  }, [isFromRegenerate, tabParam])
+  const [showShareNotification, setShowShareNotification] = useState(isNewOrRegenerated)
 
   // Update active tab when URL parameter changes
   useEffect(() => {
@@ -615,7 +601,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                     chatId={chatId} 
                     onSubmit={handleConversationPlanSubmit} 
                     initialData={conversationPlan}
-                    startInEditMode={true}
+                    startInEditMode={isNewOrRegenerated}
                   />
                 </Suspense>
               </div>
