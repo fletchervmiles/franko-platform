@@ -530,8 +530,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           <p className="text-sm text-gray-500 mb-6">Select an example topic below to start—edit freely, it's just a starting point.</p>
           
           <div className="space-y-6 mb-8">
-            {/* Start from Scratch button on its own line */}
-            <div className="flex justify-start">
+            <div className="flex flex-wrap gap-3">
+              {/* Start from Scratch button as first button */}
               <button
                 onClick={handleStartFromScratch}
                 className={cn(
@@ -544,13 +544,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                 <PenLine className="w-3.5 h-3.5 text-blue-500 mr-2" />
                 Start from Scratch
               </button>
-            </div>
-            
-            {/* Or divider */}
-            <div className="text-xs text-gray-500 pl-2">or</div>
-            
-            {/* Template options */}
-            <div className="flex flex-wrap gap-3">
+              
+              {/* Template options */}
               {conversationTemplates.map((template, index) => (
                 <button
                   key={index}
