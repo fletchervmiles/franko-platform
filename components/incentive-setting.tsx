@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { useParams } from "next/navigation"
-import { Loader2, Gift } from "lucide-react"
+import { Loader2, Gift, Edit2 } from "lucide-react"
 
 export function IncentiveSetting() {
   const params = useParams()
@@ -23,6 +23,7 @@ export function IncentiveSetting() {
   const [initialDescription, setInitialDescription] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [editMode, setEditMode] = useState(false)
 
   // Fetch current incentive settings
   useEffect(() => {
@@ -69,6 +70,7 @@ export function IncentiveSetting() {
 
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
+    if (!editMode) return;
     setIncentiveStatus(checked);
   }
 
@@ -109,6 +111,9 @@ export function IncentiveSetting() {
       setInitialCode(incentiveCode);
       setInitialDescription(incentiveDescription);
       
+      // Exit edit mode
+      setEditMode(false);
+      
       toast.success("Incentive settings updated successfully")
     } catch (error) {
       console.error("Error updating incentive settings:", error)
@@ -116,6 +121,14 @@ export function IncentiveSetting() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // Cancel edits and revert to initial values
+  const handleCancel = () => {
+    setIncentiveStatus(initialStatus);
+    setIncentiveCode(initialCode);
+    setIncentiveDescription(initialDescription);
+    setEditMode(false);
   }
 
   // Check if form has changes to enable/disable save button
@@ -129,14 +142,27 @@ export function IncentiveSetting() {
 
   return (
     <Card className="border-none shadow-none">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold flex items-center">
-          <Gift className="h-4 w-4 mr-2 text-blue-600" />
-          Incentive Settings
-        </CardTitle>
-        <CardDescription>
-          Offer incentives to encourage participation and completion
-        </CardDescription>
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-lg font-semibold flex items-center">
+            <Gift className="h-4 w-4 mr-2 text-blue-600" />
+            Incentive Settings
+          </CardTitle>
+          <CardDescription>
+            Offer incentives to encourage participation and completion
+          </CardDescription>
+        </div>
+        {!editMode && !isLoading && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setEditMode(true)}
+            className="h-8 text-xs px-4"
+          >
+            <Edit2 className="h-3 w-3 mr-1" />
+            Edit
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -153,7 +179,7 @@ export function IncentiveSetting() {
                 id="incentive-toggle"
                 checked={incentiveStatus}
                 onCheckedChange={handleToggleChange}
-                disabled={isSaving}
+                disabled={isSaving || !editMode}
                 aria-label="Toggle incentive"
               />
             </div>
@@ -164,13 +190,19 @@ export function IncentiveSetting() {
                   <Label htmlFor="incentive-code" className="text-sm font-medium">
                     Incentive Code
                   </Label>
-                  <Input
-                    id="incentive-code"
-                    value={incentiveCode}
-                    onChange={(e) => setIncentiveCode(e.target.value)}
-                    placeholder="Enter a discount code to share after the chat (e.g., 'SAVE10')"
-                    className="bg-white mt-2"
-                  />
+                  {editMode ? (
+                    <Input
+                      id="incentive-code"
+                      value={incentiveCode}
+                      onChange={(e) => setIncentiveCode(e.target.value)}
+                      placeholder="Enter a discount code to share after the chat (e.g., 'SAVE10')"
+                      className="bg-white mt-2"
+                    />
+                  ) : (
+                    <div className="mt-2 p-2 bg-white border rounded-md text-sm">
+                      {incentiveCode || "No code set"}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -182,36 +214,53 @@ export function IncentiveSetting() {
                   </p>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <span className="text-sm whitespace-nowrap italic text-gray-600">Upon completion, you'll receive</span>
-                    <Input
-                      id="incentive-description"
-                      value={incentiveDescription}
-                      onChange={(e) => setIncentiveDescription(e.target.value)}
-                      placeholder="20% off your next order, a free sample, etc."
-                      className="bg-white flex-1"
-                    />
+                    {editMode ? (
+                      <Input
+                        id="incentive-description"
+                        value={incentiveDescription}
+                        onChange={(e) => setIncentiveDescription(e.target.value)}
+                        placeholder="20% off your next order, a free sample, etc."
+                        className="bg-white flex-1"
+                      />
+                    ) : (
+                      <div className="flex-1 p-2 bg-white border rounded-md text-sm">
+                        {incentiveDescription || "No description set"}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
             
-            <div className="flex justify-end mt-6">
-              <Button 
-                onClick={handleSave} 
-                disabled={isSaving || !hasChanges()}
-                variant="outline"
-                size="sm"
-                className={`h-8 text-xs px-4 transition-all duration-300 ease-in-out ${hasChanges() ? 'bg-black text-white hover:bg-gray-800' : ''}`}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </div>
+            {editMode && (
+              <div className="flex justify-end mt-6 gap-2">
+                <Button 
+                  onClick={handleCancel}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs px-4"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isSaving || !hasChanges()}
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 text-xs px-4 transition-all duration-300 ease-in-out ${hasChanges() ? 'bg-black text-white hover:bg-gray-800' : ''}`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
