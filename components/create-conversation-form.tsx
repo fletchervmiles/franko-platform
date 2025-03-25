@@ -36,7 +36,7 @@ const useOrganisationName = () => {
   useEffect(() => {
     async function fetchOrganisationName() {
       try {
-        const response = await fetch("/api/profile")
+        const response = await fetch("/api/user/profile")
         const data = await response.json()
         setOrganisationName(data.organisationName || "product")
       } catch (error) {
