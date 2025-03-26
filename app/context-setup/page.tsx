@@ -359,18 +359,6 @@ export default function ContextSetupPage() {
                       <div className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-5">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-medium">Business Information</h3>
-                          <div className="flex items-center gap-2">
-                            {!isEditing && (
-                              <Button onClick={handleEditCard} variant="outline" size="sm" className="h-9 text-xs px-4 py-2">
-                                Edit
-                              </Button>
-                            )}
-                            {isEditing && (
-                              <Button onClick={handleCancelCard} variant="outline" size="sm" className="h-9 text-xs px-4 py-2">
-                                Cancel
-                              </Button>
-                            )}
-                          </div>
                         </div>
                         
                         <div className="space-y-5">
@@ -511,7 +499,7 @@ export default function ContextSetupPage() {
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isPending || isEditingUrl || isEditingName}
+                          disabled={isPending || isEditing}
                           className={cn(
                             "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
                             shouldPulse && "animate-pulse-edge",
