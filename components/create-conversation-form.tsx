@@ -108,7 +108,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   
   // State for visible cards
-  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 5 : 1)
+  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 4 : 1)
   
   // Conversation templates with icons
   const conversationTemplates = useMemo(() => [
@@ -214,7 +214,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           setAdditionalDetails(data.additionalDetails || "");
           
           // Show all cards when regenerating
-          setVisibleCards(5);
+          setVisibleCards(4);
         } catch (error) {
           console.error('Error fetching chat details:', error);
           toast.error('Failed to load existing conversation details');
@@ -251,8 +251,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         return respondentContacts !== null
       case 4:
         return incentiveStatus !== null && (!incentiveStatus || (incentiveStatus && incentiveCode.trim().length > 0 && incentiveDescription.trim().length > 0))
-      case 5:
-        return additionalDetails.trim().length > 0 // Only true when content is actually added
       default:
         return false
     }
@@ -260,7 +258,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   
   // Function to show the next card
   const showNextCard = () => {
-    if (visibleCards < 5) {
+    if (visibleCards < 4) {
       setVisibleCards(visibleCards + 1)
     }
   }
@@ -759,37 +757,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                 </div>
               </div>
             )}
-          </div>
-          
-          {visibleCards === 4 && (
-            <div className="flex justify-end mt-5">
-              <Button 
-                onClick={showNextCard} 
-                className="bg-black text-white hover:bg-gray-800 h-9 text-xs px-5"
-              >
-                Next <ChevronRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {/* Card 5: Additional Details */}
-      {visibleCards >= 5 && (
-        <div ref={cardRefs.card5}>
-          <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
-            <h3 className="text-base font-medium mb-2 flex items-center">
-              Optional: Additional Context or Guidance
-              <StatusDot active={hasContent(5)} />
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">Provide any context or clarifying guidance you'd like the AI to keep in mind when crafting your conversation plan.</p>
-            
-            <Textarea
-              value={additionalDetails}
-              onChange={(e) => setAdditionalDetails(e.target.value)}
-              placeholder="I.e. specifically ask about their favourite feature and explore the reasons why."
-              className="mb-6 min-h-[120px] max-w-3xl bg-white"
-            />
           </div>
           
           <div className="flex justify-end mt-8 space-x-4">
