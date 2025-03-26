@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <SignIn
       signUpUrl="/sign-up"
-      redirectUrl="/create"
+      redirectUrl="/workspace"
       path="/sign-in"
       routing="path"
     />
