@@ -6,6 +6,12 @@ import { NextResponse } from "next/server";
 // Simple rate limit tracking with a basic counter
 const ratelimitCache = new Map();
 
+// Function to detect mobile devices from User-Agent
+const isMobileDevice = (userAgent: string | null): boolean => {
+  if (!userAgent) return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+};
+
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   "/account",
@@ -158,6 +164,13 @@ export default clerkMiddleware(async (auth, req) => {
   // For protected UI routes, redirect to sign-in
   if (!userId && isProtected) {
     return redirectToSignIn({ returnBackUrl: req.url });
+  }
+
+  // Check if user is on mobile and trying to access protected routes
+  const userAgent = req.headers.get('user-agent');
+  if (userId && isProtected && isMobileDevice(userAgent)) {
+    // Redirect to a "desktop only" page
+    return NextResponse.redirect(new URL('/desktop-only', req.url));
   }
 
   // If authenticated, allow access to all routes
