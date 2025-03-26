@@ -407,8 +407,8 @@ export default function ContextSetupPage() {
                             <p className="text-sm text-gray-500 mb-2">
                               We'll analyze your website content to build context.
                             </p>
-                            <div className="flex items-center gap-2">
-                              <FormControl>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <FormControl className="w-full">
                                 <div className="relative w-full">
                                   <Input
                                     placeholder="https://..."
@@ -416,15 +416,10 @@ export default function ContextSetupPage() {
                                     {...field}
                                     disabled={!isEditingUrl}
                                   />
-                                  {field.value.length === 0 && !profile?.organisationUrl && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
-                                      ✨ Enter your company URL
-                                    </div>
-                                  )}
                                 </div>
                               </FormControl>
                               {isCardEditing && (
-                                <>
+                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
                                   {isEditingUrl ? (
                                     <div className="flex items-center gap-1">
                                       <Button 
@@ -469,9 +464,14 @@ export default function ContextSetupPage() {
                                       </Button>
                                     )
                                   )}
-                                </>
+                                </div>
                               )}
                             </div>
+                            {field.value.length === 0 && !profile?.organisationUrl && (
+                              <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                ✨ Please enter your company URL
+                              </p>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -498,8 +498,8 @@ export default function ContextSetupPage() {
                             <p className="text-sm text-gray-500 mb-2">
                               Used to reference your business accurately in conversations.
                             </p>
-                            <div className="flex items-center gap-2">
-                              <FormControl>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <FormControl className="w-full">
                                 <div className="relative w-full">
                                   <Input
                                     placeholder="Enter name..."
@@ -507,15 +507,10 @@ export default function ContextSetupPage() {
                                     {...field}
                                     disabled={!isEditingName}
                                   />
-                                  {field.value.length === 0 && !profile?.organisationName && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 text-sm font-medium animate-pulse-edge bg-indigo-50 px-3 py-1 rounded-full">
-                                      ✨ Enter your company or product name
-                                    </div>
-                                  )}
                                 </div>
                               </FormControl>
                               {isCardEditing && (
-                                <>
+                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
                                   {isEditingName ? (
                                     <div className="flex items-center gap-1">
                                       <Button 
@@ -560,9 +555,14 @@ export default function ContextSetupPage() {
                                       </Button>
                                     )
                                   )}
-                                </>
+                                </div>
                               )}
                             </div>
+                            {field.value.length === 0 && !profile?.organisationName && (
+                              <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                ✨ Please enter your company or product name
+                              </p>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
