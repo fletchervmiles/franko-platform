@@ -1,6 +1,6 @@
 export default function DesktopOnlyPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+    <div className="flex flex-col items-center justify-center h-screen p-6 text-center overflow-hidden">
       <div className="max-w-md space-y-6">
         <h1 className="text-3xl font-bold">Mobile Currently Unsupported</h1>
         
