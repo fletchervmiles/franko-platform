@@ -101,8 +101,6 @@ export default function ContextSetupPage() {
   const [showManualContext, setShowManualContext] = useState(false)
   const { toast } = useToast()
   const [description, setDescription] = useState<string>("")
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -179,24 +177,27 @@ export default function ContextSetupPage() {
       })
       
       // Reset edit states
-      setIsEditing(false)
-      setIsSaving(false)
+      setIsEditingUrl(false)
+      setIsEditingName(false)
+      setIsSavingUrl(false)
+      setIsSavingName(false)
       
       // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
       
       toast({
         title: "Success!",
-        description: "Your business information has been updated successfully.",
+        description: "Field updated successfully.",
       })
     },
     onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update business information. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update field. Please try again.",
       })
-      setIsSaving(false)
+      setIsSavingUrl(false)
+      setIsSavingName(false)
     }
   })
 
@@ -218,10 +219,12 @@ export default function ContextSetupPage() {
       // If description is complete, ensure we're in view mode
       if (!profile.organisationDescriptionCompleted) {
         setIsCardEditing(true)
-        setIsEditing(!(profile.organisationUrl && profile.organisationName))
+        setIsEditingUrl(profile.organisationUrl ? false : true)
+        setIsEditingName(profile.organisationName ? false : true)
       } else {
         setIsCardEditing(false)
-        setIsEditing(false)
+        setIsEditingUrl(false)
+        setIsEditingName(false)
       }
     }
   }, [profile, form])
@@ -248,45 +251,72 @@ export default function ContextSetupPage() {
     })
   }
 
-  const handleSaveFields = () => {
+  const handleSaveUrl = () => {
     if (!user?.id) return
     
     const urlValue = form.getValues("url")
-    const nameValue = form.getValues("orgName")
-    
-    // Validate fields
-    let hasError = false
-    
     if (!urlValue) {
       form.setError("url", { message: "URL is required" })
-      hasError = true
+      return
     }
     
-    if (!nameValue) {
-      form.setError("orgName", { message: "Organisation name is required" })
-      hasError = true
-    }
-    
-    if (hasError) return
-    
-    setIsSaving(true)
+    setIsSavingUrl(true)
     saveFieldMutation({
       userId: user.id,
-      organisationUrl: urlValue,
+      organisationUrl: urlValue
+    })
+  }
+
+  const handleSaveName = () => {
+    if (!user?.id) return
+    
+    const nameValue = form.getValues("orgName")
+    if (!nameValue) {
+      form.setError("orgName", { message: "Organisation name is required" })
+      return
+    }
+    
+    setIsSavingName(true)
+    saveFieldMutation({
+      userId: user.id,
       organisationName: nameValue
     })
   }
 
   const handleEditCard = () => {
-    setIsEditing(true)
+    setIsCardEditing(true)
   }
 
   const handleCancelCard = () => {
-    setIsEditing(false)
+    setIsCardEditing(false)
+    setIsEditingUrl(false)
+    setIsEditingName(false)
     
     // Reset form values to last submitted values
     if (submittedValues) {
       form.setValue("url", submittedValues.url)
+      form.setValue("orgName", submittedValues.orgName)
+    }
+  }
+
+  const handleEditUrl = () => {
+    setIsEditingUrl(true)
+  }
+
+  const handleEditName = () => {
+    setIsEditingName(true)
+  }
+
+  const handleCancelUrl = () => {
+    setIsEditingUrl(false)
+    if (submittedValues?.url) {
+      form.setValue("url", submittedValues.url)
+    }
+  }
+
+  const handleCancelName = () => {
+    setIsEditingName(false)
+    if (submittedValues?.orgName) {
       form.setValue("orgName", submittedValues.orgName)
     }
   }
@@ -324,12 +354,12 @@ export default function ContextSetupPage() {
                     <p className="text-base text-gray-700">Tell us about your business so your AI can understand who you are and deliver personalized conversations.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isEditing && (
+                    {!isCardEditing && profile && (
                       <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
                         Edit
                       </Button>
                     )}
-                    {isEditing && (
+                    {isCardEditing && (
                       <Button onClick={handleCancelCard} variant="outline" size="sm" className="h-8 text-xs px-4">
                         Cancel
                       </Button>
@@ -356,119 +386,187 @@ export default function ContextSetupPage() {
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-4">
-                      <div className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-5">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-medium">Business Information</h3>
-                        </div>
-                        
-                        <div className="space-y-5">
-                          <FormField
-                            control={form.control}
-                            name="url"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                  <Link className="h-4 w-4 text-blue-500" /> Website URL
-                                  <TooltipProvider delayDuration={0}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                        <p>We scan publicly available information from your website to help your AI understand your products, services, and terminology.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </FormLabel>
-                                <p className="text-sm text-gray-500 mb-2">
-                                  We'll analyze your website content to build context.
-                                </p>
-                                <FormControl>
-                                  <div className="relative w-full">
-                                    <Input
-                                      placeholder="https://..."
-                                      className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                      {...field}
-                                      disabled={!isEditing}
-                                    />
-                                  </div>
-                                </FormControl>
-                                {field.value.length === 0 && !profile?.organisationUrl && (
-                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                    ✨ Please enter your company URL
-                                  </p>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="orgName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                  <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
-                                  <TooltipProvider delayDuration={0}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                        <p>Enter your official company or brand name here, so your AI can correctly represent your business in interactions.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </FormLabel>
-                                <p className="text-sm text-gray-500 mb-2">
-                                  Used to reference your business accurately in conversations.
-                                </p>
-                                <FormControl>
-                                  <div className="relative w-full">
-                                    <Input
-                                      placeholder="Enter name..."
-                                      className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                      {...field}
-                                      disabled={!isEditing}
-                                    />
-                                  </div>
-                                </FormControl>
-                                {field.value.length === 0 && !profile?.organisationName && (
-                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                    ✨ Please enter your company or product name
-                                  </p>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          {isEditing && (
-                            <div className="flex justify-end mt-4">
-                              <Button 
-                                type="button" 
-                                size="sm"
-                                onClick={handleSaveFields}
-                                disabled={isSaving}
-                                className="h-9 px-4 py-2 text-xs"
-                              >
-                                {isSaving ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="mr-2 h-4 w-4" />
-                                    Save
-                                  </>
-                                )}
-                              </Button>
+                      <FormField
+                        control={form.control}
+                        name="url"
+                        render={({ field }) => (
+                          <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                            <FormLabel className="text-base font-semibold flex items-center gap-2">
+                              <Link className="h-4 w-4 text-blue-500" /> Website URL
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                    <p>We scan publicly available information from your website to help your AI understand your products, services, and terminology.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
+                            <p className="text-sm text-gray-500 mb-2">
+                              We'll analyze your website content to build context.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <FormControl className="w-full">
+                                <div className="relative w-full">
+                                  <Input
+                                    placeholder="https://..."
+                                    className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                    {...field}
+                                    disabled={!isEditingUrl}
+                                  />
+                                </div>
+                              </FormControl>
+                              {isCardEditing && (
+                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
+                                  {isEditingUrl ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={handleCancelUrl}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        size="sm"
+                                        onClick={handleSaveUrl}
+                                        disabled={isSavingUrl || !field.value}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        {isSavingUrl ? (
+                                          <>
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            Save
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="mr-1 h-3 w-3" />
+                                            Save
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    field.value && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleEditUrl}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Edit className="h-3 w-3 text-gray-500" />
+                                      </Button>
+                                    )
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
+                            {field.value.length === 0 && !profile?.organisationUrl && (
+                              <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                ✨ Please enter your company URL
+                              </p>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="orgName"
+                        render={({ field }) => (
+                          <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                            <FormLabel className="text-base font-semibold flex items-center gap-2">
+                              <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                    <p>Enter your official company or brand name here, so your AI can correctly represent your business in interactions.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </FormLabel>
+                            <p className="text-sm text-gray-500 mb-2">
+                              Used to reference your business accurately in conversations.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <FormControl className="w-full">
+                                <div className="relative w-full">
+                                  <Input
+                                    placeholder="Enter name..."
+                                    className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                    {...field}
+                                    disabled={!isEditingName}
+                                  />
+                                </div>
+                              </FormControl>
+                              {isCardEditing && (
+                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
+                                  {isEditingName ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={handleCancelName}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        size="sm"
+                                        onClick={handleSaveName}
+                                        disabled={isSavingName || !field.value}
+                                        className="h-8 px-2 text-xs"
+                                      >
+                                        {isSavingName ? (
+                                          <>
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            Save
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="mr-1 h-3 w-3" />
+                                            Save
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    field.value && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleEditName}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Edit className="h-3 w-3 text-gray-500" />
+                                      </Button>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {field.value.length === 0 && !profile?.organisationName && (
+                              <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                ✨ Please enter your company or product name
+                              </p>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     <div className="flex flex-wrap justify-end gap-3">
@@ -477,7 +575,7 @@ export default function ContextSetupPage() {
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isPending || isEditing}
+                          disabled={isPending || isEditingUrl || isEditingName}
                           className="h-9 px-4 flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
                         >
                           {isPending ? (
@@ -499,7 +597,7 @@ export default function ContextSetupPage() {
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isPending || isEditing}
+                          disabled={isPending || isEditingUrl || isEditingName}
                           className={cn(
                             "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
                             shouldPulse && "animate-pulse-edge",
