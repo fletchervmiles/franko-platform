@@ -7,21 +7,53 @@
 
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
-// Initial loading placeholder with minimal footprint
-const InitialLoadingState = () => (
-  <div className="h-full flex items-center justify-center">
-    <div className="flex flex-col items-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="mt-2 text-sm text-muted-foreground">
-        Loading conversation...
-      </p>
+// Initial loading placeholder with minimal footprint and consistent styling
+const InitialLoadingState = () => {
+  // Apply app-like styles to prevent zoom and pull-to-refresh
+  useEffect(() => {
+    // Apply fixed positioning to prevent pull-to-refresh
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.body.style.overscrollBehavior = 'none';
+    
+    return () => {
+      // Clean up styles on unmount
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.overscrollBehavior = '';
+    };
+  }, []);
+  
+  return (
+    <div className="h-[100dvh] flex items-center justify-center bg-[#F9F8F6]"
+      style={{
+        touchAction: "manipulation",
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        overscrollBehavior: 'none'
+      }}
+    >
+      <div className="flex flex-col items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-2 text-sm text-muted-foreground">
+          Loading conversation...
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Dynamically import the ExternalChatWrapper with custom loading strategy
 const DynamicExternalChatWrapper = dynamic(

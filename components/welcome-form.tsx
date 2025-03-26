@@ -41,6 +41,21 @@ export function WelcomeForm({
     onSubmit(formData)
   }
 
+  // Custom input styles to prevent auto-zoom
+  const inputStyles = {
+    fontSize: '16px', // Minimum 16px to prevent zoom on iOS
+    padding: '12px 16px', // Larger tap target
+    lineHeight: '1.5', // Improved readability
+    touchAction: 'manipulation' // Better touch handling
+  };
+
+  // Button styles to ensure consistency
+  const buttonStyles = {
+    fontSize: '16px',
+    minHeight: '48px',
+    touchAction: 'manipulation'
+  };
+
   return (
     <div className="space-y-6 w-full max-w-md mx-auto">
       {/* Debug display to check if the condition is working */}
@@ -66,7 +81,9 @@ export function WelcomeForm({
             value={formData.firstName}
             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
             required
-            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0"
+            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+            style={inputStyles}
+            autoComplete="name"
           />
         </div>
 
@@ -79,7 +96,9 @@ export function WelcomeForm({
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
-            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0"
+            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+            style={inputStyles}
+            autoComplete="email"
           />
         </div>
 
@@ -89,10 +108,11 @@ export function WelcomeForm({
           disabled={isLoading}
           className={cn(
             "w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
-            "transition-all duration-200 shadow-sm py-2.5 text-base font-medium",
+            "transition-all duration-200 shadow-sm py-3 text-base font-medium",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           )}
+          style={buttonStyles}
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
