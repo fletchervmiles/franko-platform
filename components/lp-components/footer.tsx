@@ -10,7 +10,7 @@ export default function Footer() {
           </h2>
           
           <div className="flex flex-wrap items-center justify-center gap-6">
-            <Link href="/signup" className="inline-flex items-center justify-center px-8 py-3 rounded-md bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium hover:opacity-90 transition-opacity">
+            <Link href="/sign-up" className="inline-flex items-center justify-center px-8 py-3 rounded-md bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium hover:opacity-90 transition-opacity">
               Get started for free
             </Link>
             
