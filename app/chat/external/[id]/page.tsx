@@ -334,7 +334,7 @@ export default function StartChatPage({
             </p>
           ) : (
             <>
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <div className="border border-gray-200 bg-gray-50 p-4 rounded-lg mb-6">
                 <p className="text-center text-sm text-gray-600">
                   {chatInstanceData?.welcomeCardDescription || 
                     "This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time."}

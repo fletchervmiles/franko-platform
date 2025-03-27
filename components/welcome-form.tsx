@@ -63,7 +63,7 @@ export function WelcomeForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Name field */}
         <div className="space-y-2">
-          <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+          <label htmlFor="firstName" className="text-sm text-gray-700">
             First Name
           </label>
           <div className="relative">
@@ -76,7 +76,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
               placeholder="Enter your first name"
-              className="pl-12 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
               style={inputStyles}
               autoComplete="name"
             />
@@ -85,7 +85,7 @@ export function WelcomeForm({
 
         {/* Email field */}
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="text-sm text-gray-700">
             Email Address
           </label>
           <div className="relative">
@@ -99,7 +99,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               placeholder="Enter your email address"
-              className="pl-12 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
               style={inputStyles}
               autoComplete="email"
             />
