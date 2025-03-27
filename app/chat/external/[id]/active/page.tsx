@@ -42,8 +42,8 @@ export default function ActiveChatPage({
   params: { id: string };
 }) {
   const searchParams = useSearchParams();
-  const chatResponseId = searchParams.get("responseId");
-  const welcomeDesc = searchParams.get("welcomeDesc");
+  const chatResponseId = searchParams?.get("responseId");
+  const welcomeDesc = searchParams?.get("welcomeDesc");
   const welcomeDescription = welcomeDesc ? decodeURIComponent(welcomeDesc) : undefined;
   
   // Start warming the prompt cache immediately when the page loads
