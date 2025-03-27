@@ -63,10 +63,8 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
           </h2>
 
           {isComplete && (
-            <p className="text-center text-sm text-amber-500 mt-4 flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Thank you for your patience—our best model is thoughtfully preparing your conversation plan to ensure it's just right for you.
-            </p>
+            <p className="text-center text-sm text-amber-500 mt-4">
+              Thank you for your patience—this is taking slightly longer than usual, but the good news is that it means the model is thinking deeply about your conversation plan!            </p>
           )}
 
           <div className="text-center text-sm text-muted-foreground">
