@@ -76,7 +76,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
               placeholder="Enter your first name"
-              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12 placeholder:text-sm"
               style={inputStyles}
               autoComplete="name"
             />
@@ -99,7 +99,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               placeholder="Enter your email address"
-              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-0 h-12 placeholder:text-sm"
               style={inputStyles}
               autoComplete="email"
             />
