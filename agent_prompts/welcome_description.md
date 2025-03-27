@@ -1,6 +1,6 @@
-# 🚀 Final Prompt Instructions  
+# Prompt Instructions  
 
-Given the provided inputs, clearly generate a friendly, warm, user-facing introduction for users who start a chatbot conversation.
+Given the provided inputs (they will be given at the bottom of the prompt), clearly generate a friendly, warm, user-facing introduction for users who start a chatbot conversation.
 
 ### You will receive these three inputs:
 - **"title"**: (Internal use only) original internal conversation template title.
@@ -270,10 +270,11 @@ Include clearly all 4 of these elements in a short paragraph:
 ```
 ---
 
-## 📋 Clearly & Consistently Reference Summary:
+# Inputs:
 
-- ✅ Use the exact structure explicitly provided above.
-- ✅ Each clearly provided example demonstrates desired style, tone, and content clearly.
-- ✅ Instructions specifically outline length (~words/characters), content, style, format, clearly and consistently.
+Ok, here are the relevant inputs:
 
-You can copy this entire prompt exactly as written into your `prompt.md` file.
+Title: {title}
+Duration: {duration}
+Summary: {summary}
+
