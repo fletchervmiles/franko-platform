@@ -182,17 +182,13 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           if (formattedDuration) {
             // Convert from backend format to frontend display format
             if (formattedDuration.includes("1 minute")) {
-              formattedDuration = "1 minute (quick)";
+              formattedDuration = "1 minute (quick) - 5 turns";
             } else if (formattedDuration.includes("2 minutes")) {
-              formattedDuration = "2 minutes (recommended)";
+              formattedDuration = "2 minutes (recommended) - 10 turns";
             } else if (formattedDuration.includes("3-4 minutes")) {
-              formattedDuration = "3-4 minutes (focused)";
-            } else if (formattedDuration.includes("5-6 minutes")) {
-              formattedDuration = "5-6 minutes (balanced)";
-            } else if (formattedDuration.includes("7-8 minutes")) {
-              formattedDuration = "7-8 minutes (exploratory)";
-            } else if (formattedDuration.includes("9-10 minutes")) {
-              formattedDuration = "9-10 minutes (deep dive)";
+              formattedDuration = "3-4 minutes (exploratory) - 16 turns";
+            } else if (formattedDuration.includes("4-5 minutes")) {
+              formattedDuration = "4-5 minutes (deep dive) - 20 turns";
             }
           }
           
@@ -324,12 +320,10 @@ I'll send this to customers who've recently churned or canceled their ${organisa
 
   // Duration options
   const durationOptions = [
-    "1 minute (quick)",
-    "2 minutes (recommended)",
-    "3-4 minutes (focused)",
-    "5-6 minutes (balanced)",
-    "7-8 minutes (exploratory)",
-    "9-10 minutes (deep dive)"
+    "1 minute (quick) - 5 turns",
+    "2 minutes (recommended) - 10 turns",
+    "3-4 minutes (exploratory) - 16 turns",
+    "4-5 minutes (deep dive) - 20 turns"
   ]
 
   // Add quota checking

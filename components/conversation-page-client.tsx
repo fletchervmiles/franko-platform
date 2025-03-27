@@ -70,8 +70,8 @@ const IncentiveSetting = dynamic(
 const LoadingPlaceholder = () => (
   <div className="w-full p-4 flex items-center justify-center">
     <div className="text-center">
-      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-      <p className="mt-2 text-sm text-muted-foreground">Loading content...</p>
+      <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary/70" />
+      <p className="mt-2 text-xs text-muted-foreground">Loading...</p>
     </div>
   </div>
 )
@@ -85,8 +85,8 @@ interface ConversationPageClientProps {
 
 export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
   const searchParams = useSearchParams()
-  const tabParam = searchParams.get('tab')
-  const fromParam = searchParams.get('from')
+  const tabParam = searchParams?.get('tab')
+  const fromParam = searchParams?.get('from')
   const [activeTab, setActiveTab] = useState(tabParam || "plan")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
@@ -111,6 +111,18 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
       setActiveTab(tabParam)
     }
   }, [tabParam])
+  
+  // Update URL when active tab changes (without full page reload)
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value)
+    
+    // Construct the new URL with the updated tab parameter
+    const newParams = new URLSearchParams(searchParams?.toString() || '')
+    newParams.set('tab', value)
+    
+    // Use App Router navigation options (scroll: false instead of shallow)
+    router.push(`/conversations/${chatId}?${newParams.toString()}`, { scroll: false })
+  }, [chatId, router, searchParams])
 
   // Memoize the updateLastViewed function
   const updateLastViewed = useCallback(async () => {
@@ -155,7 +167,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         setIsLoading(true);
         
         // Check for localStorage data first
-        const useLocal = searchParams.get('useLocal') === 'true';
+        const useLocal = searchParams?.get('useLocal') === 'true';
         let localPlanFound = false;
         
         if (useLocal) {
@@ -526,7 +538,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         </div>
 
         {/* Tabs Section */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0">
             <TabsTrigger
               value="share"

@@ -62,6 +62,13 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
             {!isComplete ? "Generating your Conversation Plan..." : `Finalising now${dots}`}
           </h2>
 
+          {isComplete && (
+            <p className="text-center text-sm text-amber-500 mt-4 flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Thank you for your patience—our best model is thoughtfully preparing your conversation plan to ensure it's just right for you.
+            </p>
+          )}
+
           <div className="text-center text-sm text-muted-foreground">
             <p className="mb-6">
               Your plan will include step-by-step instructions to help guide your conversational agent, including:
