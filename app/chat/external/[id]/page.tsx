@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { WelcomeForm } from "@/components/welcome-form";
-import { Loader2, Shield, ArrowRight } from "lucide-react";
+import { Loader2, Shield, ArrowRight, Gift } from "lucide-react";
 import { useConsolidatedChatInit } from "@/lib/hooks/use-consolidated-chat-init";
 import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
 import { useQuotaAvailability } from "@/hooks/use-quota-availability";
@@ -356,6 +356,18 @@ export default function StartChatPage({
                 />
               ) : !hasReachedResponseLimit && (
                 <div className="flex flex-col space-y-4">
+                  {/* Add incentive banner for anonymous view */}
+                  {chatInstanceData?.incentive_status && (
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Gift className="h-5 w-5 text-indigo-500" />
+                        <p className="text-sm text-gray-700">
+                          {chatInstanceData?.incentive_description || "Complete this conversation to receive an incentive!"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-center">
                     <Shield size={14} className="text-gray-500 mr-2" />
                     <p className="text-sm text-gray-500">Your feedback is anonymous</p>

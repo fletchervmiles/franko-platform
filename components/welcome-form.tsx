@@ -42,7 +42,6 @@ export function WelcomeForm({
   // Custom input styles to prevent auto-zoom
   const inputStyles = {
     fontSize: '16px', // Minimum 16px to prevent zoom on iOS
-    padding: '12px 16px', // Larger tap target
     lineHeight: '1.5', // Improved readability
     touchAction: 'manipulation' // Better touch handling
   };
@@ -77,7 +76,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
               placeholder="Enter your first name"
-              className="pl-10 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
               style={inputStyles}
               autoComplete="name"
             />
@@ -100,7 +99,7 @@ export function WelcomeForm({
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               placeholder="Enter your email address"
-              className="pl-10 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              className="pl-12 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
               style={inputStyles}
               autoComplete="email"
             />
