@@ -58,6 +58,8 @@ export async function POST(request: Request) {
       incentiveCode: data.incentiveCode,
       incentiveDescription: data.incentiveDescription,
       additionalDetails: data.additionalDetails,
+      welcomeHeading: data.welcomeHeading,
+      welcomeCardDescription: data.welcomeCardDescription,
     });
 
     logger.info('Chat instance fields updated:', { chatId });

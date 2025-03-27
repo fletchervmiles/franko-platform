@@ -94,21 +94,22 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   }, [chatId, isNew])
   
   // State for form values
-  const [topic, setTopic] = useState<string | undefined>(undefined)
-  const [selectedTemplate, setSelectedTemplate] = useState<string | undefined>(undefined)
-  const [duration, setDuration] = useState("")
-  const [respondentContacts, setRespondentContacts] = useState<boolean | null>(null)
-  const [incentiveStatus, setIncentiveStatus] = useState<boolean | null>(null)
-  const [incentiveCode, setIncentiveCode] = useState("")
-  const [incentiveDescription, setIncentiveDescription] = useState("")
-  const [additionalDetails, setAdditionalDetails] = useState("")
+  const [topic, setTopic] = useState<string>("")
+  const [duration, setDuration] = useState<string>("")
+  const [respondentContacts, setRespondentContacts] = useState<boolean>(false)
+  const [incentiveStatus, setIncentiveStatus] = useState<boolean>(false)
+  const [incentiveCode, setIncentiveCode] = useState<string>("")
+  const [incentiveDescription, setIncentiveDescription] = useState<string>("")
+  const [additionalDetails, setAdditionalDetails] = useState<string>("")
+  const [welcomeHeading, setWelcomeHeading] = useState<string>("Ready to share your feedback?")
+  const [welcomeCardDescription, setWelcomeCardDescription] = useState<string>("This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time.")
   
   // State for form submission
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   
   // State for visible cards
-  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 4 : 1)
+  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 5 : 1)
   
   // Conversation templates with icons
   const conversationTemplates = useMemo(() => [
@@ -170,50 +171,36 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     if (isRegenerating && chatId) {
       const fetchChatDetails = async () => {
         try {
-          const response = await fetch(`/api/chat-instances/details?chatId=${chatId}`);
+          const response = await fetch(`/api/chat-instances/${chatId}`);
+          
           if (!response.ok) {
             throw new Error('Failed to fetch chat details');
           }
           
-          const data = await response.json();
+          const chatData = await response.json();
           
-          // Map database duration format to form duration format
-          let formattedDuration = data.duration || "";
-          if (formattedDuration) {
-            // Convert from backend format to frontend display format
-            if (formattedDuration.includes("1 minute")) {
-              formattedDuration = "1 minute (quick) - 5 turns";
-            } else if (formattedDuration.includes("2 minutes")) {
-              formattedDuration = "2 minutes (recommended) - 10 turns";
-            } else if (formattedDuration.includes("3-4 minutes")) {
-              formattedDuration = "3-4 minutes (exploratory) - 16 turns";
-            } else if (formattedDuration.includes("4-5 minutes")) {
-              formattedDuration = "4-5 minutes (deep dive) - 20 turns";
-            }
+          if (chatData.topic) setTopic(chatData.topic);
+          if (chatData.duration) setDuration(chatData.duration);
+          if (chatData.respondentContacts !== undefined) setRespondentContacts(chatData.respondentContacts);
+          if (chatData.incentive_status !== undefined) setIncentiveStatus(chatData.incentive_status);
+          if (chatData.incentive_code) setIncentiveCode(chatData.incentive_code);
+          if (chatData.incentive_description) {
+            // Remove the prefix if it exists
+            const description = chatData.incentive_description.startsWith('Upon completion, you\'ll receive ')
+              ? chatData.incentive_description.substring('Upon completion, you\'ll receive '.length)
+              : chatData.incentive_description;
+            
+            setIncentiveDescription(description);
           }
-          
-          // Populate form fields with existing data
-          setTopic(data.topic || "");
-          setDuration(formattedDuration);
-          setRespondentContacts(data.respondentContacts);
-          setIncentiveStatus(data.incentiveStatus);
-          setIncentiveCode(data.incentiveCode || "");
-          
-          // Remove the prefix from incentive description if it exists
-          let incentiveDesc = data.incentiveDescription || "";
-          const prefix = "Upon completion, you'll receive ";
-          if (incentiveDesc.startsWith(prefix)) {
-            incentiveDesc = incentiveDesc.substring(prefix.length);
-          }
-          setIncentiveDescription(incentiveDesc);
-          
-          setAdditionalDetails(data.additionalDetails || "");
+          if (chatData.additionalDetails) setAdditionalDetails(chatData.additionalDetails);
+          if (chatData.welcomeHeading) setWelcomeHeading(chatData.welcomeHeading);
+          if (chatData.welcomeCardDescription) setWelcomeCardDescription(chatData.welcomeCardDescription);
           
           // Show all cards when regenerating
-          setVisibleCards(4);
+          setVisibleCards(5);
         } catch (error) {
           console.error('Error fetching chat details:', error);
-          toast.error('Failed to load existing conversation details');
+          toast.error('Failed to load conversation details');
         }
       };
       
@@ -254,7 +241,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   
   // Function to show the next card
   const showNextCard = () => {
-    if (visibleCards < 4) {
+    if (visibleCards < 5) {
       setVisibleCards(visibleCards + 1)
     }
   }
@@ -262,22 +249,12 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   // Handle template selection
   const handleTemplateSelect = (prompt: string) => {
     setTopic(prompt)
-    setSelectedTemplate(prompt)
   }
 
   // Handle "Start from Scratch"
   const handleStartFromScratch = () => {
     const scratchPrompt = "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
     setTopic(scratchPrompt)
-    setSelectedTemplate(scratchPrompt)
-    // Focus the textarea
-    setTimeout(() => {
-      const textarea = document.querySelector('textarea');
-      if (textarea) {
-        textarea.focus();
-        textarea.select(); // Select all text for easy replacement
-      }
-    }, 100);
   }
 
   // Handle duration selection with auto-progression
@@ -378,6 +355,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           incentiveCode,
           incentiveDescription: formattedIncentiveDescription,
           additionalDetails,
+          welcomeHeading,
+          welcomeCardDescription,
         }),
       })
       
@@ -528,7 +507,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                 onClick={handleStartFromScratch}
                 className={cn(
                   "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                  selectedTemplate === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+                  topic === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
                     ? "bg-black text-white shadow-sm"
                     : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
                 )}
@@ -544,7 +523,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                   onClick={() => handleTemplateSelect(template.prompt)}
                   className={cn(
                     "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                    selectedTemplate === template.prompt
+                    topic === template.prompt
                       ? "bg-black text-white shadow-sm"
                       : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
                   )}
@@ -556,7 +535,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
             </div>
           </div>
           
-          {selectedTemplate && (
+          {topic && (
             <>
               <h3 className="text-base font-medium mb-2 flex items-center">
                 Your Instructions
@@ -564,7 +543,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <p className="text-sm text-gray-500 mb-4">Briefly describe what you're looking to learn. This can be anything you want—you're not limited to the topics above.</p>
               
               <Textarea
-                value={topic || ""}
+                value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="e.g., I want to learn why customers decide to cancel—so we can reduce churn."
                 className="mb-2 min-h-[300px] bg-white"
@@ -788,6 +767,42 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <span>You've reached your conversation plan generation limit.</span>
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Card 5: Welcome Screen Customization */}
+      {visibleCards >= 5 && (
+        <div ref={cardRefs.card5}>
+          <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
+            <h3 className="text-base font-medium mb-2 flex items-center">
+              Welcome Screen Customization
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">Customize the welcome screen that respondents will see.</p>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Welcome Heading</label>
+                <Input
+                  value={welcomeHeading}
+                  onChange={(e) => setWelcomeHeading(e.target.value)}
+                  placeholder="Ready to share your feedback?"
+                  className="bg-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">This is the main headline on the welcome screen.</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Welcome Card Description</label>
+                <Textarea
+                  value={welcomeCardDescription}
+                  onChange={(e) => setWelcomeCardDescription(e.target.value)}
+                  placeholder="This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time."
+                  className="bg-white min-h-[100px]"
+                />
+                <p className="text-xs text-gray-500 mt-1">This is the descriptive text shown in the gray card on the welcome screen.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

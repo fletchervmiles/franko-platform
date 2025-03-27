@@ -584,6 +584,8 @@ export async function updateChatInstanceFields(
     additionalDetails?: string;
     published?: boolean;
     welcomeDescription?: string;
+    welcomeHeading?: string;
+    welcomeCardDescription?: string;
   }
 ): Promise<SelectChatInstance | undefined> {
   try {

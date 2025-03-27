@@ -43,6 +43,8 @@ export async function GET(
     // Return chat instance data including notification settings
     return NextResponse.json({
       welcomeDescription: chatInstance.welcomeDescription,
+      welcomeHeading: chatInstance.welcomeHeading,
+      welcomeCardDescription: chatInstance.welcomeCardDescription,
       respondentContacts: chatInstance.respondentContacts,
       incentive_status: chatInstance.incentiveStatus,
       incentive_description: chatInstance.incentiveDescription,
