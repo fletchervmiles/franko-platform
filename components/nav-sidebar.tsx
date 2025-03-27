@@ -247,6 +247,9 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
   }, [])
 
   const getPageTitle = useCallback(() => {
+    // Early return if pathname is null
+    if (pathname === null) return "Workspace"
+    
     if (pathname === "/create") return "Create"
     for (const section of navMainData) {
       const matchingItem = section.items.find((item) => {
