@@ -77,7 +77,8 @@ import {
  * - SWR: Manages chat history data fetching and caching
  */
 export const History = ({ userId }: { userId: string | null }) => {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params ? (params as { id?: string }).id : undefined;
   const pathname = usePathname();
 
   // Sidebar visibility state
@@ -121,9 +122,10 @@ export const History = ({ userId }: { userId: string | null }) => {
       loading: "Deleting chat...",
       success: () => {
         mutate((history) => {
-          if (history) {
+          if (history && id) {
             return history.filter((h) => h.id !== id);
           }
+          return history;
         });
         return "Chat deleted successfully";
       },

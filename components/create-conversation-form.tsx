@@ -74,7 +74,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const params = useParams()
   const searchParams = useSearchParams()
   // Use the prop chatId if provided, otherwise try to get it from params
-  const chatId = propChatId || (params?.id as string)
+  const chatId = propChatId || (params ? (params as { id?: string }).id : undefined)
   
   // Fetch organisation name
   const { organisationName } = useOrganisationName()

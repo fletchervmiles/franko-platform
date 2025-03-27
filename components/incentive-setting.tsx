@@ -12,7 +12,8 @@ import { Loader2, Gift } from "lucide-react"
 
 export function IncentiveSetting() {
   const params = useParams()
-  const chatId = params?.guideName as string
+  const guideName = params ? (params as any).guideName : undefined
+  const chatId = guideName || ""
 
   // State for form values
   const [incentiveStatus, setIncentiveStatus] = useState<boolean>(false)

@@ -48,7 +48,8 @@ const getEmailNotificationSetting = async (chatId: string): Promise<boolean> => 
 
 export function EmailNotificationSetting() {
   const params = useParams();
-  const chatId = Array.isArray(params.guideName) ? params.guideName[0] : params.guideName;
+  const guideName = params ? (params as any).guideName : undefined;
+  const chatId = guideName ? (Array.isArray(guideName) ? guideName[0] : guideName) : undefined;
   
   const [enabled, setEnabled] = useState(true)
   const [initialEnabled, setInitialEnabled] = useState(true)
