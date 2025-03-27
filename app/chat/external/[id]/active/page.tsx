@@ -42,7 +42,7 @@ export default function ActiveChatPage({
   params: { id: string };
 }) {
   const searchParams = useSearchParams();
-  const chatResponseId = searchParams?.get("responseId");
+  const chatResponseId = searchParams?.get("responseId") || null;
   const welcomeDesc = searchParams?.get("welcomeDesc");
   const welcomeDescription = welcomeDesc ? decodeURIComponent(welcomeDesc) : undefined;
   
