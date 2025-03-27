@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Message } from 'ai';
 import { generateUUID } from '@/lib/utils';
+import { extractResponseFromAIOutput } from '@/lib/utils/json-parser';
+import { isFeatureEnabled } from '@/lib/utils/feature-flags';
 
 // Extended Message interface to include objectives data
 interface ExtendedMessage extends Message {
@@ -201,6 +203,18 @@ export function useExternalChat({
         
         // Helper function to extract response from potentially formatted content
         const extractDisplayContent = (content: any): string => {
+          // If there's a direct response field at the top level, use that
+          if (data.response && typeof data.response === 'string') {
+            return data.response;
+          }
+          
+          // Use our robust parsing if the feature is enabled
+          if (isFeatureEnabled('USE_ROBUST_JSON_PARSER')) {
+            const errorMessage = "Sorry, there was an error processing the response. Please try again.";
+            return extractResponseFromAIOutput(content, 'response', errorMessage);
+          }
+          
+          // Legacy fallback parser (original implementation)
           // If it's not a string, convert it to string
           if (typeof content !== 'string') {
             return String(content);
@@ -216,6 +230,7 @@ export function useExternalChat({
               }
             } catch (e) {
               console.error('Error parsing JSON in markdown blocks:', e);
+              return "Sorry, there was an error processing the response. Please try again.";
             }
           }
           
@@ -230,12 +245,9 @@ export function useExternalChat({
             } catch (e) {
               // Not valid JSON - just use the content as is
               console.log('Content is not valid JSON, using as is');
+              // If it looks like JSON but failed to parse, show error message
+              return "Sorry, there was an error processing the response. Please try again.";
             }
-          }
-          
-          // If we have a separate response field at the top level, use that
-          if (data.response && typeof data.response === 'string') {
-            return data.response;
           }
           
           // Default to the original content

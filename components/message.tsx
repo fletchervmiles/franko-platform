@@ -10,6 +10,9 @@ import {
   LazyConversationPlan, 
   LazyOptionButtons 
 } from "@/components/lazy-components"
+// Import our JSON parser utility
+import { extractResponseFromAIOutput } from "@/lib/utils/json-parser"
+import { isFeatureEnabled } from "@/lib/utils/feature-flags"
 
 interface MessageProps {
   content: string | ReactNode
@@ -194,6 +197,13 @@ export const Message = React.memo(function Message({
   });
 
   const getDisplayContent = useCallback((content: string) => {
+    // Use our robust parsing if the feature is enabled
+    if (isFeatureEnabled('USE_ROBUST_JSON_PARSER')) {
+      const errorMessage = "Oh no, it seems there's been an error processing your last response. Please try again.";
+      return extractResponseFromAIOutput(content, 'response', errorMessage);
+    }
+    
+    // Legacy fallback parser (original implementation)
     try {
       if (content.includes('```json') && content.includes('```')) {
         const jsonStr = content.split('```json\n')[1].split('\n```')[0];
@@ -203,7 +213,7 @@ export const Message = React.memo(function Message({
       return content;
     } catch (error) {
       console.error('Error parsing JSON:', error);
-      return content;
+      return "Oh no, it seems there's been an error processing your last response. Please try again.";
     }
   }, []);
 
