@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { Gift } from "lucide-react"
+import { Gift, User, Mail, ArrowRight } from "lucide-react"
 
 interface WelcomeFormProps {
   onSubmit: (data: {
@@ -49,25 +47,16 @@ export function WelcomeForm({
     touchAction: 'manipulation' // Better touch handling
   };
 
-  // Button styles to ensure consistency
-  const buttonStyles = {
-    fontSize: '16px',
-    minHeight: '48px',
-    touchAction: 'manipulation'
-  };
-
   return (
-    <div className="space-y-6 w-full max-w-md mx-auto">
-      {/* Debug display to check if the condition is working */}
+    <div className="space-y-6 w-full">
+      {/* Incentive banner */}
       {incentive_status && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-indigo-500" />
-            <div>
-              <p className="text-sm text-gray-700">
-                {incentive_description || "Complete this conversation to receive an incentive!"}
-              </p>
-            </div>
+            <p className="text-sm text-gray-700">
+              {incentive_description || "Complete this conversation to receive an incentive!"}
+            </p>
           </div>
         </div>
       )}
@@ -75,44 +64,54 @@ export function WelcomeForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Name field */}
         <div className="space-y-2">
-          <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
-          <Input
-            id="firstName"
-            value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-            required
-            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
-            style={inputStyles}
-            autoComplete="name"
-          />
+          <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+            First Name
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+              <User size={18} />
+            </div>
+            <Input
+              id="firstName"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              required
+              placeholder="Enter your first name"
+              className="pl-10 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              style={inputStyles}
+              autoComplete="name"
+            />
+          </div>
         </div>
 
         {/* Email field */}
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-            className="w-full bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
-            style={inputStyles}
-            autoComplete="email"
-          />
+          <label htmlFor="email" className="text-sm font-medium text-gray-700">
+            Email Address
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+              <Mail size={18} />
+            </div>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              placeholder="Enter your email address"
+              className="pl-10 bg-[#FAFAFA] border border-gray-200 focus:border-blue-500 focus:ring-0 h-12"
+              style={inputStyles}
+              autoComplete="email"
+            />
+          </div>
         </div>
 
         {/* Submit button */}
         <Button
           type="submit"
           disabled={isLoading}
-          className={cn(
-            "w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
-            "transition-all duration-200 shadow-sm py-3 text-base font-medium",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          )}
-          style={buttonStyles}
+          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-6"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -120,7 +119,10 @@ export function WelcomeForm({
               Getting Started...
             </span>
           ) : (
-            "Get Started"
+            <>
+              Start Chatting
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </>
           )}
         </Button>
       </form>

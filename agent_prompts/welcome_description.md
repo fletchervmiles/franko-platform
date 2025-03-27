@@ -7,11 +7,9 @@ You will generate a short, user-friendly introduction sentence for users about t
 - **"summary"**: Internal summary of conversation purpose and goals (not user-facing).
 - **"duration"**: Internal approximate duration categorized as:
   - "1 minute (quick)"
-  - "2 minutes (focused)"
-  - "3-4 minutes (recommended)"
-  - "5-6 minutes (balanced)"
-  - "7-8 minutes (exploratory)"
-  - "9-10 minutes (deep dive)"
+  - "2 minutes (recommended)"
+  - "3-4 minutes (exploratory)"
+  - "4-5 minutes (deep dive)"
 
 ### ✅ Clearly follow these output rules:
 - Return only **1 short sentence**, about **8-10 words** total.

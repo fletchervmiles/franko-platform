@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { WelcomeForm } from "@/components/welcome-form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield, ArrowRight } from "lucide-react";
 import { useConsolidatedChatInit } from "@/lib/hooks/use-consolidated-chat-init";
 import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
 import { useQuotaAvailability } from "@/hooks/use-quota-availability";
+import { Button } from "@/components/ui/button";
 import Head from "next/head";
 
 // Custom hook to prevent zooming on mobile
@@ -50,6 +51,8 @@ export default function StartChatPage({
   const [isNavigating, setIsNavigating] = useState(false);
   const [chatInstanceData, setChatInstanceData] = useState<{
     welcomeDescription?: string;
+    welcomeHeading?: string;
+    welcomeCardDescription?: string;
     respondentContacts?: boolean;
     incentive_status?: boolean;
     incentive_description?: string;
@@ -174,6 +177,8 @@ export default function StartChatPage({
           // This ensures the UI can still render even if the API fails
           setChatInstanceData({
             welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
+            welcomeHeading: "Ready to share your feedback?",
+            welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
             respondentContacts: false,
             incentive_status: false,
             incentive_description: ""
@@ -197,6 +202,8 @@ export default function StartChatPage({
         // Provide fallback data even when exceptions occur
         setChatInstanceData({
           welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
+          welcomeHeading: "Ready to share your feedback?",
+          welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
           respondentContacts: false,
           incentive_status: false,
           incentive_description: ""
@@ -311,59 +318,68 @@ export default function StartChatPage({
         ...fadeStyle
       }}
     >
-      <Card className="max-w-lg w-full p-8 bg-white shadow-lg">
-        <div className="space-y-6">
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold">
-              {hasReachedResponseLimit ? "Response Limit Reached" : "Welcome! Ready to Chat?"}
-            </h1>
-            {hasReachedResponseLimit ? (
-              <p className="text-gray-600">
-                Thank you for your interest—this conversation has reached its response limit and is no longer accepting new submissions.
-              </p>
-            ) : (
-              <p className="text-gray-600">
-                {chatInstanceData?.welcomeDescription || 
-                  "This will be a brief 3-4 minute chat to share your thoughts on Clerk.com's onboarding and documentation. Your feedback will help make the experience even better for developers like you!"}
-              </p>
-            )}
-          </div>
-          
-          {errorMessage && !hasReachedResponseLimit && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm">
-              {errorMessage}
-            </div>
+      <Card className="max-w-md w-full bg-white shadow-lg relative overflow-hidden">
+        <CardHeader className="text-center pt-10">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
+            {hasReachedResponseLimit 
+              ? "Response Limit Reached" 
+              : (chatInstanceData?.welcomeHeading || "Ready to share your feedback?")}
+          </h1>
+        </CardHeader>
+        
+        <CardContent>
+          {hasReachedResponseLimit ? (
+            <p className="text-gray-600 text-center">
+              Thank you for your interest—this conversation has reached its response limit and is no longer accepting new submissions.
+            </p>
+          ) : (
+            <>
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <p className="text-center text-sm text-gray-600">
+                  {chatInstanceData?.welcomeCardDescription || 
+                    "This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time."}
+                </p>
+              </div>
+              
+              {errorMessage && (
+                <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm mb-4">
+                  {errorMessage}
+                </div>
+              )}
+            
+              {chatInstanceData?.respondentContacts ? (
+                <WelcomeForm 
+                  onSubmit={handleStartChat}
+                  isLoading={isInitializing}
+                  incentive_status={chatInstanceData.incentive_status}
+                  incentive_description={chatInstanceData.incentive_description}
+                />
+              ) : !hasReachedResponseLimit && (
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-center">
+                    <Shield size={14} className="text-gray-500 mr-2" />
+                    <p className="text-sm text-gray-500">Your feedback is anonymous</p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => handleStartChat()}
+                    disabled={isInitializing}
+                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-6"
+                  >
+                    {isInitializing ? "Preparing Your Session..." : "Start Chatting"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-          
-          {!hasReachedResponseLimit && chatInstanceData?.respondentContacts ? (
-            <WelcomeForm 
-              onSubmit={handleStartChat}
-              isLoading={isInitializing}
-              incentive_status={chatInstanceData.incentive_status}
-              incentive_description={chatInstanceData.incentive_description}
-            />
-          ) : !hasReachedResponseLimit ? (
-            <div className="flex justify-center">
-              <button
-                onClick={() => handleStartChat()}
-                disabled={isInitializing}
-                className={`
-                  w-full max-w-sm bg-gradient-to-r from-blue-500 to-indigo-600 
-                  hover:from-blue-600 hover:to-indigo-700 text-white
-                  py-3 px-4 rounded-lg transition-all duration-200 shadow-sm
-                  disabled:opacity-50 disabled:cursor-not-allowed text-base
-                `}
-                style={{ fontSize: '16px', minHeight: '48px' }}
-              >
-                {isInitializing ? "Preparing Your Session..." : "Get Started"}
-              </button>
-            </div>
-          ) : null}
-          
-          <div className="text-center text-sm text-gray-400 mt-4">
+        </CardContent>
+        
+        <CardFooter className="flex justify-center pb-6">
+          <div className="text-center text-xs text-gray-500">
             powered by franko.ai
           </div>
-        </div>
+        </CardFooter>
       </Card>
     </div>
   );
