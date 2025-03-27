@@ -79,21 +79,23 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   // Fetch organisation name
   const { organisationName } = useOrganisationName()
   
-  // Add refs for each card
+  // Restore original card refs - remove card5
   const cardRefs = {
     card1: useRef<HTMLDivElement>(null),
     card2: useRef<HTMLDivElement>(null),
     card3: useRef<HTMLDivElement>(null),
     card4: useRef<HTMLDivElement>(null),
-    card5: useRef<HTMLDivElement>(null),
   }
+  
+  // Restore original state for visible cards 
+  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 4 : 1)
   
   // Log the chat ID for debugging
   useEffect(() => {
     console.log('Chat ID:', isNew ? 'Creating new on submit' : chatId)
   }, [chatId, isNew])
   
-  // State for form values
+  // Restore original state for form values
   const [topic, setTopic] = useState<string>("")
   const [duration, setDuration] = useState<string>("")
   const [respondentContacts, setRespondentContacts] = useState<boolean>(false)
@@ -101,15 +103,10 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const [incentiveCode, setIncentiveCode] = useState<string>("")
   const [incentiveDescription, setIncentiveDescription] = useState<string>("")
   const [additionalDetails, setAdditionalDetails] = useState<string>("")
-  const [welcomeHeading, setWelcomeHeading] = useState<string>("Ready to share your feedback?")
-  const [welcomeCardDescription, setWelcomeCardDescription] = useState<string>("This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time.")
   
   // State for form submission
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
-  
-  // State for visible cards
-  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 5 : 1)
   
   // Conversation templates with icons
   const conversationTemplates = useMemo(() => [
@@ -166,44 +163,43 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     }
   ], [organisationName]);
   
+  // Update fetchChatDetails to remove welcome field retrievals
+  const fetchChatDetails = async () => {
+    try {
+      const response = await fetch(`/api/chat-instances/${chatId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat details');
+      }
+      
+      const chatData = await response.json();
+      
+      if (chatData.topic) setTopic(chatData.topic);
+      if (chatData.duration) setDuration(chatData.duration);
+      if (chatData.respondentContacts !== undefined) setRespondentContacts(chatData.respondentContacts);
+      if (chatData.incentive_status !== undefined) setIncentiveStatus(chatData.incentive_status);
+      if (chatData.incentive_code) setIncentiveCode(chatData.incentive_code);
+      if (chatData.incentive_description) {
+        // Remove the prefix if it exists
+        const description = chatData.incentive_description.startsWith('Upon completion, you\'ll receive ')
+          ? chatData.incentive_description.substring('Upon completion, you\'ll receive '.length)
+          : chatData.incentive_description;
+        
+        setIncentiveDescription(description);
+      }
+      if (chatData.additionalDetails) setAdditionalDetails(chatData.additionalDetails);
+      
+      // Show all cards when regenerating
+      setVisibleCards(4);
+    } catch (error) {
+      console.error('Error fetching chat details:', error);
+      toast.error('Failed to load conversation details');
+    }
+  };
+  
   // Add effect to load existing data when regenerating
   useEffect(() => {
     if (isRegenerating && chatId) {
-      const fetchChatDetails = async () => {
-        try {
-          const response = await fetch(`/api/chat-instances/${chatId}`);
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch chat details');
-          }
-          
-          const chatData = await response.json();
-          
-          if (chatData.topic) setTopic(chatData.topic);
-          if (chatData.duration) setDuration(chatData.duration);
-          if (chatData.respondentContacts !== undefined) setRespondentContacts(chatData.respondentContacts);
-          if (chatData.incentive_status !== undefined) setIncentiveStatus(chatData.incentive_status);
-          if (chatData.incentive_code) setIncentiveCode(chatData.incentive_code);
-          if (chatData.incentive_description) {
-            // Remove the prefix if it exists
-            const description = chatData.incentive_description.startsWith('Upon completion, you\'ll receive ')
-              ? chatData.incentive_description.substring('Upon completion, you\'ll receive '.length)
-              : chatData.incentive_description;
-            
-            setIncentiveDescription(description);
-          }
-          if (chatData.additionalDetails) setAdditionalDetails(chatData.additionalDetails);
-          if (chatData.welcomeHeading) setWelcomeHeading(chatData.welcomeHeading);
-          if (chatData.welcomeCardDescription) setWelcomeCardDescription(chatData.welcomeCardDescription);
-          
-          // Show all cards when regenerating
-          setVisibleCards(5);
-        } catch (error) {
-          console.error('Error fetching chat details:', error);
-          toast.error('Failed to load conversation details');
-        }
-      };
-      
       fetchChatDetails();
     }
   }, [isRegenerating, chatId]);
@@ -239,9 +235,9 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     }
   }
   
-  // Function to show the next card
+  // Restore original showNextCard function
   const showNextCard = () => {
-    if (visibleCards < 5) {
+    if (visibleCards < 4) {
       setVisibleCards(visibleCards + 1)
     }
   }
@@ -341,7 +337,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         ? `Upon completion, you'll receive ${incentiveDescription}` 
         : incentiveDescription;
       
-      // Now update the chat instance with form data
+      // Update form submission to remove welcome fields
       const response = await fetch(`/api/chat-instances/update?chatId=${targetChatId}`, {
         method: 'POST',
         headers: {
@@ -355,8 +351,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           incentiveCode,
           incentiveDescription: formattedIncentiveDescription,
           additionalDetails,
-          welcomeHeading,
-          welcomeCardDescription,
         }),
       })
       
@@ -767,42 +761,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <span>You've reached your conversation plan generation limit.</span>
             </div>
           )}
-        </div>
-      )}
-      
-      {/* Card 5: Welcome Screen Customization */}
-      {visibleCards >= 5 && (
-        <div ref={cardRefs.card5}>
-          <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
-            <h3 className="text-base font-medium mb-2 flex items-center">
-              Welcome Screen Customization
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">Customize the welcome screen that respondents will see.</p>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-1">Welcome Heading</label>
-                <Input
-                  value={welcomeHeading}
-                  onChange={(e) => setWelcomeHeading(e.target.value)}
-                  placeholder="Ready to share your feedback?"
-                  className="bg-white"
-                />
-                <p className="text-xs text-gray-500 mt-1">This is the main headline on the welcome screen.</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Welcome Card Description</label>
-                <Textarea
-                  value={welcomeCardDescription}
-                  onChange={(e) => setWelcomeCardDescription(e.target.value)}
-                  placeholder="This is a brief chat with our AI assistant. It involves a few quick questions and should only take a minute of your time."
-                  className="bg-white min-h-[100px]"
-                />
-                <p className="text-xs text-gray-500 mt-1">This is the descriptive text shown in the gray card on the welcome screen.</p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
