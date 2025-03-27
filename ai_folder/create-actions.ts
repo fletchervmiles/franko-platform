@@ -355,42 +355,48 @@ export async function generateWelcomeDescription({
       .replace('{duration}', duration)
       .replace('{summary}', summary);
     
-    // Add retry logic for the generateText call
+    // Add retry logic for the generateObject call
     const maxRetries = 2;
     let retryCount = 0;
     let lastError: any = null;
 
     while (retryCount < maxRetries) {
       try {
-        // Use generateText instead of generateObject as specified
-        const response = await generateText({
-          model: geminiFlashModel,
+        // Use generateObject instead of generateText to get structured output
+        const { object: welcomeContent } = await generateObject({
+          model: o1Model,
           system: systemPrompt,
           prompt: "",
-          temperature: 0.7, // A bit of creativity for engaging content
-          maxTokens: 150,   // Keep responses brief
+          schema: z.object({
+            welcome_heading: z.string().describe("~6-10 words: conversational, friendly headline phrased as a direct question clearly referencing user's experience and brand/company name"),
+            welcome_card_description: z.string().describe("~15-25 words: clearly, professionally explains the chat (~duration, AI assistant, number of questions clearly mapped below, and expresses genuine appreciation)"),
+            welcome_description: z.string().describe("~6-8 words max: short, conversational phrase summarizing chat topic from user's perspective")
+          }),
         });
         
-        // Extract the text content from the response
-        const welcomeDescription = response.text || "";
-
-        // Save the welcome description to the database
-        await updateWelcomeDescription(chatId, welcomeDescription);
+        // Save all welcome content fields to the database
+        await updateWelcomeDescription(chatId, 
+          welcomeContent.welcome_description,
+          welcomeContent.welcome_heading,
+          welcomeContent.welcome_card_description
+        );
         
-        logger.debug('Generated welcome description successfully', { 
+        logger.debug('Generated welcome content successfully', { 
           chatId,
-          descriptionLength: welcomeDescription.length
+          headingLength: welcomeContent.welcome_heading.length,
+          descriptionLength: welcomeContent.welcome_description.length,
+          cardDescriptionLength: welcomeContent.welcome_card_description.length
         });
         
         return;
       } catch (error) {
         lastError = error;
-        logger.error(`Welcome description generation attempt ${retryCount + 1} failed:`, error);
+        logger.error(`Welcome content generation attempt ${retryCount + 1} failed:`, error);
         retryCount++;
         
         // If we've reached max retries, log the error but don't throw
         if (retryCount >= maxRetries) {
-          logger.error('All welcome description generation attempts failed:', lastError);
+          logger.error('All welcome content generation attempts failed:', lastError);
           return; // Don't throw, this is non-blocking
         }
         
@@ -400,7 +406,7 @@ export async function generateWelcomeDescription({
     }
   } catch (error) {
     // Catch and log any errors but don't propagate them
-    logger.error('Error generating welcome description:', error);
+    logger.error('Error generating welcome content:', error);
     // Don't throw - this is a non-blocking operation
   }
 }

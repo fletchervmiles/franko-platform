@@ -128,7 +128,7 @@ export default function ThankYouPage({
           )}
           
           <div className="text-center text-sm text-gray-400 mt-8">
-            powered by franko.ai
+            powered by <a href="https://franko.ai" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-400">franko.ai</a>
           </div>
         </div>
       </Card>

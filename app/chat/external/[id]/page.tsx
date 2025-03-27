@@ -389,7 +389,7 @@ export default function StartChatPage({
         
         <CardFooter className="flex justify-center pb-6">
           <div className="text-center text-xs text-gray-500">
-            powered by franko.ai
+            powered by <a href="https://franko.ai" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-500">franko.ai</a>
           </div>
         </CardFooter>
       </Card>

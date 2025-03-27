@@ -613,12 +613,26 @@ export async function updateChatInstanceFields(
  */
 export async function updateWelcomeDescription(
   id: string,
-  welcomeDescription: string
+  welcomeDescription: string,
+  welcomeHeading?: string,
+  welcomeCardDescription?: string
 ): Promise<void> {
   try {
+    // Build update object with available fields
+    const updateFields: Record<string, string> = { welcomeDescription };
+    
+    // Add optional fields if provided
+    if (welcomeHeading) {
+      updateFields.welcomeHeading = welcomeHeading;
+    }
+    
+    if (welcomeCardDescription) {
+      updateFields.welcomeCardDescription = welcomeCardDescription;
+    }
+    
     await db
       .update(chatInstancesTable)
-      .set({ welcomeDescription })
+      .set(updateFields)
       .where(eq(chatInstancesTable.id, id));
     
     // Update in the instance cache if it exists
@@ -626,16 +640,16 @@ export async function updateWelcomeDescription(
     if (cachedInstance) {
       instanceCache.set(id, {
         ...cachedInstance,
-        welcomeDescription
+        ...updateFields
       });
     }
     
-    console.log(`Updated welcome description for chat ${id}`);
+    console.log(`Updated welcome content for chat ${id}`);
   } catch (error) {
-    console.error("Error updating welcome description:", error);
+    console.error("Error updating welcome content:", error);
     // Don't throw - this is a non-blocking operation
   }
-} 
+}
 
 /**
  * Gets chat instances with response data for analysis
