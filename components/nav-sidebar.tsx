@@ -66,7 +66,7 @@ const navMainData = [
     title: "Account",
     items: [
       {
-        title: "Update Plan",
+        title: "Upgrade Plan",
         url: "/upgrade",
         icon: <CreditCard className="mr-0.5 h-4 w-4" />,
       },

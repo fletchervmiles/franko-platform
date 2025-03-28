@@ -5,6 +5,10 @@ import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
 
+// Simple in-memory lock to prevent concurrent customer creation
+// Maps userId to a promise that resolves when the operation completes
+const customerCreationLocks = new Map<string, Promise<string>>();
+
 export async function createCheckoutSession(
   userId: string, 
   plan: "starter" | "pro" | "business",
@@ -15,78 +19,106 @@ export async function createCheckoutSession(
     
     let customerId: string;
     
-    // Step 1: Check our database for existing customer ID
-    const existingProfile = await db.query.profiles.findFirst({
-      where: eq(profilesTable.userId, userId)
-    });
-    
-    if (existingProfile?.stripeCustomerId) {
-      console.log(`Using existing Stripe customer from profile: ${existingProfile.stripeCustomerId}`);
-      customerId = existingProfile.stripeCustomerId;
+    // Check if there's an ongoing operation for this user
+    if (customerCreationLocks.has(userId)) {
+      console.log(`Waiting for existing customer creation for user: ${userId}`);
+      // Wait for the existing operation to complete and use its result
+      customerId = await customerCreationLocks.get(userId)!;
+      console.log(`Using customer ID from concurrent operation: ${customerId}`);
     } else {
-      // Step 2: If not in our DB, search Stripe for existing customers with this email
-      const existingCustomers = await stripe.customers.list({
-        email: customerEmail,
-        limit: 1
-      });
+      // Create a new promise for this user's customer creation/lookup
+      const customerPromise = (async () => {
+        try {
+          // Step 1: Check our database for existing customer ID
+          const existingProfile = await db.query.profiles.findFirst({
+            where: eq(profilesTable.userId, userId)
+          });
+          
+          if (existingProfile?.stripeCustomerId) {
+            console.log(`Using existing Stripe customer from profile: ${existingProfile.stripeCustomerId}`);
+            return existingProfile.stripeCustomerId;
+          } else {
+            // Step 2: If not in our DB, search Stripe for existing customers with this email
+            const existingCustomers = await stripe.customers.list({
+              email: customerEmail,
+              limit: 1
+            });
+            
+            if (existingCustomers.data.length > 0) {
+              // Use the first matching customer
+              const foundCustomerId = existingCustomers.data[0].id;
+              console.log(`Found existing Stripe customer by email: ${foundCustomerId}`);
+              
+              // Update their metadata with our userId if needed
+              if (!existingCustomers.data[0].metadata?.userId) {
+                await stripe.customers.update(foundCustomerId, {
+                  metadata: { userId }
+                });
+                console.log(`Updated existing customer with userId: ${userId}`);
+              }
+              
+              // Update our profile with this customer ID immediately
+              if (existingProfile) {
+                await db.update(profilesTable)
+                  .set({ stripeCustomerId: foundCustomerId })
+                  .where(eq(profilesTable.userId, userId));
+                console.log(`Updated profile with existing customer ID: ${foundCustomerId}`);
+              } else {
+                // Create minimal profile if none exists
+                await db.insert(profilesTable).values({
+                  userId,
+                  email: customerEmail,
+                  stripeCustomerId: foundCustomerId,
+                  membership: "free"
+                });
+                console.log(`Created new profile with existing customer ID: ${foundCustomerId}`);
+              }
+              
+              return foundCustomerId;
+            } else {
+              // Step 3: Only create a new customer if no existing customer found
+              console.log(`Creating new Stripe customer for user: ${userId}`);
+              const customer = await stripe.customers.create({
+                email: customerEmail,
+                metadata: {
+                  userId,
+                },
+              });
+              const newCustomerId = customer.id;
+              
+              // Immediately update our profile with this new customer ID
+              if (existingProfile) {
+                await db.update(profilesTable)
+                  .set({ stripeCustomerId: newCustomerId })
+                  .where(eq(profilesTable.userId, userId));
+                console.log(`Updated profile with new customer ID: ${newCustomerId}`);
+              } else {
+                // Create minimal profile if none exists
+                await db.insert(profilesTable).values({
+                  userId,
+                  email: customerEmail,
+                  stripeCustomerId: newCustomerId,
+                  membership: "free"
+                });
+                console.log(`Created new profile with new customer ID: ${newCustomerId}`);
+              }
+              
+              return newCustomerId;
+            }
+          }
+        } finally {
+          // Remove the lock when operation completes
+          setTimeout(() => {
+            customerCreationLocks.delete(userId);
+          }, 2000); // Keep lock for 2 seconds to handle closely timed requests
+        }
+      })();
       
-      if (existingCustomers.data.length > 0) {
-        // Use the first matching customer
-        customerId = existingCustomers.data[0].id;
-        console.log(`Found existing Stripe customer by email: ${customerId}`);
-        
-        // Update their metadata with our userId if needed
-        if (!existingCustomers.data[0].metadata?.userId) {
-          await stripe.customers.update(customerId, {
-            metadata: { userId }
-          });
-          console.log(`Updated existing customer with userId: ${userId}`);
-        }
-        
-        // Update our profile with this customer ID immediately
-        if (existingProfile) {
-          await db.update(profilesTable)
-            .set({ stripeCustomerId: customerId })
-            .where(eq(profilesTable.userId, userId));
-          console.log(`Updated profile with existing customer ID: ${customerId}`);
-        } else {
-          // Create minimal profile if none exists
-          await db.insert(profilesTable).values({
-            userId,
-            email: customerEmail,
-            stripeCustomerId: customerId,
-            membership: "free"
-          });
-          console.log(`Created new profile with existing customer ID: ${customerId}`);
-        }
-      } else {
-        // Step 3: Only create a new customer if no existing customer found
-        console.log(`Creating new Stripe customer for user: ${userId}`);
-        const customer = await stripe.customers.create({
-          email: customerEmail,
-          metadata: {
-            userId,
-          },
-        });
-        customerId = customer.id;
-        
-        // Immediately update our profile with this new customer ID
-        if (existingProfile) {
-          await db.update(profilesTable)
-            .set({ stripeCustomerId: customerId })
-            .where(eq(profilesTable.userId, userId));
-          console.log(`Updated profile with new customer ID: ${customerId}`);
-        } else {
-          // Create minimal profile if none exists
-          await db.insert(profilesTable).values({
-            userId,
-            email: customerEmail,
-            stripeCustomerId: customerId,
-            membership: "free"
-          });
-          console.log(`Created new profile with new customer ID: ${customerId}`);
-        }
-      }
+      // Store the promise in the lock map
+      customerCreationLocks.set(userId, customerPromise);
+      
+      // Wait for the operation to complete
+      customerId = await customerPromise;
     }
 
     // Get the correct price ID for current plans
