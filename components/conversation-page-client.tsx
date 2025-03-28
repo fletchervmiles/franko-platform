@@ -486,6 +486,11 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // Add quota availability check
   const { hasAvailablePlanQuota, isLoading: isQuotaLoading } = useQuotaAvailability();
 
+  // Memoize the title to prevent unnecessary re-renders during tab changes
+  const conversationTitle = useMemo(() => {
+    return conversationPlan?.title || "Loading...";
+  }, [conversationPlan?.title]);
+
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
@@ -493,7 +498,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         <div className="flex items-center justify-between">
           <div className="overflow-hidden mr-4">
             <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
-              {conversationPlan?.title || "Loading..."}
+              {conversationTitle}
             </h1>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
