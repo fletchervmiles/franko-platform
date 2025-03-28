@@ -259,11 +259,32 @@ export default function ConversationPlanForm({ chatId, onSubmit, initialData, st
     }))
   }
 
-  // Add this function to handle objective deletion with confirmation
-  const handleDeleteObjective = (index: number) => {
+  // Handle objective deletion with confirmation and persist changes to database
+  const handleDeleteObjective = async (index: number) => {
+    // Remove the objective from the form state
     remove(index)
     setObjectiveToDelete(null)
-    toast.success("Objective removed successfully")
+    
+    try {
+      // Get current form values after removing the objective
+      const values = form.getValues()
+      
+      // Save the updated form values to the database
+      const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+      
+      if (!response.ok) throw new Error('Failed to save plan after deleting objective');
+      
+      toast.success("Objective removed successfully")
+    } catch (error) {
+      console.error("Error saving after objective deletion:", error)
+      toast.error("Failed to save changes after removing objective")
+    }
   }
 
   if (isLoading) {
