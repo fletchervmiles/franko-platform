@@ -83,6 +83,66 @@ interface ConversationPageClientProps {
   userId: string
 }
 
+// Memoized header component to prevent re-rendering when tabs change
+const ConversationHeader = React.memo(function ConversationHeader({ 
+  title, 
+  onRename, 
+  onShowDeleteDialog 
+}: { 
+  title: string; 
+  onRename: () => void; 
+  onShowDeleteDialog: () => void 
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="overflow-hidden mr-4">
+        <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
+          {title}
+        </h1>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <img
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
+          alt="User avatar"
+          className="h-8 w-8"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Button variant="outline" size="icon" className="h-8 w-8 border-gray-200">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-gray-500"
+              >
+                <path
+                  d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onRename}>
+              <Edit2 className="mr-2 h-4 w-4" />
+              <span>Rename</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onShowDeleteDialog} className="text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+});
+
 export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
   const searchParams = useSearchParams()
   const tabParam = searchParams?.get('tab')
@@ -491,61 +551,15 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // Add quota availability check
   const { hasAvailablePlanQuota, isLoading: isQuotaLoading } = useQuotaAvailability();
 
-  // Memoize the title to prevent unnecessary re-renders during tab changes
-  const conversationTitle = useMemo(() => {
-    return conversationPlan?.title || "Loading...";
-  }, [conversationPlan?.title]);
-
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div className="overflow-hidden mr-4">
-            <h1 className="text-2xl font-semibold text-black overflow-hidden text-ellipsis whitespace-nowrap">
-              {conversationTitle}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <img
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
-              alt="User avatar"
-              className="h-8 w-8"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="outline" size="icon" className="h-8 w-8 border-gray-200">
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 15 15"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-gray-500"
-                  >
-                    <path
-                      d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleRename}>
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  <span>Rename</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+        {/* Use the memoized header component */}
+        <ConversationHeader 
+          title={conversationPlan?.title || "Loading..."} 
+          onRename={handleRename} 
+          onShowDeleteDialog={() => setShowDeleteDialog(true)} 
+        />
 
         {/* Tabs Section */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
