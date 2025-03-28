@@ -59,6 +59,7 @@ export default function StartChatPage({
   } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [chatNotFound, setChatNotFound] = useState(false);
   
   // Start warming the prompt cache as early as possible
   // This happens in parallel with other data fetching
@@ -173,16 +174,22 @@ export default function StartChatPage({
         if (!response.ok) {
           console.warn(`Chat instance fetch failed with status ${response.status}`);
           
-          // Provide fallback data instead of throwing an error
-          // This ensures the UI can still render even if the API fails
-          setChatInstanceData({
-            welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
-            welcomeHeading: "Ready to share your feedback?",
-            welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
-            respondentContacts: false,
-            incentive_status: false,
-            incentive_description: ""
-          });
+          // Check if the chat instance was not found (404)
+          if (response.status === 404) {
+            setChatNotFound(true);
+            setChatInstanceData({});
+          } else {
+            // Provide fallback data for other errors
+            // This ensures the UI can still render even if the API fails
+            setChatInstanceData({
+              welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
+              welcomeHeading: "Ready to share your feedback?",
+              welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
+              respondentContacts: false,
+              incentive_status: false,
+              incentive_description: ""
+            });
+          }
         } else {
           const chatInstance = await response.json();
           console.log("Fetched chat instance data:", chatInstance);
@@ -199,7 +206,7 @@ export default function StartChatPage({
         }
       } catch (error) {
         console.error('Failed to fetch chat instance:', error);
-        // Provide fallback data even when exceptions occur
+        // We don't know if this is a not found error, so use fallback data
         setChatInstanceData({
           welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
           welcomeHeading: "Ready to share your feedback?",
@@ -321,14 +328,20 @@ export default function StartChatPage({
       <Card className="max-w-md w-full bg-white shadow-lg relative overflow-hidden">
         <CardHeader className="text-center pt-10">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
-            {hasReachedResponseLimit 
-              ? "Response Limit Reached" 
-              : (chatInstanceData?.welcomeHeading || "Ready to share your feedback?")}
+            {chatNotFound
+              ? "Chat Unavailable"
+              : (hasReachedResponseLimit 
+                ? "Response Limit Reached" 
+                : (chatInstanceData?.welcomeHeading || "Ready to share your feedback?"))}
           </h1>
         </CardHeader>
         
         <CardContent>
-          {hasReachedResponseLimit ? (
+          {chatNotFound ? (
+            <p className="text-gray-600 text-center">
+              This chat is no longer available for participation. Thank you.
+            </p>
+          ) : hasReachedResponseLimit ? (
             <p className="text-gray-600 text-center">
               Thank you for your interest—this conversation has reached its response limit and is no longer accepting new submissions.
             </p>
