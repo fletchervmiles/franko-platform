@@ -245,7 +245,12 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     return () => {
       isMounted = false;
     };
-  }, [chatId, toast, searchParams]);
+  }, [
+    chatId, 
+    toast, 
+    // Only include the useLocal parameter from searchParams, not the tab parameter
+    searchParams?.get('useLocal')
+  ]);
 
   // Memoize handleDelete function
   const handleDelete = useCallback(async () => {
