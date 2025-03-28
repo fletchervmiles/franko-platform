@@ -150,6 +150,8 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   const [activeTab, setActiveTab] = useState(tabParam || "plan")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [conversationPlan, setConversationPlan] = useState<ConversationPlan | null>(null)
+  // Separate stable state for title that doesn't change with tab navigation
+  const [stableTitle, setStableTitle] = useState<string>("Loading...")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
@@ -254,6 +256,11 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
             if (isMounted) {
               setConversationPlan(plan);
               
+              // Update stable title state when plan is loaded
+              if (plan?.title) {
+                setStableTitle(plan.title);
+              }
+              
               // Update localStorage
               try {
                 localStorage.setItem(`plan_${chatId}`, JSON.stringify({
@@ -305,12 +312,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     return () => {
       isMounted = false;
     };
-  }, [
-    chatId, 
-    toast, 
-    // Only include the useLocal parameter from searchParams, not the tab parameter
-    searchParams?.get('useLocal')
-  ]);
+  }, [chatId, toast, searchParams]);
 
   // Memoize handleDelete function
   const handleDelete = useCallback(async () => {
@@ -398,6 +400,9 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
           ...conversationPlan,
           title: newTitle,
         });
+        
+        // Also update our stable title state
+        setStableTitle(newTitle);
       }
       
       toast({
@@ -556,7 +561,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
       <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
         {/* Use the memoized header component */}
         <ConversationHeader 
-          title={conversationPlan?.title || "Loading..."} 
+          title={stableTitle} 
           onRename={handleRename} 
           onShowDeleteDialog={() => setShowDeleteDialog(true)} 
         />
