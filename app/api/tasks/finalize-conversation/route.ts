@@ -1,48 +1,65 @@
 import { NextResponse } from 'next/server';
 import { finalizeConversation } from '@/lib/utils/conversation-finalizer';
 import { logger } from '@/lib/logger';
+import { headers } from 'next/headers';
 
 // Simple secret check - use an environment variable
 const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 
 export async function POST(request: Request) {
-  // 1. Security Check
-  const secretHeader = request.headers.get('X-Internal-Secret');
-  if (!BACKGROUND_TASK_SECRET || secretHeader !== BACKGROUND_TASK_SECRET) {
-    logger.warn('[BackgroundTask: Finalize] Unauthorized attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 2. Parse Body
-  let body;
   try {
-    // Cloning might still be safer even here, though less likely to conflict
-    const clonedRequest = request.clone();
-    body = await clonedRequest.json();
+    logger.debug('[API POST /finalize] Received request (via query param)');
+
+    // 1. Read chatResponseId from query parameters
+    const { searchParams } = new URL(request.url);
+    const chatResponseId = searchParams.get('chatResponseId');
+
+    // 2. Validate ID
+    if (!chatResponseId) {
+      logger.error('[API POST /finalize] Missing required query parameter: chatResponseId');
+      return NextResponse.json({ error: 'Chat response ID is required in query parameters' }, { status: 400 });
+    }
+
+    // 3. Check Secret
+    if (!BACKGROUND_TASK_SECRET) {
+       logger.error('[API POST /finalize] BACKGROUND_TASK_SECRET is not set. Cannot trigger background task.');
+       return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
+    }
+
+    // 4. Trigger Background Task (Fire-and-Forget)
+    const host = headers().get('host');
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const backgroundTaskUrl = `${protocol}://${host}/api/tasks/finalize-conversation`;
+
+    logger.info(`[API POST /finalize] Triggering background finalization for ${chatResponseId} via ${backgroundTaskUrl}`);
+
+    fetch(backgroundTaskUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret': BACKGROUND_TASK_SECRET,
+      },
+      // The background task still expects the ID in its body
+      body: JSON.stringify({ chatResponseId }),
+    }).catch(fetchError => {
+      logger.error(`[API POST /finalize] Error initiating background task fetch: ${fetchError.message}`, { chatResponseId });
+    });
+
+    // 5. Return 202 Accepted immediately
+    logger.info(`[API POST /finalize] Accepted request for ${chatResponseId}, background task initiated.`);
+    return NextResponse.json({
+      success: true,
+      message: 'Conversation finalization initiated',
+      chatResponseId
+    }, { status: 202 });
+
   } catch (error) {
-    logger.error('[BackgroundTask: Finalize] Error parsing request body:', error);
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-  }
-
-  const { chatResponseId } = body;
-
-  // 3. Validate ID
-  if (!chatResponseId) {
-    logger.error('[BackgroundTask: Finalize] Missing required parameter: chatResponseId');
-    return NextResponse.json({ error: 'Chat response ID is required' }, { status: 400 });
-  }
-
-  // 4. Execute the long-running task
-  try {
-    logger.info('[BackgroundTask: Finalize] Starting finalization job', { chatResponseId });
-    await finalizeConversation(chatResponseId);
-    logger.info('[BackgroundTask: Finalize] Finalization job completed successfully', { chatResponseId });
-    // Return success, although this response isn't directly used by the caller (fire-and-forget)
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    // Catch errors like URL parsing or header access
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`[BackgroundTask: Finalize] Error during finalizeConversation: ${errorMessage}`, { chatResponseId, stack: error instanceof Error ? error.stack : undefined });
-    // Return an error status - useful for Vercel logs
-    return NextResponse.json({ error: 'Finalization task failed', message: errorMessage }, { status: 500 });
+    logger.error(`[API POST /finalize] Error processing request: ${errorMessage}`);
+    return NextResponse.json({
+      error: 'Failed to initiate conversation finalization',
+      message: errorMessage
+    }, { status: 500 });
   }
 } 

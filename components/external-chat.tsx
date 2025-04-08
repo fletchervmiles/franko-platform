@@ -496,11 +496,11 @@ export function ExternalChat({
         // Update state and finalize after initiating redirect (can run in background)
         setTimeout(() => {
           setIsFinished(true);
-          // Fire and forget - trigger finalization in the background
-          fetch('/api/external-chat/finalize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatResponseId })
+          // Fire and forget - trigger finalization using query parameter
+          const finalizeUrl = `/api/external-chat/finalize?chatResponseId=${encodeURIComponent(chatResponseId)}`;
+          fetch(finalizeUrl, {
+            method: 'POST', // Keep POST for semantic meaning
+            // No body or Content-Type header needed
           }).catch(error => {
             console.error('Background finalization error:', error);
           });

@@ -198,8 +198,14 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    '/((?!.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage).*)',
+    // Match API/TRPC routes, BUT exclude /api/external-chat/finalize
+    '/(api|trpc)((?!/external-chat/finalize).*)',
+    // Match root
     '/',
-    '/(api|trpc)(.*)'
+    // Match other pages, excluding static files, _next, and specific explicit bypasses already handled in code if needed
+    // Note: The original complex regex might need adjustment based on what Clerk truly needs to see vs. what can be fully bypassed.
+    // Keeping the original bypasses AND this matcher exclusion is safest.
+     '/((?!.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage|api/external-chat/finalize).*)',
   ]
 };
+

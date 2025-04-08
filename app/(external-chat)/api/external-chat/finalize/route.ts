@@ -11,14 +11,17 @@
  */
 
 import { NextResponse } from 'next/server';
-import { finalizeConversation } from '@/lib/utils/conversation-finalizer';
+// finalizeConversation is called by the background task, not directly here anymore
+// import { finalizeConversation } from '@/lib/utils/conversation-finalizer'; 
 import { logger } from '@/lib/logger';
-import { headers } from 'next/headers'; // Import headers to get host
+// Remove the headers import for testing
+// import { headers } from 'next/headers'; 
 
-const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
+// Comment out potentially problematic imports/variables if they existed previously
+// const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 
 /**
- * POST Request Handler
+ * GET Request Handler
  * 
  * Triggers the conversation finalization process:
  * - Updates end time and duration
@@ -26,70 +29,58 @@ const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
  * - Generates transcript and summary
  * - Sends notifications
  */
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    logger.debug('[API POST /finalize] Received request');
-    let body;
-    try {
-      // Use the clone + text + parse method as it seemed most reliable for reading
-      const clonedRequest = request.clone();
-      const rawBody = await clonedRequest.text();
-      body = JSON.parse(rawBody);
-      logger.debug('[API POST /finalize] Request body parsed successfully', { bodyKeys: Object.keys(body) });
-    } catch (error) {
-      logger.error('[API POST /finalize] Error parsing request body:', error);
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    }
-    
-    const { chatResponseId } = body;
-    
+    logger.debug('[API GET /finalize] Minimal handler entered.');
+
+    // --- Temporarily Commented Out Logic ---
+    /*
+    // 1. Read chatResponseId from query parameters
+    const requestUrl = new URL(request.url);
+    const chatResponseId = requestUrl.searchParams.get('chatResponseId');
+
     if (!chatResponseId) {
-      logger.error('[API POST /finalize] Missing required parameter: chatResponseId');
-      return NextResponse.json({ error: 'Chat response ID is required' }, { status: 400 });
+      logger.error('[API GET /finalize] Missing required query parameter: chatResponseId');
+      return NextResponse.json({ error: 'Chat response ID is required in query parameters' }, { status: 400 });
     }
+
+    // Accessing env var might be an issue?
+    const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 
     // --- Trigger Background Task (Fire-and-Forget) ---
     if (!BACKGROUND_TASK_SECRET) {
-       logger.error('[API POST /finalize] BACKGROUND_TASK_SECRET is not set. Cannot trigger background task.');
-       // Return 500 or handle appropriately
+       logger.error('[API GET /finalize] BACKGROUND_TASK_SECRET is not set. Cannot trigger background task.');
        return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
     }
 
-    // Construct the full URL for the background task API route
-    const host = headers().get('host'); // Get the host (e.g., localhost:3000 or your domain)
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const backgroundTaskUrl = `${protocol}://${host}/api/tasks/finalize-conversation`;
+    // Use the relative path for the background task API route
+    const backgroundTaskUrl = '/api/tasks/finalize-conversation';
 
-    logger.info(`[API POST /finalize] Triggering background finalization for ${chatResponseId} via ${backgroundTaskUrl}`);
+    logger.info(`[API GET /finalize] Triggering background finalization for ${chatResponseId} via ${backgroundTaskUrl}`);
 
-    // Use fetch without await for fire-and-forget
     fetch(backgroundTaskUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Internal-Secret': BACKGROUND_TASK_SECRET, // Add the secret header
+        'X-Internal-Secret': BACKGROUND_TASK_SECRET,
       },
       body: JSON.stringify({ chatResponseId }),
     }).catch(fetchError => {
-      // Log errors initiating the fetch itself, but don't block the response
-      logger.error(`[API POST /finalize] Error initiating background task fetch: ${fetchError.message}`, { chatResponseId });
+      logger.error(`[API GET /finalize] Error initiating background task fetch: ${fetchError.message}`, { chatResponseId });
     });
-    // ------------------------------------------------
+    */
+    // --- End Commented Out Logic ---
 
-    // Return 202 Accepted immediately
-    logger.info(`[API POST /finalize] Accepted request for ${chatResponseId}, background task initiated.`);
-    return NextResponse.json({
-      success: true,
-      message: 'Conversation finalization initiated',
-      chatResponseId
-    }, { status: 202 }); // Use 202 Accepted status
+
+    // Return a simple success response for testing
+    logger.info('[API GET /finalize] Minimal handler returning OK.');
+    return NextResponse.json({ status: 'ok - minimal handler' }, { status: 200 });
 
   } catch (error) {
-    // Catch errors *before* initiating the background task (e.g., body parsing)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`[API POST /finalize] Error processing request: ${errorMessage}`);
+    logger.error(`[API GET /finalize] Minimal handler error: ${errorMessage}`);
     return NextResponse.json({
-      error: 'Failed to initiate conversation finalization',
+      error: 'Minimal handler failed',
       message: errorMessage
     }, { status: 500 });
   }
