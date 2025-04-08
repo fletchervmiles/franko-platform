@@ -254,7 +254,7 @@ export function ExternalChat({
     };
   }, [messages.length, isMobile]);
   
-  // Prevent zoom using touch events on mobile
+  // Prevent zoom using touch events on mobile deploy
   useEffect(() => {
     if (!isMobile) return;
     
