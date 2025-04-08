@@ -126,6 +126,18 @@ export function extractResponseFromAIOutput(
     return String(content);
   }
 
+  // If content doesn't look like JSON, return it directly
+  const trimmedContent = content.trim();
+  const looksLikeJson = 
+    content.includes('```json') || 
+    (trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) || 
+    (trimmedContent.startsWith('[') && trimmedContent.endsWith('}]'));
+
+  if (!looksLikeJson) {
+    console.log('Content does not look like JSON, returning directly.');
+    return content; // Return the plain text content as is
+  }
+
   // Try to extract JSON if content is wrapped
   const jsonContent = extractJsonFromString(content) || content;
   
