@@ -70,6 +70,34 @@ export const Message = React.memo(function Message({
   allMessages = [],
   isFirstInTurn = true
 }: MessageProps) {
+
+  // Define hooks unconditionally at the top level
+  const getDisplayContent = useCallback((content: string) => {
+    try {
+      // Handle both double-escaped and single-escaped newlines for JSON.stringify'ed responses
+      // This handles the case when a response is read from the database after being JSON.stringify'ed
+      let processed = content;
+      
+      // 1. Replace double-escaped newlines (\\n) with actual newlines
+      processed = processed.replace(/\\\\n/g, '\n');
+      
+      // 2. Replace single-escaped newlines (\n) with actual newlines
+      processed = processed.replace(/\\n/g, '\n');
+      
+      return processed;
+    } catch (error) {
+      console.error('Error processing content:', error);
+      return content;
+    }
+  }, []);
+  
+  const hasDisplayableTools = useMemo(() => 
+    toolInvocations?.some(
+      t => t.state === "result" && t.toolName !== "searchWeb" && t.toolName !== "thinkingHelp"
+    ), 
+    [toolInvocations]
+  );
+
   // Extract text content from content array if needed
   const extractedContent = useMemo(() => {
     // If content is already a string, return it directly
@@ -235,33 +263,6 @@ export const Message = React.memo(function Message({
     contentPreview: typeof content === 'string' ? content.substring(0, 100) : Array.isArray(content) ? extractedContent.substring(0, 100) : '[non-string content]',
     isFirstInTurn
   });
-
-  const getDisplayContent = useCallback((content: string) => {
-    try {
-      // Handle both double-escaped and single-escaped newlines for JSON.stringify'ed responses
-      // This handles the case when a response is read from the database after being JSON.stringify'ed
-      let processed = content;
-      
-      // 1. Replace double-escaped newlines (\\n) with actual newlines
-      processed = processed.replace(/\\\\n/g, '\n');
-      
-      // 2. Replace single-escaped newlines (\n) with actual newlines
-      processed = processed.replace(/\\n/g, '\n');
-      
-      return processed;
-    } catch (error) {
-      console.error('Error processing content:', error);
-      return content;
-    }
-  }, []);
-  
-  // Determine if we have displayable tool invocations (not searchWeb or thinkingHelp)
-  const hasDisplayableTools = useMemo(() => 
-    toolInvocations?.some(
-      t => t.state === "result" && t.toolName !== "searchWeb" && t.toolName !== "thinkingHelp"
-    ), 
-    [toolInvocations]
-  );
 
   // Determine if we should show loading state
   const showLoading = isLoading && !content && !toolInvocations?.length;

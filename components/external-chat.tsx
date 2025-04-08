@@ -273,13 +273,11 @@ export function ExternalChat({
       e.preventDefault();
     };
     
-    // @ts-ignore - TypeScript doesn't recognize gesturestart
     document.addEventListener('gesturestart', preventGesture, { passive: false });
     
     return () => {
       document.removeEventListener('touchstart', preventZoom);
       document.removeEventListener('touchmove', preventZoom);
-      // @ts-ignore
       document.removeEventListener('gesturestart', preventGesture);
     };
   }, [isMobile]);

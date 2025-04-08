@@ -56,6 +56,23 @@ export const ConversationProgress = React.memo(function ConversationProgress({
     retry: false
   });
 
+  // Memoize step computation - Must be called before early return
+  const steps = useMemo(() => {
+    // Handle the case where progress or objectives might be undefined/null
+    if (!progress?.objectives) {
+      return []; // Return empty array if no objectives
+    }
+    
+    return Object.entries(progress.objectives)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([_id, obj]) => ({ // Prefix id with _ to indicate it's unused
+        label: "", // Empty label since we're not displaying it anymore
+        status: obj.status === "done" ? "completed" 
+               : obj.status === "current" ? "in-review"
+               : "pending"
+      } as Step));
+  }, [progress]); // Depend only on progress object
+
   // Refetch progress when message count changes
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['objective-progress', conversationId] });
@@ -124,18 +141,6 @@ export const ConversationProgress = React.memo(function ConversationProgress({
   if (!progress?.objectives) {
     return null;
   }
-
-  // Memoize step computation to avoid recalculating on every render
-  const steps = useMemo(() => {
-    return Object.entries(progress.objectives)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([id, obj]) => ({
-        label: "", // Empty label since we're not displaying it anymore
-        status: obj.status === "done" ? "completed" 
-               : obj.status === "current" ? "in-review"
-               : "pending"
-      } as Step));
-  }, [progress.objectives]);
 
   return <ProgressBar steps={steps} isUpdating={isUpdating || isFetching} />;
 });

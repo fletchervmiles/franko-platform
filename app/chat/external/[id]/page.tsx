@@ -160,7 +160,6 @@ export default function StartChatPage({
     // Add event listeners
     document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
     document.addEventListener('touchmove', preventZoom, { passive: false });
-    // @ts-ignore - TypeScript doesn't recognize gesturestart
     document.addEventListener('gesturestart', preventGesture, { passive: false });
     
     return () => {
@@ -173,7 +172,6 @@ export default function StartChatPage({
       
       document.removeEventListener('touchstart', preventPullToRefresh);
       document.removeEventListener('touchmove', preventZoom);
-      // @ts-ignore
       document.removeEventListener('gesturestart', preventGesture);
     };
   }, [isSafari]);

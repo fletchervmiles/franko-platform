@@ -16,6 +16,7 @@ import { getProfile } from '@/db/queries/profiles-queries';
 // We need to use a more persistent cache that won't be recreated on module reloads
 // This uses the global object which persists across module reloads
 declare global {
+  // eslint-disable-next-line no-var
   var _promptCache: LRUCache<string, string> | undefined;
 }
 
@@ -133,6 +134,7 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
 
 // We need to make protected IDs persistent too
 declare global {
+  // eslint-disable-next-line no-var
   var _protectedChatIds: Set<string> | undefined;
 }
 

@@ -128,7 +128,7 @@ export function convertToUIMessages(
     }
 
     let textContent = "";
-    let toolInvocations: Array<ToolInvocation> = [];
+    const toolInvocations: Array<ToolInvocation> = [];
 
     // Process different types of message content
     if (typeof message.content === "string") {
