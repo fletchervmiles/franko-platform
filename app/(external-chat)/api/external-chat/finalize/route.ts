@@ -28,24 +28,19 @@ import { logger } from '@/lib/logger';
  * - Returns a success or error response.
  */
 export async function POST(request: Request) {
-  let body: any = null; // Declare body outside the inner try block
   let chatResponseIdForError: string | undefined = undefined; // For logging in outer catch
 
   try {
-    try {
-      body = await request.json();
-      chatResponseIdForError = body?.chatResponseId; // Assign after parsing succeeds
-    } catch (error) {
-      logger.error('[API POST /finalize] Error parsing request body:', error);
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    }
-    
-    const { chatResponseId } = body;
-    
+    // Read chatResponseId from query parameters instead of body
+    const requestUrl = new URL(request.url);
+    const chatResponseId = requestUrl.searchParams.get('chatResponseId');
+    // Ensure null from searchParams.get becomes undefined for the logging variable
+    chatResponseIdForError = chatResponseId === null ? undefined : chatResponseId; 
+
     // Validate required parameters
     if (!chatResponseId) {
-      logger.error('[API POST /finalize] Missing required parameter: chatResponseId');
-      return NextResponse.json({ error: 'Chat response ID is required' }, { status: 400 });
+      logger.error('[API POST /finalize] Missing required query parameter: chatResponseId');
+      return NextResponse.json({ error: 'Chat response ID is required in query parameters' }, { status: 400 });
     }
     
     logger.info(`[API POST /finalize] Received request to finalize conversation: ${chatResponseId}`);
@@ -66,7 +61,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // Log and return any errors from the finalization process
     const errorMessage = error instanceof Error ? error.message : String(error);
-    // Try to include chatResponseId in error log if possible (might not be available if parsing failed)
+    // Try to include chatResponseId in error log if possible 
     // Use the chatResponseIdForError variable captured earlier
     logger.error(`[API POST /finalize] Error during finalization for ${chatResponseIdForError ?? 'unknown'}: ${errorMessage}`);
     
