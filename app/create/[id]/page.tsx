@@ -36,7 +36,7 @@ export default async function CreatePage({ params, searchParams }: { params: { i
           
           <CreateConversationForm 
             isNew={params.id === 'new'} 
-            chatId={params.id !== 'new' ? params.id : undefined} 
+            idProp={params.id !== 'new' ? params.id : undefined}
             isRegenerating={isRegenerating}
           />
         </div>
