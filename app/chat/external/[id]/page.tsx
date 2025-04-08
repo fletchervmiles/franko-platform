@@ -56,8 +56,8 @@ interface ChatInstanceData {
   welcomeHeading?: string;
   welcomeCardDescription?: string;
   respondentContacts?: boolean;
-  incentive_status?: boolean;
-  incentive_description?: string;
+  incentiveStatus?: boolean;
+  incentiveDescription?: string;
   branding?: BrandingData | null; // Add branding object
 }
 
@@ -198,8 +198,8 @@ export default function StartChatPage({
               welcomeHeading: "Ready to share your feedback?",
               welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
               respondentContacts: false,
-              incentive_status: false,
-              incentive_description: "",
+              incentiveStatus: false,
+              incentiveDescription: "",
               branding: null, // Explicitly set branding to null on fallback
             });
           }
@@ -216,8 +216,8 @@ export default function StartChatPage({
           welcomeHeading: "Ready to share your feedback?",
           welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
           respondentContacts: false,
-          incentive_status: false,
-          incentive_description: "",
+          incentiveStatus: false,
+          incentiveDescription: "",
           branding: null, // Explicitly set branding to null on fetch error
         });
       } finally {
@@ -398,19 +398,19 @@ export default function StartChatPage({
                 <WelcomeForm 
                   onSubmit={handleStartChat}
                   isLoading={isInitializing}
-                  incentive_status={chatInstanceData.incentive_status}
-                  incentive_description={chatInstanceData.incentive_description}
+                  incentiveStatus={chatInstanceData.incentiveStatus}
+                  incentiveDescription={chatInstanceData.incentiveDescription}
                   buttonColor={buttonColor}
                   useGradientButton={useGradientButton}
                 />
               ) : !hasReachedResponseLimit && (
                 <div className="flex flex-col space-y-4">
-                  {chatInstanceData?.incentive_status && (
+                  {chatInstanceData?.incentiveStatus && (
                     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-2">
                       <div className="flex items-center gap-2">
                         <Gift className="h-5 w-5 text-indigo-500" />
                         <p className="text-sm text-gray-700">
-                          {chatInstanceData?.incentive_description || "Complete this conversation to receive an incentive!"}
+                          {chatInstanceData?.incentiveDescription || "Complete this conversation to receive an incentive!"}
                         </p>
                       </div>
                     </div>
