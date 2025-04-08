@@ -28,12 +28,15 @@ import { logger } from '@/lib/logger';
  * - Returns a success or error response.
  */
 export async function POST(request: Request) {
+  logger.info('[API POST /finalize] Handler entered.'); // Log entry
   let chatResponseIdForError: string | undefined = undefined; // For logging in outer catch
 
   try {
+    logger.debug(`[API POST /finalize] Processing request URL: ${request.url}`); // Log URL
     // Read chatResponseId from query parameters instead of body
     const requestUrl = new URL(request.url);
     const chatResponseId = requestUrl.searchParams.get('chatResponseId');
+    logger.debug(`[API POST /finalize] Extracted chatResponseId from URL: ${chatResponseId}`); // Log extracted ID
     // Ensure null from searchParams.get becomes undefined for the logging variable
     chatResponseIdForError = chatResponseId === null ? undefined : chatResponseId; 
 
@@ -47,16 +50,19 @@ export async function POST(request: Request) {
     
     // Call the finalizer utility
     // This function now handles the DB updates, summary generation, webhook triggers, etc.
+    logger.debug(`[API POST /finalize] Calling finalizeConversation for: ${chatResponseId}`); // Log before calling finalizer
     await finalizeConversation(chatResponseId);
     
     logger.info(`[API POST /finalize] Conversation finalization process completed for: ${chatResponseId}`);
     
     // Return success response
-    return NextResponse.json({ 
+    const successResponse = { 
       success: true, 
       message: 'Conversation finalized successfully',
       chatResponseId
-    }, { status: 200 }); // Use 200 OK for success
+    };
+    logger.debug('[API POST /finalize] Sending success response:', successResponse); // Log success response object
+    return NextResponse.json(successResponse, { status: 200 }); // Use 200 OK for success
 
   } catch (error) {
     // Log and return any errors from the finalization process
