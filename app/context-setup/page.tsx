@@ -117,7 +117,14 @@ export default function ContextSetupPage() {
   // Query for profile data
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['profile', user?.id],
-    queryFn: () => fetchProfile(user?.id!),
+    queryFn: async () => {
+      // Explicitly check if user.id exists before calling fetchProfile
+      if (!user?.id) {
+        // Should ideally not happen due to 'enabled' flag, but good practice
+        return null // Or throw an error
+      }
+      return fetchProfile(user.id)
+    },
     enabled: !!user?.id,
   })
 
