@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     logger.debug('[API GET /finalize] Minimal handler entered.');
 
     // --- Temporarily Commented Out Logic ---
-    /*
+    
     // 1. Read chatResponseId from query parameters
     const requestUrl = new URL(request.url);
     const chatResponseId = requestUrl.searchParams.get('chatResponseId');
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Chat response ID is required in query parameters' }, { status: 400 });
     }
 
+    /* // Keep this block commented
     // Accessing env var might be an issue?
     const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 
@@ -74,7 +75,8 @@ export async function GET(request: Request) {
 
     // Return a simple success response for testing
     logger.info('[API GET /finalize] Minimal handler returning OK.');
-    return NextResponse.json({ status: 'ok - minimal handler' }, { status: 200 });
+    // Adjust the return message slightly to show progress
+    return NextResponse.json({ status: 'ok - url parsed', chatResponseId }, { status: 200 }); 
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
