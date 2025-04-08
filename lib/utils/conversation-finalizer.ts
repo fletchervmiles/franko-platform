@@ -249,6 +249,7 @@ async function triggerConversationCompletedWebhooks(finalChatResponse: SelectCha
       completionStatus: finalChatResponse.completionStatus,
       userWords: finalChatResponse.user_words,
       transcriptSummary: finalChatResponse.transcript_summary,
+      cleanTranscript: finalChatResponse.cleanTranscript,
       intervieweeFirstName: finalChatResponse.intervieweeFirstName,
       intervieweeSecondName: finalChatResponse.intervieweeSecondName,
       intervieweeEmail: finalChatResponse.intervieweeEmail, // Be mindful of privacy regulations

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, PlusCircle, Edit, Trash2, Copy, AlertTriangle, RefreshCw, Send } from 'lucide-react';
+import { Loader2, PlusCircle, Edit, Trash2, Copy, AlertTriangle, RefreshCw } from 'lucide-react';
 import { WebhookForm } from './webhook-form'; // We will create this next
 
 // Define the shape of the webhook data we expect from the API (excluding secret)
@@ -208,17 +208,6 @@ export function WebhookSettings({ chatInstanceId }: WebhookSettingsProps) {
         });
     };
 
-    // TODO: Implement Send Test Event functionality
-    const handleSendTestEvent = (webhookId: string) => {
-         toast({ title: "Info", description: "Send Test Event feature not yet implemented." });
-         console.log("Trigger test event for webhook:", webhookId);
-         // Implementation:
-         // 1. Add API endpoint: POST /api/chat-instances/[chatId]/webhooks/[webhookId]/test
-         // 2. Backend: Fetch webhook, construct sample payload, send POST request
-         // 3. Frontend: Call the API endpoint, show loading/success/error toast
-    };
-
-
     return (
         <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -276,17 +265,6 @@ export function WebhookSettings({ chatInstanceId }: WebhookSettingsProps) {
                                      </p>
                                 </div>
                                 <div className="flex items-center space-x-3 flex-shrink-0">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => handleSendTestEvent(webhook.id)}
-                                        title="Send Test Event"
-                                        // disabled={isTesting === webhook.id} // Add state for testing if needed
-                                     >
-                                        {/* Add loading state here */}
-                                        <Send className="h-4 w-4" />
-                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
