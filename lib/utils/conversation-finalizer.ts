@@ -22,7 +22,7 @@ import { countUserWords } from "./word-counter";
 import { updateUsageCount } from "./usage-tracker";
 import { generateSummary } from "./summary-generator";
 import { logger } from "@/lib/logger";
-import { sendResponseNotification } from "@/app/api/send/route";
+import { sendResponseNotification } from "@/lib/email-service";
 import { getLatestObjectives } from "./conversation-helper";
 import crypto from 'crypto';
 import { getActiveWebhooksForEvent } from '@/db/queries/webhooks-queries';
