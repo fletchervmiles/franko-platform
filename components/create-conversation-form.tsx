@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import React from "react"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from 'react-markdown'
@@ -27,6 +26,9 @@ import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import LoadingScreen from "./loading-screen"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
+import TextareaAutosize from 'react-textarea-autosize'
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
 
 // Custom hook to fetch organisation name
 const useOrganisationName = () => {
@@ -65,16 +67,16 @@ const StatusDot = ({ active }: { active: boolean }) => (
 // Update the component props interface
 interface CreateConversationFormProps {
   isNew?: boolean;
-  chatId?: string;
+  idProp?: string;
   isRegenerating?: boolean;
 }
 
-export const CreateConversationForm = React.memo(function CreateConversationForm({ isNew = false, chatId: propChatId, isRegenerating = false }: CreateConversationFormProps) {
+export const CreateConversationForm = React.memo(function CreateConversationForm({ isNew = false, idProp, isRegenerating = false }: CreateConversationFormProps) {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  // Use the prop chatId if provided, otherwise try to get it from params
-  const chatId = propChatId || (params ? (params as { id?: string }).id : undefined)
+  // Use the prop ID if provided, otherwise try to get it from params
+  const idVariable = idProp || (params ? (params as { id?: string }).id : undefined);
   
   // Fetch organisation name
   const { organisationName } = useOrganisationName()
@@ -92,17 +94,20 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   
   // Log the chat ID for debugging
   useEffect(() => {
-    console.log('Chat ID:', isNew ? 'Creating new on submit' : chatId)
-  }, [chatId, isNew])
+    console.log('Instance ID:', isNew ? 'Creating new on submit' : idVariable)
+  }, [idVariable, isNew])
   
   // Restore original state for form values
   const [topic, setTopic] = useState<string>("")
-  const [duration, setDuration] = useState<string>("")
-  const [respondentContacts, setRespondentContacts] = useState<boolean>(false)
-  const [incentiveStatus, setIncentiveStatus] = useState<boolean>(false)
+  const [numTurns, setNumTurns] = useState<number>(10)
+  const [respondentContacts, setRespondentContacts] = useState<boolean | null>(null)
+  const [incentiveStatus, setIncentiveStatus] = useState<boolean | null>(null)
   const [incentiveCode, setIncentiveCode] = useState<string>("")
   const [incentiveDescription, setIncentiveDescription] = useState<string>("")
   const [additionalDetails, setAdditionalDetails] = useState<string>("")
+  
+  // Add state to track if the topic section has been interacted with
+  const [hasInitiatedTopic, setHasInitiatedTopic] = useState<boolean>(false)
   
   // State for form submission
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -163,10 +168,12 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     }
   ], [organisationName]);
   
-  // Update fetchChatDetails to remove welcome field retrievals
+  // Update fetchChatDetails to use idVariable
   const fetchChatDetails = async () => {
+    if (!idVariable) return; // Check idVariable
     try {
-      const response = await fetch(`/api/chat-instances/${chatId}`);
+      // Use idVariable in the fetch URL
+      const response = await fetch(`/api/chat-instances/${idVariable}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch chat details');
@@ -175,22 +182,37 @@ I'll send this to customers who've recently churned or canceled their ${organisa
       const chatData = await response.json();
       
       if (chatData.topic) setTopic(chatData.topic);
-      if (chatData.duration) setDuration(chatData.duration);
+      // Parse duration string to set numTurns
+      if (chatData.duration) {
+        const turnsMatch = chatData.duration.match(/(\d+)\s+turns$/);
+        if (turnsMatch && turnsMatch[1]) {
+          const parsedTurns = parseInt(turnsMatch[1], 10);
+          if (parsedTurns >= 3 && parsedTurns <= 20) {
+            setNumTurns(parsedTurns);
+          } else {
+            setNumTurns(10); // Default if parsing fails or out of range
+          }
+        } else {
+           setNumTurns(10); // Default if no turns found in string
+        }
+      }
       if (chatData.respondentContacts !== undefined) setRespondentContacts(chatData.respondentContacts);
       if (chatData.incentive_status !== undefined) setIncentiveStatus(chatData.incentive_status);
       if (chatData.incentive_code) setIncentiveCode(chatData.incentive_code);
       if (chatData.incentive_description) {
-        // Remove the prefix if it exists
         const description = chatData.incentive_description.startsWith('Upon completion, you\'ll receive ')
           ? chatData.incentive_description.substring('Upon completion, you\'ll receive '.length)
           : chatData.incentive_description;
-        
         setIncentiveDescription(description);
       }
       if (chatData.additionalDetails) setAdditionalDetails(chatData.additionalDetails);
       
       // Show all cards when regenerating
       setVisibleCards(4);
+      // Mark topic as initiated if topic data is loaded
+      if (chatData.topic) {
+        setHasInitiatedTopic(true)
+      }
     } catch (error) {
       console.error('Error fetching chat details:', error);
       toast.error('Failed to load conversation details');
@@ -199,10 +221,11 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   
   // Add effect to load existing data when regenerating
   useEffect(() => {
-    if (isRegenerating && chatId) {
+    // Check idVariable
+    if (isRegenerating && idVariable) {
       fetchChatDetails();
     }
-  }, [isRegenerating, chatId]);
+  }, [isRegenerating, idVariable]); // Depend on idVariable
   
   // Add effect to scroll to the newly visible card when visibleCards changes
   useEffect(() => {
@@ -223,13 +246,14 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   const hasContent = (cardIndex: number) => {
     switch (cardIndex) {
       case 1:
-        return topic !== undefined && topic.trim().length > 0
+        return (topic !== undefined && topic.trim().length > 0) || hasInitiatedTopic;
       case 2:
-        return duration.trim().length > 0
+        // Check if numTurns is within the valid range (it should be by default)
+        return numTurns >= 3 && numTurns <= 20;
       case 3:
-        return respondentContacts !== null
+        return respondentContacts === true || respondentContacts === false
       case 4:
-        return incentiveStatus !== null && (!incentiveStatus || (incentiveStatus && incentiveCode.trim().length > 0 && incentiveDescription.trim().length > 0))
+        return incentiveStatus === false || (incentiveStatus === true && incentiveCode.trim().length > 0 && incentiveDescription.trim().length > 0)
       default:
         return false
     }
@@ -245,22 +269,21 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   // Handle template selection
   const handleTemplateSelect = (prompt: string) => {
     setTopic(prompt)
+    setHasInitiatedTopic(true)
   }
 
   // Handle "Start from Scratch"
   const handleStartFromScratch = () => {
-    const scratchPrompt = "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+    const scratchPrompt = ""
     setTopic(scratchPrompt)
+    setHasInitiatedTopic(true)
   }
 
-  // Handle duration selection with auto-progression
-  const handleDurationSelect = (time: string) => {
-    setDuration(time)
-    // Auto-progress to next card after selection
-    if (visibleCards === 2) {
-      setTimeout(() => {
-        showNextCard()
-      }, 300)
+  // Update slider change handler (removed auto-progression logic)
+  const handleTurnsChange = (value: number[]) => {
+    const newTurns = value[0]
+    if (newTurns >= 3 && newTurns <= 20) {
+      setNumTurns(newTurns)
     }
   }
 
@@ -281,7 +304,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     // Auto-progress to next card only if "No" is selected
     if (!value && visibleCards === 4) {
       setTimeout(() => {
-        showNextCard()
+        // If there were a card 5, this would show it: showNextCard()
       }, 300)
     }
   }
@@ -290,14 +313,6 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   const isFormComplete = () => {
     return hasContent(1) && hasContent(2) && hasContent(3) && hasContent(4);
   }
-
-  // Duration options
-  const durationOptions = [
-    "1 minute (quick) - 5 turns",
-    "2 minutes (recommended) - 10 turns",
-    "3-4 minutes (exploratory) - 16 turns",
-    "4-5 minutes (deep dive) - 20 turns"
-  ]
 
   // Add quota checking
   const { hasAvailablePlanQuota, isLoading: isQuotaLoading, planQuotaPercentage } = useQuotaAvailability();
@@ -313,10 +328,11 @@ I'll send this to customers who've recently churned or canceled their ${organisa
       setIsSubmitting(true)
       setShowLoadingScreen(true) // Show loading screen
       
-      let targetChatId = chatId;
+      let targetId = idVariable; // Use idVariable, rename for clarity
       
       // If this is a new conversation, create a chat instance first
       if (isNew) {
+        setLoadingProgress("Creating conversation..."); // Update progress
         const createResponse = await fetch('/api/chats/create', {
           method: 'POST',
           headers: {
@@ -329,45 +345,52 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         }
         
         const { id } = await createResponse.json();
-        targetChatId = id;
+        targetId = id; // Assign the new ID
       }
       
-      // Prepare incentive description with prefix if incentive is enabled
-      const formattedIncentiveDescription = incentiveStatus 
-        ? `Upon completion, you'll receive ${incentiveDescription}` 
-        : incentiveDescription;
+      // Prepare incentive description
+      const formattedIncentiveDescription = incentiveStatus
+          ? `Upon completion, you'll receive ${incentiveDescription}`
+          : incentiveDescription;
+
+      // Format the duration string based on numTurns
+      const durationString = formatDurationString(numTurns);
       
-      // Update form submission to remove welcome fields
-      const response = await fetch(`/api/chat-instances/update?chatId=${targetChatId}`, {
-        method: 'POST',
+      setLoadingProgress("Saving details..."); // Update progress
+      // --- Correct the fetch call ---
+      // Use PATCH method and the standard [id] route
+      const response = await fetch(`/api/chat-instances/${targetId}`, {
+        method: 'PATCH', // Use PATCH
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           topic,
-          duration,
+          duration: durationString,
           respondentContacts,
           incentiveStatus,
           incentiveCode,
           incentiveDescription: formattedIncentiveDescription,
           additionalDetails,
+          // NOTE: published status is not set here, defaults to false
         }),
       })
       
       if (!response.ok) {
         throw new Error('Failed to save conversation details')
       }
-      
+
+      setLoadingProgress("Generating plan..."); // Update progress
       // Update the plan generation and handling section
-      // Generate conversation plan
-      const planResponse = await fetch(`/api/conversation-plan/generate?chatId=${targetChatId}`, {
+      // Generate conversation plan - uses chatId query param, which is correct
+      const planResponse = await fetch(`/api/conversation-plan/generate?chatId=${targetId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           topic,
-          duration,
+          duration: durationString,
           additionalDetails,
         }),
       });
@@ -379,7 +402,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         
         // Redirect with delay
         setTimeout(() => {
-          router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
+          router.push(`/conversations/${targetId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
         }, 2000);
       } else {
         // Wait for the full response body
@@ -387,7 +410,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         
         // Store the plan data in localStorage as fallback
         try {
-          localStorage.setItem(`plan_${targetChatId}`, JSON.stringify({
+          localStorage.setItem(`plan_${targetId}`, JSON.stringify({
             data: planData,
             timestamp: Date.now()
           }));
@@ -402,7 +425,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         if (planData._verified === true) {
           setLoadingProgress("Plan verified! Redirecting...");
           setTimeout(() => {
-            router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
+            router.push(`/conversations/${targetId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
           }, 1000);
           return;
         }
@@ -421,11 +444,11 @@ I'll send this to customers who've recently churned or canceled their ${organisa
             try {
               setLoadingProgress(`Verifying plan (${attempts + 1}/${maxAttempts})...`);
               
-              const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetChatId}`);
+              const checkResponse = await fetch(`/api/conversation-plan?chatId=${targetId}`);
               
               if (checkResponse.ok) {
                 // Plan exists in read replica, safe to redirect
-                router.push(`/conversations/${targetChatId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
+                router.push(`/conversations/${targetId}?tab=plan${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               
@@ -435,7 +458,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               if (attempts >= maxAttempts) {
                 // If we exceed max attempts, redirect anyway with localStorage flag
                 console.warn(`Plan verification timed out after ${maxAttempts} attempts`);
-                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
+                router.push(`/conversations/${targetId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               
@@ -447,7 +470,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               
               if (attempts >= maxAttempts) {
                 // Fallback to localStorage approach
-                router.push(`/conversations/${targetChatId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
+                router.push(`/conversations/${targetId}?tab=plan&useLocal=true${isRegenerating ? '&from=regenerate' : '&from=generate'}`);
                 return;
               }
               
@@ -466,6 +489,34 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Helper function to get depth description based on turns
+  const getDepthDescription = (turns: number): string => {
+    if (turns >= 3 && turns <= 5) return "Quick"
+    if (turns >= 6 && turns <= 10) return "Recommended"
+    if (turns >= 11 && turns <= 16) return "Exploratory"
+    if (turns >= 17 && turns <= 20) return "Deep Dive"
+    return "Custom" // Fallback
+  }
+
+  // Helper function to estimate time - UPDATED
+  const estimateTime = (turns: number): string => {
+    const totalSeconds = turns * 30 // Changed 20 to 30
+    const minutes = Math.floor(totalSeconds / 60)
+    const remainingSeconds = totalSeconds % 60
+    if (minutes === 0) return `≈ ${remainingSeconds} sec`
+    if (remainingSeconds === 0) return `≈ ${minutes} min`
+    // Simple decimal representation for partial minutes
+    const decimalMinutes = (totalSeconds / 60).toFixed(1)
+    return `≈ ${decimalMinutes} min`
+  }
+
+  // Helper function to format the duration string for the backend
+  const formatDurationString = (turns: number): string => {
+    const description = getDepthDescription(turns);
+    const timeEstimate = estimateTime(turns); // This will now use the 30s calculation
+    return `${timeEstimate} (${description}) - ${turns} turns`;
   }
 
   // Update the button text based on whether we're regenerating and quota status
@@ -496,12 +547,12 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           
           <div className="space-y-6 mb-8">
             <div className="flex flex-wrap gap-3">
-              {/* Start from Scratch button as first button */}
+              {/* Start from Scratch button */}
               <button
                 onClick={handleStartFromScratch}
                 className={cn(
                   "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                  topic === "Tell us exactly what you'd like to learn—your agent will draft your conversation plan and can adapt to any topic."
+                  hasInitiatedTopic && topic.trim() === ""
                     ? "bg-black text-white shadow-sm"
                     : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
                 )}
@@ -517,7 +568,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
                   onClick={() => handleTemplateSelect(template.prompt)}
                   className={cn(
                     "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                    topic === template.prompt
+                    hasInitiatedTopic && topic === template.prompt
                       ? "bg-black text-white shadow-sm"
                       : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
                   )}
@@ -529,18 +580,20 @@ I'll send this to customers who've recently churned or canceled their ${organisa
             </div>
           </div>
           
-          {topic && (
+          {hasInitiatedTopic && (
             <>
               <h3 className="text-base font-medium mb-2 flex items-center">
                 Your Instructions
               </h3>
               <p className="text-sm text-gray-500 mb-4">Briefly describe what you're looking to learn. This can be anything you want—you're not limited to the topics above.</p>
               
-              <Textarea
+              <TextareaAutosize
                 value={topic}
-                onChange={(e) => setTopic(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTopic(e.target.value)}
                 placeholder="e.g., I want to learn why customers decide to cancel—so we can reduce churn."
-                className="mb-2 min-h-[300px] bg-white"
+                className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-2 resize-none"
+                minRows={5}
+                maxRows={20}
               />
             </>
           )}
@@ -553,48 +606,73 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               className="bg-black text-white hover:bg-gray-800 h-9 text-xs px-5"
               disabled={!hasContent(1)}
             >
-              Next <ChevronRight className="ml-1 h-3 w-3" />
+              Next
             </Button>
           </div>
         )}
       </div>
       
-      {/* Card 2: Duration */}
+      {/* Card 2: Duration (Slider) - Revised UI */}
       {visibleCards >= 2 && (
         <div ref={cardRefs.card2}>
           <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-2 flex items-center">
-              Set the Conversation Duration
+              Set the Conversation Length
               <StatusDot active={hasContent(2)} />
             </h3>
-            <p className="text-sm text-gray-500 mb-6">Approximately how long should the agent engage respondents in conversation before wrapping up?</p>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4 max-w-3xl">
-              {durationOptions.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => handleDurationSelect(time)}
-                  className={cn(
-                    "p-4 rounded-lg border",
-                    duration === time 
-                      ? "border-black bg-gray-50" 
-                      : "border-gray-200 bg-white hover:bg-gray-50",
-                    "transition-colors duration-200 text-center"
-                  )}
-                >
-                  <span className="text-sm">{time}</span>
-                </button>
-              ))}
+            <p className="text-sm text-gray-500 mb-8">
+              Choose the number of conversational turns (questions/responses) the agent should aim for.
+            </p>
+
+            {/* Container for Slider and Badges - Left Aligned */}
+            <div className="max-w-3xl space-y-4">
+              {/* Slider Block */}
+              <div className="space-y-2">
+                 <Slider
+                  value={[numTurns]}
+                  onValueChange={handleTurnsChange}
+                  min={3}
+                  max={20}
+                  step={1}
+                   className={cn(
+                     "w-full cursor-pointer"
+                   )}
+                  aria-label="Number of conversation turns"
+                />
+                {/* Min/Max Labels below slider */}
+                <div className="flex justify-between text-xs text-gray-500 px-1">
+                  <span>3 Turns (Min)</span>
+                  <span>20 Turns (Max)</span>
+                </div>
+              </div>
+
+              {/* Badges Block - Centered Below Slider */}
+              <div className="flex justify-center items-center space-x-3 pt-2">
+                 {/* Turn Count Badge */}
+                <Badge variant="outline" className="bg-white px-3 py-1.5 shadow-sm border-gray-200">
+                  <MessageSquare className="w-4 h-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-800">{numTurns} Turns</span>
+                </Badge>
+                {/* Summary Badge (Softer Blue) */}
+                 <Badge variant="default" className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1.5 shadow-sm border border-transparent">
+                  <span className="text-sm font-medium">{getDepthDescription(numTurns)}</span>
+                  <span className="mx-1.5 opacity-60">|</span>
+                  <Clock className="w-4 h-4 mr-1 opacity-80" />
+                  <span className="text-sm">{estimateTime(numTurns)}</span>
+                </Badge>
+              </div>
             </div>
           </div>
-          
+
+          {/* Next Button for Card 2 */}
           {visibleCards === 2 && (
             <div className="flex justify-end mt-5">
-              <Button 
-                onClick={showNextCard} 
+              <Button
+                onClick={showNextCard}
                 className="bg-black text-white hover:bg-gray-800 h-9 text-xs px-5"
+                disabled={!hasContent(2)}
               >
-                Next <ChevronRight className="ml-1 h-3 w-3" />
+                Next
               </Button>
             </div>
           )}
@@ -644,8 +722,9 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <Button 
                 onClick={showNextCard} 
                 className="bg-black text-white hover:bg-gray-800 h-9 text-xs px-5"
+                disabled={!hasContent(3)}
               >
-                Next <ChevronRight className="ml-1 h-3 w-3" />
+                Next
               </Button>
             </div>
           )}
@@ -689,7 +768,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               </button>
             </div>
             
-            {incentiveStatus && (
+            {incentiveStatus === true && (
               <div className="space-y-8 mt-6 max-w-3xl p-6 bg-gray-50 rounded-md border border-gray-100">
                 <div>
                   <label htmlFor="incentive-code" className="block text-sm font-medium mb-2">
@@ -728,8 +807,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           
           <div className="flex justify-end mt-8 space-x-4">
             {isRegenerating && (
-              <Button 
-                onClick={() => router.push(`/conversations/${chatId}?tab=plan`)}
+              <Button
+                onClick={() => router.push(`/conversations/${idVariable}?tab=plan`)}
                 className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
               >
                 Back to Plan

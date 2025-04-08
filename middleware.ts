@@ -66,7 +66,10 @@ export default clerkMiddleware(async (auth, req) => {
   const url = req.nextUrl.pathname;
   
   // Bypass auth for external chat pages and their API endpoints
-  if (url.includes('/chat/external/') || 
+  if (url === '/api/external-chat/finalize') {
+    // Explicitly handle finalize route early to avoid potential body stream issues
+    return NextResponse.next();
+  } else if (url.includes('/chat/external/') || 
       url === '/api/usage' || 
       url.startsWith('/api/external-chat/history') ||
       url.startsWith('/api/chat-responses/') ||
@@ -173,7 +176,23 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL('/desktop-only', req.url));
   }
 
-  // If authenticated, allow access to all routes
+  // If authenticated, add userId to headers and allow access
+  if (userId) {
+    // Clone the request headers and set a new header
+    // This preserves the existing headers and adds the user ID
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('X-User-Id', userId);
+
+    // Return NextResponse.next() with the new headers
+    return NextResponse.next({
+      request: {
+        // New request headers
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // Fallback for any other case (e.g., public route reached here without early return)
   return NextResponse.next();
 });
 

@@ -26,6 +26,9 @@ export const profilesTable = pgTable("profiles", {
   totalInternalChatQueriesAvailable: integer("total_internal_chat_queries_available").default(0),
   totalChatInstanceGenerationsQuota: integer("total_chat_instance_generations_quota").default(0),
   context_update: integer("context_update").default(0),
+  logoUrl: text("logo_url"),
+  buttonColor: text("button_color"),
+  titleColor: text("title_color"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

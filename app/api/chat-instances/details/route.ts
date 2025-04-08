@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Return only the form fields needed for regeneration
+    // Return only the form fields needed for regeneration + welcome fields
     const formData = {
       topic: chatInstance.topic || "",
       duration: chatInstance.duration || "",
@@ -40,9 +40,12 @@ export async function GET(request: Request) {
       incentiveCode: chatInstance.incentiveCode || "",
       incentiveDescription: chatInstance.incentiveDescription || "",
       additionalDetails: chatInstance.additionalDetails || "",
+      welcomeHeading: chatInstance.welcomeHeading || "",
+      welcomeCardDescription: chatInstance.welcomeCardDescription || "",
+      welcomeDescription: chatInstance.welcomeDescription || "",
     };
 
-    logger.info('Chat instance details fetched for regeneration:', { chatId });
+    logger.info('Chat instance details fetched:', { chatId });
     
     return NextResponse.json(formData);
   } catch (error) {

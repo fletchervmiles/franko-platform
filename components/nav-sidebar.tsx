@@ -17,6 +17,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useAuth } from "@clerk/nextjs"
+import { cn } from "@/lib/utils"
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
@@ -109,7 +110,7 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
 }) {
   const { signOut } = useAuth();
   const { openModal, setModalType } = useFeedbackModal();
-  const { hasContext, contextCompleted, isLoading } = useProfile();
+  const { hasContext, contextCompleted, isLoading, highlightWorkspaceNavItem, setHighlightWorkspaceNavItem } = useProfile();
   
   // Special handling for Sign Out button
   if (item.title === "Sign Out") {
@@ -158,6 +159,16 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     );
   }
 
+  // Handle Workspace item highlight (Step 8)
+  const isWorkspaceItem = item.title === "Workspace";
+  const handleWorkspaceClick = () => {
+    // Reset highlight when workspace is clicked
+    if (isWorkspaceItem && highlightWorkspaceNavItem) {
+      setHighlightWorkspaceNavItem(false);
+    }
+    // Allow default link navigation to proceed
+  };
+
   // Regular menu items
   return (
     <SidebarMenuItem>
@@ -165,7 +176,11 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
         asChild
         className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
       >
-        <Link href={item.url} className="flex items-center relative">
+        <Link 
+          href={item.url.trim()} // Trim whitespace from URL
+          className="flex items-center relative"
+          onClick={handleWorkspaceClick} // Add onClick handler
+        >
           <span
             className={`${section.title === "Account" ? "text-gray-500" : "text-gray-800"}`}
           >
@@ -173,11 +188,20 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
           </span>
           <span className="ml-2 font-medium">{item.title}</span>
           
-          {/* Add pulsating yellow dot for Context Setup when not completed */}
+          {/* Original pulsating dot for Context Setup */}
           {item.title === "Context Setup" && !isLoading && !contextCompleted && (
             <span 
-              className="ml-2 h-2 w-2 rounded-full bg-yellow-400 animate-pulse"
+              className="ml-auto h-2 w-2 rounded-full bg-yellow-400 animate-pulse" // Use ml-auto to push to the right
               aria-hidden="true"
+            />
+          )}
+
+          {/* New Highlight for Workspace (Step 8) */}
+          {isWorkspaceItem && highlightWorkspaceNavItem && (
+            <span 
+              className="ml-auto h-2.5 w-2.5 rounded-full bg-green-500 animate-bounce" // Brighter color, more animation
+              aria-hidden="true"
+              title="Context set! Create your first conversation here." // Tooltip
             />
           )}
         </Link>

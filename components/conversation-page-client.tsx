@@ -66,6 +66,33 @@ const IncentiveSetting = dynamic(
   }
 )
 
+// Add dynamic import for the new component
+const ChatWelcomeScreenSetting = dynamic(
+  () => import("@/components/chat-welcome-screen-setting").then(mod => ({ default: mod.ChatWelcomeScreenSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+// Add dynamic import for the new redirect component
+const RedirectSetting = dynamic(
+  () => import("@/components/redirect-setting").then(mod => ({ default: mod.RedirectSetting })),
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
+// Dynamically import the WebhookSettings component
+const WebhookSettings = dynamic(
+  () => import("@/components/webhook-settings").then(mod => mod.WebhookSettings), // Use the named export
+  {
+    loading: () => <LoadingPlaceholder />,
+    ssr: false
+  }
+)
+
 // Loading placeholder for lazy-loaded components
 const LoadingPlaceholder = () => (
   <div className="w-full p-4 flex items-center justify-center">
@@ -157,7 +184,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   const { toast } = useToast()
 
   // The guideName param is actually the chat instance ID
-  const chatId = params.guideName
+  const idVariable = params.guideName
 
   // Check if we're coming from generation or regeneration
   const isFromRegenerate = fromParam === 'regenerate'
@@ -169,7 +196,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
 
   // Update active tab when URL parameter changes
   useEffect(() => {
-    if (tabParam && ['share', 'plan', 'responses', 'settings'].includes(tabParam)) {
+    if (tabParam && ['share', 'plan', 'responses', 'settings', 'integrations'].includes(tabParam)) {
       setActiveTab(tabParam)
     }
   }, [tabParam])
@@ -183,13 +210,13 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     newParams.set('tab', value)
     
     // Use App Router navigation options (scroll: false instead of shallow)
-    router.push(`/conversations/${chatId}?${newParams.toString()}`, { scroll: false })
-  }, [chatId, router, searchParams])
+    router.push(`/conversations/${idVariable}?${newParams.toString()}`, { scroll: false })
+  }, [idVariable, router, searchParams])
 
   // Memoize the updateLastViewed function
   const updateLastViewed = useCallback(async () => {
     try {
-      const response = await fetch(`/api/chat-instances/${chatId}/last-viewed`, {
+      const response = await fetch(`/api/chat-instances/${idVariable}/last-viewed`, {
         method: 'POST',
       });
       
@@ -210,7 +237,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     } catch (error) {
       console.error('Error updating last viewed timestamp:', error);
     }
-  }, [chatId]);
+  }, [idVariable]);
 
   // Update lastViewed timestamp when the user views the responses tab
   useEffect(() => {
@@ -223,7 +250,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     let isMounted = true;
     
     async function loadConversationPlan() {
-      if (!isMounted) return;
+      if (!isMounted || !idVariable) return;
       
       try {
         setIsLoading(true);
@@ -234,7 +261,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         
         if (useLocal) {
           try {
-            const storedData = localStorage.getItem(`plan_${chatId}`);
+            const storedData = localStorage.getItem(`plan_${idVariable}`);
             if (storedData) {
               const parsed = JSON.parse(storedData);
               if (parsed.data) {
@@ -249,7 +276,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         
         // Always try to fetch from API
         try {
-          const response = await fetch(`/api/conversation-plan?chatId=${chatId}`);
+          const response = await fetch(`/api/conversation-plan?chatId=${idVariable}`);
           
           if (response.ok) {
             const plan = await response.json();
@@ -263,7 +290,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
               
               // Update localStorage
               try {
-                localStorage.setItem(`plan_${chatId}`, JSON.stringify({
+                localStorage.setItem(`plan_${idVariable}`, JSON.stringify({
                   data: plan,
                   timestamp: Date.now()
                 }));
@@ -312,12 +339,12 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     return () => {
       isMounted = false;
     };
-  }, [chatId, toast, searchParams]);
+  }, [idVariable, toast, searchParams]);
 
   // Memoize handleDelete function
   const handleDelete = useCallback(async () => {
     try {
-      const response = await fetch(`/api/chat-instances/${chatId}`, {
+      const response = await fetch(`/api/chat-instances/${idVariable}`, {
         method: 'DELETE',
       });
       
@@ -355,7 +382,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
       
       setShowDeleteDialog(false);
     }
-  }, [chatId, toast, router]);
+  }, [idVariable, toast, router]);
 
   // Memoize handleRename function
   const handleRename = useCallback(async () => {
@@ -371,7 +398,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     }
     
     try {
-      const response = await fetch(`/api/chat-instances/${chatId}`, {
+      const response = await fetch(`/api/chat-instances/${idVariable}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -419,12 +446,12 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         variant: "destructive",
       });
     }
-  }, [chatId, conversationPlan, toast]);
+  }, [idVariable, conversationPlan, toast]);
 
   // Memoize handleConversationPlanSubmit function
   const handleConversationPlanSubmit = useCallback(async (data: ConversationPlan) => {
     try {
-      const response = await fetch(`/api/conversation-plan?chatId=${chatId}`, {
+      const response = await fetch(`/api/conversation-plan?chatId=${idVariable}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -463,7 +490,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         variant: "destructive",
       });
     }
-  }, [chatId, toast]);
+  }, [idVariable, toast]);
 
   // State for responses data
   const [responsesData, setResponsesData] = useState({
@@ -480,7 +507,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
         if (activeTab === 'responses') {
           setIsLoading(true);
           
-          const response = await fetch(`/api/chat-instances/${chatId}/responses`);
+          const response = await fetch(`/api/chat-instances/${idVariable}/responses`);
           
           if (!response.ok) {
             let errorMessage = 'Failed to fetch chat responses';
@@ -551,7 +578,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     if (activeTab === 'responses') {
       fetchChatResponses();
     }
-  }, [chatId, activeTab, toast]);
+  }, [idVariable, activeTab, toast]);
   
   // Add quota availability check
   const { hasAvailablePlanQuota, isLoading: isQuotaLoading } = useQuotaAvailability();
@@ -599,10 +626,16 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
             >
               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Settings</span>
             </TabsTrigger>
+            <TabsTrigger
+              value="integrations"
+              className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+            >
+              <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100">Integrations</span>
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="share" className="mt-10">
             <Suspense fallback={<LoadingPlaceholder />}>
-              <ShareableLink guideName={chatId} />
+              <ShareableLink guideName={idVariable} />
             </Suspense>
           </TabsContent>
           <TabsContent value="plan" className="mt-10">
@@ -620,7 +653,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                   </div>
                   <div className="flex flex-col items-end">
                   <Button 
-                    onClick={() => router.push(`/create/${chatId}?regenerate=true`)}
+                    onClick={() => router.push(`/create/${idVariable}?regenerate=true`)}
                       disabled={isQuotaLoading || !hasAvailablePlanQuota}
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm px-3 py-1.5 transition-all duration-200 md:ml-4 self-start md:self-auto flex items-center gap-1"
                   >
@@ -639,7 +672,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                 </div>
                 <Suspense fallback={<LoadingPlaceholder />}>
                   <ConversationPlanForm 
-                    chatId={chatId} 
+                    chatId={idVariable} 
                     onSubmit={handleConversationPlanSubmit} 
                     initialData={conversationPlan}
                     startInEditMode={isNewOrRegenerated}
@@ -655,7 +688,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                 totalCustomerWords={responsesData.totalCustomerWords}
                 completionRate={responsesData.completionRate}
                 responseData={responsesData.responseData}
-                chatInstanceId={chatId}
+                chatInstanceId={idVariable}
               />
             </Suspense>
           </TabsContent>
@@ -672,8 +705,23 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                     <IncentiveSetting />
                   </Suspense>
                 </div>
+                <div className="bg-white rounded-[6px] shadow-sm">
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <RedirectSetting />
+                  </Suspense>
+                </div>
+                <div className="bg-white rounded-[6px] shadow-sm">
+                  <Suspense fallback={<LoadingPlaceholder />}>
+                    <ChatWelcomeScreenSetting />
+                  </Suspense>
+                </div>
               </div>
             </Card>
+          </TabsContent>
+          <TabsContent value="integrations" className="mt-10">
+            <Suspense fallback={<LoadingPlaceholder />}>
+              <WebhookSettings chatInstanceId={idVariable} />
+            </Suspense>
           </TabsContent>
         </Tabs>
 

@@ -38,6 +38,7 @@ export const chatInstancesTable = pgTable("chat_instances", {
   welcomeCardDescription: text("welcome_card_description"), // Added new field
   published: boolean("published").default(false),
   responseEmailNotifications: boolean("response_email_notifications").default(true),
+  redirect_url: text("redirect_url"), // Add the new redirect_url field here
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

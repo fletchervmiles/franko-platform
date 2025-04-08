@@ -11,7 +11,7 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '@/lib/logger';
 import { updateChatInstanceConversationPlan, updateChatInstanceProgress, updateWelcomeDescription } from "@/db/queries/chat-instances-queries";
-import { o1Model, geminiFlashModel } from ".";
+import { o1Model, geminiFlashModel, gemini25ProPreviewModel } from ".";
 import { arrayToNumberedObjectives, type ConversationPlan, type Objective } from "@/components/conversationPlanSchema";
 import { getProfile } from "@/db/queries/profiles-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
@@ -160,22 +160,63 @@ export async function generateConversationPlanFromForm({
     console.log(systemPrompt);
     console.log('=== END CONVERSATION PLAN PROMPT ===\n');
     
-    // Add retry logic for the generateObject call
-    const maxRetries = 3;
-    let retryCount = 0;
-    let lastError: any = null;
+    // Define models to try
+    const primaryModel = gemini25ProPreviewModel;
+    const fallbackModel = o1Model;
+    
+    let rawPlan: any; // Use 'any' for now, will be validated by schema
+    let modelUsed: string | undefined;
 
-    while (retryCount < maxRetries) {
+    try {
+      // Attempt 1: Try the primary model (Gemini 2.5 Pro Preview)
+      modelUsed = `Gemini 2.5 Pro Preview (gemini-2.5-pro-preview-03-25)`;
+      logger.ai(`Attempting conversation plan generation with primary model: ${modelUsed}`);
+      const modelStartTime = new Date();
+      
+      const result = await generateObject({
+        model: primaryModel,
+        system: `${systemPrompt}`,
+        prompt: "", // Keep prompt empty as system prompt contains all context
+        schema: z.object({ // Keep the same schema
+          thinking: z.object({
+            topicStrategy: z.string().describe("~200-word brainstorm on the topic"),
+            appliedtoOrganisation: z.string().describe("~200-word application to the organization"),
+            userPersona: z.string().describe("~100-word overview of the customer persona"),
+            durationThoughts: z.string().describe("Turn distribution reasoning + any time-check guidelines"),
+          }),
+          title: z.string().describe("Jargon-free title with key context"),
+          duration: z.string().describe("Estimate using User input (e.g., '3 minutes', '≈2', '2')"),
+          summary: z.string().describe("25-50 word summary with strategic value"),
+          objectives: z.array(
+            z.object({
+              objective: z.string().describe("Action/goal focus area"),
+              desiredOutcome: z.string().describe("Result/importance of the objective"),
+              agentGuidance: z.array(z.string()).describe("2-5 guidance thoughts focused on learning outcomes"),
+              expectedConversationTurns: z.string().describe("Expected number of conversation turns")
+            })
+          ).describe("Time-aware objectives sorted by priority")
+        }),
+      });
+      rawPlan = result.object;
+
+      const modelEndTime = new Date();
+      const modelDurationSec = (modelEndTime.getTime() - modelStartTime.getTime()) / 1000;
+      logger.ai(`Successfully generated plan with ${modelUsed} (duration: ${modelDurationSec.toFixed(2)}s)`);
+
+    } catch (primaryError) {
+      logger.error(`Primary model (${modelUsed}) failed:`, primaryError);
+      
+      // Attempt 2: Fallback to o1Model
+      modelUsed = `OpenAI o1`;
+      logger.ai(`Attempting conversation plan generation with fallback model: ${modelUsed}`);
+      const fallbackStartTime = new Date();
+
       try {
-        // Start timing the model request
-        const modelStartTime = new Date();
-        logger.ai(`Starting o1Model request at ${modelStartTime.toISOString()}`);
-        
-        const { object: rawPlan } = await generateObject({
-          model: o1Model,
+        const fallbackResult = await generateObject({
+          model: fallbackModel, // Use the fallback model
           system: `${systemPrompt}`,
           prompt: "",
-          schema: z.object({
+          schema: z.object({ // Use the same schema
             thinking: z.object({
               topicStrategy: z.string().describe("~200-word brainstorm on the topic"),
               appliedtoOrganisation: z.string().describe("~200-word application to the organization"),
@@ -195,19 +236,28 @@ export async function generateConversationPlanFromForm({
             ).describe("Time-aware objectives sorted by priority")
           }),
         });
-        
-        // End timing and calculate duration
-        const modelEndTime = new Date();
-        const modelDurationSec = (modelEndTime.getTime() - modelStartTime.getTime()) / 1000;
-        logger.ai(`Completed o1Model request at ${modelEndTime.toISOString()} (duration: ${modelDurationSec.toFixed(2)}s)`);
+        rawPlan = fallbackResult.object;
 
-        // Validate that we have at least one objective
+        const fallbackEndTime = new Date();
+        const fallbackDurationSec = (fallbackEndTime.getTime() - fallbackStartTime.getTime()) / 1000;
+        logger.ai(`Successfully generated plan with fallback ${modelUsed} (duration: ${fallbackDurationSec.toFixed(2)}s)`);
+
+      } catch (fallbackError) {
+        logger.error(`Fallback model (${modelUsed}) also failed:`, fallbackError);
+        // Throw the original error if fallback also fails
+        throw new Error(`Failed to generate conversation plan with both primary and fallback models. Primary error: ${primaryError}`);
+      }
+    }
+
+    // Validate that we have at least one objective (rawPlan should be populated by now)
         if (!rawPlan || !rawPlan.objectives || rawPlan.objectives.length === 0) {
-          throw new Error("Generated plan must have at least one objective");
+      // This case might happen if the model returns an empty/invalid object structure
+      logger.error('Generated plan is missing objectives despite successful API call.', { modelUsed, rawPlan });
+      throw new Error("Generated plan must have at least one objective, but received an empty or invalid structure.");
         }
 
-        // Transform the raw plan to match our schema
-        const objectivesArray = rawPlan.objectives.map(obj => ({
+    // Transform the raw plan to match our schema (same logic as before)
+    const objectivesArray = rawPlan.objectives.map((obj: any) => ({ // Add 'any' type for safety
           objective: obj.objective || "Untitled Objective",
           desiredOutcome: obj.desiredOutcome || "Key insight to be gained",
           agentGuidance: Array.isArray(obj.agentGuidance) ? obj.agentGuidance : ["Guide the conversation naturally"],
@@ -269,31 +319,14 @@ export async function generateConversationPlanFromForm({
         logger.debug('Generated conversation plan from form data:', {
           title: plan.title,
           duration: plan.duration,
-          objectiveCount: plan.objectives.length
+      objectiveCount: plan.objectives.length,
+      modelUsed // Log which model ended up being used
         });
 
         return plan;
-      } catch (error) {
-        lastError = error;
-        logger.error(`Conversation plan generation attempt ${retryCount + 1} failed:`, error);
-        retryCount++;
-        
-        // If we've reached max retries, throw the last error
-        if (retryCount >= maxRetries) {
-          logger.error('All conversation plan generation attempts failed:', lastError);
-          throw new Error('Failed to generate conversation plan after multiple attempts');
-        }
-        
-        // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-      }
-    }
-
-    // This should never be reached due to the throw in the catch block above
-    throw lastError;
   } catch (error) {
     logger.error('Error generating conversation plan from form:', error);
-    throw error;
+    throw error; // Re-throw the error to be handled by the caller
   }
 }
 

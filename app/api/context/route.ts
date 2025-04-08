@@ -322,20 +322,21 @@ export async function PATCH(request: Request) {
 
     const updateData: any = {};
 
-    // Update organization URL if provided
-    if (organisationUrl) {
+    // Update organization URL if provided (even if empty string)
+    if (organisationUrl !== undefined) { 
       updateData.organisationUrl = organisationUrl;
     }
 
-    // Update organization name if provided
-    if (organisationName) {
+    // Update organization name if provided (even if empty string)
+    if (organisationName !== undefined) { 
       updateData.organisationName = organisationName;
     }
 
     // Update description if provided
-    if (organisationDescription) {
+    if (organisationDescription !== undefined) { 
       updateData.organisationDescription = organisationDescription;
-      updateData.organisationDescriptionCompleted = true;
+      // Only mark as completed if description is provided and not empty
+      updateData.organisationDescriptionCompleted = !!organisationDescription; 
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -351,11 +352,12 @@ export async function PATCH(request: Request) {
     const updatedProfile = await updateProfile(userId, updateData);
     logger.info('Profile update successful');
 
+    // Return the potentially updated fields
     return NextResponse.json({ 
       success: true,
       organisationUrl: updatedProfile[0].organisationUrl,
       organisationName: updatedProfile[0].organisationName,
-      description: updatedProfile[0].organisationDescription
+      description: updatedProfile[0].organisationDescription // Ensure description is returned
     });
     
   } catch (error) {

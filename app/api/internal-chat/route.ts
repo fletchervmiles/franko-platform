@@ -19,7 +19,10 @@ import * as console from 'console';
 import { LRUCache } from 'lru-cache';
 
 // Import custom modules and functions
-import { geminiFlashModel, geminiProModel } from "@/ai_folder";
+import { 
+  geminiFlashModel, 
+  gemini25ProExperimentalModel
+} from "@/ai_folder";
 import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { getChatResponseById } from "@/db/queries/chat-responses-queries";
 import { 
@@ -173,9 +176,9 @@ export async function POST(request: Request) {
     
     while (retryCount < maxRetries) {
       try {
-        // Select model based on retry count
-        const model = retryCount === 0 ? geminiProModel : geminiFlashModel;
-        logger.info(`Using ${retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel'} for internal chat request`);
+        // Select model based on retry count - Use Experimental first, then Flash
+        const model = retryCount === 0 ? gemini25ProExperimentalModel : geminiFlashModel;
+        logger.info(`Using ${retryCount === 0 ? 'gemini25ProExperimentalModel' : 'geminiFlashModel'} for internal chat request`);
         
         const result = await streamText({
           model: model,
@@ -249,7 +252,7 @@ export async function POST(request: Request) {
           id,
           internalChatSessionId,
           duration: `${(endTime - startTime).toFixed(2)}ms`,
-          model: retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel'
+          model: retryCount === 0 ? 'gemini25ProExperimentalModel' : 'geminiFlashModel'
         });
         
         // Return streaming response

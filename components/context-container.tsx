@@ -15,9 +15,10 @@ interface ContextContainerProps {
   initialContext: string
   userId?: string
   onContextUpdated?: (updatedContext: string) => void
+  startInEditMode?: boolean
 }
 
-export function ContextContainer({ initialContext, userId, onContextUpdated }: ContextContainerProps) {
+export function ContextContainer({ initialContext, userId, onContextUpdated, startInEditMode = false }: ContextContainerProps) {
   const { user } = useUser()
   const { toast } = useToast()
   const [context, setContext] = useState(initialContext)
@@ -33,9 +34,13 @@ export function ContextContainer({ initialContext, userId, onContextUpdated }: C
     // Add a small delay to show loading state
     const timeout = setTimeout(() => {
       setIsLoading(false)
+      // If triggered by manual add, enter edit mode (Step 4)
+      if (startInEditMode) {
+         setIsEditing(true);
+      }
     }, 500)
     return () => clearTimeout(timeout)
-  }, [initialContext])
+  }, [initialContext, startInEditMode])
 
   useEffect(() => {
     setWordCount(context.split(/\s+/).filter(Boolean).length)
@@ -109,8 +114,8 @@ export function ContextContainer({ initialContext, userId, onContextUpdated }: C
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Database className="h-5 w-5 text-blue-500" /> Your AI Knowledge Base
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                <Database className="h-4 w-4 text-blue-500" /> Your AI Knowledge Base
               </h2>
               {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
@@ -135,7 +140,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated }: C
               </Button>
             </div>
           </div>
-          <p className="text-sm text-gray-500">Your customized set of insights that guides AI conversations.</p>
+          <p className="text-sm text-gray-500">This AI-generated summary acts as background knowledge for conversations and plan creation. You can edit it directly.</p>
           <div className="pt-2 flex items-center space-x-2">
             <div className="bg-white p-2 rounded-lg border flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-600" />
@@ -180,10 +185,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated }: C
                           Saving...
                         </>
                       ) : (
-                        <>
-                          <Check className="mr-2 h-3 w-3" />
-                          Save
-                        </>
+                        "Save"
                       )}
                     </Button>
                   </div>

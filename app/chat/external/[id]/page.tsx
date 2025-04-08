@@ -10,6 +10,8 @@ import { usePromptWarmup } from "@/lib/hooks/use-prompt-warmup";
 import { useQuotaAvailability } from "@/hooks/use-quota-availability";
 import { Button } from "@/components/ui/button";
 import Head from "next/head";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 // Custom hook to prevent zooming on mobile
 const usePreventZoom = () => {
@@ -41,6 +43,28 @@ const usePreventZoom = () => {
   }, []);
 };
 
+// Define structure for branding data from API
+interface BrandingData {
+  logoUrl?: string | null;
+  buttonColor?: string | null;
+  titleColor?: string | null;
+}
+
+// Update state type to include branding
+interface ChatInstanceData {
+  welcomeDescription?: string;
+  welcomeHeading?: string;
+  welcomeCardDescription?: string;
+  respondentContacts?: boolean;
+  incentive_status?: boolean;
+  incentive_description?: string;
+  branding?: BrandingData | null; // Add branding object
+}
+
+// Define default branding colors
+const DEFAULT_BUTTON_COLOR = '#4f46e5'; // Default indigo
+const DEFAULT_TITLE_COLOR = null; // Use null for default gradient style
+
 export default function StartChatPage({
   params: { id },
 }: {
@@ -49,14 +73,7 @@ export default function StartChatPage({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [chatInstanceData, setChatInstanceData] = useState<{
-    welcomeDescription?: string;
-    welcomeHeading?: string;
-    welcomeCardDescription?: string;
-    respondentContacts?: boolean;
-    incentive_status?: boolean;
-    incentive_description?: string;
-  } | null>(null);
+  const [chatInstanceData, setChatInstanceData] = useState<ChatInstanceData | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [chatNotFound, setChatNotFound] = useState(false);
@@ -161,71 +178,62 @@ export default function StartChatPage({
     };
   }, [isSafari]);
 
-  // Initial load - fetch instance data via the legacy API to ensure compatibility
+  // Initial load - fetch instance data
   useEffect(() => {
     async function fetchInstanceData() {
+      setIsLoading(true); // Start loading indicator
       try {
         console.log(`Fetching chat instance data for ID: ${id}`);
-        
-        // Use the legacy API for the initial load to ensure compatibility
-        // This loads just the chat instance details without creating a chat response yet
+
+        // This API call now needs to return the branding object as well
         const response = await fetch(`/api/chat-instances/${id}`);
-        
+
         if (!response.ok) {
           console.warn(`Chat instance fetch failed with status ${response.status}`);
-          
-          // Check if the chat instance was not found (404)
           if (response.status === 404) {
             setChatNotFound(true);
-            setChatInstanceData({});
+            setChatInstanceData({}); // Keep as empty object for not found state
           } else {
-            // Provide fallback data for other errors
-            // This ensures the UI can still render even if the API fails
+            // Fallback for other errors - ensure branding is null
             setChatInstanceData({
               welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
               welcomeHeading: "Ready to share your feedback?",
               welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
               respondentContacts: false,
               incentive_status: false,
-              incentive_description: ""
+              incentive_description: "",
+              branding: null, // Explicitly set branding to null on fallback
             });
           }
         } else {
-          const chatInstance = await response.json();
+          const chatInstance: ChatInstanceData = await response.json(); // Expect ChatInstanceData structure
           console.log("Fetched chat instance data:", chatInstance);
-          
-          // Set the instance data from the response
           setChatInstanceData(chatInstance);
-          
-          // Debug log to check incentive data
-          console.log("Incentive data:", {
-            status: chatInstance.incentive_status,
-            description: chatInstance.incentive_description,
-            code: chatInstance.incentive_code
-          });
         }
       } catch (error) {
         console.error('Failed to fetch chat instance:', error);
-        // We don't know if this is a not found error, so use fallback data
+        // Fallback on fetch error - ensure branding is null
         setChatInstanceData({
           welcomeDescription: "Welcome to this conversation. We appreciate your time and feedback!",
           welcomeHeading: "Ready to share your feedback?",
           welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
           respondentContacts: false,
           incentive_status: false,
-          incentive_description: ""
+          incentive_description: "",
+          branding: null, // Explicitly set branding to null on fetch error
         });
       } finally {
-        // Always stop the loading state, whether successful or not
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading indicator
       }
     }
-    
+
     // Only fetch if we don't have the data yet
-    if (!chatInstanceData) {
-      fetchInstanceData();
+    if (!chatInstanceData && !chatNotFound) { // Also check chatNotFound
+       fetchInstanceData();
+    } else if (chatNotFound) {
+       setIsLoading(false); // Ensure loading stops if chat was already marked as not found
     }
-  }, [chatInstanceData, id]);
+  }, [chatInstanceData, id, chatNotFound]); // Add chatNotFound dependency
 
   const handleStartChat = (formData?: {
     firstName: string;
@@ -278,6 +286,16 @@ export default function StartChatPage({
     transition: 'opacity 0.5s ease-in-out'
   };
 
+  // --- Determine effective branding colors ---
+  const logoUrl = chatInstanceData?.branding?.logoUrl;
+  const customButtonColor = chatInstanceData?.branding?.buttonColor;
+  const customTitleColor = chatInstanceData?.branding?.titleColor;
+
+  const buttonColor = customButtonColor || DEFAULT_BUTTON_COLOR;
+  const titleColor = customTitleColor; // Keep null if not set, to trigger gradient
+  const useGradientButton = !customButtonColor;
+  const useGradientTitle = !customTitleColor;
+
   // Loading state
   if (isLoading) {
     return (
@@ -326,12 +344,30 @@ export default function StartChatPage({
       }}
     >
       <Card className="max-w-md w-full bg-white shadow-lg relative overflow-hidden">
-        <CardHeader className="text-center pt-10">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
+        <CardHeader className="text-center pt-8 pb-6">
+          {logoUrl && (
+            <div className="mb-4 flex justify-center">
+              <Image
+                src={logoUrl}
+                alt="Company Logo"
+                width={120}
+                height={40}
+                style={{ objectFit: 'contain', maxHeight: '40px' }}
+                priority
+              />
+            </div>
+          )}
+
+          <h1 className={cn(
+              "text-2xl font-bold",
+              useGradientTitle && "bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent"
+            )}
+            style={{ color: titleColor || undefined }}
+          >
             {chatNotFound
               ? "Chat Unavailable"
-              : (hasReachedResponseLimit 
-                ? "Response Limit Reached" 
+              : (hasReachedResponseLimit
+                ? "Response Limit Reached"
                 : (chatInstanceData?.welcomeHeading || "Ready to share your feedback?"))}
           </h1>
         </CardHeader>
@@ -366,10 +402,11 @@ export default function StartChatPage({
                   isLoading={isInitializing}
                   incentive_status={chatInstanceData.incentive_status}
                   incentive_description={chatInstanceData.incentive_description}
+                  buttonColor={buttonColor}
+                  useGradientButton={useGradientButton}
                 />
               ) : !hasReachedResponseLimit && (
                 <div className="flex flex-col space-y-4">
-                  {/* Add incentive banner for anonymous view */}
                   {chatInstanceData?.incentive_status && (
                     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-2">
                       <div className="flex items-center gap-2">
@@ -389,7 +426,11 @@ export default function StartChatPage({
                   <Button
                     onClick={() => handleStartChat()}
                     disabled={isInitializing}
-                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-6"
+                    className={cn(
+                      "w-full text-white py-6",
+                      useGradientButton && "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                    )}
+                    style={{ backgroundColor: !useGradientButton ? buttonColor : undefined }}
                   >
                     {isInitializing ? "Preparing Your Session..." : "Start Chatting"}
                     <ArrowRight className="ml-2 h-4 w-4" />

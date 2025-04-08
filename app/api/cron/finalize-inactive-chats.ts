@@ -16,23 +16,39 @@ import { and, eq, isNull, lt, ne } from "drizzle-orm";
 import { finalizeConversation } from "@/lib/utils/conversation-finalizer";
 import { logger } from "@/lib/logger";
 
-// API key for authentication
+// API key for authentication (e.g., for manual triggers or external services)
 const API_KEY = process.env.CRON_API_KEY || '';
+// Secret provided by Vercel Cron Job Security (added as env var)
+const VERCEL_CRON_SECRET = process.env.CRON_SECRET || '';
 
 // Number of conversations to process per batch
 const BATCH_SIZE = 10;
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Authenticate the request
+    // Authenticate the request - check for Vercel Cron secret OR the separate Bearer token
     const authHeader = request.headers.get('authorization');
-    if (!API_KEY || !authHeader || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== API_KEY) {
+
+    // Check 1: Vercel's automated cron secret in Authorization header
+    const isAuthorizedByVercel = VERCEL_CRON_SECRET && authHeader === `Bearer ${VERCEL_CRON_SECRET}`;
+
+    // Check 2: Manual API Key (optional fallback)
+    const isAuthorizedByApiKey = API_KEY && authHeader && authHeader === `Bearer ${API_KEY}`;
+
+    if (!isAuthorizedByVercel && !isAuthorizedByApiKey) {
+      logger.warn('Unauthorized cron job access attempt', {
+         hasAuthHeader: !!authHeader,
+         // Avoid logging the actual secret or key
+         authHeaderStart: authHeader ? authHeader.substring(0, 15) + '...' : null
+      });
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
-    
+
+    logger.info(`Cron job authorized via ${isAuthorizedByVercel ? 'Vercel Secret' : 'API Key'}`);
+
     // Get the page parameter
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);

@@ -448,18 +448,54 @@ export function ExternalChat({
     if (areAllObjectivesDone && hasEndingMessage && !isFinished) {
       console.log('Auto-finish conditions met, starting 5-second countdown');
       
-      // Create a 5-second timeout before redirecting
-      const redirectTimeout = setTimeout(() => {
-        console.log('Auto-finishing conversation after delay');
+      const redirectTimeout = setTimeout(async () => { // Make the callback async
+        console.log('Attempting auto-finish redirect...');
         
-        // FIRST: Immediate redirect with highest priority
-        router.push(`/chat/external/${chatInstanceId}/finish`);
-        
-        // THEN: Defer all other operations to next event cycle
+        let customRedirectUrl: string | null = null;
+        try {
+          // Fetch the chat instance details to check for a redirect URL
+          const response = await fetch(`/api/chat-instances/${chatInstanceId}`);
+          console.log(`[Redirect Logic] Fetch response status: ${response.status}`); // Log status
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[Redirect Logic] Fetched data:', data); // Log fetched data
+            const dbRedirectUrl = data.redirect_url;
+            console.log(`[Redirect Logic] redirect_url from DB: ${dbRedirectUrl}`); // Log the raw value
+            // Check if redirect_url is a valid, non-empty string
+            if (dbRedirectUrl && typeof dbRedirectUrl === 'string' && dbRedirectUrl.trim() !== '') {
+              // Basic validation (already done in settings, but good to double-check)
+              const hasProtocol = dbRedirectUrl.startsWith("http://") || dbRedirectUrl.startsWith("https://");
+              console.log(`[Redirect Logic] URL has protocol? ${hasProtocol}`); // Log protocol check result
+              if (hasProtocol) {
+                customRedirectUrl = dbRedirectUrl;
+                console.log(`Found custom redirect URL: ${customRedirectUrl}`);
+              } else {
+                console.warn(`Stored redirect URL is invalid (missing protocol): ${dbRedirectUrl}`);
+              }
+            } else {
+               console.log('No custom redirect URL configured or it is empty.');
+            }
+          } else {
+            console.error(`Failed to fetch chat instance details (status: ${response.status})`);
+          }
+        } catch (error) {
+          console.error("Error fetching chat instance details for redirect:", error);
+          // Fallback to default redirect handled below
+        }
+
+        // Perform the redirect
+        if (customRedirectUrl) {
+          console.log(`Redirecting to custom URL: ${customRedirectUrl}`);
+          window.location.assign(customRedirectUrl); // Use window.location for external URLs
+        } else {
+          console.log(`Redirecting to default finish page for chat instance: ${chatInstanceId}`);
+          // Fallback to default finish page
+          router.push(`/chat/external/${chatInstanceId}/finish`);
+        }
+
+        // Update state and finalize after initiating redirect (can run in background)
         setTimeout(() => {
-          // Update state
           setIsFinished(true);
-          
           // Fire and forget - trigger finalization in the background
           fetch('/api/external-chat/finalize', {
             method: 'POST',
@@ -469,12 +505,13 @@ export function ExternalChat({
             console.error('Background finalization error:', error);
           });
         }, 0);
+
       }, 5000); // 5 seconds delay
       
-      // Clean up timeout if component unmounts
+      // Clean up timeout if component unmounts or conditions change
       return () => clearTimeout(redirectTimeout);
     }
-  }, [areAllObjectivesDone, hasEndingMessage, isFinished, chatResponseId, chatInstanceId, router]);
+  }, [areAllObjectivesDone, hasEndingMessage, isFinished, chatResponseId, chatInstanceId, router]); // Add router to dependency array
 
   // Use the custom hook to prevent zooming
   usePreventZoom();

@@ -3,6 +3,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
+import { profilesTable } from "../schema/profiles-schema";
 import { arrayToNumberedObjectives, numberedObjectivesToArray, type ConversationPlan } from "@/components/conversationPlanSchema";
 import { revalidatePath } from "next/cache";
 import { LRUCache } from 'lru-cache';
@@ -716,5 +717,48 @@ export async function getChatInstancesWithResponses(userId: string) {
   } catch (error) {
     console.error("Error getting chat instances with responses:", error);
     throw new Error("Failed to get chat instances with responses");
+  }
+}
+
+export async function getChatInstanceWithBranding(instanceId: string) {
+  // No caching here as branding might change, and this is likely called less frequently than core instance data
+  logger.info(`Fetching chat instance ${instanceId} with branding from database`);
+  try {
+    const result = await db
+      .select({
+        // Select desired fields from chatInstancesTable
+        instanceId: chatInstancesTable.id,
+        userId: chatInstancesTable.userId, // Needed for ownership checks if required later
+        welcomeHeading: chatInstancesTable.welcomeHeading,
+        welcomeCardDescription: chatInstancesTable.welcomeCardDescription,
+        welcomeDescription: chatInstancesTable.welcomeDescription,
+        respondentContacts: chatInstancesTable.respondentContacts,
+        incentiveStatus: chatInstancesTable.incentiveStatus,
+        incentiveDescription: chatInstancesTable.incentiveDescription,
+        incentiveCode: chatInstancesTable.incentiveCode,
+        responseEmailNotifications: chatInstancesTable.responseEmailNotifications,
+        redirect_url: chatInstancesTable.redirect_url,
+        // Select branding fields from profilesTable
+        logoUrl: profilesTable.logoUrl,
+        buttonColor: profilesTable.buttonColor,
+        titleColor: profilesTable.titleColor,
+      })
+      .from(chatInstancesTable)
+      .leftJoin(profilesTable, eq(chatInstancesTable.userId, profilesTable.userId)) // Join based on userId
+      .where(eq(chatInstancesTable.id, instanceId))
+      .limit(1);
+
+    if (!result || result.length === 0) {
+      logger.warn(`Chat instance ${instanceId} not found when fetching with branding.`);
+      return null;
+    }
+
+    const instance = result[0];
+    logger.info(`Successfully fetched chat instance ${instanceId} with branding.`);
+    return instance; // Return the flat structure, API route will nest it
+
+  } catch (error) {
+    logger.error(`Failed to get chat instance ${instanceId} with branding:`, { error: error instanceof Error ? error.message : String(error) });
+    throw new Error("Failed to get chat instance with branding");
   }
 }

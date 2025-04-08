@@ -18,6 +18,8 @@ import { useToast } from "@/hooks/use-toast"
 import { ContextContainer } from "@/components/context-container"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useProfile } from "@/components/contexts/profile-context"
+import { BrandingContext } from "@/components/branding-context"
 
 const contextSetupSchema = z.object({
   url: z.string()
@@ -92,15 +94,13 @@ export default function ContextSetupPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isCardEditing, setIsCardEditing] = useState(false)
-  const [isEditingUrl, setIsEditingUrl] = useState(false)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [isSavingUrl, setIsSavingUrl] = useState(false)
-  const [isSavingName, setIsSavingName] = useState(false)
   const [submittedValues, setSubmittedValues] = useState<ContextSetupValues | null>(null)
   const [shouldPulse, setShouldPulse] = useState(false)
   const [showManualContext, setShowManualContext] = useState(false)
   const { toast } = useToast()
   const [description, setDescription] = useState<string>("")
+  const contextContainerRef = useRef<HTMLDivElement>(null)
+  const { setHighlightWorkspaceNavItem } = useProfile()
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -136,17 +136,20 @@ export default function ContextSetupPage() {
         orgName: data.organisationName
       })
       
-      // Reset all editing states to return to view mode
+      // Reset card editing state to return to view mode
       setIsCardEditing(false)
-      setIsEditingUrl(false)
-      setIsEditingName(false)
       
       // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
       
+      // Highlight workspace nav item if context was just completed (Step 8)
+      if (!profile?.organisationDescriptionCompleted && data.description) {
+        setHighlightWorkspaceNavItem(true)
+      }
+      
       toast({
         title: "Success!",
-        description: "Your context has been updated successfully.",
+        description: "Your context has been generated successfully.",
       })
     },
     onError: (error) => {
@@ -158,46 +161,41 @@ export default function ContextSetupPage() {
     }
   })
 
-  // Mutation for saving individual fields
-  const { mutate: saveFieldMutation, isPending: isSavingField } = useMutation({
+  // Mutation for saving individual fields (now used for saving card edits)
+  const { mutate: saveCardEditsMutation, isPending: isSavingCardEdits } = useMutation({
     mutationFn: saveField,
     onSuccess: (data) => {
       // Update form values if they're returned
-      if (data.organisationUrl) {
+      if (data.organisationUrl !== undefined) {
         form.setValue("url", data.organisationUrl)
       }
-      if (data.organisationName) {
+      if (data.organisationName !== undefined) {
         form.setValue("orgName", data.organisationName)
       }
       
       // Update submitted values
       setSubmittedValues({
-        url: data.organisationUrl || (submittedValues?.url || ""),
-        orgName: data.organisationName || (submittedValues?.orgName || "")
+        url: data.organisationUrl ?? (submittedValues?.url ?? ""),
+        orgName: data.organisationName ?? (submittedValues?.orgName ?? "")
       })
       
-      // Reset edit states
-      setIsEditingUrl(false)
-      setIsEditingName(false)
-      setIsSavingUrl(false)
-      setIsSavingName(false)
+      // Exit edit mode
+      setIsCardEditing(false)
       
       // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
       
       toast({
         title: "Success!",
-        description: "Field updated successfully.",
+        description: "Fields updated successfully.",
       })
     },
     onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update field. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update fields. Please try again.",
       })
-      setIsSavingUrl(false)
-      setIsSavingName(false)
     }
   })
 
@@ -208,23 +206,19 @@ export default function ContextSetupPage() {
       form.setValue("orgName", profile.organisationName || "")
       setDescription(profile.organisationDescription || "")
       
-      if (profile.organisationUrl && profile.organisationName) {
+      // Set initial submitted values when profile loads
         setSubmittedValues({
-          url: profile.organisationUrl,
-          orgName: profile.organisationName
+        url: profile.organisationUrl || "",
+        orgName: profile.organisationName || ""
         })
-      }
       
-      // Auto-enable card edit mode if description is incomplete
-      // If description is complete, ensure we're in view mode
-      if (!profile.organisationDescriptionCompleted) {
+      // Auto-enable card edit mode only if BOTH URL and Name are missing
+      if (!profile.organisationUrl && !profile.organisationName) {
         setIsCardEditing(true)
-        setIsEditingUrl(profile.organisationUrl ? false : true)
-        setIsEditingName(profile.organisationName ? false : true)
       } else {
-        setIsCardEditing(false)
-        setIsEditingUrl(false)
-        setIsEditingName(false)
+        // Otherwise, stay in view mode unless explicitly edited
+        // Keep existing editing state if user triggered it
+        // setIsCardEditing(false) // Removed this to preserve user-initiated edits
       }
     }
   }, [profile, form])
@@ -244,6 +238,7 @@ export default function ContextSetupPage() {
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
     
+    // This function is now primarily for the initial context generation/regeneration
     mutate({
       userId: user.id,
       organisationUrl: data.url,
@@ -251,85 +246,62 @@ export default function ContextSetupPage() {
     })
   }
 
-  const handleSaveUrl = () => {
+  // New handler for saving card edits
+  const handleSaveCardEdits = () => {
     if (!user?.id) return
     
     const urlValue = form.getValues("url")
-    if (!urlValue) {
-      form.setError("url", { message: "URL is required" })
-      return
-    }
-    
-    setIsSavingUrl(true)
-    saveFieldMutation({
-      userId: user.id,
-      organisationUrl: urlValue
-    })
-  }
-
-  const handleSaveName = () => {
-    if (!user?.id) return
-    
     const nameValue = form.getValues("orgName")
-    if (!nameValue) {
-      form.setError("orgName", { message: "Organisation name is required" })
-      return
-    }
     
-    setIsSavingName(true)
-    saveFieldMutation({
+    // Allow saving empty fields, so no validation here needed beyond what Zod provides if submitted
+    // Trigger the mutation with both fields
+    saveCardEditsMutation({
       userId: user.id,
+      organisationUrl: urlValue,
       organisationName: nameValue
     })
   }
 
   const handleEditCard = () => {
     setIsCardEditing(true)
+    // Preserve current values when starting edit
+    setSubmittedValues({
+        url: form.getValues("url"),
+        orgName: form.getValues("orgName")
+    })
   }
 
   const handleCancelCard = () => {
     setIsCardEditing(false)
-    setIsEditingUrl(false)
-    setIsEditingName(false)
     
-    // Reset form values to last submitted values
+    // Reset form values to last saved/loaded values
     if (submittedValues) {
       form.setValue("url", submittedValues.url)
       form.setValue("orgName", submittedValues.orgName)
     }
-  }
-
-  const handleEditUrl = () => {
-    setIsEditingUrl(true)
-  }
-
-  const handleEditName = () => {
-    setIsEditingName(true)
-  }
-
-  const handleCancelUrl = () => {
-    setIsEditingUrl(false)
-    if (submittedValues?.url) {
-      form.setValue("url", submittedValues.url)
-    }
-  }
-
-  const handleCancelName = () => {
-    setIsEditingName(false)
-    if (submittedValues?.orgName) {
-      form.setValue("orgName", submittedValues.orgName)
-    }
+    // Clear errors if any were triggered during edit
+    form.clearErrors()
   }
 
   const handleAddManualContext = () => {
     setShowManualContext(true)
+    // Scroll to context container after a short delay to allow rendering
+    setTimeout(() => {
+      contextContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // We will handle setting edit mode via props in ContextContainer itself
+    }, 100)
   }
 
   const handleContextUpdated = (updatedContext: string) => {
     setDescription(updatedContext)
-    setIsCardEditing(false)
-    // Refetch profile data to update UI
-    queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+    // Refetch profile data to update UI and potentially trigger nav highlight
+    queryClient.invalidateQueries({ queryKey: ['profile', user?.id] }).then(() => {
+      const freshProfile = queryClient.getQueryData(['profile', user?.id]) as typeof profile
+      // Check if context just became completed (Step 8)
+      if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
+        setHighlightWorkspaceNavItem(true)
+      }
+    })
   }
 
   return (
@@ -351,17 +323,33 @@ export default function ContextSetupPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-base text-gray-700">Tell us about your business so your AI can understand who you are and deliver personalized conversations.</p>
+                    <p className="text-base text-gray-700">Add your business details. This information will be used when generating your Conversation Plans and as overarching context during AI Agent conversations.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isCardEditing && profile && (
-                      <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
-                        Edit
+                    {!isCardEditing && profile?.organisationDescription && (
+                       <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => onSubmit(form.getValues())}
+                          disabled={isPending || isSavingCardEdits}
+                          className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                        >
+                          {isPending ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Regenerating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-3 w-3" />
+                              Regenerate Context
+                            </>
+                          )}
                       </Button>
                     )}
-                    {isCardEditing && (
-                      <Button onClick={handleCancelCard} variant="outline" size="sm" className="h-8 text-xs px-4">
-                        Cancel
+                    {!isCardEditing && (
+                      <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
+                        Edit
                       </Button>
                     )}
                   </div>
@@ -399,77 +387,29 @@ export default function ContextSetupPage() {
                                     <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
                                   </TooltipTrigger>
                                   <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                    <p>We scan publicly available information from your website to help your AI understand your products, services, and terminology.</p>
+                                    <p>We scan publicly available information from this website to build the AI's foundational understanding of your products, services, and brand voice.</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             </FormLabel>
                             <p className="text-sm text-gray-500 mb-2">
-                              We'll analyze your website content to build context.
+                              Primary source for automated context generation.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-2">
                               <FormControl className="w-full">
                                 <div className="relative w-full">
                                   <Input
-                                    placeholder="https://..."
+                                    placeholder="https://yourcompany.com"
                                     className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
                                     {...field}
-                                    disabled={!isEditingUrl}
+                                    disabled={!isCardEditing || isSavingCardEdits}
                                   />
                                 </div>
                               </FormControl>
-                              {isCardEditing && (
-                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
-                                  {isEditingUrl ? (
-                                    <div className="flex items-center gap-1">
-                                      <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={handleCancelUrl}
-                                        className="h-8 px-2 text-xs"
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button 
-                                        type="button" 
-                                        size="sm"
-                                        onClick={handleSaveUrl}
-                                        disabled={isSavingUrl || !field.value}
-                                        className="h-8 px-2 text-xs"
-                                      >
-                                        {isSavingUrl ? (
-                                          <>
-                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                            Save
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Check className="mr-1 h-3 w-3" />
-                                            Save
-                                          </>
-                                        )}
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    field.value && (
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleEditUrl}
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <Edit className="h-3 w-3 text-gray-500" />
-                                      </Button>
-                                    )
-                                  )}
-                                </div>
-                              )}
                             </div>
-                            {field.value.length === 0 && !profile?.organisationUrl && (
+                            {!field.value && !profile?.organisationUrl && (
                               <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                ✨ Please enter your company URL
+                                ✨ Enter your company URL to automatically generate context.
                               </p>
                             )}
                             <FormMessage />
@@ -490,77 +430,29 @@ export default function ContextSetupPage() {
                                     <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
                                   </TooltipTrigger>
                                   <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                    <p>Enter your official company or brand name here, so your AI can correctly represent your business in interactions.</p>
+                                    <p>Enter the official name your AI should use when referring to your business or primary offering.</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             </FormLabel>
                             <p className="text-sm text-gray-500 mb-2">
-                              Used to reference your business accurately in conversations.
+                              Ensures your brand is referenced accurately.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-2">
                               <FormControl className="w-full">
                                 <div className="relative w-full">
                                   <Input
-                                    placeholder="Enter name..."
+                                    placeholder="Your Company Inc."
                                     className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
                                     {...field}
-                                    disabled={!isEditingName}
+                                    disabled={!isCardEditing || isSavingCardEdits}
                                   />
                                 </div>
                               </FormControl>
-                              {isCardEditing && (
-                                <div className="flex justify-end sm:justify-start sm:flex-shrink-0">
-                                  {isEditingName ? (
-                                    <div className="flex items-center gap-1">
-                                      <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={handleCancelName}
-                                        className="h-8 px-2 text-xs"
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button 
-                                        type="button" 
-                                        size="sm"
-                                        onClick={handleSaveName}
-                                        disabled={isSavingName || !field.value}
-                                        className="h-8 px-2 text-xs"
-                                      >
-                                        {isSavingName ? (
-                                          <>
-                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                            Save
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Check className="mr-1 h-3 w-3" />
-                                            Save
-                                          </>
-                                        )}
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    field.value && (
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleEditName}
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <Edit className="h-3 w-3 text-gray-500" />
-                                      </Button>
-                                    )
-                                  )}
-                                </div>
-                              )}
                             </div>
-                            {field.value.length === 0 && !profile?.organisationName && (
+                            {!field.value && !profile?.organisationName && (
                               <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                ✨ Please enter your company or product name
+                                ✨ Enter your company or product name.
                               </p>
                             )}
                             <FormMessage />
@@ -569,35 +461,43 @@ export default function ContextSetupPage() {
                       />
                     </div>
 
-                    <div className="flex flex-wrap justify-end gap-3">
-                      {/* Show resubmit button when in edit mode and both URL and company name exist */}
-                      {isCardEditing && profile?.organisationUrl && profile?.organisationName && profile?.organisationDescription && (
+                    <div className="flex flex-wrap justify-end items-center gap-3 pt-2">
+                       {isCardEditing && (
+                         <>
+                           <Button 
+                             type="button" 
+                             variant="outline" 
+                             size="sm" 
+                             onClick={handleCancelCard} 
+                             className="h-8 text-xs px-4"
+                             disabled={isSavingCardEdits}
+                           >
+                             Cancel
+                           </Button>
                         <Button
-                          type="submit"
+                             type="button" 
                           size="sm"
-                          disabled={isPending || isEditingUrl || isEditingName}
-                          className="h-9 px-4 flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                             onClick={handleSaveCardEdits} 
+                             disabled={isSavingCardEdits}
+                             className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
                         >
-                          {isPending ? (
+                             {isSavingCardEdits ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              <span>Regenerating...</span>
+                                 Saving...
                             </>
                           ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4" />
-                              Regenerate AI Context
-                            </>
+                               "Save"
                           )}
                         </Button>
+                         </>
                       )}
                       
-                      {/* Show extract context button if URL and name entered but no description yet */}
-                      {(url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
+                      {!isCardEditing && (url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
                         <Button
                           type="submit"
                           size="sm"
-                          disabled={isPending || isEditingUrl || isEditingName}
+                          disabled={isPending || isSavingCardEdits}
                           className={cn(
                             "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
                             shouldPulse && "animate-pulse-edge",
@@ -609,22 +509,22 @@ export default function ContextSetupPage() {
                               <span>Generating...</span>
                             </div>
                           ) : (
-                            "Extract context from website"
+                            "Extract Context from Website"
                           )}
                         </Button>
                       )}
                       
-                      {/* Show Add Context Manually button if we have URL and name but no description yet */}
-                      {!showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
+                      {!isCardEditing && !showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={handleAddManualContext}
                           className="h-9 px-4 flex items-center gap-2"
+                          disabled={isPending || isSavingCardEdits}
                         >
                           <PlusCircle className="h-4 w-4" />
-                          Add context manually
+                          Add Context Manually
                         </Button>
                       )}
                     </div>
@@ -634,13 +534,24 @@ export default function ContextSetupPage() {
             </CardContent>
           </Card>
 
-          {/* Show context container if there's content or showing manual context entry */}
           {(profile?.organisationDescription || showManualContext) && (
-            <ContextContainer 
-              initialContext={profile?.organisationDescription || ""} 
-              userId={user?.id}
-              onContextUpdated={handleContextUpdated}
-            />
+            <div ref={contextContainerRef}>
+              <ContextContainer
+                initialContext={profile?.organisationDescription || ""}
+                userId={user?.id}
+                onContextUpdated={handleContextUpdated}
+                startInEditMode={showManualContext && !profile?.organisationDescription}
+              />
+            </div>
+          )}
+
+          {!isLoadingProfile && profile && (
+             <BrandingContext
+                userId={user?.id}
+                initialLogoUrl={profile.logoUrl}
+                initialButtonColor={profile.buttonColor}
+                initialTitleColor={profile.titleColor}
+             />
           )}
         </div>
       </div>

@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, ClipboardList, Link, MessageSquare, CheckCircle, MessageCircleReply, Database, BarChart2 } from "lucide-react"
+import { Settings, ClipboardList, Link as LinkIcon, MessageSquare, CheckCircle, BarChart2, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { motion } from "framer-motion"
 
 // Add custom CSS class for slower pulse animation and image rotation
 const customStyles = `
@@ -103,42 +102,67 @@ const customStyles = `
   background-color: #6366F1;
   transform: scale(1.2);
 }
+.nav-arrow-container {
+  position: absolute; bottom: 16px;
+  left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  z-index: 20; padding: 6px 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  border-radius: 9999px;
+  width: fit-content;
+}
+.nav-arrow-button {
+  background: none; border: none; padding: 4px; display: flex;
+  align-items: center; justify-content: center; cursor: pointer;
+  color: #D1D5DB;
+  transition: color 0.2s ease;
+}
+.nav-arrow-button:hover {
+  color: #ffffff;
+}
+.nav-arrow-button:disabled {
+  color: #6B7280;
+  cursor: not-allowed;
+}
 `;
 
 const sections = [
   {
     id: "context-setup",
-    title: "Context Setup",
-    icon: <Settings className="mr-1 h-3 w-3" />,
+    title: "Set up your context",
+    icon: <Settings className="h-5 w-5" />,
     content: {
-      title: "1. Build Your AI Agent's Context in Seconds",
-      description: "Submit your URL to generate an AI knowledge base—giving your conversational agent the context is needs to understand your business.",
+      title: "01. Set up your context",
+      description: "Provide your website URL to create an AI-ready knowledge base to guide context for your customer conversations.",
       image: {
         desktop: "/assets/journey/context-setup-desktop-img.png",
         mobile: "/assets/journey/context-setup-mobile-img.png"
       },
+      hasRotatingImages: false,
     },
   },
   {
     id: "conversation-plan",
-    title: "Generate Plan",
-    icon: <ClipboardList className="mr-1 h-3 w-3" />,
+    title: "Generate your plan",
+    icon: <ClipboardList className="h-5 w-5" />,
     content: {
-      title: "Generate Plan",
-      description: "Plan and structure your conversation flows for optimal engagement.",
+      title: "02. Generate your conversation plan",
+      description: "Briefly describe your learning objectives to generate a structured conversation plan. Set number of questions, and other options like incentives and email collection.",
       image: {
         desktop: "/assets/journey/conversation-form-desktop-img.png",
         mobile: "/assets/journey/conversation-form-mobile-img.png"
       },
+      hasRotatingImages: false,
     },
   },
   {
     id: "review-plan",
-    title: "Review Plan",
-    icon: <CheckCircle className="mr-1 h-3 w-3" />,
+    title: "Review and edit",
+    icon: <CheckCircle className="h-5 w-5" />,
     content: {
-      title: "Review Plan",
-      description: "Review and refine your generated conversation plan.",
+      title: "03. Review and edit",
+      description: "Review and edit conversation objectives, desired outcomes and agent guidance to ensure the agent meet your needs.",
       image: {
         desktop: [
           "/assets/journey/review-plan-desktop-1.png", 
@@ -153,25 +177,12 @@ const sections = [
     },
   },
   {
-    id: "shareable-link",
-    title: "Share",
-    icon: <Link className="mr-1 h-3 w-3" />,
+    id: "share-customers",
+    title: "Share With Customers",
+    icon: <LinkIcon className="h-5 w-5" />,
     content: {
-      title: "Share",
-      description: "Generate and manage shareable links for your conversations.",
-      image: {
-        desktop: "/assets/journey/shareable-link-desktop.png",
-        mobile: "/assets/journey/shareable-link-mobile.png"
-      },
-    },
-  },
-  {
-    id: "customer-chat",
-    title: "Customer",
-    icon: <MessageSquare className="mr-1 h-3 w-3" />,
-    content: {
-      title: "Customer",
-      description: "Monitor and manage customer chat interactions in real-time.",
+      title: "04. Share With Customers",
+      description: "Send a secure link to a guided conversation—convenient, clickable, available whenever your customer is ready, no scheduling required.",
       image: {
         desktop: [
           "/assets/journey/customer-chat-desktop-1.png",
@@ -186,12 +197,12 @@ const sections = [
     },
   },
   {
-    id: "response-review",
-    title: "Responses",
-    icon: <CheckCircle className="mr-1 h-3 w-3" />,
+    id: "gather-responses",
+    title: "Gather Responses",
+    icon: <MessageSquare className="h-5 w-5" />,
     content: {
-      title: "Review Responses",
-      description: "Review and analyze conversation responses for quality assurance.",
+      title: "05. Gather Responses",
+      description: "Get notified when feedback rolls in: transcripts, summaries, 1000s of customer words collected without any manual intervention.",
       image: {
         desktop: [
           "/assets/journey/response-review-desktop-1.png",
@@ -206,12 +217,12 @@ const sections = [
     },
   },
   {
-    id: "response-chat",
-    title: "Chat with Data",
-    icon: <BarChart2 className="mr-1 h-3 w-3" />,
+    id: "chat-with-data",
+    title: "Chat With Your Data",
+    icon: <BarChart2 className="h-5 w-5" />,
     content: {
-      title: "Chat with Data",
-      description: "Manage and optimize automated response patterns in your chats.",
+      title: "06. Chat With Your Data",
+      description: "Seamlessly interact with your aggregated semi-structured data—like conversing with hundreds of customers at once—turning your responses into proprietary customer intelligence.",
       image: {
         desktop: [
           "/assets/journey/response-chat-desktop-1.png",
@@ -229,57 +240,93 @@ const sections = [
   },
 ]
 
-export default function Journey() {
-  const [activeTab, setActiveTab] = useState("context-setup")
-  const isMobile = useIsMobile()
+// Define variants for mobile cards
+const mobileCardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" }
+  }
+};
 
-  // Reset to first tab when switching between mobile and desktop
+export default function Journey() {
+  const [activeSectionId, setActiveSectionId] = useState(sections[0].id)
+  const isMobile = useIsMobile()
+  const activeSection = sections.find(s => s.id === activeSectionId) || sections[0]
+
+  // Reset to first section when switching between mobile and desktop
   useEffect(() => {
-    setActiveTab("context-setup")
+    setActiveSectionId(sections[0].id)
   }, [isMobile])
+
+  if (isMobile === null) {
+    // Avoid rendering mismatch during SSR/hydration for mobile detection
+    return <div className="min-h-[70vh]"></div>
+  }
 
   return (
     <>
-      {!isMobile ? (
-        // Desktop view with tabs
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full flex bg-transparent rounded-none h-10">
-            {sections.map((section) => (
-              <TabsTrigger
-                key={section.id}
-                value={section.id}
-                className="flex-1 flex items-center justify-center group relative rounded-none h-10 px-1 data-[state=active]:shadow-none data-[state=active]:font-medium data-[state=active]:text-white transition-colors duration-200 ease-in-out"
-              >
-                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-indigo-600 flex items-center justify-center gap-1 text-xs text-black group-hover:text-white whitespace-nowrap transition-all duration-200">
-                  {section.icon}
-                  {section.title}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {sections.map((section) => (
-            <TabsContent key={section.id} value={section.id} className="mt-0">
-              <DesktopPanel section={section} />
-            </TabsContent>
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+      {isMobile ? (
+        // Mobile layout
+        <div className="flex flex-col space-y-8">
+          {sections.map((section, index) => (
+            <motion.div
+              key={section.id}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={mobileCardVariants}
+              transition={{ delay: index * 0.1 }}
+            >
+              <MobileStepCard section={section} />
+            </motion.div>
           ))}
-        </Tabs>
+        </div>
       ) : (
-        // Mobile view with stacked cards
-        <div className="flex flex-col space-y-6 min-h-[50vh]">
-          {sections.map((section) => (
-            <Card key={section.id} className="w-full shadow-md hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-center pb-5 border-b">
-                <div className="flex items-center gap-1">
-                  {section.icon}
-                  <CardTitle className="text-xs">{section.title}</CardTitle>
+        // Desktop layout
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start min-h-[60vh]">
+          {/* Left column: Step list */}
+          <div className="md:col-span-1 space-y-2 sticky top-24">
+            {sections.map((section, index) => {
+              const isActive = activeSectionId === section.id;
+              const numberPrefix = `${String(index + 1).padStart(2, '0')}. `;
+
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSectionId(section.id)}
+                  className={`w-full text-left px-4 py-4 rounded-lg group ${
+                    isActive
+                      ? 'bg-white border border-gray-200 shadow-sm cursor-default'
+                      : 'text-gray-400 hover:text-gray-800 hover:bg-gray-100'
+                  }`}
+                  disabled={isActive}
+                >
+                  <div className={`font-semibold text-base mb-1 ${isActive ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                    <span className={isActive
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent"
+                      : ""
+                    }>
+                      {numberPrefix}
+                    </span>
+                    {section.title}
+                  </div>
+                  {isActive && (
+                    <p className="text-sm text-gray-600 leading-relaxed pl-8">
+                      {section.content.description}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right column: Content display */}
+          <div className="md:col-span-2 sticky top-24">
+            <ContentDisplay key={activeSection.id} section={activeSection} isMobile={false} />
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <MobilePanel section={section} />
-              </CardContent>
-            </Card>
-          ))}
         </div>
       )}
     </>
@@ -557,4 +604,156 @@ function MobilePanel({ section }: { section: (typeof sections)[0] }) {
       </div>
     </div>
   )
+}
+
+// Separate component for mobile step card
+function MobileStepCard({ section }: { section: (typeof sections)[0] }) {
+  return (
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+       {/* Image Display */}
+       <ContentDisplay key={section.id} section={section} isMobile={true} />
+
+       {/* Text Content */}
+       <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+               {section.content.title}
+            </h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+               {section.content.description}
+            </p>
+       </div>
+    </div>
+  );
+}
+
+// Separate component for content display
+function ContentDisplay({ section, isMobile }: { section: (typeof sections)[0], isMobile: boolean }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  const imageSet = isMobile ? section.content.image.mobile : section.content.image.desktop;
+  const hasMultipleImages = section.content.hasRotatingImages && Array.isArray(imageSet) && imageSet.length > 1;
+  const totalImages = hasMultipleImages ? (imageSet as string[]).length : 1;
+
+  const handlePrev = () => {
+    if (currentImageIndex > 0) {
+        setImageLoaded(false);
+        setCurrentImageIndex(currentImageIndex - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentImageIndex < totalImages - 1) {
+        setImageLoaded(false);
+        setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  const getImageSrc = () => {
+    if (hasMultipleImages) {
+      return (imageSet as string[])[currentImageIndex];
+    }
+    return imageSet as string;
+  };
+
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!hasMultipleImages || !isMobile) return;
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart || !hasMultipleImages || !isMobile) return;
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd || !hasMultipleImages || !isMobile) return;
+    const distance = touchStart - touchEnd;
+    const swipeThreshold = 50;
+
+    if (distance > swipeThreshold) {
+      handleNext();
+    } else if (distance < -swipeThreshold) {
+      handlePrev();
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentImageIndex, section.id]);
+
+  return (
+    <div
+      className={`relative w-full rounded-xl overflow-hidden ${
+        isMobile
+          ? 'bg-gray-50 p-3'
+          : 'bg-gray-100 shadow-lg border border-gray-200 p-4 md:p-6'
+      }`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="relative w-full h-auto">
+        {!imageLoaded && (
+          <div className={`absolute inset-0 bg-gray-200 animate-pulse rounded-lg ${isMobile ? 'aspect-[4/3]' : 'aspect-video'}`}></div>
+        )}
+        <Image
+          ref={imageRef}
+          key={getImageSrc()}
+          src={getImageSrc()}
+          alt={section.content.title}
+          fill={false}
+          width={isMobile ? 800 : 1200}
+          height={isMobile ? 600 : 675}
+          sizes="(max-width: 767px) 90vw, (min-width: 768px) 45vw, 800px"
+          quality={100}
+          priority={section.id === sections[0].id && currentImageIndex === 0}
+          unoptimized={true}
+          style={{
+            objectFit: "contain",
+            maxWidth: "100%",
+            height: "auto",
+            borderRadius: "0.5rem"
+          }}
+          className={`transition-opacity duration-300 ease-in-out ${imageLoaded ? 'opacity-100' : 'opacity-0'} block`}
+          onLoad={() => {
+             requestAnimationFrame(() => setImageLoaded(true));
+          }}
+          onError={() => {
+            console.error(`Failed to load image: ${getImageSrc()}`);
+             requestAnimationFrame(() => setImageLoaded(true));
+          }}
+        />
+      </div>
+
+      {/* Navigation Arrows */}
+      {hasMultipleImages && (
+        <div className="nav-arrow-container" style={{ bottom: isMobile ? '12px' : '24px' }}>
+          <button
+            className="nav-arrow-button"
+            onClick={handlePrev}
+            disabled={currentImageIndex === 0}
+            aria-label="Previous image"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            className="nav-arrow-button"
+            onClick={handleNext}
+            disabled={currentImageIndex === totalImages - 1}
+            aria-label="Next image"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Gift, User, Mail, ArrowRight } from "lucide-react"
+import { Gift, User, Mail, ArrowRight, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 
 interface WelcomeFormProps {
   onSubmit: (data: {
@@ -13,13 +17,23 @@ interface WelcomeFormProps {
   isLoading?: boolean
   incentive_status?: boolean
   incentive_description?: string
+  buttonColor?: string
+  useGradientButton?: boolean
 }
+
+// Define the Zod schema for the form
+const formSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+})
 
 export function WelcomeForm({ 
   onSubmit, 
   isLoading = false,
   incentive_status = false,
-  incentive_description = ""
+  incentive_description = "",
+  buttonColor,
+  useGradientButton
 }: WelcomeFormProps) {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -34,8 +48,32 @@ export function WelcomeForm({
     });
   }, [incentive_status, incentive_description]);
 
+  // Initialize the form using react-hook-form and Zod resolver
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      email: "",
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    // Basic validation before submitting
+    if (!formData.firstName.trim() || !formData.email.trim()) {
+      // Optionally show a toast or inline error
+      console.error("Form fields cannot be empty");
+      // You might want to trigger react-hook-form validation manually here if using it
+      // form.trigger();
+      return;
+    }
+     // Simple email format check (consider a more robust library if needed)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      console.error("Invalid email format");
+      // form.setError("email", { type: "manual", message: "Invalid email format" });
+      return;
+    }
     onSubmit(formData)
   }
 
@@ -110,12 +148,16 @@ export function WelcomeForm({
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-6"
+          className={cn(
+            "w-full text-white py-6",
+            useGradientButton && "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          )}
+          style={{ backgroundColor: !useGradientButton ? buttonColor : undefined }}
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin">⚪</span>
-              Getting Started...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Preparing Your Session...
             </span>
           ) : (
             <>

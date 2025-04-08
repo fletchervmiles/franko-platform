@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { deleteChatInstance, getChatInstanceById, updateChatInstance } from "@/db/queries/chat-instances-queries";
-import { db } from "@/db/db";
-import { chatInstancesTable } from "@/db/schema/chat-instances-schema";
-import { eq } from "drizzle-orm";
+import { deleteChatInstance, getChatInstanceById, updateChatInstance, getChatInstanceWithBranding } from "@/db/queries/chat-instances-queries";
+import { logger } from "@/lib/logger";
+import { InsertChatInstance } from "@/db/schema/chat-instances-schema";
+import { ConversationPlan } from "@/components/conversationPlanSchema";
 
 /**
  * GET /api/chat-instances/[id]
  * 
- * Retrieves minimal chat instance data needed for welcome screen and settings
+ * Retrieves chat instance data needed for welcome screen and settings, including branding.
  */
 export async function GET(
   request: NextRequest,
@@ -25,34 +25,54 @@ export async function GET(
     const isExternalRequest = referer.includes('/chat/external/');
     
     // Only check authentication for non-external requests
+    let userId = null;
     if (!isExternalRequest) {
       const authResult = await auth();
-      const userId = authResult.userId;
+      userId = authResult.userId;
 
       if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }
 
-    const chatInstance = await getChatInstanceById(chatInstanceId);
+    // Fetch chat instance data *including branding* using the updated query
+    const chatInstanceWithBranding = await getChatInstanceWithBranding(chatInstanceId);
 
-    if (!chatInstance) {
+    if (!chatInstanceWithBranding) {
+      logger.warn('Chat instance not found in GET request', { id: chatInstanceId });
       return NextResponse.json({ error: "Chat instance not found" }, { status: 404 });
     }
 
-    // Return chat instance data including notification settings
-    return NextResponse.json({
-      welcomeDescription: chatInstance.welcomeDescription,
-      welcomeHeading: chatInstance.welcomeHeading,
-      welcomeCardDescription: chatInstance.welcomeCardDescription,
-      respondentContacts: chatInstance.respondentContacts,
-      incentive_status: chatInstance.incentiveStatus,
-      incentive_description: chatInstance.incentiveDescription,
-      incentive_code: chatInstance.incentiveCode,
-      response_email_notifications: chatInstance.responseEmailNotifications
-    });
+    // If it's not an external request, verify ownership
+    if (!isExternalRequest && chatInstanceWithBranding.userId !== userId) {
+       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Structure the response including the branding object
+    const responseData = {
+      // Core instance data
+      welcomeDescription: chatInstanceWithBranding.welcomeDescription,
+      welcomeHeading: chatInstanceWithBranding.welcomeHeading,
+      welcomeCardDescription: chatInstanceWithBranding.welcomeCardDescription,
+      respondentContacts: chatInstanceWithBranding.respondentContacts,
+      incentiveStatus: chatInstanceWithBranding.incentiveStatus,
+      incentiveDescription: chatInstanceWithBranding.incentiveDescription,
+      incentiveCode: chatInstanceWithBranding.incentiveCode,
+      response_email_notifications: chatInstanceWithBranding.responseEmailNotifications,
+      redirect_url: chatInstanceWithBranding.redirect_url,
+
+      // Branding data nested in an object
+      branding: {
+        logoUrl: chatInstanceWithBranding.logoUrl,
+        buttonColor: chatInstanceWithBranding.buttonColor,
+        titleColor: chatInstanceWithBranding.titleColor,
+      }
+    };
+
+    logger.debug('Returning chat instance data with branding', { id: chatInstanceId });
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Failed to retrieve chat instance:", error);
+    logger.error("Failed to retrieve chat instance with branding:", { error: error instanceof Error ? error.message : String(error), id: params?.id });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -78,15 +98,16 @@ export async function DELETE(
     }
     
     if (chatInstance.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     
     // Delete the chat instance
     await deleteChatInstance(id);
     
-    return NextResponse.json({ success: true });
+    logger.info('Chat instance deleted successfully', { id });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Error deleting chat instance:", error);
+    logger.error("Error deleting chat instance:", { error: error instanceof Error ? error.message : String(error), id: params?.id });
     return NextResponse.json({ error: "Failed to delete chat instance" }, { status: 500 });
   }
 } 
@@ -95,6 +116,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let rawBody: any;
   try {
     const { userId } = await auth();
     
@@ -104,73 +126,98 @@ export async function PATCH(
 
     const id = params.id;
     
+    if (!id) {
+      return NextResponse.json({ error: "Missing chat instance ID" }, { status: 400 });
+    }
+
+    // Log the raw body first
+    try {
+        rawBody = await request.json();
+        logger.debug('Received PATCH request body:', { id, body: rawBody });
+    } catch (e) {
+        logger.error('Failed to parse PATCH request body', { id, error: e });
+        return new NextResponse("Invalid request body", { status: 400 });
+    }
+    const body = rawBody;
+
     // Check if the chat instance exists and belongs to the user
-    const chatInstance = await getChatInstanceById(id);
+    const existingChat = await getChatInstanceById(id);
     
-    if (!chatInstance) {
+    if (!existingChat) {
       return NextResponse.json({ error: "Chat instance not found" }, { status: 404 });
     }
     
-    if (chatInstance.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (existingChat.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     
-    // Get the data from the request body
-    const body = await request.json();
-    const { title, incentiveStatus, incentiveCode, incentiveDescription } = body;
-    
-    // If we have incentive settings in the request
-    if (incentiveStatus !== undefined) {
-      // Update the incentive settings
-      const updates = {
-        incentiveStatus,
-        incentiveCode: incentiveCode || "",
-        incentiveDescription: incentiveDescription || "",
-        updatedAt: new Date(),
-      };
+    // Prepare updates object
+    const updates: Partial<InsertChatInstance> = {};
+    let updatePerformed = false;
 
-      const updatedChatInstance = await updateChatInstance(id, updates);
-      
-      return NextResponse.json({ 
-        success: true,
-        id: id,
-        incentiveStatus: updatedChatInstance?.incentiveStatus,
-        incentiveCode: updatedChatInstance?.incentiveCode,
-        incentiveDescription: updatedChatInstance?.incentiveDescription
-      });
-    }
-    
-    // Handle title update (original functionality)
-    if (title) {
-      if (typeof title !== 'string' || title.trim() === '') {
-        return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    // Handle Title Update (within conversationPlan)
+    if (body.title !== undefined) {
+      if (typeof body.title !== 'string' || body.title.trim() === '') {
+          return NextResponse.json({ error: "Title must be a non-empty string" }, { status: 400 });
       }
-      
-      // Update the conversation plan with the new title
-      const conversationPlan = chatInstance.conversationPlan as any;
-      if (!conversationPlan) {
-        return NextResponse.json({ error: "Conversation plan not found" }, { status: 404 });
+      const conversationPlan = existingChat.conversationPlan as ConversationPlan | undefined;
+      if (conversationPlan) {
+          updates.conversationPlan = { ...conversationPlan, title: body.title };
+          updates.conversationPlanLastEdited = new Date();
+          logger.info('Prepared title update within conversation plan', { id, title: body.title });
+      } else {
+          updates.topic = body.title;
+          logger.info('Prepared title update using topic field (no plan found)', { id, title: body.title });
       }
-      
-      // Update the title in the conversation plan
-      conversationPlan.title = title;
-      
-      // Update the chat instance with the new conversation plan
-      const updatedChatInstance = await updateChatInstance(id, {
-        conversationPlan,
-        conversationPlanLastEdited: new Date(),
-      });
-      
-      return NextResponse.json({ 
-        success: true,
-        title: title,
-        id: id
-      });
+       updatePerformed = true;
     }
+
+    // Handle Other Fields (Incentives, Welcome, Published, Notifications, Redirect)
+    if (body.published !== undefined) updates.published = body.published;
+    if (body.incentiveStatus !== undefined) updates.incentiveStatus = body.incentiveStatus;
+    if (body.incentiveCode !== undefined) updates.incentiveCode = body.incentiveCode;
+    if (body.incentiveDescription !== undefined) updates.incentiveDescription = body.incentiveDescription;
+    if (body.welcomeHeading !== undefined) updates.welcomeHeading = body.welcomeHeading;
+    if (body.welcomeCardDescription !== undefined) updates.welcomeCardDescription = body.welcomeCardDescription;
+    if (body.welcomeDescription !== undefined) updates.welcomeDescription = body.welcomeDescription;
+    if (body.responseEmailNotifications !== undefined) updates.responseEmailNotifications = body.responseEmailNotifications;
+    if (body.redirect_url !== undefined) {
+      updates.redirect_url = body.redirect_url;
+    }
+
+    const updateKeys = Object.keys(updates);
     
-    return NextResponse.json({ error: "No valid update parameters provided" }, { status: 400 });
+    // Check if any update is being performed, including title update
+    if (!updatePerformed && updateKeys.length === 0) {
+        logger.warn('PATCH request body contained no valid fields for update', { id, body });
+        return NextResponse.json({ error: "No valid fields provided for update" }, { status: 400 });
+    }
+
+    updates.updatedAt = new Date();
+
+    logger.info('Attempting to update chat instance with final updates:', { id, updates });
+    const updatedChat = await updateChatInstance(id, updates);
+
+    if (!updatedChat) {
+        logger.error('Failed to update chat instance in DB query', { id, updatesAttempted: updates });
+        return NextResponse.json({ error: "Failed to update chat instance" }, { status: 500 });
+    }
+
+    logger.info('Chat instance updated via PATCH successfully', { id, updatedFields: updateKeys });
+    return NextResponse.json(updatedChat);
+
   } catch (error) {
-    console.error("Error updating chat instance:", error);
-    return NextResponse.json({ error: "Failed to update chat instance" }, { status: 500 });
+    let requestBodyForErrorLog = 'Could not read body for error log';
+    try {
+        requestBodyForErrorLog = rawBody ? JSON.stringify(rawBody) : 'Body already consumed or empty';
+    } catch (parseError) { }
+
+    logger.error('Error in chat instance PATCH handler:', {
+        error: error instanceof Error ? error.message : String(error),
+        id: params?.id || 'Unknown ID',
+        requestBody: requestBodyForErrorLog,
+        stack: error instanceof Error ? error.stack : undefined
+     });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

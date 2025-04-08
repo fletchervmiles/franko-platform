@@ -5,7 +5,10 @@
  * Removes system and tool messages, preserves markdown, and formats user/assistant messages.
  */
 
-import { extractResponseText } from './conversation-helper';
+// Remove the old helper import
+// import { extractResponseText } from './conversation-helper'; 
+// Import the robust JSON parser
+import { extractResponseFromAIOutput } from './json-parser';
 import { logger } from '@/lib/logger';
 
 /**
@@ -58,9 +61,11 @@ export function cleanTranscript(messagesJson: string, userName?: string): string
         let textContent: string;
         
         if (message.role === 'assistant') {
-          // For assistant messages, use our helper to extract the response field from JSON
+          // For assistant messages, use the robust JSON parser
           if (typeof message.content === 'string') {
-            textContent = extractResponseText(message.content);
+            // Use the new parser here
+            textContent = extractResponseFromAIOutput(message.content, 'response', message.content); 
+            // Pass original content as fallback if parsing fails completely
           } else if (Array.isArray(message.content)) {
             // If content is an array, extract text fields
             textContent = message.content

@@ -14,5 +14,11 @@
   "github": {
     "enabled": true,
     "silent": false
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/finalize-inactive-chats",
+      "schedule": "0 * * * *"
+    }
+  ]
 } 

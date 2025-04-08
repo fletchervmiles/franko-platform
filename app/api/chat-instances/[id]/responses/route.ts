@@ -60,19 +60,22 @@ export async function GET(
       .select()
       .from(chatResponsesTable)
       .where(eq(chatResponsesTable.chatInstanceId, chatInstanceId))
-      .orderBy(chatResponsesTable.createdAt);
+      .orderBy(chatResponsesTable.createdAt); // Consider ordering by updatedAt or interviewEndTime desc for recency
 
-    // Filter to only include responses that have a status of 'completed'
-    const completedResponses = responses.filter(
-      response => response.status === 'completed'
+    // Filter to only include responses that are 'completed' AND have a meaningful completionStatus (not null and not '0%')
+    const completedAndMeaningfulResponses = responses.filter(
+      response => response.status === 'completed' && 
+                  response.completionStatus !== null && // Explicitly check for null
+                  response.completionStatus !== '0%'  // Also check for '0%'
     );
 
-    logger.info('Chat responses fetched', { 
+    logger.info('Meaningful chat responses fetched', { 
       chatInstanceId, 
-      count: completedResponses.length 
+      totalFetched: responses.length, // Log total before filtering
+      countDisplayed: completedAndMeaningfulResponses.length // Log count after filtering
     });
 
-    return NextResponse.json({ responses: completedResponses }, { headers });
+    return NextResponse.json({ responses: completedAndMeaningfulResponses }, { headers });
   } catch (error) {
     logger.error("Failed to retrieve chat responses:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

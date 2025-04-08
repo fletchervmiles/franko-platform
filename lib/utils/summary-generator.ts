@@ -9,7 +9,10 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { generateText } from "ai";
 import { logger } from "@/lib/logger";
-import { geminiProModel, geminiFlashModel } from "@/ai_folder";
+import { 
+  geminiFlashModel, 
+  gemini25ProPreviewModel // Import the new model
+} from "@/ai_folder";
 
 /**
  * Generates a summary of a conversation using the AI SDK
@@ -71,14 +74,14 @@ export async function generateSummary(
     while (retryCount < maxRetries) {
       try {
         logger.debug(`Generating summary attempt ${retryCount + 1}`, { 
-          model: retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel',
+          model: retryCount === 0 ? 'gemini25ProPreviewModel' : 'geminiFlashModel',
           transcriptLength: cleanTranscript.length,
           planLength: planString.length
         });
         
-        // Use the AI SDK generateText function - try Gemini Pro first, then Flash as fallback
+        // Use the AI SDK generateText function - try Gemini Pro Preview first, then Flash as fallback
         const response = await generateText({
-          model: retryCount === 0 ? geminiProModel : geminiFlashModel,
+          model: retryCount === 0 ? gemini25ProPreviewModel : geminiFlashModel,
           system: systemPrompt,
           prompt: "",
           temperature: 0.5,
@@ -92,7 +95,7 @@ export async function generateSummary(
         }
         
         logger.debug('Summary generated successfully', { 
-          model: retryCount === 0 ? 'geminiProModel' : 'geminiFlashModel',
+          model: retryCount === 0 ? 'gemini25ProPreviewModel' : 'geminiFlashModel',
           summaryLength: summary.length
         });
         

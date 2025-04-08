@@ -1,5 +1,16 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+
+// Define animation variants
+const descriptionVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+}
 
 export default function Hero() {
   return (
@@ -9,22 +20,25 @@ export default function Hero() {
       </div>
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-[42px] sm:text-6xl md:text-7xl font-medium tracking-tight text-black sm:leading-tight">
-            Stop Surveying,<br />
-            Start Conversing.
+          <h1 className="text-4xl leading-tight sm:text-6xl md:text-7xl font-medium tracking-tight text-black sm:leading-tight">
+            AI Agents for Continuous Customer Feedback
           </h1>
-          <div className="mt-3 sm:mt-6 rounded-2xl bg-gray-50/80 backdrop-blur-sm p-4 sm:p-6 max-w-3xl mx-auto border border-gray-200 shadow-sm">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={descriptionVariants}
+            className="mt-3 sm:mt-6 rounded-2xl bg-gray-50/80 backdrop-blur-sm p-4 sm:p-6 max-w-3xl mx-auto border border-gray-200 shadow-sm"
+          >
             <p className="text-sm sm:text-base md:text-lg leading-6 sm:leading-7 text-gray-700">
-            Franko lets you replace traditional surveys with AI agents, tailored to your business needs and learning objectives. It's like sending your customers a link to ChatGPT—but fully contextualized to your chosen topic. 
+            Franko lets product teams create AI agents that run short, focused customer conversations, continuously gathering feedback without needing a dedicated research team.
             </p>
-          </div>
+          </motion.div>
           <div className="mt-12 sm:mt-16 flex items-center justify-center gap-4 flex-wrap">
             <div className="relative">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative shimmer-bg">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent shimmer-effect"></div>
+              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
                 <Link
                   href="/sign-up"
-                  className="rounded-lg bg-gray-900 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center relative z-10"
+                  className="rounded-lg bg-gray-900 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black inline-flex items-center relative z-10"
                 >
                   Build your agent
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -44,22 +58,7 @@ export default function Hero() {
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200" />
       
       <style jsx>{`
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        
-        .shimmer-effect {
-          animation: shimmer 2s infinite;
-        }
-        
-        .shimmer-bg {
-          overflow: hidden;
-        }
+        /* Any other component-specific styles can remain here */
       `}</style>
     </div>
   )

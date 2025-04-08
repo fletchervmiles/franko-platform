@@ -12,8 +12,7 @@ import { Loader2, Gift } from "lucide-react"
 
 export function IncentiveSetting() {
   const params = useParams()
-  const guideName = params ? (params as any).guideName : undefined
-  const chatId = guideName || ""
+  const idVariable = params ? (params as any).guideName : undefined
 
   // State for form values
   const [incentiveStatus, setIncentiveStatus] = useState<boolean>(false)
@@ -28,11 +27,11 @@ export function IncentiveSetting() {
   // Fetch current incentive settings
   useEffect(() => {
     async function fetchIncentiveSettings() {
-      if (!chatId) return
+      if (!idVariable) return
 
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/chat-instances/details?chatId=${chatId}`)
+        const response = await fetch(`/api/chat-instances/details?chatId=${idVariable}`)
         if (!response.ok) {
           throw new Error("Failed to fetch incentive settings")
         }
@@ -66,7 +65,7 @@ export function IncentiveSetting() {
     }
 
     fetchIncentiveSettings()
-  }, [chatId])
+  }, [idVariable])
 
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
@@ -75,6 +74,7 @@ export function IncentiveSetting() {
 
   // Handle form submission
   const handleSave = async () => {
+    if (!idVariable) return
     // Validate inputs if incentive is enabled
     if (incentiveStatus && (!incentiveCode || !incentiveDescription)) {
       toast.error("Please provide both incentive code and description")
@@ -89,7 +89,7 @@ export function IncentiveSetting() {
         ? `Upon completion, you'll receive ${incentiveDescription}` 
         : ""
 
-      const response = await fetch(`/api/chat-instances/${chatId}`, {
+      const response = await fetch(`/api/chat-instances/${idVariable}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -136,7 +136,7 @@ export function IncentiveSetting() {
           Incentive Settings
         </CardTitle>
         <CardDescription>
-          Offer incentives to encourage participation and completion
+          Offer an incentive to encourage participation and completion.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -165,6 +165,8 @@ export function IncentiveSetting() {
                   <Label htmlFor="incentive-code" className="text-sm font-medium">
                     Incentive Code
                   </Label>
+                  <p className="text-xs text-gray-500 mt-0.5 mb-3">
+                  This code will appear on the 'Thank You' page after the conversation has been completed.                  </p>
                   <Input
                     id="incentive-code"
                     value={incentiveCode}
@@ -178,8 +180,8 @@ export function IncentiveSetting() {
                   <Label htmlFor="incentive-description" className="text-sm font-medium">
                     Incentive Details
                   </Label>
-                  <p className="text-xs text-gray-500 mt-1 mb-2">
-                    Complete the sentence to describe your reward. It will appear to users prefixed with "Upon completion, you'll receive".
+                  <p className="text-xs text-gray-500 mt-0.5 mb-3">
+                  Enter a brief description of your reward. It will display on the welcome screen prefixed by 'Upon completion, you'll receive… .'
                   </p>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <span className="text-sm whitespace-nowrap italic text-gray-600">Upon completion, you'll receive</span>

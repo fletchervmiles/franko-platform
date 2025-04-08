@@ -15,6 +15,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'img.clerk.com',
         port: '',
         pathname: '/**',
@@ -29,7 +35,7 @@ const nextConfig = {
   // Modern optimization settings
   compiler: {
     // Remove console.log in production
-    removeConsole: process.env.NODE_ENV === 'production',
+    // removeConsole: process.env.NODE_ENV === 'production',
   },
   // Enable React strict mode for better development
   reactStrictMode: true,

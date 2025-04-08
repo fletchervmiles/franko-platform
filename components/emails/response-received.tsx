@@ -53,7 +53,7 @@ export const ResponseNotification: React.FC<Readonly<ResponseNotificationProps>>
       }}>
         <a 
           href={conversationId 
-            ? `https://franko.ai/conversations/${conversationId}` 
+            ? `https://franko.ai/conversations/${conversationId}?tab=responses`
             : 'https://franko.ai/dashboard'}
           style={{
             background: 'linear-gradient(to right, #3b82f6, #4f46e5)',
