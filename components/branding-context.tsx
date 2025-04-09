@@ -21,7 +21,7 @@ interface BrandingContextProps {
   initialTitleColor?: string | null;
 }
 
-// Define the expected structure of the profile data returned by the API...
+// Define the expected structure of the profile data returned by the API
 interface UpdatedProfileBranding {
   logoUrl?: string | null;
   buttonColor?: string | null;
