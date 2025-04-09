@@ -89,8 +89,8 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
   "welcome_heading": "Ready to tell us about your experience with Franko?",
-  "welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback helps us improve and is greatly appreciated!",
-  "welcome_description": "Quick chat about your Franko experience"
+  "welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback helps us improve!",
+  "welcome_description": "Quick chat about your experience with Franko"
 }
 ```
 
@@ -99,7 +99,7 @@ Include clearly all 3 of these elements in a short paragraph:
 ## ✅ Additional Examples Clearly Demonstrating Correct Output:
 
 **Example 1**
-**Example Input:**  
+**Example Input:**
 ```json
 {
   "title": "Improving QuickLab's Online Payment Flow",
@@ -108,19 +108,19 @@ Include clearly all 3 of these elements in a short paragraph:
 }
 ```
 
-**Correct Output Example:**  
+**Correct Output Example:**
 ```json
 {
-  "welcome_heading": "Ready to chat about QuickLab's online payment experience?",
-  "welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—your feedback helps us greatly improve QuickLab payments!",
-  "welcome_description": "Quick chat about QuickLab online payment experience"
+"welcome_heading": "Ready to chat about your QuickLab online payment experience?",
+"welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—your input is vital in refining QuickLab payments!",
+"welcome_description": "Quick chat about your QuickLab online payment experience"
 }
 ```
 
 ---
 
 **Example 2**
-**Example Input:**  
+**Example Input:**
 ```json
 {
   "title": "Recommended Check-In: FreshBasket's Delivery Experience",
@@ -129,12 +129,12 @@ Include clearly all 3 of these elements in a short paragraph:
 }
 ```
 
-**Correct Output Example:**  
+**Correct Output Example:**
 ```json
 {
-  "welcome_heading": "How was your FreshBasket grocery delivery experience?",
-  "welcome_description_card": "This chat with our AI assistant involves ~15 questions—your valuable feedback helps us improve FreshBasket deliveries!",
-  "welcome_description": "Chat about FreshBasket grocery delivery experience"
+"welcome_heading": "How was your FreshBasket grocery delivery experience?",
+"welcome_description_card": "This chat with our AI assistant involves ~15 questions—your insights truly help us refine FreshBasket deliveries!",
+"welcome_description": "Chat about your FreshBasket grocery delivery experience"
 }
 ```
 
@@ -151,7 +151,7 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
 "welcome_heading": "Ready to share your PayEase checkout experience?",
-"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback helps us improve and is greatly appreciated!",
+"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback is truly valuable in improving PayEase checkout!",
 "welcome_description": "Quick chat about your PayEase checkout experience"
 }
 ```
@@ -169,8 +169,8 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
 "welcome_heading": "Ready to discuss your StreamNow video browsing experience?",
-"welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—we greatly appreciate your feedback for improving StreamNow!",
-"welcome_description": "Quick chat on StreamNow video browsing experience"
+"welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—we truly value your feedback in improving StreamNow!",
+"welcome_description": "Quick chat on your StreamNow video browsing experience"
 }
 ```
 ---
@@ -187,8 +187,8 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
 "welcome_heading": "How was your FreshBasket grocery delivery experience?",
-"welcome_description_card": "This chat with our AI assistant involves ~15 questions—your valuable feedback helps us improve FreshBasket deliveries!",
-"welcome_description": "Chat about FreshBasket grocery delivery experience"
+"welcome_description_card": "This chat with our AI assistant involves ~15 questions—your feedback is extremely valuable in improving FreshBasket deliveries!",
+"welcome_description": "Chat about your FreshBasket grocery delivery experience"
 }
 ```
 ---
@@ -204,9 +204,9 @@ Include clearly all 3 of these elements in a short paragraph:
 **Correct Output:**
 ```json
 {
-"welcome_heading": "Ready to chat about QuickLab's online payment process?",
-"welcome_description_card": "This chat with our AI assistant includes ~10 quick questions—we greatly appreciate your feedback to help enhance QuickLab payments!",
-"welcome_description": "Quick chat about QuickLab online payment experience"
+"welcome_heading": "Ready to chat about your QuickLab online payment process?",
+"welcome_description_card": "This chat with our AI assistant includes ~10 quick questions—your feedback is instrumental in enhancing QuickLab payments!",
+"welcome_description": "Quick chat about your QuickLab online payment experience"
 }
 ```
 ---
@@ -223,7 +223,7 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
 "welcome_heading": "Interested in sharing your PetPal app experience?",
-"welcome_description_card": "This chat with our AI assistant involves ~20 questions—your feedback is highly appreciated and helps us enhance PetPal!",
+"welcome_description_card": "This chat with our AI assistant involves ~20 questions—your feedback truly helps us enhance PetPal!",
 "welcome_description": "Chat about your PetPal app experience"
 }
 ```
@@ -259,8 +259,26 @@ Include clearly all 3 of these elements in a short paragraph:
 ```json
 {
 "welcome_heading": "Ready to discuss your StreamHub playback experience?",
-"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your insights help improve StreamHub and are greatly appreciated!",
-"welcome_description": "Quick chat on StreamHub video playback experience"
+"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your insights help improve StreamHub and are sincerely valued!",
+"welcome_description": "Quick chat on your StreamHub video playback experience"
+}
+```
+---
+**Example 10:**
+**Input:**
+```json
+{
+"title": "Gathering First Impressions from Recently Onboarded Slack Users",
+"summary": "A 10-turn plan to uncover customers’ initial motivations, the ‘aha’ moment timeline, perceived value, and early friction points...",
+"duration": "≈ 5 min (Recommended) - 10 turns"
+}
+```
+**Correct Output:**
+```json
+{
+"welcome_heading": "Ready to share your Slack onboarding experience?",
+"welcome_description_card": "This chat with our AI assistant includes ~10 quick questions—your feedback is extremely helpful in shaping Slack's future updates!",
+"welcome_description": "Quick chat about your Slack onboarding experience"
 }
 ```
 ---
