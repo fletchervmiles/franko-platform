@@ -137,7 +137,7 @@ export default function DocumentationPage() {
   return (
     <div>
       <Nav />
-      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8 mt-12 mb-12 border border-gray-200 rounded-md">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 mt-12 mb-12 border border-gray-200 rounded-md">
         {/* Apply prose styles for nice markdown formatting */}
         <article className="prose prose-indigo">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
