@@ -363,7 +363,7 @@ export function BrandingContext({
                 </div>
                 {/* Title Color */}
                 <div className="space-y-2">
-                   <Label htmlFor="titleColor" className="text-sm font-medium">Title Color</Label>
+                   <Label htmlFor="titleColor" className="text-sm font-medium">Modal Heading Color</Label>
                     <Popover open={showTitleColorPicker} onOpenChange={setShowTitleColorPicker}>
                       <PopoverTrigger asChild disabled={!isEditing || mutation.isPending}>
                          <Button
