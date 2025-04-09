@@ -5,7 +5,6 @@
  * 1. Finds chat responses that have been inactive for more than 30 minutes
  * 2. Finalizes each inactive conversation
  * 3. Handles pagination for processing large numbers of conversations
- * 
  * Designed to be called by a cron job or scheduler
  */
 
