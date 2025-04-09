@@ -8,7 +8,7 @@ import Nav from '@/components/lp-components/nav'; // Import the Nav component
 // Remove the main heading from the markdown string
 const markdownContent = `This document explains how to configure and utilize webhooks from the Franko platform to receive notifications and data when a conversation is completed.
 
-### Introduction
+### Introduction    
 
 Webhooks provide a way for the Franko platform to send real-time data to your external applications or services automatically. When a specific event occurs within Franko, we send an HTTP POST request containing relevant data to the endpoint URL you configure.
 
@@ -137,7 +137,7 @@ export default function DocumentationPage() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 mt-12 mb-12 border border-gray-200 rounded-md">
         {/* Render the main heading separately and centered */}
         <h1 className="text-3xl font-bold text-center mb-8">
-          Franko Platform Webhook
+          Setting up a webhook
         </h1>
 
         {/* Apply prose styles for the rest of the markdown content */}

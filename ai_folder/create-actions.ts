@@ -161,15 +161,15 @@ export async function generateConversationPlanFromForm({
     console.log('=== END CONVERSATION PLAN PROMPT ===\n');
     
     // Define models to try
-    const primaryModel = gemini25ProPreviewModel;
-    const fallbackModel = o1Model;
+    const primaryModel = o1Model;
+    const fallbackModel = gemini25ProPreviewModel;
     
     let rawPlan: any; // Use 'any' for now, will be validated by schema
     let modelUsed: string | undefined;
 
     try {
-      // Attempt 1: Try the primary model (Gemini 2.5 Pro Preview)
-      modelUsed = `Gemini 2.5 Pro Preview (gemini-2.5-pro-preview-03-25)`;
+      // Attempt 1: Try the primary model (o1)
+      modelUsed = `OpenAI o1`;
       logger.ai(`Attempting conversation plan generation with primary model: ${modelUsed}`);
       const modelStartTime = new Date();
       
@@ -206,8 +206,8 @@ export async function generateConversationPlanFromForm({
     } catch (primaryError) {
       logger.error(`Primary model (${modelUsed}) failed:`, primaryError);
       
-      // Attempt 2: Fallback to o1Model
-      modelUsed = `OpenAI o1`;
+      // Attempt 2: Fallback to gemini25ProPreviewModel
+      modelUsed = `Gemini 2.5 Pro Preview (gemini-2.5-pro-preview-03-25)`;
       logger.ai(`Attempting conversation plan generation with fallback model: ${modelUsed}`);
       const fallbackStartTime = new Date();
 
@@ -244,8 +244,8 @@ export async function generateConversationPlanFromForm({
 
       } catch (fallbackError) {
         logger.error(`Fallback model (${modelUsed}) also failed:`, fallbackError);
-        // Throw the original error if fallback also fails
-        throw new Error(`Failed to generate conversation plan with both primary and fallback models. Primary error: ${primaryError}`);
+        // Throw the original error if fallback also fails, updated message
+        throw new Error(`Failed to generate conversation plan with both o1 (primary) and Gemini 2.5 Pro (fallback) models. Primary error: ${primaryError}`);
       }
     }
 
