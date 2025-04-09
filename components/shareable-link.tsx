@@ -17,7 +17,7 @@ export function ShareableLink({ guideName }: ShareableLinkProps) {
   const [shareableUrl, setShareableUrl] = React.useState("")
 
   React.useEffect(() => {
-    const baseUrl = "https://franko.ai"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     setShareableUrl(`${baseUrl}/chat/external/${guideName}`)
   }, [guideName])
 
