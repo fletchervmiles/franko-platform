@@ -19,7 +19,24 @@ import { ContextContainer } from "@/components/context-container"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProfile } from "@/components/contexts/profile-context"
-import { BrandingContext } from "@/components/branding-context"
+import dynamic from "next/dynamic"
+
+// Dynamically import BrandingContext only on the client side
+const BrandingContext = dynamic(
+  () => import("@/components/branding-context").then(mod => mod.BrandingContext),
+  { 
+    ssr: false, 
+    loading: () => (
+      <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center h-24">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+)
 
 const contextSetupSchema = z.object({
   url: z.string()
