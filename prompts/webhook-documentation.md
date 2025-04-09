@@ -1,4 +1,4 @@
-# Franko Platform Webhook
+# Setting up a webhook
 
 This document explains how to configure and utilize webhooks from the Franko platform to receive notifications and data when a conversation is completed.
 
