@@ -327,7 +327,7 @@ export function ExternalChat({
     
     // Set up interval to check for inactivity
     const INACTIVITY_CHECK_INTERVAL = 60 * 1000; // Check every minute
-    const INACTIVITY_THRESHOLD = 5 * 60 * 1000; // 10 minute threshold
+    const INACTIVITY_THRESHOLD = 60 * 60 * 1000; // 60 minute threshold
     
     // Clear any existing interval
     if (inactivityCheckIntervalRef.current) {

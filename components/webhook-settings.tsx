@@ -13,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2, PlusCircle, Edit, Trash2, Copy, AlertTriangle, RefreshCw } from 'lucide-react';
 import { WebhookForm } from './webhook-form'; // We will create this next
+import Link from 'next/link'; // Import Link
+import { ExternalLink } from 'lucide-react'; // Import an icon for the link
 
 // Define the shape of the webhook data we expect from the API (excluding secret)
 export interface WebhookDisplayData {
@@ -211,15 +213,19 @@ export function WebhookSettings({ chatInstanceId }: WebhookSettingsProps) {
     return (
         <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <div>
+                <div className="flex-grow">
                     <CardTitle className="text-lg font-medium">Webhooks</CardTitle>
-                    <CardDescription>
-                        Trigger external actions when conversations are completed.
+                    <CardDescription className="flex items-center space-x-1">
+                        <span>Trigger external actions when conversations are completed.</span>
+                        <Link href="/documentation" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline inline-flex items-center">
+                            Learn More
+                            <ExternalLink className="ml-1 h-3 w-3" />
+                        </Link>
                     </CardDescription>
                 </div>
                  <Dialog open={showFormDialog} onOpenChange={setShowFormDialog}>
                     <DialogTrigger asChild>
-                        <Button size="sm" onClick={handleAddWebhook} disabled={isLoading}>
+                        <Button size="sm" onClick={handleAddWebhook} disabled={isLoading} className="flex-shrink-0">
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Webhook
                         </Button>
                     </DialogTrigger>

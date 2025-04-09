@@ -58,7 +58,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     // Calculate the cutoff time (60 minutes ago)
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 5);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 60);
     
     logger.info('Finding inactive chats before:', { cutoffTime, page, batchSize: BATCH_SIZE });
     

@@ -57,11 +57,15 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     }
     
     // Set the end time and calculate the duration
-    const interviewEndTime = new Date();
+    // If the cron job is finalizing, interviewEndTime in DB will be null
+    const isCronFinalization = !chatResponse.interviewEndTime;
+    const interviewEndTime = chatResponse.interviewEndTime || new Date(); // Use existing if available, else set to now
     const startTime = chatResponse.interviewStartTime || chatResponse.createdAt;
-    const totalInterviewMinutes = Math.round(
-      (interviewEndTime.getTime() - startTime.getTime()) / (1000 * 60)
-    );
+    
+    // Only calculate duration if it wasn't a cron finalization
+    const totalInterviewMinutes = isCronFinalization 
+      ? null 
+      : Math.round((interviewEndTime.getTime() - startTime.getTime()) / (1000 * 60));
     
     // Clean the transcript
     let transcript = '';
