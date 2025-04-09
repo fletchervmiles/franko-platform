@@ -10,7 +10,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image'; // Use Next.js Image component for optimization
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"; // Import cn for conditional classes
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { SketchPicker, ColorResult } from 'react-color';
+import { cn } from "@/lib/utils";
 
 interface BrandingContextProps {
   userId?: string;
@@ -65,6 +67,10 @@ export function BrandingContext({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // State for color picker visibility
+  const [showButtonColorPicker, setShowButtonColorPicker] = useState(false);
+  const [showTitleColorPicker, setShowTitleColorPicker] = useState(false);
 
   // Store initial values when edit mode starts, used for cancellation
   const [stagedInitialValues, setStagedInitialValues] = useState({
@@ -139,6 +145,15 @@ export function BrandingContext({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Handlers for react-color pickers
+  const handleButtonColorChange = (color: ColorResult) => {
+    setButtonColor(color.hex);
+  };
+
+  const handleTitleColorChange = (color: ColorResult) => {
+    setTitleColor(color.hex);
   };
 
   const handleSaveChanges = () => {
@@ -320,34 +335,60 @@ export function BrandingContext({
                 {/* Button Color */}
                 <div className="space-y-2">
                    <Label htmlFor="buttonColor" className="text-sm font-medium">Button Color</Label>
-                   <div className="flex items-center gap-2 border rounded-md bg-[#FAFAFA] pr-2">
-                      <Input
-                         id="buttonColor"
-                         type="color"
-                         value={buttonColor}
-                         onChange={(e) => setButtonColor(e.target.value)}
-                         className="w-10 h-10 p-0 border-none rounded-l-md cursor-pointer"
-                         disabled={!isEditing || mutation.isPending}
-                         style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
-                      />
-                      <span className="text-sm font-mono text-gray-600">{buttonColor}</span>
-                   </div>
+                   <Popover open={showButtonColorPicker} onOpenChange={setShowButtonColorPicker}>
+                      <PopoverTrigger asChild disabled={!isEditing || mutation.isPending}>
+                         <Button
+                           variant="outline"
+                           className={cn("w-full justify-start text-left font-normal h-10 px-2", !isEditing && "opacity-70 cursor-not-allowed")}
+                           disabled={!isEditing || mutation.isPending}
+                         >
+                           <div className="flex items-center gap-2 w-full">
+                              <div
+                                 className="h-6 w-6 rounded border"
+                                 style={{ backgroundColor: buttonColor }}
+                              />
+                              <span className="text-sm font-mono text-gray-600 flex-grow">{buttonColor}</span>
+                           </div>
+                         </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none" align="start">
+                         <SketchPicker
+                           color={buttonColor}
+                           onChangeComplete={handleButtonColorChange}
+                           disableAlpha
+                           presetColors={[]}
+                         />
+                      </PopoverContent>
+                   </Popover>
                 </div>
                 {/* Title Color */}
                 <div className="space-y-2">
                    <Label htmlFor="titleColor" className="text-sm font-medium">Title Color</Label>
-                   <div className="flex items-center gap-2 border rounded-md bg-[#FAFAFA] pr-2">
-                      <Input
-                         id="titleColor"
-                         type="color"
-                         value={titleColor}
-                         onChange={(e) => setTitleColor(e.target.value)}
-                         className="w-10 h-10 p-0 border-none rounded-l-md cursor-pointer"
-                         disabled={!isEditing || mutation.isPending}
-                         style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
-                      />
-                      <span className="text-sm font-mono text-gray-600">{titleColor}</span>
-                   </div>
+                    <Popover open={showTitleColorPicker} onOpenChange={setShowTitleColorPicker}>
+                      <PopoverTrigger asChild disabled={!isEditing || mutation.isPending}>
+                         <Button
+                           variant="outline"
+                           className={cn("w-full justify-start text-left font-normal h-10 px-2", !isEditing && "opacity-70 cursor-not-allowed")}
+                           disabled={!isEditing || mutation.isPending}
+                         >
+                            <div className="flex items-center gap-2 w-full">
+                               <div
+                                  className="h-6 w-6 rounded border"
+                                  style={{ backgroundColor: titleColor }}
+                               />
+                               <span className="text-sm font-mono text-gray-600 flex-grow">{titleColor}</span>
+                            </div>
+                         </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none" align="start">
+                         <SketchPicker
+                            color={titleColor}
+                            onChangeComplete={handleTitleColorChange}
+                            disableAlpha
+                            presetColors={[]}
+                         />
+                      </PopoverContent>
+                   </Popover>
                 </div>
              </div>
           </div>
