@@ -18,7 +18,7 @@
   "crons": [
     {
       "path": "/api/cron/finalize-inactive-chats",
-      "schedule": "0 * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 } 
