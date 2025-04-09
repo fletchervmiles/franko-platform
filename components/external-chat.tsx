@@ -87,6 +87,8 @@ export function ExternalChat({
   const [isMobile, setIsMobile] = useState(false);
   // Detect Safari browser
   const [isSafari, setIsSafari] = useState(false);
+  // Add new state for the expiration message
+  const [showExpirationMessage, setShowExpirationMessage] = useState(false);
 
   // Use optimized hook for fetching user data
   // IMPORTANT: All hooks must be called in the same order on every render
@@ -325,7 +327,7 @@ export function ExternalChat({
     
     // Set up interval to check for inactivity
     const INACTIVITY_CHECK_INTERVAL = 60 * 1000; // Check every minute
-    const INACTIVITY_THRESHOLD = 60 * 60 * 1000; // 1 hour threshold
+    const INACTIVITY_THRESHOLD = 5 * 60 * 1000; // 10 minute threshold
     
     // Clear any existing interval
     if (inactivityCheckIntervalRef.current) {
@@ -359,12 +361,15 @@ export function ExternalChat({
       const countdownInterval = setInterval(() => {
         setAutoFinishCountdown((prev) => prev - 1);
       }, 1000);
-      
+
       return () => clearInterval(countdownInterval);
     } else if (isAutoFinishing && autoFinishCountdown === 0) {
-      // Time's up, auto-finish the conversation
+      // Time's up, auto-finish the conversation LOCALLY
+      console.log("Frontend inactivity timer finished. Disabling input and showing message.");
       setIsFinished(true);
-      // This would be where we'd trigger finishing automatically
+      // Set the state to show the expiration message
+      setShowExpirationMessage(true);
+      // NOTE: This does NOT call the backend finalize API or redirect
     }
   }, [isAutoFinishing, autoFinishCountdown]);
   
@@ -662,20 +667,14 @@ export function ExternalChat({
 
       <div className="fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10">
         <div className="mx-auto max-w-4xl">
-          {/* Only render the button when all objectives are done */}
-          {/* {isReadyToFinish && !isFinished && (
-            <div className="flex justify-end mb-1 md:mb-2 pr-8">
-              <FinishConversationButton 
-                chatResponseId={chatResponseId}
-                chatInstanceId={chatInstanceId}
-                onFinishStart={() => setIsFinished(true)}
-                isAutoFinish={isAutoFinishing}
-                countdown={autoFinishCountdown}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 rounded-md h-6 text-xs px-2 font-normal border-none"
-              />
+          {/* Conditionally render the expiration message */}
+          {showExpirationMessage && (
+            <div className="text-center text-sm text-muted-foreground py-2">
+              This chat window has expired. Thank you.
             </div>
-          )} */}
-          
+          )}
+
+          {/* Input is now disabled when isFinished is true */}
           <ChatInput
             value={input}
             onChange={handleInputChange}
