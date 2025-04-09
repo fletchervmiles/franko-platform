@@ -5,11 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown (tables, etc.)
 import Nav from '@/components/lp-components/nav'; // Import the Nav component
 
-// Paste the raw markdown content here
-// Make sure to handle backticks within the template literal correctly
-const markdownContent = `# Franko Platform Webhook
-
-This document explains how to configure and utilize webhooks from the Franko platform to receive notifications and data when a conversation is completed.
+// Remove the main heading from the markdown string
+const markdownContent = `This document explains how to configure and utilize webhooks from the Franko platform to receive notifications and data when a conversation is completed.
 
 ### Introduction
 
@@ -138,7 +135,12 @@ export default function DocumentationPage() {
     <div>
       <Nav />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 mt-12 mb-12 border border-gray-200 rounded-md">
-        {/* Apply prose styles for nice markdown formatting */}
+        {/* Render the main heading separately and centered */}
+        <h1 className="text-3xl font-bold text-center mb-8">
+          Franko Platform Webhook
+        </h1>
+
+        {/* Apply prose styles for the rest of the markdown content */}
         <article className="prose prose-indigo">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {markdownContent}
