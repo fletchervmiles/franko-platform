@@ -10,7 +10,7 @@ export default function Footer() {
             Start turning conversations into proprietary customer intelligence.
           </h2>
           
-          <div className="flex flex-wrap items-center justify-center gap-6">
+          <div className="flex flex-wrap items-start justify-center gap-6">
             <div className="flex flex-col items-center">
               <Link
                 href="https://franko.ai/chat/external/97ca4cd6-55a5-4b20-9978-cb15d9e30baa"
@@ -44,7 +44,7 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="pt-8 border-t border-gray-800 mt-auto">
+        <div className="pt-8 border-t border-gray-800 mt-16 sm:mt-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-y-4 sm:gap-y-0 text-sm text-gray-300 pb-4">
             <div className="flex items-center gap-1 mb-4 sm:mb-0">
               <span>©{new Date().getFullYear()}</span>
