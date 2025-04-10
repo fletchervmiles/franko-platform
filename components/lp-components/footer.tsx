@@ -11,13 +11,20 @@ export default function Footer() {
           </h2>
           
           <div className="flex flex-wrap items-center justify-center gap-6">
-            <Link
-              href="/demo/personalized"
-              className="inline-flex items-center justify-center px-8 py-3 rounded-md border border-gray-400 text-gray-200 font-medium hover:bg-gray-800 hover:border-white"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" aria-hidden="true" />
-              Get a Personalized Demo
-            </Link>
+            <div className="flex flex-col items-center">
+              <Link
+                href="https://franko.ai/chat/external/97ca4cd6-55a5-4b20-9978-cb15d9e30baa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-8 py-3 rounded-md border border-gray-400 text-gray-200 font-medium hover:bg-gray-800 hover:border-white"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" aria-hidden="true" />
+                Get a Personalized Demo
+              </Link>
+              <p className="text-xs text-gray-400 mt-2 max-w-xs">
+                Speak to a Franko agent for &lt;60 secs so we can personalize your demo prior to the call.
+              </p>
+            </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Link
