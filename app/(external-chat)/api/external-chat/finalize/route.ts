@@ -11,8 +11,7 @@
  */
 
 import { NextResponse } from 'next/server';
-// finalizeConversation is called by the background task, not directly here anymore
-// import { finalizeConversation } from '@/lib/utils/conversation-finalizer'; 
+import { finalizeConversation } from '@/lib/utils/conversation-finalizer'; // Ensure this is the correct path to the updated finalizer
 import { logger } from '@/lib/logger';
 // Remove the headers import for testing
 // import { headers } from 'next/headers'; 
@@ -21,69 +20,62 @@ import { logger } from '@/lib/logger';
 // const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 
 /**
- * GET Request Handler
+ * POST Request Handler
  * 
  * Triggers the conversation finalization process:
- * - Updates end time and duration
- * - Calculates completion status
- * - Generates transcript and summary
- * - Sends notifications
+ * - Reads chatResponseId from the request body.
+ * - Calls the finalizeConversation utility (which now handles updates, summary, webhooks, etc.).
+ * - Returns a success or error response.
  */
-export async function GET(request: Request) {
-  try {
-    logger.debug('[API GET /finalize] Minimal handler entered.');
+export async function POST(request: Request) {
+  logger.info('[API POST /finalize] Handler entered.'); // Log entry
+  let chatResponseIdForError: string | undefined = undefined; // For logging in outer catch
 
-    // --- Temporarily Commented Out Logic ---
-    
-    // 1. Read chatResponseId from query parameters
+  try {
+    logger.debug(`[API POST /finalize] Processing request URL: ${request.url}`); // Log URL
+    // Read chatResponseId from query parameters instead of body
     const requestUrl = new URL(request.url);
     const chatResponseId = requestUrl.searchParams.get('chatResponseId');
+    logger.debug(`[API POST /finalize] Extracted chatResponseId from URL: ${chatResponseId}`); // Log extracted ID
+    // Ensure null from searchParams.get becomes undefined for the logging variable
+    chatResponseIdForError = chatResponseId === null ? undefined : chatResponseId; 
 
+    // Validate required parameters
     if (!chatResponseId) {
-      logger.error('[API GET /finalize] Missing required query parameter: chatResponseId');
+      logger.error('[API POST /finalize] Missing required query parameter: chatResponseId');
       return NextResponse.json({ error: 'Chat response ID is required in query parameters' }, { status: 400 });
     }
-
-    /* // Keep this block commented
-    // Accessing env var might be an issue?
-    const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
-
-    // --- Trigger Background Task (Fire-and-Forget) ---
-    if (!BACKGROUND_TASK_SECRET) {
-       logger.error('[API GET /finalize] BACKGROUND_TASK_SECRET is not set. Cannot trigger background task.');
-       return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
-    }
-
-    // Use the relative path for the background task API route
-    const backgroundTaskUrl = '/api/tasks/finalize-conversation';
-
-    logger.info(`[API GET /finalize] Triggering background finalization for ${chatResponseId} via ${backgroundTaskUrl}`);
-
-    fetch(backgroundTaskUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Secret': BACKGROUND_TASK_SECRET,
-      },
-      body: JSON.stringify({ chatResponseId }),
-    }).catch(fetchError => {
-      logger.error(`[API GET /finalize] Error initiating background task fetch: ${fetchError.message}`, { chatResponseId });
-    });
-    */
-    // --- End Commented Out Logic ---
-
-
-    // Return a simple success response for testing
-    logger.info('[API GET /finalize] Minimal handler returning OK.');
-    // Adjust the return message slightly to show progress
-    return NextResponse.json({ status: 'ok - url parsed', chatResponseId }, { status: 200 }); 
+    
+    logger.info(`[API POST /finalize] Received request to finalize conversation: ${chatResponseId}`);
+    
+    // Call the finalizer utility
+    // This function now handles the DB updates, summary generation, webhook triggers, etc.
+    logger.debug(`[API POST /finalize] Calling finalizeConversation for: ${chatResponseId}`); // Log before calling finalizer
+    await finalizeConversation(chatResponseId);
+    
+    logger.info(`[API POST /finalize] Conversation finalization process completed for: ${chatResponseId}`);
+    
+    // Return success response
+    const successResponse = { 
+      success: true, 
+      message: 'Conversation finalized successfully',
+      chatResponseId
+    };
+    logger.debug('[API POST /finalize] Sending success response:', successResponse); // Log success response object
+    return NextResponse.json(successResponse, { status: 200 }); // Use 200 OK for success
 
   } catch (error) {
+    // Log and return any errors from the finalization process
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`[API GET /finalize] Minimal handler error: ${errorMessage}`);
-    return NextResponse.json({
-      error: 'Minimal handler failed',
+    // Try to include chatResponseId in error log if possible 
+    // Use the chatResponseIdForError variable captured earlier
+    logger.error(`[API POST /finalize] Error during finalization for ${chatResponseIdForError ?? 'unknown'}: ${errorMessage}`);
+    
+    return NextResponse.json({ 
+      error: 'Failed to finalize conversation',
       message: errorMessage
     }, { status: 500 });
   }
 } 
+
+// Ensure no GET handler remains in this file. 

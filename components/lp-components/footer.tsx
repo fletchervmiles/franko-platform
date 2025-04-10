@@ -38,7 +38,7 @@ export default function Footer() {
         </div>
         
         <div className="pt-8 border-t border-gray-800 mt-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-gray-300 pb-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-y-4 sm:gap-y-0 text-sm text-gray-300 pb-4">
             <div className="flex items-center gap-1 mb-4 sm:mb-0">
               <span>©{new Date().getFullYear()}</span>
               <span>-</span>

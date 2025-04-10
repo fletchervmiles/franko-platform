@@ -173,6 +173,7 @@ export async function PATCH(
     }
 
     // Handle Other Fields (Incentives, Welcome, Published, Notifications, Redirect)
+    if (body.respondentContacts !== undefined) updates.respondentContacts = body.respondentContacts;
     if (body.published !== undefined) updates.published = body.published;
     if (body.incentiveStatus !== undefined) updates.incentiveStatus = body.incentiveStatus;
     if (body.incentiveCode !== undefined) updates.incentiveCode = body.incentiveCode;

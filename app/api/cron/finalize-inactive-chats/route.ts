@@ -5,7 +5,6 @@
  * 1. Finds chat responses that have been inactive for more than 30 minutes
  * 2. Finalizes each inactive conversation
  * 3. Handles pagination for processing large numbers of conversations
- * 
  * Designed to be called by a cron job or scheduler
  */
 
@@ -25,6 +24,9 @@ const VERCEL_CRON_SECRET = process.env.CRON_SECRET || '';
 const BATCH_SIZE = 10;
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // ADDED: Log immediately upon entry
+  console.log(`--- CRON ROUTE HANDLER ENTERED at ${new Date().toISOString()} ---`);
+  
   try {
     // Authenticate the request - check for Vercel Cron secret OR the separate Bearer token
     const authHeader = request.headers.get('authorization');
@@ -54,16 +56,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const offset = (page - 1) * BATCH_SIZE;
     
-    // Calculate the cutoff time (30 minutes ago)
+    // Calculate the cutoff time (60 minutes ago)
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 60);
     
     logger.info('Finding inactive chats before:', { cutoffTime, page, batchSize: BATCH_SIZE });
     
     // Find chat responses that:
     // 1. Don't have a status of 'completed'
     // 2. Don't have an interviewEndTime
-    // 3. Were last updated more than 30 minutes ago
+    // 3. Were last updated more than 60 minutes ago
     const inactiveResponses = await db.select({
       id: chatResponsesTable.id
     })

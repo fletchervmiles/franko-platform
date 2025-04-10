@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { safeAuth } from "@/lib/utils/safe-auth";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
-import { sendWelcomeEmail, sendAdminNotification } from "@/app/api/send/route";
+import { sendWelcomeEmail, sendAdminNotification } from "@/lib/email-service";
 import { PLAN_RESPONSES, PLAN_INTERNAL_CHAT_QUERIES, PLAN_CHAT_INSTANCE_GENERATIONS } from "@/lib/stripe";
 
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {

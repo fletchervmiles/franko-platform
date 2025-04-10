@@ -64,7 +64,7 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
 
           {isComplete && (
             <p className="text-center text-sm text-amber-500 mt-4">
-              Thank you for your patience—this is taking slightly longer than usual, but the good news is that it means the model is thinking deeply about your conversation plan!            </p>
+              Thank you for your patience—this is taking slightly longer than usual. The good news is, it means the model is thinking deeply about your conversation plan!            </p>
           )}
 
           <div className="text-center text-sm text-muted-foreground">
@@ -78,7 +78,7 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
                   <div className="h-4 w-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
                     <Check className="h-2.5 w-2.5 text-white" />
                   </div>
-                  <span>Conversation Objectives</span>
+                  <span>Conversation objectives</span>
                 </div>
 
                 <div className="flex items-center gap-3">

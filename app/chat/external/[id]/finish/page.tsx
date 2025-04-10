@@ -12,8 +12,8 @@ export default function ThankYouPage({
   params: { id: string };
 }) {
   const [chatInstanceData, setChatInstanceData] = useState<{
-    incentive_status?: boolean;
-    incentive_code?: string;
+    incentiveStatus?: boolean;
+    incentiveCode?: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -40,8 +40,8 @@ export default function ThankYouPage({
           const data = await response.json();
           setChatInstanceData(data);
           console.log("Fetched chat instance data for thank you page:", {
-            incentive_status: data.incentive_status,
-            incentive_code: data.incentive_code,
+            incentiveStatus: data.incentiveStatus,
+            incentiveCode: data.incentiveCode,
             raw_data: data
           });
         } else {
@@ -61,8 +61,8 @@ export default function ThankYouPage({
 
   // Handle copy to clipboard
   const copyToClipboard = () => {
-    if (chatInstanceData?.incentive_code) {
-      navigator.clipboard.writeText(chatInstanceData.incentive_code);
+    if (chatInstanceData?.incentiveCode) {
+      navigator.clipboard.writeText(chatInstanceData.incentiveCode);
       setCopied(true);
       
       // Trigger a small confetti burst when copying
@@ -99,11 +99,11 @@ export default function ThankYouPage({
             </p>
           </div>
 
-          {chatInstanceData?.incentive_status && chatInstanceData?.incentive_code && (
+          {chatInstanceData?.incentiveStatus && chatInstanceData?.incentiveCode && (
             <div className="mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center gap-2">
                 <code className="bg-white px-3 py-2 rounded border border-gray-200 flex-1 text-center">
-                  {chatInstanceData.incentive_code}
+                  {chatInstanceData.incentiveCode}
                 </code>
                 <Button 
                   variant="outline" 

@@ -56,8 +56,8 @@ interface ChatInstanceData {
   welcomeHeading?: string;
   welcomeCardDescription?: string;
   respondentContacts?: boolean;
-  incentive_status?: boolean;
-  incentive_description?: string;
+  incentiveStatus?: boolean;
+  incentiveDescription?: string;
   branding?: BrandingData | null; // Add branding object
 }
 
@@ -121,13 +121,6 @@ export default function StartChatPage({
 
   // Prevent pull-to-refresh and pinch zooming
   useEffect(() => {
-    // Apply fixed positioning to prevent pull-to-refresh
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    document.body.style.overscrollBehavior = 'none';
-    
     // Prevent pinch zoom
     const preventZoom = (e: TouchEvent) => {
       if (e.touches.length > 1) {
@@ -164,12 +157,6 @@ export default function StartChatPage({
     
     return () => {
       // Clean up
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.body.style.overscrollBehavior = '';
-      
       document.removeEventListener('touchstart', preventPullToRefresh);
       document.removeEventListener('touchmove', preventZoom);
       document.removeEventListener('gesturestart', preventGesture);
@@ -198,8 +185,8 @@ export default function StartChatPage({
               welcomeHeading: "Ready to share your feedback?",
               welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
               respondentContacts: false,
-              incentive_status: false,
-              incentive_description: "",
+              incentiveStatus: false,
+              incentiveDescription: "",
               branding: null, // Explicitly set branding to null on fallback
             });
           }
@@ -216,8 +203,8 @@ export default function StartChatPage({
           welcomeHeading: "Ready to share your feedback?",
           welcomeCardDescription: "This is a brief chat with our AI assistant. Thank you for your time.",
           respondentContacts: false,
-          incentive_status: false,
-          incentive_description: "",
+          incentiveStatus: false,
+          incentiveDescription: "",
           branding: null, // Explicitly set branding to null on fetch error
         });
       } finally {
@@ -325,23 +312,15 @@ export default function StartChatPage({
 
   return (
     <div 
-      className="h-[100dvh] w-full bg-[#F9F8F6] flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-[100dvh] w-full bg-[#F9F8F6] flex items-center justify-center p-4 overflow-y-auto"
       style={{ 
         touchAction: "manipulation",
-        position: isSafari ? 'fixed' : 'relative',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        overscrollBehavior: 'none',
         WebkitOverflowScrolling: "touch",
         WebkitTouchCallout: "none",
-        ["WebkitOverscrollBehavior" as any]: "none",
         ...fadeStyle
       }}
     >
-      <Card className="max-w-md w-full bg-white shadow-lg relative overflow-hidden">
+      <Card className="max-w-md w-full bg-white shadow-lg relative my-auto">
         <CardHeader className="text-center pt-8 pb-6">
           {logoUrl && (
             <div className="mb-4 flex justify-center">
@@ -398,19 +377,19 @@ export default function StartChatPage({
                 <WelcomeForm 
                   onSubmit={handleStartChat}
                   isLoading={isInitializing}
-                  incentive_status={chatInstanceData.incentive_status}
-                  incentive_description={chatInstanceData.incentive_description}
+                  incentiveStatus={chatInstanceData.incentiveStatus}
+                  incentiveDescription={chatInstanceData.incentiveDescription}
                   buttonColor={buttonColor}
                   useGradientButton={useGradientButton}
                 />
               ) : !hasReachedResponseLimit && (
                 <div className="flex flex-col space-y-4">
-                  {chatInstanceData?.incentive_status && (
+                  {chatInstanceData?.incentiveStatus && (
                     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-2">
                       <div className="flex items-center gap-2">
                         <Gift className="h-5 w-5 text-indigo-500" />
                         <p className="text-sm text-gray-700">
-                          {chatInstanceData?.incentive_description || "Complete this conversation to receive an incentive!"}
+                          {chatInstanceData?.incentiveDescription || "Complete this conversation to receive an incentive!"}
                         </p>
                       </div>
                     </div>

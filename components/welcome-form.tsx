@@ -15,8 +15,8 @@ interface WelcomeFormProps {
     email: string
   }) => void
   isLoading?: boolean
-  incentive_status?: boolean
-  incentive_description?: string
+  incentiveStatus?: boolean
+  incentiveDescription?: string
   buttonColor?: string
   useGradientButton?: boolean
 }
@@ -30,8 +30,8 @@ const formSchema = z.object({
 export function WelcomeForm({ 
   onSubmit, 
   isLoading = false,
-  incentive_status = false,
-  incentive_description = "",
+  incentiveStatus = false,
+  incentiveDescription = "",
   buttonColor,
   useGradientButton
 }: WelcomeFormProps) {
@@ -43,10 +43,10 @@ export function WelcomeForm({
   // Debug log to check if incentive props are received
   useEffect(() => {
     console.log("WelcomeForm received incentive props:", {
-      status: incentive_status,
-      description: incentive_description
+      status: incentiveStatus,
+      description: incentiveDescription
     });
-  }, [incentive_status, incentive_description]);
+  }, [incentiveStatus, incentiveDescription]);
 
   // Initialize the form using react-hook-form and Zod resolver
   const form = useForm<z.infer<typeof formSchema>>({
@@ -87,12 +87,12 @@ export function WelcomeForm({
   return (
     <div className="space-y-6 w-full">
       {/* Incentive banner */}
-      {incentive_status && (
+      {incentiveStatus && (
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-indigo-500" />
             <p className="text-sm text-gray-700">
-              {incentive_description || "Complete this conversation to receive an incentive!"}
+              {incentiveDescription || "Complete this conversation to receive an incentive!"}
             </p>
           </div>
         </div>

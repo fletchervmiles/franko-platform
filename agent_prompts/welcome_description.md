@@ -5,11 +5,7 @@ Given the provided inputs (they will be given at the bottom of the prompt), clea
 ### You will receive these three inputs:
 - **"title"**: (Internal use only) original internal conversation template title.
 - **"summary"**: (Internal use only) internal conversation summary (not user-facing).
-- **"duration"**: Approximate conversation duration, clearly in one of these exactly:
-  - "1 minute (quick)"
-  - "2 minutes (recommended)"
-  - "3-4 minutes (exploratory)"
-  - "4-5 minutes (deep dive)"
+- **"duration"**: Approximate conversation duration string, formatted like: `"≈ {estimated time} ({depth description}) - {number} turns"`. For example: `"≈ 5 min (Recommended) - 10 turns"`.
 
 ---
 
@@ -41,23 +37,22 @@ Always output **exactly** the following JSON structure:
 ---
 
 ### 📌 welcome_description_card (~15-25 words)
-Include clearly all 4 of these elements in a short paragraph:
+Include clearly all 3 of these elements in a short paragraph:
 - Clearly identifies interaction as chat with **"our AI assistant"** explicitly mentioned.
-- Clearly indicates chat duration using duration mapping clearly (e.g. "~1 minute").
-- Clearly indicates number of questions using mapping below (e.g. "5 quick questions").
+- Clearly indicates approximate number of questions using mapping below (e.g. "~5 quick questions").
 - Clearly communicates genuine appreciation for user feedback in a warm, friendly, concise manner.
 
 **Exact Conversation Duration and Questions Mapping:**
 
-| Conversation Duration             | Clearly Indicate Duration  | Clearly State Number of Questions      |
-|---------------------------------- |----------------------------|-----------------------------------------|
-| 1 minute (quick)                  | "~1 minute"                | "5 quick questions"                     |
-| 2 minutes (recommended)           | "~2 minutes"               | "10 quick questions"                    |
-| 3-4 minutes (exploratory)         | "~4 minutes"               | "16 questions"                    |
-| 4-5 minutes (deep dive)           | "~6 minutes"               | "approximately 20 questions"            |
+| Input Turn Count | Clearly State Approx. Number of Questions |
+| :--------------- | :---------------------------------------- |
+| 3-5              | "~5 quick questions"                      |
+| 6-10             | "~10 quick questions"                     |
+| 11-16            | "~15 questions"                           |
+| 17-20            | "~20 questions"                           |
 
 **Good example of "welcome_description_card":**
-- "This brief ~2 minutes chat with our AI assistant includes 10 quick questions—we greatly appreciate your feedback for helping improve EatClub!"
+- "This chat with our AI assistant includes ~10 quick questions—we greatly appreciate your feedback for helping improve EatClub!"
 
 ---
 
@@ -86,7 +81,7 @@ Include clearly all 4 of these elements in a short paragraph:
 {
   "title": "Quick Exploration into Churn Causes and Improvement Ideas",
   "summary": "Short chat to identify reasons customers stopped using Franko, their frustrations, and suggestions.",
-  "duration": "1 minute (quick)"
+  "duration": "≈ 2.5 min (Quick) - 5 turns"
 }
 ```
 
@@ -94,8 +89,8 @@ Include clearly all 4 of these elements in a short paragraph:
 ```json
 {
   "welcome_heading": "Ready to tell us about your experience with Franko?",
-  "welcome_description_card": "This brief ~1 minute chat with our AI assistant involves 5 quick questions—your feedback helps us improve and is greatly appreciated!",
-  "welcome_description": "quick chat about your Franko experience"
+  "welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback helps us improve!",
+  "welcome_description": "Quick chat about your experience with Franko"
 }
 ```
 
@@ -104,42 +99,42 @@ Include clearly all 4 of these elements in a short paragraph:
 ## ✅ Additional Examples Clearly Demonstrating Correct Output:
 
 **Example 1**
-**Example Input:**  
+**Example Input:**
 ```json
 {
-  "title": "Improving QuickLab’s Online Payment Flow",
-  "summary": "Gain insights on user experience, friction points, and improvements in QuickLab’s online payments.",
-  "duration": "2 minutes (recommended)"
+  "title": "Improving QuickLab's Online Payment Flow",
+  "summary": "Gain insights on user experience, friction points, and improvements in QuickLab's online payments.",
+  "duration": "≈ 5 min (Recommended) - 10 turns"
 }
 ```
 
-**Correct Output Example:**  
+**Correct Output Example:**
 ```json
 {
-  "welcome_heading": "Ready to chat about QuickLab’s online payment experience?",
-  "welcome_description_card": "This brief ~2 minutes chat with our AI assistant involves 10 quick questions—your feedback helps us greatly improve QuickLab payments!",
-  "welcome_description": "quick chat about QuickLab online payment experience"
+"welcome_heading": "Ready to chat about your QuickLab online payment experience?",
+"welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—your input is vital in refining QuickLab payments!",
+"welcome_description": "Quick chat about your QuickLab online payment experience"
 }
 ```
 
 ---
 
 **Example 2**
-**Example Input:**  
+**Example Input:**
 ```json
 {
-  "title": "Recommended Check-In: FreshBasket’s Delivery Experience",
+  "title": "Recommended Check-In: FreshBasket's Delivery Experience",
   "summary": "Check-in to understand satisfaction/friction with FreshBasket grocery deliveries.",
-  "duration": "3-4 minutes (exploratory)"
+  "duration": "≈ 7.5 min (Exploratory) - 15 turns"
 }
 ```
 
-**Correct Output Example:**  
+**Correct Output Example:**
 ```json
 {
-  "welcome_heading": "How was your FreshBasket grocery delivery experience?",
-  "welcome_description_card": "This ~4 minutes chat with our AI assistant involves about 15 questions—your valuable feedback helps us improve FreshBasket deliveries!",
-  "welcome_description": "chat about FreshBasket grocery delivery experience"
+"welcome_heading": "How was your FreshBasket grocery delivery experience?",
+"welcome_description_card": "This chat with our AI assistant involves ~15 questions—your insights truly help us refine FreshBasket deliveries!",
+"welcome_description": "Chat about your FreshBasket grocery delivery experience"
 }
 ```
 
@@ -149,15 +144,15 @@ Include clearly all 4 of these elements in a short paragraph:
 {
 "title": "Quick Insights: Improving PayWise Mobile Checkout",
 "summary": "Briefly gather feedback from users on PayEase.com checkout steps to identify checkout improvements.",
-"duration": "1 minute (quick)"
+"duration": "≈ 1.5 min (Quick) - 3 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "Ready to share your PayEase checkout experience?",
-"welcome_description_card": "This brief ~1 minute chat with our AI assistant involves 5 quick questions—your feedback helps us improve and is greatly appreciated!",
-"welcome_description": "quick chat about your PayEase checkout experience"
+"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your feedback is truly valuable in improving PayEase checkout!",
+"welcome_description": "Quick chat about your PayEase checkout experience"
 }
 ```
 ---
@@ -165,17 +160,17 @@ Include clearly all 4 of these elements in a short paragraph:
 **Input:**
 ```json
 {
-"title": "Focused Feedback on StreamNow’s Video Search Feature",
+"title": "Focused Feedback on StreamNow's Video Search Feature",
 "summary": "Short conversation to evaluate how easily users find videos on StreamNow and identify search improvements.",
-"duration": "2 minutes (recommended)"
+"duration": "≈ 3.5 min (Recommended) - 7 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "Ready to discuss your StreamNow video browsing experience?",
-"welcome_description_card": "This brief ~2 minutes chat with our AI assistant involves 10 quick questions—we greatly appreciate your feedback for improving StreamNow!",
-"welcome_description": "quick chat on StreamNow video browsing experience"
+"welcome_description_card": "This chat with our AI assistant involves ~10 quick questions—we truly value your feedback in improving StreamNow!",
+"welcome_description": "Quick chat on your StreamNow video browsing experience"
 }
 ```
 ---
@@ -183,17 +178,17 @@ Include clearly all 4 of these elements in a short paragraph:
 **Input:**
 ```json
 {
-"title": "Recommended Check-In: FreshBasket’s Delivery Experience",
+"title": "Recommended Check-In: FreshBasket's Delivery Experience",
 "summary": "Check-in to understand user satisfaction or friction with FreshBasket grocery delivery.",
-"duration": "3-4 minutes (exploratory)"
+"duration": "≈ 8 min (Exploratory) - 16 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "How was your FreshBasket grocery delivery experience?",
-"welcome_description_card": "This ~4 minutes chat with our AI assistant involves about 15 questions—your valuable feedback helps us improve FreshBasket deliveries!",
-"welcome_description": "chat about FreshBasket grocery delivery experience"
+"welcome_description_card": "This chat with our AI assistant involves ~15 questions—your feedback is extremely valuable in improving FreshBasket deliveries!",
+"welcome_description": "Chat about your FreshBasket grocery delivery experience"
 }
 ```
 ---
@@ -201,17 +196,17 @@ Include clearly all 4 of these elements in a short paragraph:
 **Input:**
 ```json
 {
-"title": "Improving QuickLab’s Online Payment Flow",
-"summary": "Gain understanding of user experience, friction points, and improvements in QuickLab’s online payments.",
-"duration": "2 minutes (recommended)"
+"title": "Improving QuickLab's Online Payment Flow",
+"summary": "Gain understanding of user experience, friction points, and improvements in QuickLab's online payments.",
+"duration": "≈ 5 min (Recommended) - 10 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
-"welcome_heading": "Ready to chat about QuickLab’s online payment process?",
-"welcome_description_card": "This brief ~2 minutes chat with our AI assistant includes 10 quick questions—we greatly appreciate your feedback to help enhance QuickLab payments!",
-"welcome_description": "quick chat about QuickLab online payment experience"
+"welcome_heading": "Ready to chat about your QuickLab online payment process?",
+"welcome_description_card": "This chat with our AI assistant includes ~10 quick questions—your feedback is instrumental in enhancing QuickLab payments!",
+"welcome_description": "Quick chat about your QuickLab online payment experience"
 }
 ```
 ---
@@ -221,15 +216,15 @@ Include clearly all 4 of these elements in a short paragraph:
 {
 "title": "PetPal App User Experience Check-In",
 "summary": "Conversation designed to assess user satisfaction and discover areas of improvement in the PetPal app.",
-"duration": "4-5 minutes (deep dive)"
+"duration": "≈ 9 min (Deep Dive) - 18 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "Interested in sharing your PetPal app experience?",
-"welcome_description_card": "This ~6 minutes chat with our AI assistant involves approximately 20 questions—your feedback is highly appreciated and helps us enhance PetPal!",
-"welcome_description": "chat about your PetPal app experience"
+"welcome_description_card": "This chat with our AI assistant involves ~20 questions—your feedback truly helps us enhance PetPal!",
+"welcome_description": "Chat about your PetPal app experience"
 }
 ```
 ---
@@ -239,15 +234,15 @@ Include clearly all 4 of these elements in a short paragraph:
 {
 "title": "Understanding Your FitTrack App Usage",
 "summary": "Explore user perceptions, behaviors, and suggestions related to their FitTrack app usage experience.",
-"duration": "4-5 minutes (deep dive)"
+"duration": "≈ 10 min (Deep Dive) - 20 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "Ready to tell us about your FitTrack app experience?",
-"welcome_description_card": "This ~6 minutes chat with our AI assistant involves approximately 20 questions—your feedback directly helps us enhance FitTrack for everyone!",
-"welcome_description": "chat about your FitTrack app experience"
+"welcome_description_card": "This chat with our AI assistant involves ~20 questions—your feedback directly helps us enhance FitTrack for everyone!",
+"welcome_description": "Chat about your FitTrack app experience"
 }
 ```
 ---
@@ -257,15 +252,33 @@ Include clearly all 4 of these elements in a short paragraph:
 {
 "title": "Quick Feedback on StreamHub's Video Playback",
 "summary": "Short conversation to gather quick reactions to the video playback quality and features on StreamHub.",
-"duration": "1 minute (quick)"
+"duration": "≈ 2 min (Quick) - 4 turns"
 }
 ```
 **Correct Output:**
 ```json
 {
 "welcome_heading": "Ready to discuss your StreamHub playback experience?",
-"welcome_description_card": "This brief ~1 minute chat with our AI assistant involves 5 quick questions—your insights help improve StreamHub and are greatly appreciated!",
-"welcome_description": "quick chat on StreamHub video playback experience"
+"welcome_description_card": "This chat with our AI assistant involves ~5 quick questions—your insights help improve StreamHub and are sincerely valued!",
+"welcome_description": "Quick chat on your StreamHub video playback experience"
+}
+```
+---
+**Example 10:**
+**Input:**
+```json
+{
+"title": "Gathering First Impressions from Recently Onboarded Slack Users",
+"summary": "A 10-turn plan to uncover customers’ initial motivations, the ‘aha’ moment timeline, perceived value, and early friction points...",
+"duration": "≈ 5 min (Recommended) - 10 turns"
+}
+```
+**Correct Output:**
+```json
+{
+"welcome_heading": "Ready to share your Slack onboarding experience?",
+"welcome_description_card": "This chat with our AI assistant includes ~10 quick questions—your feedback is extremely helpful in shaping Slack's future updates!",
+"welcome_description": "Quick chat about your Slack onboarding experience"
 }
 ```
 ---
