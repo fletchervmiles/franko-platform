@@ -37,7 +37,7 @@ export default function DemoChat() {
             Try Franko in Under 1 Minute
           </h2>
           <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Curious how Franko's AI Agents work? Spend just 60 seconds chatting with one about Slack. Experience firsthand how easily you can gather actionable product feedback.
+            Curious how Franko's AI Agents work? Spend just 60 seconds chatting with an agent about your most and least favourite thing about Slack! Experience firsthand how easily you can gather actionable product feedback.
           </p>
           <p 
             className="text-base text-white mb-12 sm:mb-14 font-medium"
@@ -46,7 +46,9 @@ export default function DemoChat() {
             No scheduling, just launch and chat.
           </p>
           <Link
-            href="/demo/slack"
+            href="https://franko.ai/chat/external/c7d65de0-779f-45b3-8c4e-91f7bba2b406"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-base font-medium text-white shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-950 transition duration-150 ease-in-out group" 
           >
             <PlayCircle className="mr-2 h-5 w-5 transition-transform duration-300 ease-out group-hover:scale-110" aria-hidden="true" />
