@@ -121,13 +121,6 @@ export default function StartChatPage({
 
   // Prevent pull-to-refresh and pinch zooming
   useEffect(() => {
-    // Apply fixed positioning to prevent pull-to-refresh
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    document.body.style.overscrollBehavior = 'none';
-    
     // Prevent pinch zoom
     const preventZoom = (e: TouchEvent) => {
       if (e.touches.length > 1) {
@@ -164,12 +157,6 @@ export default function StartChatPage({
     
     return () => {
       // Clean up
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.body.style.overscrollBehavior = '';
-      
       document.removeEventListener('touchstart', preventPullToRefresh);
       document.removeEventListener('touchmove', preventZoom);
       document.removeEventListener('gesturestart', preventGesture);
@@ -325,23 +312,15 @@ export default function StartChatPage({
 
   return (
     <div 
-      className="h-[100dvh] w-full bg-[#F9F8F6] flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-[100dvh] w-full bg-[#F9F8F6] flex items-center justify-center p-4 overflow-y-auto"
       style={{ 
         touchAction: "manipulation",
-        position: isSafari ? 'fixed' : 'relative',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        overscrollBehavior: 'none',
         WebkitOverflowScrolling: "touch",
         WebkitTouchCallout: "none",
-        ["WebkitOverscrollBehavior" as any]: "none",
         ...fadeStyle
       }}
     >
-      <Card className="max-w-md w-full bg-white shadow-lg relative overflow-hidden">
+      <Card className="max-w-md w-full bg-white shadow-lg relative my-auto">
         <CardHeader className="text-center pt-8 pb-6">
           {logoUrl && (
             <div className="mb-4 flex justify-center">
