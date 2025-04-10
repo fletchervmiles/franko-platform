@@ -509,7 +509,7 @@ export function ExternalChat({
           });
         }, 0);
 
-      }, 2500); // 5 seconds delay
+      }, 1500); // 1.5 seconds delay
       
       // Clean up timeout if component unmounts or conditions change
       return () => clearTimeout(redirectTimeout);
