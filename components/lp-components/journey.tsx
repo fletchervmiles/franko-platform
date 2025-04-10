@@ -136,8 +136,8 @@ const sections = [
       title: "01. Set up your context",
       description: "Provide your website URL to create an AI-ready knowledge base to guide context for your customer conversations.",
       image: {
-        desktop: "/assets/journey/context-setup-desktop-img.png",
-        mobile: "/assets/journey/context-setup-mobile-img.png"
+        desktop: "/assets/journey-images/context-setup-desktop-01.png",
+        mobile: "/assets/journey-images/context-setup-mobile-01.png"
       },
       hasRotatingImages: false,
     },
@@ -150,10 +150,16 @@ const sections = [
       title: "02. Generate your conversation plan",
       description: "Briefly describe your learning objectives to generate a structured conversation plan. Set number of questions, and other options like incentives and email collection.",
       image: {
-        desktop: "/assets/journey/conversation-form-desktop-img.png",
-        mobile: "/assets/journey/conversation-form-mobile-img.png"
+        desktop: [
+          "/assets/journey-images/conversation-plan-form-desktop-01.png",
+          "/assets/journey-images/conversation-plan-form-desktop-02.png"
+        ],
+        mobile: [
+          "/assets/journey-images/conversation-plan-form-mobile-01.png",
+          "/assets/journey-images/conversation-plan-form-mobile-02.png"
+        ]
       },
-      hasRotatingImages: false,
+      hasRotatingImages: true,
     },
   },
   {
@@ -165,12 +171,14 @@ const sections = [
       description: "Review and edit conversation objectives, desired outcomes and agent guidance to ensure the agent meet your needs.",
       image: {
         desktop: [
-          "/assets/journey/review-plan-desktop-1.png", 
-          "/assets/journey/review-plan-desktop-2.png"
+          "/assets/journey-images/conversation-plan-generated-desktop-01.png",
+          "/assets/journey-images/conversation-plan-generated-desktop-02.png",
+          "/assets/journey-images/shareable-link-desktop-01.png"
         ],
         mobile: [
-          "/assets/journey/review-plan-mobile-1.png", 
-          "/assets/journey/review-plan-mobile-2.png"
+          "/assets/journey-images/conversation-plan-generated-mobile-01.png",
+          "/assets/journey-images/conversation-plan-generated-mobile-02.png",
+          "/assets/journey-images/shareable-link-mobile-01.png"
         ]
       },
       hasRotatingImages: true,
@@ -185,12 +193,12 @@ const sections = [
       description: "Send a secure link to a guided conversation—convenient, clickable, available whenever your customer is ready, no scheduling required.",
       image: {
         desktop: [
-          "/assets/journey/customer-chat-desktop-1.png",
-          "/assets/journey/customer-chat-desktop-2.png"
+          "/assets/journey-images/welcome-form-desktop-01.png",
+          "/assets/journey-images/chat-window-desktop-01.png"
         ],
         mobile: [
-          "/assets/journey/customer-chat-mobile-1.png",
-          "/assets/journey/customer-chat-mobile-2.png"
+          "/assets/journey-images/welcome-form-mobile-01.png",
+          "/assets/journey-images/chat-window-mobile-01.png"
         ]
       },
       hasRotatingImages: true,
@@ -205,12 +213,12 @@ const sections = [
       description: "Get notified when feedback rolls in: transcripts, summaries, 1000s of customer words collected without any manual intervention.",
       image: {
         desktop: [
-          "/assets/journey/response-review-desktop-1.png",
-          "/assets/journey/response-review-desktop-2.png"
+          "/assets/journey-images/response-dashboard-desktop-01.png",
+          "/assets/journey-images/response-dashboard-desktop-02.png"
         ],
         mobile: [
-          "/assets/journey/response-review-mobile-1.png",
-          "/assets/journey/response-review-mobile-2.png"
+          "/assets/journey-images/response-dashboard-mobile-01.png",
+          "/assets/journey-images/response-dashboard-mobile-02.png"
         ]
       },
       hasRotatingImages: true,
