@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Settings, ClipboardList, Link as LinkIcon, MessageSquare, CheckCircle, BarChart2, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Add custom CSS class for slower pulse animation and image rotation
 const customStyles = `
@@ -106,14 +106,17 @@ const customStyles = `
   position: absolute; bottom: 16px;
   left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 12px;
-  z-index: 20; padding: 6px 10px;
-  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 20; 
+  padding: 4px 8px; /* Reduced padding */
+  background-color: rgba(0, 0, 0, 0.15); /* Increased transparency */
   backdrop-filter: blur(4px);
   border-radius: 9999px;
   width: fit-content;
 }
 .nav-arrow-button {
-  background: none; border: none; padding: 4px; display: flex;
+  background: none; border: none; 
+  padding: 3px; /* Reduced padding */
+  display: flex;
   align-items: center; justify-content: center; cursor: pointer;
   color: #D1D5DB;
   transition: color 0.2s ease;
@@ -334,7 +337,7 @@ export default function Journey() {
           {/* Right column: Content display */}
           <div className="md:col-span-2 sticky top-24">
             <ContentDisplay key={activeSection.id} section={activeSection} isMobile={false} />
-                </div>
+          </div>
         </div>
       )}
     </>
@@ -637,120 +640,148 @@ function MobileStepCard({ section }: { section: (typeof sections)[0] }) {
 // Separate component for content display
 function ContentDisplay({ section, isMobile }: { section: (typeof sections)[0], isMobile: boolean }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [imageLoaded, setImageLoaded] = useState(false); 
+  const [direction, setDirection] = useState<"prev" | "next" | null>(null); 
 
   const imageSet = isMobile ? section.content.image.mobile : section.content.image.desktop;
   const hasMultipleImages = section.content.hasRotatingImages && Array.isArray(imageSet) && imageSet.length > 1;
   const totalImages = hasMultipleImages ? (imageSet as string[]).length : 1;
 
-  const handlePrev = () => {
-    if (currentImageIndex > 0) {
-        setImageLoaded(false);
-        setCurrentImageIndex(currentImageIndex - 1);
-    }
-  };
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setDirection(null);
+    setImageLoaded(false);
+  }, [section.id]);
+  
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentImageIndex]);
 
-  const handleNext = () => {
-    if (currentImageIndex < totalImages - 1) {
-        setImageLoaded(false);
-        setCurrentImageIndex(currentImageIndex + 1);
-    }
+  const handleNavigation = (newIndex: number) => {
+      const newDirection = newIndex > currentImageIndex ? "next" : "prev";
+      setDirection(newDirection);
+      setCurrentImageIndex(newIndex); 
   };
-
+  const handlePrev = () => { if (currentImageIndex > 0) handleNavigation(currentImageIndex - 1); };
+  const handleNext = () => { if (currentImageIndex < totalImages - 1) handleNavigation(currentImageIndex + 1); };
   const getImageSrc = () => {
+    if (!imageSet) return ""; 
     if (hasMultipleImages) {
-      return (imageSet as string[])[currentImageIndex];
+      const safeIndex = Math.max(0, Math.min(currentImageIndex, totalImages - 1));
+      return (imageSet as string[])[safeIndex];
     }
     return imageSet as string;
   };
-
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!hasMultipleImages || !isMobile) return;
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+  
+  const slideVariants = {
+    initial: (direction: "prev" | "next") => ({ x: direction === "next" ? "100%" : "-100%", opacity: 0.5, transition: { duration: 0.2 } }),
+    animate: { zIndex: 1, x: "0%", opacity: 1, transition: { duration: 0.4, ease: "easeOut" } },
+    exit: (direction: "prev" | "next") => ({ zIndex: 0, x: direction === "next" ? "-100%" : "100%", opacity: 0.5, transition: { duration: 0.2 } }),
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart || !hasMultipleImages || !isMobile) return;
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd || !hasMultipleImages || !isMobile) return;
-    const distance = touchStart - touchEnd;
-    const swipeThreshold = 50;
-
-    if (distance > swipeThreshold) {
-      handleNext();
-    } else if (distance < -swipeThreshold) {
-      handlePrev();
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number; y: number }; velocity: { x: number; y: number } }) => {
+    const swipeThreshold = 50; 
+    if (info.offset.x < -swipeThreshold) {
+        handleNext();
+    } else if (info.offset.x > swipeThreshold) {
+        handlePrev();
     }
-    setTouchStart(null);
-    setTouchEnd(null);
   };
 
-  useEffect(() => {
-    setImageLoaded(false);
-  }, [currentImageIndex, section.id]);
+  useEffect(() => { 
+      if (hasMultipleImages && imageSet) {
+          const nextIndex = (currentImageIndex + 1) % totalImages;
+          const prevIndex = (currentImageIndex - 1 + totalImages) % totalImages;
+          const nextImageSrc = (imageSet as string[])[nextIndex];
+          const prevImageSrc = (imageSet as string[])[prevIndex];
+          if (nextImageSrc) { new window.Image().src = nextImageSrc; }
+          if (prevImageSrc) { new window.Image().src = prevImageSrc; }
+      }
+  }, [currentImageIndex, imageSet, hasMultipleImages, totalImages]);
 
   return (
     <div
-      className={`relative w-full rounded-xl overflow-hidden ${
+      className={`relative w-full rounded-xl overflow-hidden ${ 
         isMobile
           ? 'bg-gray-50 p-3'
           : 'bg-gray-100 shadow-lg border border-gray-200 p-4 md:p-6'
       }`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       <div className="relative w-full h-auto">
         {!imageLoaded && (
-          <div className={`absolute inset-0 bg-gray-200 animate-pulse rounded-lg ${isMobile ? 'aspect-[4/3]' : 'aspect-video'}`}></div>
-        )}
+           <div className={`absolute inset-0 bg-gray-200 animate-pulse rounded-lg w-full ${isMobile ? 'aspect-[4/3]' : 'aspect-video'} z-0`}></div>
+         )}
+        <AnimatePresence initial={false} custom={direction}> 
+          <motion.div
+            key={currentImageIndex} 
+            custom={direction}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute inset-0 w-full h-full cursor-grab"
+            style={{ backfaceVisibility: 'hidden' }} 
+            drag={isMobile ? "x" : false} 
+            dragConstraints={{ left: 0, right: 0 }} 
+            dragElastic={0.1} 
+            onDragEnd={handleDragEnd} 
+          >
+            <Image
+              src={getImageSrc()} 
+              alt={section.content.title} 
+              fill={false} 
+              width={isMobile ? 800 : 1200} 
+              height={isMobile ? 600 : 675} 
+              sizes="(max-width: 767px) 90vw, (min-width: 768px) 45vw, 800px"
+              quality={90} 
+              priority={section.id === sections[0].id && currentImageIndex === 0}
+              unoptimized={true}
+              style={{
+                objectFit: "contain", 
+                maxWidth: "100%", 
+                height: "auto", 
+                borderRadius: "0.5rem", 
+                pointerEvents: 'none'
+              }}
+              className={`block w-full`}
+              onLoad={() => { setImageLoaded(true); }}
+              onError={(e) => { console.error(`Failed to load image: ${e.currentTarget.src}`); setImageLoaded(true); }}
+            />
+          </motion.div>
+        </AnimatePresence>
         <Image
-          ref={imageRef}
-          key={getImageSrc()}
-          src={getImageSrc()}
-          alt={section.content.title}
-          fill={false}
-          width={isMobile ? 800 : 1200}
-          height={isMobile ? 600 : 675}
-          sizes="(max-width: 767px) 90vw, (min-width: 768px) 45vw, 800px"
-          quality={100}
-          priority={section.id === sections[0].id && currentImageIndex === 0}
-          unoptimized={true}
-          style={{
-            objectFit: "contain",
-            maxWidth: "100%",
-            height: "auto",
-            borderRadius: "0.5rem"
-          }}
-          className={`transition-opacity duration-300 ease-in-out ${imageLoaded ? 'opacity-100' : 'opacity-0'} block`}
-          onLoad={() => {
-             requestAnimationFrame(() => setImageLoaded(true));
-          }}
-          onError={() => {
-            console.error(`Failed to load image: ${getImageSrc()}`);
-             requestAnimationFrame(() => setImageLoaded(true));
-          }}
-        />
+            src={getImageSrc()} 
+            alt="" 
+            aria-hidden="true"
+            fill={false}
+            width={isMobile ? 800 : 1200} 
+            height={isMobile ? 600 : 675} 
+            sizes="(max-width: 767px) 90vw, (min-width: 768px) 45vw, 800px"
+            quality={1} 
+            priority={false}
+            unoptimized={true}
+            style={{
+              objectFit: "contain", 
+              maxWidth: "100%", 
+              height: "auto", 
+              borderRadius: "0.5rem", 
+              visibility: 'hidden' 
+            }}
+            className="block w-full relative" 
+          />
       </div>
-
-      {/* Navigation Arrows */}
       {hasMultipleImages && (
-        <div className="nav-arrow-container" style={{ bottom: isMobile ? '12px' : '24px' }}>
+        <div 
+          className="nav-arrow-container" 
+          style={{ bottom: isMobile ? '12px' : '24px' }}
+        >
           <button
             className="nav-arrow-button"
             onClick={handlePrev}
             disabled={currentImageIndex === 0}
             aria-label="Previous image"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
           <button
             className="nav-arrow-button"
@@ -758,7 +789,7 @@ function ContentDisplay({ section, isMobile }: { section: (typeof sections)[0], 
             disabled={currentImageIndex === totalImages - 1}
             aria-label="Next image"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
         </div>
       )}

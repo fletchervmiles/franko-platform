@@ -47,7 +47,7 @@ export default function HomePage() {
             Build Your Own Continuous Customer Feedback Engine.
             </h2>
             <p className="text-lg sm:text-xl text-gray-400 text-center mt-6 max-w-3xl mx-auto">
-              Automate short, targeted conversations at critical points in the customer journey—building a data-backed view of your customers' experiences, in their own words.
+            Automate short, targeted conversations at critical points in your customer journey—each conversation accessed via simple, shareable links—building a data‑backed view of your customers’ experiences, in their own words.
             </p>
           </div>
           <Timeline />
