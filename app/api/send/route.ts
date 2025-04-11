@@ -7,7 +7,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Function to send welcome email
-export async function sendWelcomeEmail(to: string, firstName: string) {
+async function sendWelcomeEmail(to: string, firstName: string) {
   try {
     const { data, error } = await resend.emails.send({
       from: 'Fletcher from Franko <welcome@franko.ai>', // Using verified domain
@@ -30,7 +30,7 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
 }
 
 // Function to send admin notification when a new user signs up
-export async function sendAdminNotification(firstName: string, lastName: string | undefined, email: string) {
+async function sendAdminNotification(firstName: string, lastName: string | undefined, email: string) {
   try {
     const signupDate = new Date().toLocaleString('en-US', {
       weekday: 'long',
@@ -66,7 +66,7 @@ export async function sendAdminNotification(firstName: string, lastName: string 
 }
 
 // Function to send notification when a new chat response is received
-export async function sendResponseNotification(
+async function sendResponseNotification(
   to: string,
   firstName: string,
   conversationTitle?: string,
@@ -99,7 +99,7 @@ export async function sendResponseNotification(
 }
 
 // Function to send feedback email
-export async function sendFeedbackEmail(
+async function sendFeedbackEmail(
   message: string,
   reaction: string | null,
   userEmail?: string,
