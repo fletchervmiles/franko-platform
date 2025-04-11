@@ -64,7 +64,7 @@ export default function WhyComparison() {
           No feedback loop? You're in    trouble.
         </h2>
         <p className="text-lg sm:text-xl font-light text-white text-center mb-16 max-w-3xl mx-auto">
-          Growth is harder than ever. Acqusition costs, churn, customer expectations, # of competitors—all way up! Understanding your customer is your moat but traditional methods aren't cutting it.
+          Growth is harder than ever. Acquisition costs, churn, customer expectations, # of competitors—all way up! Understanding your customer is your moat but traditional methods aren't cutting it.
         </p>
 
         <p 
