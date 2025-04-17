@@ -5,8 +5,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -41,16 +42,9 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: undefined
-      }}
-    >
-      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
-        <body 
-          className="bg-background text-foreground"
-          suppressHydrationWarning
-        >
+    <ClerkProvider appearance={{ baseTheme: undefined }}>
+      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}> 
+        <body className="bg-background text-foreground" suppressHydrationWarning>
           <Providers
             attribute="class"
             defaultTheme="light"
@@ -59,7 +53,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             forcedTheme="light"
           >
             <ClerkProfileSync />
-            {children}
+            <PostHogProvider>
+              {children}
+            </PostHogProvider>
             <Toaster />
             <Analytics />
             <SpeedInsights />

@@ -42,3 +42,5 @@ next-env.d.ts
 /components/custom-ui/faqs.tsx
 /lib/supabase/database.types.ts
 /db/schema/interviews-schema.ts
+
+.env.local
