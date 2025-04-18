@@ -36,9 +36,11 @@ export async function initializeModels() {
 
   // Similarly wrap the Gemini Flash model with the same middleware
   geminiFlashModel = wrapLanguageModel({
-    model: google("gemini-2.0-flash"),
+    model: google("gemini-2.5-flash-preview-04-17"),
     middleware: customMiddleware,
   });
+
+  // gemini-2.5-flash-preview-04-17
 
   // Add the new Gemini 2.5 Pro Preview model
   gemini25ProPreviewModel = wrapLanguageModel({
