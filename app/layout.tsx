@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/utilities/providers";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import Script from 'next/script';
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
@@ -44,6 +45,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <ClerkProvider appearance={{ baseTheme: undefined }}>
       <html lang="en" className={`${geist.variable} ${geistMono.variable}`}> 
+        <head>
+          <Script 
+            defer 
+            src="https://cloud.umami.is/script.js" 
+            data-website-id="dd36e2e3-91eb-4464-a0dd-e2cb157066ac"
+          />
+        </head>
         <body className="bg-background text-foreground" suppressHydrationWarning>
           <Providers
             attribute="class"
