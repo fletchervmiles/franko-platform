@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import Exa from "exa-js";
 import { updateProfile, getProfile } from "@/db/queries/profiles-queries";
-import { o3MiniModel } from "@/ai_folder";
+import { o3Model } from "@/ai_folder";
 import fs from 'fs';
 import path from 'path';
 import { generateObject } from "ai";
@@ -222,7 +222,7 @@ export async function POST(request: Request) {
           logger.info(`OpenAI attempt ${attempt}/${maxRetries}`);
           
           const completion = await openai.chat.completions.create({
-            model: "o3-mini",
+            model: "o3",
             messages: [
               { 
                 role: "user", 
