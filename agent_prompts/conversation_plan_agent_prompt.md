@@ -19,7 +19,7 @@ The purpose of this plan is to serve as an **initial brainstorm** for the junior
 
 - Integrate **specific details** from the organisational description to ensure relevance and applicability (e.g., referencing pricing, features, or customer benefits).
 
-- If the prompt or user inputs mention brand voice preferences, **ensure all guidance aligns with that** tone.
+- If the prompt or user inputs mention brand voice preferences, **ensure all guidance aligns with that** tone. You can find Brand voice under heading 7, **Brand Positioning** in the context document shared. 
 
 —
 
@@ -45,9 +45,9 @@ You will receive these inputs:
 
 1. Context Overview  
 2. Core Benefits  
-3. Customer Persona  
+3. Customer Persona and JTBD
 4. Features/Services  
-5. Key Benefits  
+5. Competitive Advantages  
 6. Pricing  
 7. Brand Positioning  
 8. Customer Feedback  
@@ -147,6 +147,7 @@ Follow these steps to generate the conversation plan:
     * Prioritize objectives addressing key insights from `topicStrategy`, `appliedToOrganisation`, and any user persona details.
 - Clearly **document** how many turns each objective gets.
 - Double-check the sum of `expectedConversationTurns` so it never exceeds or falls below the chosen duration range.
+- Note, a turn includes both the agent and customer utterances. So one agent message and one customer response equals 1 turn.
 
 
 **5. Step 5: Include Standard Intro**
@@ -183,24 +184,25 @@ Return the plan in this JSON format:
 
 {
   "thinking": {
-    "topicStrategy": "string",          // ~200-word brainstorm on the topic
-    "appliedtoOrganisation": "string",  // ~200-word application to the organization
-    "userPersona": "string",            // ~100-word overview of the customer persona
-    "durationThoughts": "string"        // Turn distribution reasoning + any time-check guidelines
+    "topicStrategy": "string",          /* ~100-word brainstorm on the topic */
+    "appliedtoOrganisation": "string",  /* ~100-word application to the organization */
+    "userPersona": "string",            /* ~100-word overview of the customer persona */
+    "durationThoughts": "string"        /* Turn distribution reasoning + any time-check guidelines */
   },
-  "title": "string",                    // Plan title
-  "duration": "number",                 // The total number of turns specified in the input duration string (e.g., 10)
-  "summary": "string",                  // 25-50 word summary
+  "title": "string",                    /* Plan title */
+  "duration": "number",                 /* The total number of turns specified in the input duration */ string (e.g., 10)
+  "summary": "string",                  /* 25-50 word summary */
   "objectives": [
     {
-      "objective00": "string",           // Action/goal
-      "desiredOutcome": "string",      // Result/importance
-      "agentGuidance": ["string"],     // 4-6 guidance thoughts focused on learning outcomes
-      "expectedConversationTurns": "string | number" // Turns allocated
+      "objective01": "string",           /* Action/goal */
+      "desiredOutcome": "string",      /* Result/importance */
+      "agentGuidance": ["string"],     /* 4-6 guidance thoughts focused on learning outcomes */
+      "expectedConversationTurns": "string | number" /* Turns allocated */
     }
   ]
 }
 
+Note, non-ASCII quotes/backticks are not allowed in the JSON response.
 
 —
 
@@ -209,7 +211,15 @@ Return the plan in this JSON format:
 
 Examples for Reference Only. 
 
-### Example 01
+
+
+
+
+
+
+
+
+### Example 02
 
 **Example Inputs:**
 
@@ -306,7 +316,7 @@ Assume detailed report. Excluding for example purposes.
 
 
 
-### Example 02
+### Example 03
 
 **Example Inputs:**
 
@@ -387,109 +397,3 @@ Assume detailed report. Excluding for example purposes.
 }
 
 —-
-
-
-
-### Example 03
-
-**Example Inputs:**
-
-```
-1. Description of the Conversation Topic:
-
-Analyze how customers discover the organization, their initial impressions, and key decision factors. Uncover gaps in messaging, trust signals, and friction points in the sales funnel. The insights should help to refine targeting, improve onboarding, and ensure a seamless journey from awareness to conversion and initial experience.
-
-2. Conversation Duration:
-
-`≈ 10 min (Deep Dive) - 20 turns`
-
-3. Any Additional Details (Optional):
-
-N/A
-
-4. Organisation Description:
-
-Assume detailed report. Excluding for example purposes.
-
-```
-
-**Example Output:**
-
-{
-  "thinking": {
-    "topicStrategy": "Evaluating customer discovery and key decision factors is essential to optimize marketing and sales strategies. Effective analysis maps customers' journeys from initial awareness through conversion, pinpointing core impressions, decision-making drivers, gaps in trust signals, unclear messaging, and friction in purchasing experiences. Uncovering exactly how prospects encounter the brand, their immediate perceptions, and critical conversion barriers delivers useful insights. Direct customer feedback informs specific improvements in messaging clarity, channel strategy, sales process smoothness, and trust-building elements—driving improved customer targeting, higher conversion rates, stronger relationships, and ultimately long-term satisfaction and loyalty.",
-    "appliedToOrganisation": "For AgeMate.com in the competitive dietary supplement market, clarity around how customers initially discover and perceive the NMN-based products provides strategic differentiation opportunities. Key discovery touchpoints involve online search, social media presence, and referrals. Immediate impressions likely revolve around scientific credibility, transparency, product effectiveness, pricing clarity, and convenience of ordering processes. Identifying messaging gaps (product benefits clarity, sustainability communications), weak trust signals (customer testimonials, guarantees), and specific friction points (checkout complexity, shipping delays, onboarding instructions) allows AgeMate.com to enhance user experiences, boost credibility, streamline conversion journeys, and improve overall market positioning.",
-    "userPersona": "AgeMate.com's typical customers are health-conscious, tech-savvy individuals interested in natural supplements for anti-aging and longevity. They value science-backed products, transparency, and high-quality ingredients. They are likely responsive to detailed product information and reassurances about efficacy and safety. Their motivations include improving energy levels, enhancing sleep quality, and maintaining overall well-being. Environmental concerns, such as packaging sustainability, may also influence their purchasing decisions. Understanding these characteristics helps tailor the conversation to address their specific interests and concerns.",
-    "durationThoughts": "With 20 total conversation turns (approx. 10 minutes), strategic allocation is critical. Assign the first 2 turns clearly setting context and establishing trust. Allocate 4 turns each evenly to 4 strategic deep-dive objectives: (1) Customer Discovery Paths & Initial Awareness, (2) Initial Brand Impressions & Messaging Clarity, (3) Decision-Making Drivers & Trust Factors, and (4) Sales Funnel Friction & Onboarding Feedback. An optional final objective gets 2 turns if needed. This balanced yet concise structure ensures meaningful, actionable insights that directly inform AgeMate.com's efforts to refine targeting strategy, optimize sales processes, and enhance overall customer conversion journeys within the 20-turn limit."
-  },
-  "title": "Optimizing Customer Journeys: Discovery to Conversion at AgeMate.com",
-  "duration": 20,
-  "summary": "This 20-turn deep-dive conversation plan uncovers how customers discover AgeMate.com, initial brand impressions, vital decision-making factors, messaging gaps, and key sales funnel friction points to refine targeting, messaging, onboarding, and overall customer experience.",
-  "objectives": [
-    {
-      "objective01": "Create a Warm Introduction and Clearly Explain Discussion Purpose",
-      "desiredOutcome": "Build comfort, clarify the conversation objective, and establish an open and cooperative atmosphere for meaningful feedback.",
-      "agentGuidance": [
-        "Open warmly using AgeMate.com's professional and approachable brand voice.",
-        "Clearly outline the focus on understanding their discovery journey, initial impressions, and decision factors.",
-        "Express genuine appreciation, emphasizing their feedback's importance for improving customer experience.",
-        "Confirm their comfort and readiness to begin."
-      ],
-      "expectedConversationTurns": 2
-    },
-    {
-      "objective02": "Understand Customer Discovery Pathways and Initial Awareness",
-      "desiredOutcome": "Capture how customers initially find AgeMate.com, detailing key channels or messages sparking interest for strategic marketing refinement.",
-      "agentGuidance": [
-        "Prompt for specifics on how they first discovered AgeMate: web search, advertisements, or personal recommendations.",
-        "Identify distinctive brand qualities that immediately resonated, such as scientific credibility, transparency, or health outcomes.",
-        "Note specific language or impressions that stood out positively or negatively to guide effective marketing positioning.",
-        "Clarify whether their discovery was active research or passive encounter to sharpen marketing outreach."
-      ],
-      "expectedConversationTurns": 4
-    },
-    {
-      "objective03": "Clarify Initial Brand Impressions and Messaging Effectiveness",
-      "desiredOutcome": "Identify customer perceptions of the brand's professional credibility, transparency, product communication, and initial website experience.",
-      "agentGuidance": [
-        "Encourage open description of their initial impressions of AgeMate.com's website clarity, aesthetics, or trustworthiness.",
-        "Clarify if brand promises (scientific validation, testing standards, 100-day guarantees) were clear and convincing upfront.",
-        "Probe gently for confusion or concerns about product use instructions, subscription clarity, pricing transparency, or sustainability messaging.",
-        "Gather clear examples of what may have strengthened initial trust or reassurance."
-      ],
-      "expectedConversationTurns": 4
-    },
-    {
-      "objective04": "Explore Key Decision Drivers and Impact of Trust Signals",
-      "desiredOutcome": "Identify precisely which factors or messaging elements contributed decisively to their purchase confidence and conversion.",
-      "agentGuidance": [
-        "Clarify primary purchasing motivators, such as scientific credibility, trust signals, customer reviews, or guarantees.",
-        "Explore clearly the role of price transparency and product effectiveness promises influencing their final decision.",
-        "Note whether trustworthy visuals (certifications, testimonials, testing outcomes) notably increased their confidence before purchase.",
-        "Invite reflection on any concerns overcome during their decision-making process."
-      ],
-      "expectedConversationTurns": 4
-    },
-    {
-      "objective05": "Identify Friction Points & Opportunities for Onboarding Enhancement",
-      "desiredOutcome": "Pinpoint specific frustrations during purchase/checkout and onboarding stages to streamline future customer experiences.",
-      "agentGuidance": [
-        "Encourage detailed feedback on challenges encountered during checkout, product selection, or subscription setup.",
-        "Explore any shipment delays, packaging concerns, or uncertainty in the process from ordering through initial product use.",
-        "Invite explicit suggestions on improving product instructions, website interface, or subscription information clarity for new users.",
-        "Maintain empathy and assure them suggestions are valued and will actively shape customer improvements."
-      ],
-      "expectedConversationTurns": 4
-    },
-    {
-      "objective06": "Gather Additional Insights for Continuous Improvement (Optional if time permits)",
-      "desiredOutcome": "Identify unexpected or additional customer insights that may impact satisfaction, conversion, or loyalty.",
-      "agentGuidance": [
-        "Invite spontaneous suggestions or comparative feedback with other brands.",
-        "Allow space for discussion around desired additional products, different subscription options, or support enhancements.",
-        "Remain responsive and empathetic toward unexpected ideas or challenges that customers share proactively."
-      ],
-      "expectedConversationTurns": 2
-    }
-  ]
-}

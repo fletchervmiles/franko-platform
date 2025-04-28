@@ -18,6 +18,7 @@ export let o1HighModel: LanguageModelV1;
 export let o1MiniModel: LanguageModelV1;
 export let gemini25ProPreviewModel: LanguageModelV1;
 export let gemini25ProExperimentalModel: LanguageModelV1;
+export let o3Model: LanguageModelV1;
 
 // Create a function to initialize models with dynamic imports
 export async function initializeModels() {
@@ -93,6 +94,14 @@ export async function initializeModels() {
   // Create a wrapped version of the OpenAI o1-mini model
   o1MiniModel = wrapLanguageModel({
     model: openai("o1-mini") as unknown as LanguageModelV1,
+    middleware: customMiddleware,
+  });
+
+  // Create a wrapped version of the OpenAI o3 model with medium reasoning effort
+  o3Model = wrapLanguageModel({
+    model: openai("o3", {
+      reasoningEffort: 'medium'  // Configure with medium reasoning effort
+    }) as unknown as LanguageModelV1,
     middleware: customMiddleware,
   });
 }

@@ -11,7 +11,7 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '@/lib/logger';
 import { updateChatInstanceConversationPlan, updateChatInstanceProgress, updateWelcomeDescription } from "@/db/queries/chat-instances-queries";
-import { o1Model, geminiFlashModel, gemini25ProPreviewModel } from ".";
+import { o1Model, geminiFlashModel, gemini25ProPreviewModel, o3Model } from ".";
 import { arrayToNumberedObjectives, type ConversationPlan, type Objective } from "@/components/conversationPlanSchema";
 import { getProfile } from "@/db/queries/profiles-queries";
 import type { ObjectiveProgress } from "@/db/schema/chat-instances-schema";
@@ -161,15 +161,15 @@ export async function generateConversationPlanFromForm({
     console.log('=== END CONVERSATION PLAN PROMPT ===\n');
     
     // Define models to try
-    const primaryModel = o1Model;
+    const primaryModel = o3Model;
     const fallbackModel = gemini25ProPreviewModel;
     
     let rawPlan: any; // Use 'any' for now, will be validated by schema
     let modelUsed: string | undefined;
 
     try {
-      // Attempt 1: Try the primary model (o1)
-      modelUsed = `OpenAI o1`;
+      // Attempt 1: Try the primary model (o3)
+      modelUsed = `OpenAI o3`;
       logger.ai(`Attempting conversation plan generation with primary model: ${modelUsed}`);
       const modelStartTime = new Date();
       
@@ -245,7 +245,7 @@ export async function generateConversationPlanFromForm({
       } catch (fallbackError) {
         logger.error(`Fallback model (${modelUsed}) also failed:`, fallbackError);
         // Throw the original error if fallback also fails, updated message
-        throw new Error(`Failed to generate conversation plan with both o1 (primary) and Gemini 2.5 Pro (fallback) models. Primary error: ${primaryError}`);
+        throw new Error(`Failed to generate conversation plan with both o3 (primary) and Gemini 2.5 Pro (fallback) models. Primary error: ${primaryError}`);
       }
     }
 
@@ -397,7 +397,7 @@ export async function generateWelcomeDescription({
       try {
         // Use generateObject instead of generateText to get structured output
         const { object: welcomeContent } = await generateObject({
-          model: o1Model,
+          model: o3Model,
           system: systemPrompt,
           prompt: "",
           schema: z.object({
