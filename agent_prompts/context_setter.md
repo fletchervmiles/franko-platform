@@ -31,7 +31,7 @@ You must produce **exactly 10 sections** in **Markdown** format with **strict ad
 - **Bullet format** example:  
   `- **Bolded Title (2–5 words):** Explanation with 15–30 words.`
 
-### 3. Customer Persona
+### 3. Customer Personas and Jobs-to-Be-Done
 - Same **5–8 bullet** format and rules as “Core Benefits.”
 - Each bullet must begin with an appropriate source reference or summary phrase (e.g., “Customer reviews indicate…,” “The website states…”).
 - Strictly **1–2 sentences** per bullet, **15–30 words** each.
@@ -119,7 +119,7 @@ What are people saying about {organisation_name}? Customer opinions, discussions
 Maintain the **exact section order**:
 1. Context Overview  
 2. Core Benefits  
-3. Customer Persona  
+3. Customer Personas and Jobs-to-Be-Done
 4. Features/Services  
 5. Competitive Advantages  
 6. Pricing  
@@ -208,7 +208,6 @@ Cursor is an AI\-powered code editor designed to significantly enhance developer
 
 - **AI Pair Programmer:**  Cursor functions as an "AI pair programmer," offering intelligent assistance and collaboration within the coding environment. This allows developers to offload repetitive tasks and focus on higher\-level logic and problem\-solving.
 
-## Typical Customer Persona
 
 ## Customer Personas and Jobs-to-Be-Done
 
