@@ -24,54 +24,8 @@ import { db } from '@/db/db'; // Ensure db is imported
 import { getUserPersonas } from "@/db/queries/user-personas-queries"; // Import query function for logging
 import { updateOnboardingStep } from '@/db/queries/user-onboarding-status-queries'; // <<<--- ADDED IMPORT
 
-// Maximum timeout values for Vercel Pro/Enterprise plan
-export const maxDuration = 300; // 
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
-// Disable caching completely to avoid any issues
-export const fetchCache = 'force-no-store';
-export const revalidate = 0;
-export const runtime = 'nodejs';
-
-// Process timeout handling middleware for additional protection
-async function withTimeoutHandling(fn: () => Promise<NextResponse>) {
-  // Track execution time
-  const startTime = Date.now();
-  logger.info('Context generation started at:', new Date().toISOString());
-  
-  try {
-    // Create a promise that resolves with the result
-    const fnPromise = fn();
-    
-    // Also create a timeout promise - as additional safety
-    const timeoutPromise = new Promise((_, reject) => {
-      const id = setTimeout(() => {
-        clearTimeout(id);
-        reject(new Error('Internal function timeout - approaching Vercel limit'));
-      }, 900 * 1000); // 15 min internal timeout (shorter than Vercel's)
-    });
-    
-    // Race the function against our internal timeout
-    const result = await Promise.race([fnPromise, timeoutPromise]) as NextResponse;
-    
-    const duration = Date.now() - startTime;
-    logger.info(`Context generation completed successfully in ${duration}ms`);
-    return result;
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.error(`Context generation error after ${duration}ms:`, error);
-    
-    // Return a friendly error response instead of throwing
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-      timeoutDetails: {
-        duration: `${duration}ms`,
-        maxDuration: `${maxDuration}s`,
-        recommendation: "This operation is timing out. Try with a smaller website or contact support."
-      }
-    }, { status: 500 });
-  }
-}
 
 // Helper function to load the context setter prompt
 function loadContextSetterPrompt() {
@@ -146,8 +100,7 @@ async function retryExaRequest(fn: () => Promise<any>, maxAttempts = 3): Promise
   }
 }
 
-// Original POST implementation wrapped with timeout handling
-async function handlePostRequest(request: Request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     logger.info('Raw request body:', body);
@@ -667,8 +620,7 @@ async function handlePostRequest(request: Request) {
   }
 }
 
-// Original impl - no longer directly exported 
-async function handlePatchRequest(request: Request) {
+export async function PATCH(request: Request) {
   const startTime = Date.now();
   logger.info('PATCH request to /api/context received');
 
@@ -720,13 +672,4 @@ async function handlePatchRequest(request: Request) {
     logger.error('Error in PATCH /api/context:', { error, durationMs: duration });
     return NextResponse.json({ success: false, error: 'Failed to update profile' }, { status: 500 });
   }
-}
-
-// These are the only exports
-export async function POST(request: Request) {
-  return withTimeoutHandling(() => handlePostRequest(request));
-}
-
-export async function PATCH(request: Request) {
-  return withTimeoutHandling(() => handlePatchRequest(request));
 } 

@@ -17,7 +17,6 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries"
 import { useToast } from "@/hooks/use-toast"
 import { ContextContainer } from "@/components/context-container"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from "@/lib/queryKeys"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProfile } from "@/components/contexts/profile-context"
 import dynamic from "next/dynamic"
@@ -134,7 +133,6 @@ function ContextSetupInnerPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const personasTabTriggered = useRef(false);
   const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
-  const firstPersonaTabVisit = useRef(true);
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -151,54 +149,19 @@ function ContextSetupInnerPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: submitContext,
     onSuccess: (data) => {
-      // Production debugging
-      console.log('Context generation succeeded, response:', JSON.stringify(data));
-      
-      if (data && data.description) {
-        console.log('Setting description in cache:', data.description.substring(0, 50) + '...');
-        queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            organisationDescription: data.description,
-            organisationDescriptionCompleted: true,
-          };
-        });
-        setDescription(data.description);
-        setShowManualContext(true);
-      } else {
-        console.warn('Context generation succeeded but no description returned');
-      }
-      
       setSubmittedValues({
         url: profile?.organisationUrl || form.getValues("url"),
         orgName: profile?.organisationName || form.getValues("orgName")
       })
       setIsCardEditing(false)
-
-      // Invalidate profile first, then refetch personas, then setup status
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
-        .then(() => {
-          console.log('Profile invalidated, now refetching personas...');
-          return refetchPersonas(); // Ensure this is awaited or handled if async
-        })
-        .then(() => {
-          console.log('Personas refetched, now refetching setup status...');
-          refetchSetupStatus();
-        })
-        .catch(error => {
-          console.error('Error during sequential refetch operations:', error);
-        });
-
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+      refetchPersonas()
       toast({
         title: "Success!",
         description: "Your context has been generated successfully.",
       })
-      
-      // router.refresh(); // Temporarily commented out to isolate its effect
-
       setLoadingProgress(0)
-      // refetchSetupStatus(); // Moved into the .then() chain
+      refetchSetupStatus();
     },
     onError: (error) => {
       toast({
@@ -224,7 +187,7 @@ function ContextSetupInnerPage() {
         orgName: data.organisationName ?? (submittedValues?.orgName ?? "")
       })
       setIsCardEditing(false)
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
       toast({
         title: "Success!",
         description: "Fields updated successfully.",
@@ -353,15 +316,6 @@ function ContextSetupInnerPage() {
 
   }, [activeTab, setupProgress, refetchSetupStatus]);
 
-  // When personas tab becomes active the first time, force refetch to ensure DB commit completed
-  useEffect(() => {
-    if (activeTab === 'personas' && firstPersonaTabVisit.current) {
-      firstPersonaTabVisit.current = false;
-      console.log('Persona tab activated – forcing personas refetch');
-      refetchPersonas();
-    }
-  }, [activeTab, refetchPersonas]);
-
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
     mutate({
@@ -406,34 +360,16 @@ function ContextSetupInnerPage() {
     }, 100)
   }
 
-  const handleContextUpdated = async (updatedContext: string) => {
-    console.log('Context updated via manual edit, description length:', updatedContext.length);
+  const handleContextUpdated = (updatedContext: string) => {
     setDescription(updatedContext)
     setIsCompanyComplete(!!updatedContext);
-    
-    // Optimistically update cache first for immediate UI feedback
-    queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        organisationDescription: updatedContext,
-        organisationDescriptionCompleted: true,
-      };
-    });
-    
-    // Then do the invalidation to get real server data
-    await queryClient.invalidateQueries({ 
-      queryKey: queryKeys.profile(user?.id), 
-      refetchType: 'active' 
-    });
-    
-    const freshProfile = queryClient.getQueryData(queryKeys.profile(user?.id)) as typeof profile
-    if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
-      setHighlightWorkspaceNavItem(true)
-    }
-    
-    // Update checklist status last
-    refetchSetupStatus();
+    queryClient.invalidateQueries({ queryKey: ['profile', user?.id] }).then(() => {
+      const freshProfile = queryClient.getQueryData(['profile', user?.id]) as typeof profile
+      if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
+        setHighlightWorkspaceNavItem(true)
+      }
+      refetchSetupStatus();
+    })
   }
 
   const renderStatusDot = (isComplete: boolean) => (
@@ -452,309 +388,311 @@ function ContextSetupInnerPage() {
           </h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-10">
-             <TabsTrigger
-                value="organization"
-                className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                 Company
-                 {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
-               </span>
-             </TabsTrigger>
-             <TabsTrigger
-               value="branding"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                  Branding
-                  {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
-                </span>
-             </TabsTrigger>
-             <TabsTrigger
-               value="personas"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                 Personas
-                 {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
-               </span>
-             </TabsTrigger>
-          </TabsList>
+        <PersonaProvider>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-10">
+               <TabsTrigger
+                  value="organization"
+                  className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+               >
+                 <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                   Company
+                   {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
+                 </span>
+               </TabsTrigger>
+               <TabsTrigger
+                 value="branding"
+                 className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+               >
+                  <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                    Branding
+                    {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
+                  </span>
+               </TabsTrigger>
+               <TabsTrigger
+                 value="personas"
+                 className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+               >
+                 <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                   Personas
+                   {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
+                 </span>
+               </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="organization">
-            <div className="space-y-6">
-              <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
-                <CardHeader className="pb-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
-                          <Tag className="h-4 w-4 text-blue-500" /> Company Details
-                        </h2>
-                        <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!isCardEditing && profile?.organisationDescription && (
-                           <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => onSubmit(form.getValues())}
-                              disabled={isPending || isSavingCardEdits}
-                              className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-                            >
-                              {isPending ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Regenerating...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="h-3 w-3" />
-                                  Regenerate Context
-                                </>
-                              )}
-                          </Button>
-                        )}
-                        {!isCardEditing && (
-                          <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
-                            Edit
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingProfile ? (
-                     <div className="flex flex-col items-center space-y-2 py-4">
-                       <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
-                       <p className="text-sm text-gray-500">Loading your profile...</p>
-                     </div>
-                   ) : isPending ? (
-                     <div className="flex flex-col items-center space-y-6 py-8">
-                       <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                       <div className="text-center space-y-2">
-                         <p className="text-base font-semibold text-gray-900">
-                           Creating context for your agents...
-                         </p>
-                         <p className="text-sm text-gray-500 px-4">
-                           Fetching pages → extracting information → creating a structured document → generating your personas.
-                           <br />
-                           This usually takes under a minute.
-                         </p>
-                       </div>
-                       <div className="w-full max-w-md px-4 pt-2">
-                          <Progress
-                             value={loadingProgress}
-                             className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
-                          />
-                         <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                           <span>Progress:</span>
-                           <span>{loadingProgress}%</span>
-                         </div>
-                         {loadingProgress >= 100 && (
-                           <p className="text-center text-sm text-amber-500 mt-3">
-                             Almost ready! Please allow a few more moments for the process to complete.
-                           </p>
-                         )}
-                       </div>
-                     </div>
-                   ) : (
-                     <Form {...form}>
-                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="url"
-                            render={({ field }) => (
-                              <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
-                                <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Link className="h-4 w-4 text-blue-500" /> Website URL
-                                  <TooltipProvider delayDuration={0}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                        <p>We scan publicly available information from this website to build the AI's foundational understanding of your products, services, and brand voice.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </FormLabel>
-                                <p className="text-sm text-gray-500 mb-2">
-                                  Primary source for automated context generation.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <FormControl className="w-full">
-                                    <div className="relative w-full">
-                                      <Input
-                                        placeholder="https://yourcompany.com"
-                                        className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                        {...field}
-                                        disabled={!isCardEditing || isSavingCardEdits}
-                                      />
-                                    </div>
-                                  </FormControl>
-                                </div>
-                                {!field.value && !profile?.organisationUrl && (
-                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                    ✨ Enter your company URL to automatically generate context.
-                                  </p>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="orgName"
-                            render={({ field }) => (
-                              <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
-                                <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
-                                  <TooltipProvider delayDuration={0}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                        <p>Enter the official name your AI should use when referring to your business or primary offering.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </FormLabel>
-                                <p className="text-sm text-gray-500 mb-2">
-                                  Ensures your brand is referenced accurately.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <FormControl className="w-full">
-                                    <div className="relative w-full">
-                                      <Input
-                                        placeholder="Your Company Inc."
-                                        className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                        {...field}
-                                        disabled={!isCardEditing || isSavingCardEdits}
-                                      />
-                                    </div>
-                                  </FormControl>
-                                </div>
-                                {!field.value && !profile?.organisationName && (
-                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                    ✨ Enter your company or product name.
-                                  </p>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+            <TabsContent value="organization">
+              <div className="space-y-6">
+                <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
+                  <CardHeader className="pb-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
+                            <Tag className="h-4 w-4 text-blue-500" /> Company Details
+                          </h2>
+                          <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
                         </div>
-
-                         <div className="flex flex-wrap justify-end items-center gap-3 pt-2">
-                           {isCardEditing && (
-                             <>
-                               <Button
-                                 type="button"
-                                 variant="outline"
-                                 size="sm"
-                                 onClick={handleCancelCard}
-                                 className="h-8 text-xs px-4"
-                                 disabled={isSavingCardEdits}
-                               >
-                                 Cancel
-                               </Button>
-                            <Button
-                                 type="button"
-                                  size="sm"
-                                 onClick={handleSaveCardEdits}
-                                 disabled={isSavingCardEdits}
-                                 className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                        <div className="flex items-center gap-2">
+                          {!isCardEditing && profile?.organisationDescription && (
+                             <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => onSubmit(form.getValues())}
+                                disabled={isPending || isSavingCardEdits}
+                                className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
                               >
-                                   {isSavingCardEdits ? (
+                                {isPending ? (
                                   <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                       Saving...
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span>Regenerating...</span>
                                   </>
                                 ) : (
-                                     "Save"
+                                  <>
+                                    <RefreshCw className="h-3 w-3" />
+                                    Regenerate Context
+                                  </>
                                 )}
-                              </Button>
-                             </>
-                          )}
-
-                          {!isCardEditing && (url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
-                            <Button
-                              type="submit"
-                              size="sm"
-                              disabled={isPending || isSavingCardEdits}
-                              className={cn(
-                                "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
-                                shouldPulse && "animate-pulse-edge",
-                              )}
-                            >
-                              {isPending ? (
-                                <div className="flex items-center">
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  <span>Generating...</span>
-                                </div>
-                              ) : (
-                                "Extract Context from Website"
-                              )}
                             </Button>
                           )}
-
-                          {!isCardEditing && !showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={handleAddManualContext}
-                              className="h-9 px-4 flex items-center gap-2"
-                              disabled={isPending || isSavingCardEdits}
-                            >
-                              <PlusCircle className="h-4 w-4" />
-                              Add Context Manually
+                          {!isCardEditing && (
+                            <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
+                              Edit
                             </Button>
                           )}
                         </div>
-                       </form>
-                     </Form>
-                   )}
-                </CardContent>
-              </Card>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingProfile ? (
+                       <div className="flex flex-col items-center space-y-2 py-4">
+                         <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+                         <p className="text-sm text-gray-500">Loading your profile...</p>
+                       </div>
+                     ) : isPending ? (
+                       <div className="flex flex-col items-center space-y-6 py-8">
+                         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                         <div className="text-center space-y-2">
+                           <p className="text-base font-semibold text-gray-900">
+                             Creating context for your agents...
+                           </p>
+                           <p className="text-sm text-gray-500 px-4">
+                             Fetching pages → extracting information → creating a structured document → generating your personas.
+                             <br />
+                             This usually takes under a minute.
+                           </p>
+                         </div>
+                         <div className="w-full max-w-md px-4 pt-2">
+                            <Progress
+                               value={loadingProgress}
+                               className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
+                            />
+                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                             <span>Progress:</span>
+                             <span>{loadingProgress}%</span>
+                           </div>
+                           {loadingProgress >= 100 && (
+                             <p className="text-center text-sm text-amber-500 mt-3">
+                               Almost ready! Please allow a few more moments for the process to complete.
+                             </p>
+                           )}
+                         </div>
+                       </div>
+                     ) : (
+                       <Form {...form}>
+                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                           <div className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="url"
+                              render={({ field }) => (
+                                <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                                  <FormLabel className="text-sm font-semibold flex items-center gap-2">
+                                    <Link className="h-4 w-4 text-blue-500" /> Website URL
+                                    <TooltipProvider delayDuration={0}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                          <p>We scan publicly available information from this website to build the AI's foundational understanding of your products, services, and brand voice.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </FormLabel>
+                                  <p className="text-sm text-gray-500 mb-2">
+                                    Primary source for automated context generation.
+                                  </p>
+                                  <div className="flex flex-col sm:flex-row gap-2">
+                                    <FormControl className="w-full">
+                                      <div className="relative w-full">
+                                        <Input
+                                          placeholder="https://yourcompany.com"
+                                          className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                          {...field}
+                                          disabled={!isCardEditing || isSavingCardEdits}
+                                        />
+                                      </div>
+                                    </FormControl>
+                                  </div>
+                                  {!field.value && !profile?.organisationUrl && (
+                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                      ✨ Enter your company URL to automatically generate context.
+                                    </p>
+                                  )}
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-              {(profile?.organisationDescription || showManualContext) && (
-                <div ref={contextContainerRef}>
-                  <ContextContainer
-                    initialContext={profile?.organisationDescription || ""}
-                    userId={user?.id}
-                    onContextUpdated={handleContextUpdated}
-                    startInEditMode={showManualContext && !profile?.organisationDescription}
+                            <FormField
+                              control={form.control}
+                              name="orgName"
+                              render={({ field }) => (
+                                <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                                  <FormLabel className="text-sm font-semibold flex items-center gap-2">
+                                    <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
+                                    <TooltipProvider delayDuration={0}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                          <p>Enter the official name your AI should use when referring to your business or primary offering.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </FormLabel>
+                                  <p className="text-sm text-gray-500 mb-2">
+                                    Ensures your brand is referenced accurately.
+                                  </p>
+                                  <div className="flex flex-col sm:flex-row gap-2">
+                                    <FormControl className="w-full">
+                                      <div className="relative w-full">
+                                        <Input
+                                          placeholder="Your Company Inc."
+                                          className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                          {...field}
+                                          disabled={!isCardEditing || isSavingCardEdits}
+                                        />
+                                      </div>
+                                    </FormControl>
+                                  </div>
+                                  {!field.value && !profile?.organisationName && (
+                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                      ✨ Enter your company or product name.
+                                    </p>
+                                  )}
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                           <div className="flex flex-wrap justify-end items-center gap-3 pt-2">
+                             {isCardEditing && (
+                               <>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={handleCancelCard}
+                                   className="h-8 text-xs px-4"
+                                   disabled={isSavingCardEdits}
+                                 >
+                                   Cancel
+                                 </Button>
+                              <Button
+                                   type="button"
+                                size="sm"
+                                   onClick={handleSaveCardEdits}
+                                   disabled={isSavingCardEdits}
+                                   className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                                >
+                                     {isSavingCardEdits ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                         Saving...
+                                    </>
+                                  ) : (
+                                       "Save"
+                                  )}
+                                </Button>
+                               </>
+                            )}
+
+                            {!isCardEditing && (url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={isPending || isSavingCardEdits}
+                                className={cn(
+                                  "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
+                                  shouldPulse && "animate-pulse-edge",
+                                )}
+                              >
+                                {isPending ? (
+                                  <div className="flex items-center">
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <span>Generating...</span>
+                                  </div>
+                                ) : (
+                                  "Extract Context from Website"
+                                )}
+                              </Button>
+                            )}
+
+                            {!isCardEditing && !showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={handleAddManualContext}
+                                className="h-9 px-4 flex items-center gap-2"
+                                disabled={isPending || isSavingCardEdits}
+                              >
+                                <PlusCircle className="h-4 w-4" />
+                                Add Context Manually
+                              </Button>
+                            )}
+                          </div>
+                         </form>
+                       </Form>
+                     )}
+                  </CardContent>
+                </Card>
+
+                {(profile?.organisationDescription || showManualContext) && (
+                  <div ref={contextContainerRef}>
+                    <ContextContainer
+                      initialContext={profile?.organisationDescription || ""}
+                      userId={user?.id}
+                      onContextUpdated={handleContextUpdated}
+                      startInEditMode={showManualContext && !profile?.organisationDescription}
+                    />
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="branding">
+               {!isLoadingProfile && profile && user?.id ? (
+                  <BrandingContext
+                    userId={user.id}
+                    initialLogoUrl={profile.logoUrl}
+                    initialButtonColor={profile.buttonColor}
+                    initialTitleColor={profile.titleColor}
                   />
-                </div>
-              )}
-            </div>
-          </TabsContent>
+                ) : (
+                  <LoadingPlaceholder />
+                )}
+            </TabsContent>
 
-          <TabsContent value="branding">
-             {!isLoadingProfile && profile && user?.id ? (
-                <BrandingContext
-                  userId={user.id}
-                  initialLogoUrl={profile.logoUrl}
-                  initialButtonColor={profile.buttonColor}
-                  initialTitleColor={profile.titleColor}
-                />
-              ) : (
-                <LoadingPlaceholder />
-              )}
-          </TabsContent>
-
-          <TabsContent value="personas">
-            <PersonaManager />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="personas">
+              <PersonaManager />
+            </TabsContent>
+          </Tabs>
+        </PersonaProvider>
       </div>
     </NavSidebar>
   )

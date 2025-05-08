@@ -3,10 +3,6 @@ import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { forceCompleteOnboarding } from "@/db/queries/user-onboarding-status-queries";
 
-// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
-export const maxDuration = 120; // 2 minutes
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: Request) {
   const startTime = Date.now();
   logger.info('POST request to /api/onboarding/force-complete received');

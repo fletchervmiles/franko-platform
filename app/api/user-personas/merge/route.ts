@@ -3,10 +3,6 @@ import { auth } from "@clerk/nextjs/server"; // Assuming Clerk
 import { mergeUserPersonas } from "@/db/actions/user-personas-actions";
 import { getPersonaById } from "@/db/queries/user-personas-queries"; // Import query to verify ownership
 
-// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
-export const maxDuration = 120; // 2 minutes
-export const dynamic = 'force-dynamic';
-
 // Helper function to verify user owns the persona
 async function verifyUserOwnership(userId: string, personaId: string): Promise<boolean> {
     const persona = await getPersonaById(personaId);

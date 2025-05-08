@@ -4,10 +4,6 @@ import { updateUserPersona, deleteUserPersona } from "@/db/actions/user-personas
 import type { Persona } from "@/contexts/persona-context";
 import { getPersonaById } from "@/db/queries/user-personas-queries"; // Import query to verify ownership
 
-// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
-export const maxDuration = 120; // 2 minutes
-export const dynamic = 'force-dynamic';
-
 interface RouteParams {
   params: {
     personaId: string;

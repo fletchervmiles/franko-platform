@@ -4,10 +4,6 @@ import { db } from "@/db/db";
 import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
 
-// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
-export const maxDuration = 120; // 2 minutes
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const { userId } = await auth();

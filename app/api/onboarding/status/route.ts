@@ -3,10 +3,6 @@ import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getOnboardingStatus } from "@/db/queries/user-onboarding-status-queries";
 
-// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
-export const maxDuration = 120; // 2 minutes
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: Request) {
   const startTime = Date.now();
   logger.info('GET request to /api/onboarding/status received');

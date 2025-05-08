@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
 import { toast } from "@/components/ui/use-toast"
-import { useUser } from "@clerk/nextjs"
 
 // Define persona type (ensure this matches the structure returned by your GET API)
 export interface Persona {
@@ -31,11 +30,9 @@ const PersonaContext = createContext<PersonaContextType | undefined>(undefined)
 export function PersonaProvider({ children }: { children: ReactNode }) {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [isLoadingPersonas, setIsLoadingPersonas] = useState(true)
-  const { user, isLoaded } = useUser()
 
   // Fetch personas data function
   const fetchPersonas = useCallback(async () => {
-    if (!isLoaded || !user?.id) return; // Wait for auth
     console.log("Fetching personas...") // Debug log
     try {
       setIsLoadingPersonas(true)
@@ -58,14 +55,12 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoadingPersonas(false)
     }
-  }, [isLoaded, user?.id])
+  }, [])
 
   // Fetch data on component mount
   useEffect(() => {
-    if (isLoaded && user?.id) {
-      fetchPersonas()
-    }
-  }, [fetchPersonas, isLoaded, user?.id]) // Include dependencies
+    fetchPersonas()
+  }, [fetchPersonas]) // Include fetchPersonas in dependency array
 
   // Add a new persona
   const addPersona = async (personaData: { label: string; description: string }) => {

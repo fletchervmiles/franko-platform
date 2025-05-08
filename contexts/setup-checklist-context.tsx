@@ -4,8 +4,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode, useMemo
 import { usePathname } from "next/navigation"
 import { logger } from "@/lib/logger" // Assuming logger is accessible client-side or use console.error
 import type { SelectUserOnboardingStatus } from "@/db/schema" // Import the DB schema type
-import { useUser } from "@clerk/nextjs"
-import { useProfile } from "@/components/contexts/profile-context"
 
 export type ChecklistStep = {
   key: keyof SetupProgress
@@ -123,15 +121,11 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
-  const { user, isLoaded } = useUser();
-  const { profile, isLoading: isProfileLoading } = useProfile();
 
-  const fetchStatus = async (retryCount = 0, maxRetries = 2) => {
-    if (!isLoaded || !user?.id) return; // Wait for auth
+  const fetchStatus = async () => {
     setIsLoading(true)
     setError(null)
     try {
-      console.log(`Fetching onboarding status (attempt ${retryCount + 1}/${maxRetries + 1})`);
       const response = await fetch('/api/onboarding/status');
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({})) // Try to get error message
@@ -139,31 +133,19 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
       }
       const data: SelectUserOnboardingStatus = await response.json();
       setDbStatus(data);
-      setIsLoading(false);
-      console.log('Onboarding status updated:', JSON.stringify(data));
     } catch (err) {
        const message = err instanceof Error ? err.message : "An unknown error occurred";
        logger.error("Failed to fetch onboarding status:", message); // Use logger or console.error
-       if (retryCount >= maxRetries) {
-         setError(message);
-         setDbStatus(null); // Clear potentially stale data on error
-       } else {
-         console.log(`Retrying onboarding status fetch (${retryCount + 1}/${maxRetries})`);
-         setTimeout(() => fetchStatus(retryCount + 1, maxRetries), 1000 * Math.pow(2, retryCount));
-         return; // Don't set isLoading to false until final attempt
-       }
+       setError(message);
+       setDbStatus(null); // Clear potentially stale data on error
     } finally {
-      if (retryCount >= maxRetries) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isLoaded && user?.id && !isProfileLoading && profile) {
-      fetchStatus();
-    }
-  }, [isLoaded, user?.id, isProfileLoading, profile]);
+    fetchStatus();
+  }, []);
 
   const progress = useMemo((): SetupProgress => {
     if (!dbStatus) {

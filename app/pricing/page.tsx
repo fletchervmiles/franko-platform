@@ -5,7 +5,7 @@ import Nav from "@/components/lp-components/nav";
 import Footer from "@/components/lp-components/footer-pricing";
 import Pricing from "@/components/lp-components/pricing";
 
-export default function PricingPage() {
+export default async function PricingPage() {
 
   return (
     <>
