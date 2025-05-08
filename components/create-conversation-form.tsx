@@ -148,14 +148,65 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const conversationTemplates = useMemo(() => [
     {
       title: "Acquisition & First Impressions",
-      prompt: `I want to understand:
+      prompt: `Uncovering Acquisition Drivers for ${organisationName}
 
-- how customers first discovered ${organisationName};
-- the circumstances, motivations, or challenges that led them to search for a solution like ${organisationName};
-- what specifically convinced them to try us; and
-- their impressions so far.
+Total conversation turns: 11
 
-I'll send this to new leads who've recently signed up to ${organisationName}.`,
+Objective 1 – Discovery & First Impressions
+Conversation turns – 2
+
+Founder wants to know
+- Where and how the customer first became aware of ${organisationName}.
+- What initially caught their attention and why it resonated.
+- The surrounding context and urgency of that moment.
+
+Agent guidance
+- Open with a brief welcome (≤ 15 words).
+- Ask: "Where did you first hear about ${organisationName}, and what prompted you to look into it?"
+- If the answer is one-word, probe for context. 
+- Note any product trait that stood out ("looked fast," "native to our stack," etc.).
+
+Objective 2 – Pain & Work-arounds
+Conversation turns – 3
+
+Founder wants to know
+- A recent, specific situation where the prospect hit the problem that ${organisationName} now solves. I.e. What was their process before using this tool?
+- Why each alternative fell short and where the workflow broke down.
+- The real cost of that pain—time lost, money spent, deadlines missed, frustration—and how often it recurs.
+
+Agent guidance
+- Time-anchor the story by probing them to remember their process prior to the tool. We want to figure out what was painful about this process and why it led to adopting the new tool.
+- Re-create the sequence step-by-step and note where momentum stalled.
+- Quantify (if possible): rough hours, dollars, or missed launches; ask for frequency ("every sprint or once a quarter?").
+
+Objective 3 – Decision Trigger & First Value
+Conversation turns – 3
+
+Founder wants to know
+- The single factor that tipped them into signing up for ${organisationName}.
+- Any last-minute objections (price, security, stakeholder buy-in) and how they were resolved.
+- What they did first inside ${organisationName}, how quickly they saw value, and their initial reaction.
+
+Agent guidance
+- Identify the decisive trigger that moved the user from "interested" to "signed up."
+- Surface any last-minute hesitations (price, security, effort) and learn how they were resolved or outweighed.
+- Reconstruct the first session: initial task attempted, steps taken, and overall experience.
+- Document the immediate value realised—time saved, output created, or emotional payoff (relief, excitement, surprise).
+
+Objective 4 – Persona Snapshot & Potential Growth 
+Conversation turns – 3
+
+Founder wants to know
+- Role/title, seniority, and a brief profile of their company (industry, size, tech stack).
+- Team structure and who else interacts with the output from ${organisationName}.
+- How frequently and in what situations they now use ${organisationName}; early signs of retention or expansion needs.
+
+Agent guidance (framed as learning outcomes)
+- Establish day-to-day context by uncovering the interviewee's role, seniority, and team composition.
+- Situate ${organisationName} in the project lifecycle: learn at which stage it is opened, what tasks it replaces or accelerates, and where its output flows next.
+- Identify collaboration touch-points: surface which colleagues (design, engineering, product, clients) consume or modify the output and whether they require direct access.
+- Detect expansion signals by exploring upcoming initiatives where ${organisationName} could be adopted more widely and flag any blockers—usage caps, missing integrations, approval processes.
+- Note explicit indicators of growth potential such as requests for additional seats, hitting plan limits, or mention of future teams that would benefit.`,
       icon: Sunrise
     },
     {
@@ -174,27 +225,133 @@ I'll send this to customers who've recently completed onboarding and experienced
     },
     {
       title: "Product-Market Fit Engine",
-      prompt: `I want to understand:
+      prompt: `Deepening Product-Market Fit for ${organisationName}
 
-- the customer's role, key responsibilities, and context in which they're using ${organisationName};
-- how customers would feel if they could no longer use ${organisationName} (very disappointed, somewhat disappointed, not disappointed) - and explore why!;
-- the types of people or roles they believe get the most benefit from ${organisationName};
-- the most important benefit or value they've personally experienced using ${organisationName}; and
-- specific ways we could improve ${organisationName} and provide more value.
+**Objective 1 – Measure PMF sentiment**
+- Conversation turns - 3 turns
 
-I'll send this to customers who actively use ${organisationName}, to assess overall product-market fit and inform our product roadmap.`,
+Founder wants to know:
+- Where each user sits on the "Very / Somewhat / Not disappointed" scale
+- One concise reason behind that feeling.
+
+Agent must:
+- Start conversation with a brief welcome (≤15 words) then ask exactly:
+"How would you feel if you could no longer use ${organisationName}?
+A) Very disappointed\\u2003B) Somewhat disappointed\\u2003C) Not disappointed"
+- Add this question exactly and instructions as the first agent guidance point for this objective
+- Include this question verbatim in agent guidance
+- Follow with an inquisitive why based question to further understand their answer
+
+**Objective 2 – Describe the Ideal User / HXC clues**
+- Conversation turns - 2 turns
+
+Founder wants to know 
+
+"What type of people do you think would most benefit from ${organisationName} and why?"
+
+Agent guidance:
+- Add the above question exactly and instructions as the first agent guidance point for this objective.
+- Invite the user to picture the perfect customer and list traits/roles.
+- Probe to understand why the reasons or traits match the product.
+- Remember, this is about the interviewees perception of the ideal user and why - not about their individual experience with ${organisationName} (that comes later)
+- Do not focus on concrete examples here, just perceptions. 
+
+**Objective 3 – Capture their Persona**
+- Conversation turns: 3
+
+Founder wants to know
+- Who this person is in their work context
+- How ${organisationName} fits into that context
+
+Agent Guidance:
+- Try to understand their role (title if possible) and the type of company they work at
+- This could include seniority, company size/type, team structure, etc.
+- Identify how they use ${organisationName} within their work environment, i.e. frequency, projects, workflow touchpoints, etc.
+
+**Objective 4 – Surface Main Benefit OR Deepen Feature Needs** 
+- Conversation turns - 3 turns
+
+Founder wants to know  
+- The single biggest benefit the user gets from ${organisationName}  
+- Which specific feature is most responsible for that benefit (or, if unclear, their overall favourite feature)  
+- Why that feature matters to them
+
+Use the objective kick-off question - "What is the main benefit you receive from ${organisationName}?" 
+
+Agent guidance (use as needed, not sequential)  
+- Use the objective kick-off question - "What is the main benefit you receive from ${organisationName}?"
+- Then follow up by asking which ${organisationName} feature is the most important for helping them realize that benefit.
+- If the link between benefit and feature is fuzzy, switch to just asking them more generally about what their favourite feature is and why.   
+- Explore why the chosen feature delivers value (speed, confidence, collaboration, etc.).  
+- Note any light friction that still gets in the way of experiencing the benefit.
+
+**Objective 5 – Identify & Prioritise the Top Improvement**
+- Conversation turns - 3 turns
+
+Founder wants to know  
+- The one change that would make ${organisationName} indispensable  
+- For that change, the real cost of the current gap (time, money, frustration) and any work-arounds or substitute tools now in place
+- Least-favourite or least-used feature and why 
+
+Agent guidance (use as needed, not sequential)  
+- Begin with: "How can we improve ${organisationName} for you?" 
+- The purpose is to invite improvement ideas to surface the highest-impact missing capability, enhancement, or workflow fix
+- Try to quantify the consequences or impact of the gap they articulated, i.e.
+  - Frequency of occurrence
+  - Cost in terms of money, aggravation, incomplete tasks, etc. 
+  - Reach - who else in their team is impacted by the same gap 
+- Probe the pain: How often it bites them, what it costs, and who else feels it.  
+- Capture any existing work-arounds or substitute tools they use to bridge the gap.  
+- Validate impact and urgency—listen for words like "blocker," "critical," or "nice-to-have."  
+- If no improvement emerges, explore the least-favourite or least-used feature to uncover low-value or confusing areas by asking something like: "What's your least favourite or least-used feature, and why?"`,
       icon: Lightbulb
     },
     {
       title: "Churn & Exit Insights",
-      prompt: `I want to understand:
+      prompt: `**Understanding User Churn for ${organisationName}**
 
-- the primary reasons customers decided to stop using ${organisationName};
-- any key gaps between their initial expectations and the actual value they experienced;
-- specific frustrations, issues, or limitations that contributed directly to their decision to leave; and
-- any immediate or obvious improvements they would suggest to better meet their expectations in future.
+Objective 1 – Story of Cancellation & Unmet Expectations  
+Conversation turns – 3
 
-I'll send this to customers who've recently churned or canceled their ${organisationName} account.`,
+Founder wants to know  
+- The single biggest reason the user cancelled.  
+- What they originally hoped ${organisationName} would help them achieve.  
+- An exploration of this mismatch.  
+
+Agent must  
+- Open with a brief welcome (≤ 15 words) and then ask exactly: "What is the number one reason you decided to stop using ${organisationName}?"  
+  - Probe for additional details if given a vague response. 
+- Explore for the main job or outcome they expected ${organisationName} to deliver and how often that task arises.
+- Find out what they did next—switched tools, reverted to another workflow, stayed on the free plan, etc. This will help to confirm pain and urgency."
+
+---
+
+Objective 2 – Capture Their Persona  
+Conversation turns – 2  
+
+Founder wants to know  
+- Role / title and company type or size.  
+- Team structure, seniority, and core responsibilities.  
+- How (and how often) ${organisationName} fit into their workflow.  
+
+Agent guidance  
+- Begin with the bridge question (counts as Turn 1 here):  
+  "Thanks for that context. To understand how this played out day-to-day, could you tell me about your role and the company you work for?"  
+- Then, try and learn information to help link their answers to ${organisationName}'s documented personas for segmentation purposes  
+  – I.e. approximate team size, industry, position, the kinds of projects or deliverables they own, etc.
+
+---
+
+Objective 3 – Win-Back Trigger & Top Improvement  
+Conversation turns – 2  
+
+Founder wants to know  
+- The single change that would persuade them to return.  
+- Any additional shifts that would make ${organisationName} indispensable.  
+
+Agent guidance  
+- Ask: "What change or improvement would make you consider using ${organisationName} again, if any?"  
+- Probe for anything else that could move ${organisationName} from 'nice-to-have' to 'must-have' for them.`,
       icon: LogOut
     }
   ], [organisationName]);
@@ -323,11 +480,42 @@ I'll send this to customers who've recently churned or canceled their ${organisa
       setSelectedTemplate("onboard-acquisition");
     }
     
-    // Set defaults for other required fields
+    // Set topic based on the selected template's prompt
     setTopic(templatePrompt);
-    setNumTurns(10); // Default 10 turns
-    setRespondentContacts(true); // Default to collecting contact info
-    setIncentiveStatus(false); // Default to no incentive
+
+    // Set other fields based on the selected template type
+    if (templateType === "pmf") {
+      setNumTurns(14);
+      setRespondentContacts(true);
+      setIncentiveStatus(false);
+      setIncentiveCode("");
+      setIncentiveDescription("");
+      setAdditionalDetails("");
+    } else if (templateType === "churn") {
+      // Default values for churn
+      setNumTurns(7); 
+      setRespondentContacts(false); 
+      setIncentiveStatus(false); 
+      setIncentiveCode("");
+      setIncentiveDescription("");
+      setAdditionalDetails("");
+    } else if (templateType === "onboard") {
+      // Default values for onboard
+      setNumTurns(11);
+      setRespondentContacts(true);
+      setIncentiveStatus(false);
+      setIncentiveCode("");
+      setIncentiveDescription("");
+      setAdditionalDetails("");
+    } else {
+      // Fallback general defaults
+      setNumTurns(10);
+      setRespondentContacts(true);
+      setIncentiveStatus(false);
+      setIncentiveCode("");
+      setIncentiveDescription("");
+      setAdditionalDetails("");
+    }
     
     // Don't advance cards yet - stay on the selection screen
   }
