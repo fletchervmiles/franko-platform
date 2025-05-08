@@ -189,7 +189,7 @@ export async function POST(request: Request) {
           tools: [] as any,
           
           // Save chat history
-          onFinish: async ({ responseMessages }) => {
+          onFinish: async ({ messages: responseMessages }) => {
             try {
               // Process response messages
               const newProcessedMessages = responseMessages.map(m => {
