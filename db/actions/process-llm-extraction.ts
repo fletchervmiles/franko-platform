@@ -52,7 +52,7 @@ export async function processLlmExtraction(
         .update(chatResponsesTable)
         .set({
           persona: parsedOutput.persona || 'UNCLASSIFIED', // Use default if undefined
-          pmfCategory: parsedOutput.pmfCategory || null, // Use null if undefined
+          pmf_category: parsedOutput.pmfCategory || null, // Use null if undefined
           extraction_json: parsedOutput, // Store the raw parsed JSON
         })
         .where(eq(chatResponsesTable.id, responseId));
