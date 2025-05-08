@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import type { SelectProfile } from '@/db/schema/profiles-schema';
 
 interface ProfileContextType {
@@ -40,12 +41,15 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isBrandingComplete, setIsBrandingComplete] = useState(false);
   const [isPersonasComplete, setIsPersonasComplete] = useState(false);
 
+  const userId = user?.id;
+
   const {
     data: profile,
     isLoading: isQueryLoading,
     refetch: refetchProfile,
   } = useQuery<SelectProfile | null>({
-    queryKey: ["profile"],
+    queryKey: queryKeys.profile(userId),
+    enabled: isLoaded && !!userId, // wait until auth is ready
     queryFn: async () => {
       const res = await fetch("/api/user/profile", {
         credentials: "include",

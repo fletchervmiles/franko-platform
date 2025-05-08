@@ -17,6 +17,7 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries"
 import { useToast } from "@/hooks/use-toast"
 import { ContextContainer } from "@/components/context-container"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/queryKeys"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProfile } from "@/components/contexts/profile-context"
 import dynamic from "next/dynamic"
@@ -154,7 +155,7 @@ function ContextSetupInnerPage() {
         orgName: profile?.organisationName || form.getValues("orgName")
       })
       setIsCardEditing(false)
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) })
       refetchPersonas()
       toast({
         title: "Success!",
@@ -187,7 +188,7 @@ function ContextSetupInnerPage() {
         orgName: data.organisationName ?? (submittedValues?.orgName ?? "")
       })
       setIsCardEditing(false)
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) })
       toast({
         title: "Success!",
         description: "Fields updated successfully.",
@@ -363,8 +364,8 @@ function ContextSetupInnerPage() {
   const handleContextUpdated = (updatedContext: string) => {
     setDescription(updatedContext)
     setIsCompanyComplete(!!updatedContext);
-    queryClient.invalidateQueries({ queryKey: ['profile', user?.id] }).then(() => {
-      const freshProfile = queryClient.getQueryData(['profile', user?.id]) as typeof profile
+    queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) }).then(() => {
+      const freshProfile = queryClient.getQueryData(queryKeys.profile(user?.id)) as typeof profile
       if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
         setHighlightWorkspaceNavItem(true)
       }
