@@ -72,7 +72,7 @@ import path from 'path';
 import { LRUCache } from 'lru-cache';
 
 // Import custom modules and functions
-import { o3MiniLowModel, geminiFlashModel } from "@/ai_folder";  // AI model configuration
+import { o3MiniLowModel, gemini25FlashPreviewModel } from "@/ai_folder";  // AI model configuration
 import {
   performWebSearch,
   thinkingHelp,
@@ -426,14 +426,14 @@ export async function POST(request: Request) {
     console.log("System Prompt:", systemPrompt);
     console.log("\nMessage History:", JSON.stringify(coreMessages, null, 2));
     console.log("\nRequest Configuration:", JSON.stringify({
-      model: geminiFlashModel,
+      model: gemini25FlashPreviewModel,
       maxTokens: 5000,
       temperature: 1,
     }, null, 2));
     console.log("=== FULL REQUEST DETAILS END ===\n");
 
     const result = await generateText({
-      model: geminiFlashModel,
+      model: gemini25FlashPreviewModel,
       system: systemPrompt,
       messages: coreMessages,
       maxTokens: 5000,  // Appropriate limit for responses
