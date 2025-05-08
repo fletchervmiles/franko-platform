@@ -15,6 +15,7 @@ import { SketchPicker, ColorResult } from 'react-color';
 import { cn } from "@/lib/utils";
 import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 import { useProfile } from "@/components/contexts/profile-context";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface BrandingContextProps {
   userId?: string;
@@ -115,7 +116,7 @@ export function BrandingContext({
       if (data.profile?.logoUrl) {
         setLogoPreview(data.profile.logoUrl);
       }
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId), refetchType: 'active' });
       toast({
         title: "Success!",
         description: "Branding updated successfully.",

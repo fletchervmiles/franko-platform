@@ -4,6 +4,10 @@ import { logger } from "@/lib/logger";
 import { updateOnboardingStep } from "@/db/queries/user-onboarding-status-queries";
 import { type SelectUserOnboardingStatus } from "@/db/schema";
 
+// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
+export const maxDuration = 120; // 2 minutes
+export const dynamic = 'force-dynamic';
+
 // Define the type for the expected request body
 interface ViewedStepRequestBody {
   step: keyof Pick<SelectUserOnboardingStatus, 'step3PersonasReviewed' | 'step5LinkShared'>;
