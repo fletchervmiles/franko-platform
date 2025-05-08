@@ -30,6 +30,7 @@ export const dynamic = 'force-dynamic';
 // Disable caching completely to avoid any issues
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
+export const runtime = 'nodejs';
 
 // Process timeout handling middleware for additional protection
 async function withTimeoutHandling(fn: () => Promise<NextResponse>) {
