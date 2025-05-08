@@ -150,12 +150,23 @@ function ContextSetupInnerPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: submitContext,
     onSuccess: (data) => {
+      // Optimistically update profile cache so UI reflects new description immediately
+      if (data && data.description) {
+        queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            organisationDescription: data.description,
+            organisationDescriptionCompleted: true,
+          };
+        });
+      }
       setSubmittedValues({
         url: profile?.organisationUrl || form.getValues("url"),
         orgName: profile?.organisationName || form.getValues("orgName")
       })
       setIsCardEditing(false)
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
       refetchPersonas()
       toast({
         title: "Success!",
@@ -188,7 +199,7 @@ function ContextSetupInnerPage() {
         orgName: data.organisationName ?? (submittedValues?.orgName ?? "")
       })
       setIsCardEditing(false)
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
       toast({
         title: "Success!",
         description: "Fields updated successfully.",
@@ -364,7 +375,7 @@ function ContextSetupInnerPage() {
   const handleContextUpdated = (updatedContext: string) => {
     setDescription(updatedContext)
     setIsCompanyComplete(!!updatedContext);
-    queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id) }).then(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' }).then(() => {
       const freshProfile = queryClient.getQueryData(queryKeys.profile(user?.id)) as typeof profile
       if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
         setHighlightWorkspaceNavItem(true)

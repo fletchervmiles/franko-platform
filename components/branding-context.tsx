@@ -116,7 +116,7 @@ export function BrandingContext({
       if (data.profile?.logoUrl) {
         setLogoPreview(data.profile.logoUrl);
       }
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId), refetchType: 'active' });
       toast({
         title: "Success!",
         description: "Branding updated successfully.",
