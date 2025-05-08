@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { logger } from "@/lib/logger" // Assuming logger is accessible client-side or use console.error
 import type { SelectUserOnboardingStatus } from "@/db/schema" // Import the DB schema type
 import { useUser } from "@clerk/nextjs"
+import { useProfile } from "@/components/contexts/profile-context"
 
 export type ChecklistStep = {
   key: keyof SetupProgress
@@ -123,6 +124,7 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const { user, isLoaded } = useUser();
+  const { profile, isLoading: isProfileLoading } = useProfile();
 
   const fetchStatus = async (retryCount = 0, maxRetries = 2) => {
     if (!isLoaded || !user?.id) return; // Wait for auth
@@ -158,10 +160,10 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (isLoaded && user?.id) {
+    if (isLoaded && user?.id && !isProfileLoading && profile) {
       fetchStatus();
     }
-  }, [isLoaded, user?.id]);
+  }, [isLoaded, user?.id, isProfileLoading, profile]);
 
   const progress = useMemo((): SetupProgress => {
     if (!dbStatus) {

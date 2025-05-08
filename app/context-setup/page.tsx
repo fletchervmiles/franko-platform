@@ -134,6 +134,7 @@ function ContextSetupInnerPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const personasTabTriggered = useRef(false);
   const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  const firstPersonaTabVisit = useRef(true);
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -351,6 +352,15 @@ function ContextSetupInnerPage() {
     }
 
   }, [activeTab, setupProgress, refetchSetupStatus]);
+
+  // When personas tab becomes active the first time, force refetch to ensure DB commit completed
+  useEffect(() => {
+    if (activeTab === 'personas' && firstPersonaTabVisit.current) {
+      firstPersonaTabVisit.current = false;
+      console.log('Persona tab activated – forcing personas refetch');
+      refetchPersonas();
+    }
+  }, [activeTab, refetchPersonas]);
 
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
