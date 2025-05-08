@@ -43,8 +43,8 @@ export function ConversationResponses({
     <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
       <CardHeader className="pb-6">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold">Conversation Responses</h2>
-          <p className="text-sm text-gray-500">Overview of responses collected from your conversations.</p>
+          <h2 className="text-2xl font-semibold">Responses</h2>
+          <p className="text-sm text-gray-500">Overview of responses collected from your interviews.</p>
           <div className="pt-2 flex items-center space-x-2">
             <AnalyzeResponsesButton 
               chatInstanceId={chatInstanceId} 

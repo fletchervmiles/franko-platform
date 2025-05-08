@@ -16,11 +16,11 @@ interface FAQSectionProps {
 const faqItems = (companyName: string): FAQItem[] => [
   {
     question: "How does the conversation agent work?",
-    answer: "Our agents are designed to conduct exploratory, narrative-driven interviews focused on diving deep with your customers. It uses advanced interviewing techniques to engage customers in open, meaningful conversations. The agent is contextualized to your business, plus the Conversation Plan you'll create when setting up a new Converation, ensuring that each customer conversation is centered on your specific needs."
+    answer: "Our agents are designed to conduct exploratory, narrative-driven interviews focused on diving deep with your customers. It uses advanced interviewing techniques to engage customers in open, meaningful conversations. The agent is contextualized to your business, plus the Conversation Plan you'll create when setting up a new Conversation, ensuring that each customer conversation is centered on your specific needs."
   },
   {
     question: "How long does each conversation last?",
-    answer: "When you create a new Converation Plan, you'll have the option to select your desired duration, usually between 1 and 10 minutes."
+    answer: "When you create a new Conversation Plan, you'll have the option to select your desired duration, usually between 1 and 10 minutes."
   },
   {
     question: "How do I invite customers to participate in interviews?",

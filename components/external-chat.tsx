@@ -21,7 +21,9 @@ import { WelcomeBanner } from "@/components/welcome-banner";
 // Import our custom hook instead of useChat
 import { useExternalChat } from "@/lib/hooks/use-external-chat";
 import { FinishConversationButton } from "@/components/finish-conversation-button";
-import { hasEndingPhrases, extractResponseText } from "@/lib/utils/conversation-helper";
+import { hasEndingPhrases } from "@/lib/utils/conversation-helper";
+// Import the robust JSON parser
+import { extractResponseFromAIOutput } from '@/lib/utils/json-parser';
 
 interface ExternalChatProps {
   chatInstanceId: string;
@@ -301,7 +303,7 @@ export function ExternalChat({
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant') {
         const content = typeof lastMessage.content === 'string' 
-          ? extractResponseText(lastMessage.content) 
+          ? extractResponseFromAIOutput(lastMessage.content) // Use robust parser
           : '';
         
         if (hasEndingPhrases(content)) {

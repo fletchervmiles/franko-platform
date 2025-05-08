@@ -20,7 +20,8 @@ import {
   Sunrise,
   Clock,
   Lightbulb,
-  LogOut
+  LogOut,
+  Check
 } from "lucide-react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -29,6 +30,8 @@ import { useQuotaAvailability } from "@/hooks/use-quota-availability"
 import TextareaAutosize from 'react-textarea-autosize'
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
+import { useSetupChecklist } from "@/contexts/setup-checklist-context"
+import AgentSelectionTabs from "@/components/agent-selection-tabs"
 
 // Custom hook to fetch organisation name
 const useOrganisationName = () => {
@@ -39,10 +42,23 @@ const useOrganisationName = () => {
     async function fetchOrganisationName() {
       try {
         const response = await fetch("/api/user/profile")
-        const data = await response.json()
-        setOrganisationName(data.organisationName || "product")
+        console.log('[useOrganisationName] API Response Status:', response.status);
+        console.log('[useOrganisationName] API Response OK?:', response.ok);
+
+        if (!response.ok) {
+          console.error('[useOrganisationName] Failed to fetch organisation name, status:', response.status);
+          // Potentially set a more specific error state or keep default
+          // For now, we'll let it fall through to finally and keep the default org name
+        }
+
+        const data = await response.json(); 
+        console.log('[useOrganisationName] API Data:', data);
+        
+        setOrganisationName(
+          data.organisation_name || data.organisationName || "product"
+        )
       } catch (error) {
-        console.error("Error fetching organisation name:", error)
+        console.error("[useOrganisationName] Error fetching or parsing organisation name:", error)
       } finally {
         setIsLoading(false)
       }
@@ -69,9 +85,15 @@ interface CreateConversationFormProps {
   isNew?: boolean;
   idProp?: string;
   isRegenerating?: boolean;
+  templateType?: string | null;
 }
 
-export const CreateConversationForm = React.memo(function CreateConversationForm({ isNew = false, idProp, isRegenerating = false }: CreateConversationFormProps) {
+export const CreateConversationForm = React.memo(function CreateConversationForm({ 
+  isNew = false, 
+  idProp, 
+  isRegenerating = false,
+  templateType = null
+}: CreateConversationFormProps) {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
@@ -81,16 +103,23 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   // Fetch organisation name
   const { organisationName } = useOrganisationName()
   
-  // Restore original card refs - remove card5
+  // Add reference for the initial card
   const cardRefs = {
+    card0: useRef<HTMLDivElement>(null), // New initial card reference
     card1: useRef<HTMLDivElement>(null),
     card2: useRef<HTMLDivElement>(null),
     card3: useRef<HTMLDivElement>(null),
     card4: useRef<HTMLDivElement>(null),
   }
   
-  // Restore original state for visible cards 
-  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 4 : 1)
+  // Start with card0 as the only visible card, unless regenerating
+  const [visibleCards, setVisibleCards] = useState(isRegenerating ? 4 : 0)
+  
+  // Add state to track selected template
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  
+  // Add state to track if "Build your own" was selected
+  const [useBuildYourOwn, setUseBuildYourOwn] = useState(false)
   
   // Log the chat ID for debugging
   useEffect(() => {
@@ -114,6 +143,8 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   
   // Conversation templates with icons
+  const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
+
   const conversationTemplates = useMemo(() => [
     {
       title: "Acquisition & First Impressions",
@@ -227,9 +258,19 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     }
   }, [isRegenerating, idVariable]); // Depend on idVariable
   
+  // Add effect to handle templateType prop
+  useEffect(() => {
+    if (templateType === "custom") {
+      setUseBuildYourOwn(true);
+      setVisibleCards(1); // Show the first card in the custom workflow
+      setHasInitiatedTopic(true); // Mark topic as initiated
+      setSelectedTemplate("custom"); // Ensure selectedTemplate is set for the main rendering condition
+    }
+  }, [templateType]);
+  
   // Add effect to scroll to the newly visible card when visibleCards changes
   useEffect(() => {
-    if (visibleCards > 1 && !isRegenerating) {
+    if (visibleCards > 0 && !isRegenerating) {
       const cardRef = cardRefs[`card${visibleCards}` as keyof typeof cardRefs]
       if (cardRef.current) {
         setTimeout(() => {
@@ -266,10 +307,38 @@ I'll send this to customers who've recently churned or canceled their ${organisa
     }
   }
   
-  // Handle template selection
-  const handleTemplateSelect = (prompt: string) => {
-    setTopic(prompt)
-    setHasInitiatedTopic(true)
+  // Add this before the return statement - handle template selection from AgentSelectionTabs
+  const handleTemplateSelected = (templateType: string) => {
+    let templatePrompt = "";
+    
+    // Set template based on selection
+    if (templateType === "pmf") {
+      templatePrompt = conversationTemplates[2].prompt; // Product-Market Fit Engine
+      setSelectedTemplate("product-market-fit");
+    } else if (templateType === "churn") {
+      templatePrompt = conversationTemplates[3].prompt; // Churn & Exit Insights
+      setSelectedTemplate("churn");
+    } else if (templateType === "onboard") {
+      templatePrompt = conversationTemplates[0].prompt; // Acquisition & First Impressions
+      setSelectedTemplate("onboard-acquisition");
+    }
+    
+    // Set defaults for other required fields
+    setTopic(templatePrompt);
+    setNumTurns(10); // Default 10 turns
+    setRespondentContacts(true); // Default to collecting contact info
+    setIncentiveStatus(false); // Default to no incentive
+    
+    // Don't advance cards yet - stay on the selection screen
+  }
+  
+  // This is triggered when the Generate Agent button is clicked on a template
+  const handleGenerateWithTemplate = (templateType: string) => {
+    // Make sure form values are set based on the template
+    handleTemplateSelected(templateType);
+    
+    // This will use the default values we've set and submit the form
+    handleSubmit();
   }
 
   // Handle "Start from Scratch"
@@ -418,6 +487,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
           console.error('Error storing plan data in localStorage:', e);
         }
         
+        refetchSetupStatus();
+        
         // Show success message
         toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');
         
@@ -522,81 +593,81 @@ I'll send this to customers who've recently churned or canceled their ${organisa
   // Update the button text based on whether we're regenerating and quota status
   const getSubmitButtonText = () => {
     if (isSubmitting) {
-      return isRegenerating ? "Regenerating Plan..." : "Generating Plan...";
+      return isRegenerating ? "Regenerating Agent..." : "Generating Agent...";
     }
     
     if (!isQuotaLoading && !hasAvailablePlanQuota) {
       return "⚠️ You're out of generation credits!";
     }
     
-    return isRegenerating ? "Regenerate Plan" : "Generate Plan";
+    return isRegenerating ? "Regenerate Agent" : "Generate Agent";
   };
+
+  // Function for Card 1 template selection
+  const handleTopicTemplateSelect = (prompt: string) => {
+    setTopic(prompt)
+    setHasInitiatedTopic(true)
+  }
+
+  // Build Your Own handler
+  const handleBuildYourOwnSelect = () => {
+    setSelectedTemplate("custom");
+    setUseBuildYourOwn(true);
+    // Start showing the first card if we're still at card 0
+    if (visibleCards === 0) {
+      showNextCard();
+    }
+  }
 
   return (
     <div className="space-y-12 w-full pb-20">
       {showLoadingScreen && <LoadingScreen progress={loadingProgress} />}
       
+      {/* Initial Step - Agent Selection */}
+      {!isRegenerating && (
+        <div ref={cardRefs.card0} className="border rounded-lg bg-[#FAFAFA] w-full">
+          <div className="w-full p-8">
+            <AgentSelectionTabs
+              onTemplateSelect={handleTemplateSelected}
+              onBuildYourOwnSelect={handleBuildYourOwnSelect}
+              onGenerateAgent={handleGenerateWithTemplate}
+              isSubmitting={isSubmitting}
+              organisationName={organisationName}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Only render the customization cards if Build Your Own was selected or regenerating */}
+      {(useBuildYourOwn || isRegenerating) && visibleCards >= 1 && (
+        <>
       {/* Card 1: Topic */}
       <div ref={cardRefs.card1}>
         <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
           <h3 className="text-base font-medium mb-2 flex items-center">
-            What do you want to learn from your customers?
+                Your Instructions - Tell your agent what you want to learn from customers.
             <StatusDot active={hasContent(1)} />
           </h3>
-          <p className="text-sm text-gray-500 mb-6">Select an example topic below to start—edit freely, it's just a starting point.</p>
-          
-          <div className="space-y-6 mb-8">
-            <div className="flex flex-wrap gap-3">
-              {/* Start from Scratch button */}
-              <button
-                onClick={handleStartFromScratch}
-                className={cn(
-                  "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                  hasInitiatedTopic && topic.trim() === ""
-                    ? "bg-black text-white shadow-sm"
-                    : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
-                )}
-              >
-                <PenLine className="w-3.5 h-3.5 text-blue-500 mr-2" />
-                Start from Scratch
-              </button>
+              <p className="text-sm text-gray-500 mb-6">Briefly describe what you're looking to learn. 2-5 learning objectives is usually best.</p>
               
-              {/* Template options */}
-              {conversationTemplates.map((template, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleTemplateSelect(template.prompt)}
-                  className={cn(
-                    "px-4 py-2 text-sm rounded-full transition-all shadow-sm flex items-center",
-                    hasInitiatedTopic && topic === template.prompt
-                      ? "bg-black text-white shadow-sm"
-                      : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
-                  )}
-                >
-                  {template.icon && <template.icon className="w-3.5 h-3.5 text-blue-500 mr-2" />}
-                  {template.title}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {hasInitiatedTopic && (
-            <>
-              <h3 className="text-base font-medium mb-2 flex items-center">
-                Your Instructions
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">Briefly describe what you're looking to learn. This can be anything you want—you're not limited to the topics above.</p>
-              
+              <>
               <TextareaAutosize
                 value={topic}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTopic(e.target.value)}
-                placeholder="e.g., I want to learn why customers decide to cancel—so we can reduce churn."
+                  placeholder={`Example instructions (3 clear learning objectives - suitable for 6-9 conversation turns):
+
+I want to understand:
+
+- the key benefit or value customers originally hoped to achieve when they first signed up for ${organisationName};
+- how long it took them to experience their first "aha" moment or meaningful value with ${organisationName};
+- the specific feature or experience that delivered this value from ${organisationName};
+
+I'll send this to customers who've recently completed onboarding and experienced their first interactions with ${organisationName}.`}
                 className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-2 resize-none"
-                minRows={5}
+                  minRows={10}
                 maxRows={20}
               />
             </>
-          )}
         </div>
         
         {visibleCards === 1 && (
@@ -617,7 +688,7 @@ I'll send this to customers who've recently churned or canceled their ${organisa
         <div ref={cardRefs.card2}>
           <div className="border rounded-lg p-8 bg-[#FAFAFA] w-full">
             <h3 className="text-base font-medium mb-2 flex items-center">
-              Set the Conversation Length
+              Set the Interview Length
               <StatusDot active={hasContent(2)} />
             </h3>
             <p className="text-sm text-gray-500 mb-8">
@@ -693,25 +764,33 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <button
                 onClick={() => handleRespondentContactsSelect(true)}
                 className={cn(
-                  "p-4 rounded-lg border",
+                      "p-4 rounded-lg border relative transition-all duration-200",
                   respondentContacts === true 
-                    ? "border-black bg-gray-50" 
-                    : "border-gray-200 bg-white hover:bg-gray-50",
-                  "transition-colors duration-200 text-center"
+                        ? "border-gray-300 shadow-sm bg-white" 
+                        : "border-gray-200 bg-white hover:bg-gray-50"
                 )}
               >
+                    {respondentContacts === true && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                 <span className="text-sm">Yes, capture name and email</span>
               </button>
               <button
                 onClick={() => handleRespondentContactsSelect(false)}
                 className={cn(
-                  "p-4 rounded-lg border",
+                      "p-4 rounded-lg border relative transition-all duration-200",
                   respondentContacts === false 
-                    ? "border-black bg-gray-50" 
-                    : "border-gray-200 bg-white hover:bg-gray-50",
-                  "transition-colors duration-200 text-center"
+                        ? "border-gray-300 shadow-sm bg-white" 
+                        : "border-gray-200 bg-white hover:bg-gray-50"
                 )}
               >
+                    {respondentContacts === false && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                 <span className="text-sm">No, keep it anonymous</span>
               </button>
             </div>
@@ -745,25 +824,33 @@ I'll send this to customers who've recently churned or canceled their ${organisa
               <button
                 onClick={() => handleIncentiveSelect(true)}
                 className={cn(
-                  "p-4 rounded-lg border",
+                      "p-4 rounded-lg border relative transition-all duration-200",
                   incentiveStatus === true 
-                    ? "border-black bg-gray-50" 
-                    : "border-gray-200 bg-white hover:bg-gray-50",
-                  "transition-colors duration-200 text-center"
+                        ? "border-gray-300 shadow-sm bg-white" 
+                        : "border-gray-200 bg-white hover:bg-gray-50"
                 )}
               >
+                    {incentiveStatus === true && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                 <span className="text-sm">Yes, add incentive</span>
               </button>
               <button
                 onClick={() => handleIncentiveSelect(false)}
                 className={cn(
-                  "p-4 rounded-lg border",
+                      "p-4 rounded-lg border relative transition-all duration-200",
                   incentiveStatus === false 
-                    ? "border-black bg-gray-50" 
-                    : "border-gray-200 bg-white hover:bg-gray-50",
-                  "transition-colors duration-200 text-center"
+                        ? "border-gray-300 shadow-sm bg-white" 
+                        : "border-gray-200 bg-white hover:bg-gray-50"
                 )}
               >
+                    {incentiveStatus === false && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                 <span className="text-sm">No incentive needed</span>
               </button>
             </div>
@@ -841,6 +928,8 @@ I'll send this to customers who've recently churned or canceled their ${organisa
             </div>
           )}
         </div>
+          )}
+        </>
       )}
     </div>
   )

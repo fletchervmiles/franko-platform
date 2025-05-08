@@ -39,9 +39,9 @@ function EmptyState() {
           height={64}
         />
       </div>
-      <h1 className="text-2xl font-semibold mb-3">Create Conversation</h1>
+      <h1 className="text-2xl font-semibold mb-3">Create Interview Agent</h1>
       <p className="text-sm text-gray-600 mb-6 max-w-md">
-      Answer a few short questions to set context and objectives for a new customer conversation. We'll use your answers to create a personalized plan that guides your Conversation Agent.
+      Answer a few quick questions, or use a template, to create a custom plan for a new Interview Agent.
       </p>
       <CreateChatButton />
     </div>  

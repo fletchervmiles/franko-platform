@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { generateConversationPlanFromForm } from "@/ai_folder/create-actions";
 import { getConversationPlan } from "@/db/queries/chat-instances-queries";
+import { updateOnboardingStep } from '@/db/queries/user-onboarding-status-queries';
 
 // Helper function to wait and verify plan existence
 async function verifyPlanExists(chatId: string, maxAttempts = 10): Promise<boolean> {
@@ -37,12 +38,14 @@ async function verifyPlanExists(chatId: string, maxAttempts = 10): Promise<boole
 export async function POST(request: Request) {
   const startTime = Date.now();
   let aiStartTime, aiEndTime, verificationStartTime, verificationEndTime;
+  let userId: string | null = null;
 
   try {
     logger.info('POST request to generate conversation plan started', { timestamp: startTime });
     
     // Authenticate user
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -149,6 +152,12 @@ export async function POST(request: Request) {
       verificationDurationMs: verificationDuration,
       totalElapsedMs: Date.now() - startTime
     });
+
+    // Update onboarding step 4 (AgentCreated) for user
+    if (userId) {
+        await updateOnboardingStep(userId, 'step4AgentCreated');
+        logger.info(`Updated onboarding step 4 (AgentCreated) for user ${userId}`, { chatId });
+    }
     
     return NextResponse.json({
       ...plan,
@@ -174,6 +183,7 @@ export async function POST(request: Request) {
     
     logger.error('Error generating conversation plan:', {
       error,
+      userId,
       timing: timingInfo
     });
     

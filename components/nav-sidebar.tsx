@@ -44,7 +44,17 @@ const sidebarStyles = {
 
 const navMainData = [
   {
-    title: "Product",
+    title: "Analysis",
+    items: [
+      {
+        title: "Response Q&A",
+        url: "/response-qa",
+        icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
+      },
+    ],
+  },
+  {
+    title: "Agents",
     items: [
       {
         title: "Workspace",
@@ -52,12 +62,7 @@ const navMainData = [
         icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
       },
       {
-        title: "Response Q&A",
-        url: "/response-qa",
-        icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Context Setup",
+        title: "Context",
         url: "/context-setup",
         icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
       },
@@ -189,19 +194,10 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
           <span className="ml-2 font-medium">{item.title}</span>
           
           {/* Original pulsating dot for Context Setup */}
-          {item.title === "Context Setup" && !isLoading && !contextCompleted && (
+          {item.title === "Context" && !isLoading && !contextCompleted && (
             <span 
               className="ml-auto h-2 w-2 rounded-full bg-yellow-400 animate-pulse" // Use ml-auto to push to the right
               aria-hidden="true"
-            />
-          )}
-
-          {/* New Highlight for Workspace (Step 8) */}
-          {isWorkspaceItem && highlightWorkspaceNavItem && (
-            <span 
-              className="ml-auto h-2.5 w-2.5 rounded-full bg-green-500 animate-bounce" // Brighter color, more animation
-              aria-hidden="true"
-              title="Context set! Create your first conversation here." // Tooltip
             />
           )}
         </Link>

@@ -19,6 +19,7 @@ export let o1MiniModel: LanguageModelV1;
 export let gemini25ProPreviewModel: LanguageModelV1;
 export let gemini25ProExperimentalModel: LanguageModelV1;
 export let o3Model: LanguageModelV1;
+export let gemini25FlashPreviewModel: LanguageModelV1;
 
 // Create a function to initialize models with dynamic imports
 export async function initializeModels() {
@@ -50,6 +51,12 @@ export async function initializeModels() {
   // Add the new Gemini 2.5 Pro Experimental model
   gemini25ProExperimentalModel = wrapLanguageModel({
     model: google("gemini-2.5-pro-exp-03-25"),
+    middleware: customMiddleware,
+  });
+
+  // Add the new Gemini 2.5 Flash Preview model
+  gemini25FlashPreviewModel = wrapLanguageModel({
+    model: google("gemini-2.5-flash-preview-04-17"),
     middleware: customMiddleware,
   });
 

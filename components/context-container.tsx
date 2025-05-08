@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Loader2, Check, ChevronDown, ChevronUp, InfoIcon, Bot, Database } from "lucide-react"
+import { Loader2, Check, ChevronDown, ChevronUp, InfoIcon, Bot, Database, Tag } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Markdown from "react-markdown"
@@ -84,7 +84,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
       
       toast({
         title: "Success!",
-        description: "Your knowledge base has been updated successfully.",
+        description: "knowledge base has been updated successfully.",
       })
       
       setIsEditing(false)
@@ -115,7 +115,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold flex items-center gap-2">
-                <Database className="h-4 w-4 text-blue-500" /> Your AI Knowledge Base
+                <Tag className="h-4 w-4 text-blue-500" /> AI Knowledge Base
               </h2>
               {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
@@ -140,7 +140,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
               </Button>
             </div>
           </div>
-          <p className="text-sm text-gray-500">This AI-generated summary acts as background knowledge for conversations and plan creation. You can edit it directly.</p>
+          <p className="text-sm text-gray-500">This AI-generated summary acts as background knowledge for your interview Agents.</p>
           <div className="pt-2 flex items-center space-x-2">
             <div className="bg-white p-2 rounded-lg border flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-600" />

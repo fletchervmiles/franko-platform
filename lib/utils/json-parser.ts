@@ -31,8 +31,10 @@ export function repairCommonJsonIssues(jsonString: string): string {
   // Remove trailing commas in objects and arrays
   let repaired = jsonString.replace(/,(\s*[}\]])/g, '$1');
   
-  // Fix missing quotes around keys
+  // Fix missing quotes around keys (standard form: key:)
   repaired = repaired.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3');
+  // Fix missing quotes around keys (malformed form: key":)
+  repaired = repaired.replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*":)/g, '$1"$2":');
   
   // Convert single quotes to double quotes (with escaping)
   repaired = repaired.replace(/'([^']*)'(\s*:)/g, '"$1"$2');

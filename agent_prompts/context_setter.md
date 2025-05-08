@@ -62,7 +62,7 @@ You must produce **approximately 10 sections** in **Markdown** format with **adh
   - **Sub-bullets as required**.
 - **Bullet format** example:  
   `- **Bolded Title (2–5 words):** Explanation with 15–30 words.`
-- Do **not** combine or merge with “Core Benefits”; treat this as a separate section.
+- Do **not** combine or merge with "Core Benefits"; treat this as a separate section.
 
 ### 6. Pricing
 - Provide **5–12 bullets** total.
@@ -114,43 +114,54 @@ You must produce **approximately 10 sections** in **Markdown** format with **adh
 
 ## Content and Sources
 
-Below is the JSON-like data containing relevant source extracts:
+Below is the JSON‑like data containing relevant source extracts **and pre‑parsed
+signal arrays**.
 
-## Key Takeaways
+### Primary Source Reminder
 
-- **Primary & Most Reliable Source:** Extracts 01 come directly from the {organisation_name} official website. They are the company's self-reported information.  
-- **"Source of Truth":** Treat Extracts 01 as the definitive source, especially for:  
-  - Products & Services  
-  - Company Terminology  
-  - Mission, Values, Target Audience  
-  - Other Factual Details  
+**Extracts 01** come from the official website and override all other sources
+if conflicts arise.
 
-## Handling Conflicting Information
+---
 
-- **Prioritize Extracts 01** if Extracts 02 or 03 contradict it.  
-- Extracts 02 & 03 may be outdated, inaccurate, or from non-official sources.  
-
-## How to Use the Sources
-
-1. Start with **Extracts 01** for foundational details.  
-2. Supplement with **Extracts 02** & **Extracts 03** to enrich context.  
-3. Verify any major discrepancies against **Extracts 01**.  
-
-## Source Extracts 01 - Official Website - Primary Source of Truth
-
+### Source Extract 01 – Official website   *Primary source of truth*
 {extract01}
 
-## Source Extracts 02
-
-Tell me about {organisation_name} including background, products, services, mission, industry, target market, value proposition.
-
+### Source Extract 02 – Extended company overview
 {extract02}
-## Source Extracts 03
 
-What are people saying about {organisation_name}? Customer opinions, discussions, feedback, testimonials, ratings.
-
+### Source Extract 03 – Customer opinions, reviews, discussions
 {extract03}
 
+### Source Extract 04 – Technical docs or PDFs
+{extract04}
+
+### Source Extract 05 – Video / webinar transcripts
+{extract05}
+
+### Source Extract 06 – Open‑source repos or changelogs
+{extract06}
+
+### Source Extract 07 – Social media threads or community posts
+{extract07}
+
+### Source Extract 08 – Press releases / news coverage
+{extract08}
+
+### Source Extract 09 – Third‑party comparisons / analyst notes
+{extract09}
+
+### Source Extract 10 – Jobs or careers page (for product clues only)
+{extract10}
+
+### Source Extract 11 – Any other captured content
+{extract11}
+
+---
+
+### Input Signal Data (Raw String)
+
+{input_signal_string}
 
 
 ---
@@ -168,7 +179,8 @@ Maintain the **section order**:
 7. Brand Positioning  
 8. Customer Feedback  
 9. Improvement Areas  
-10. Summary  
+10. Summary
+
 **Do NOT** combine sections or create new headings.
 
 ### Required Bullet Format
@@ -193,11 +205,11 @@ Maintain the **section order**:
 - Place a blank line after each section header.
 
 ### Strict Prohibitions
-- No introductory paragraphs beyond “Context Overview.”
-- No “conclusion” paragraphs beyond the “Summary” section.
+- No introductory paragraphs beyond "Context Overview."
+- No "conclusion" paragraphs beyond the "Summary" section.
 - No speculation or invented content.
-- No emojis or symbols like “→,” “•,” etc.
-- No “Note:” callouts.
+- No emojis or symbols like "→," "•," etc.
+- No "Note:" callouts.
 - No markdown variations beyond what is specified here.
 
 ### Missing Data Protocol
@@ -217,11 +229,11 @@ Before finalizing, **verify**:
 ### Tone Enforcement
 - Maintain a **professional analyst** tone.
 - Use **third-person** perspective.
-- Avoid subjective language like “we believe.”
+- Avoid subjective language like "we believe."
 - Use **active voice** and **present tense** unless citing reviews that are clearly in past tense.
 
 ### Example Anchoring - IMPORTANT
-Match the **formatting style** demonstrated in the “Cursor example” (omitted here). This includes:
+Match the **formatting style** demonstrated in the "Cursor example" (omitted here). This includes:
 - Section header spacing
 - Ratio of bold to regular text
 - One-line bullet explanations

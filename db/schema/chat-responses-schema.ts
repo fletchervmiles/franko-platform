@@ -10,6 +10,9 @@ export const chatResponsesTable = pgTable("chat_responses", {
   chatInstanceId: uuid("chat_instance_id")
     .notNull()
     .references(() => chatInstancesTable.id, { onDelete: "cascade" }),
+  persona: text("persona").notNull().default("UNCLASSIFIED"),
+  pmf_category: text("pmf_category"),
+  extraction_json: jsonb("extraction_json"),
   completionStatus: text("completion_status"),
   status: text("status"),
   chatProgress: jsonb("chat_progress"),

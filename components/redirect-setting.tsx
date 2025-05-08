@@ -169,7 +169,7 @@ export function RedirectSetting() {
           Redirect on Completion
         </CardTitle>
         <CardDescription>
-          Redirect to a custom URL when the conversation is completed.
+          Redirect to a custom URL when the interview is completed.
         </CardDescription>
       </CardHeader>
       <CardContent>

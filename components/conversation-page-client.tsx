@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Edit2, Trash2, Loader2, RefreshCcw, AlertTriangle } from "lucide-react"
@@ -19,11 +19,11 @@ import { Card } from "@/components/ui/card"
 import dynamic from "next/dynamic"
 import type { ConversationPlan } from "@/components/conversationPlanSchema"
 import { NavSidebar } from "@/components/nav-sidebar"
-import { useSearchParams } from "next/navigation"
-import { useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import React from "react"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
+import { useSetupChecklist } from "@/contexts/setup-checklist-context"
 
 // Dynamically import components for each tab to reduce initial bundle size
 const ShareableLink = dynamic(
@@ -172,6 +172,7 @@ const ConversationHeader = React.memo(function ConversationHeader({
 
 export const ConversationPageClient = React.memo(function ConversationPageClient({ params, userId }: ConversationPageClientProps) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const tabParam = searchParams?.get('tab')
   const fromParam = searchParams?.get('from')
   const [activeTab, setActiveTab] = useState(tabParam || "plan")
@@ -180,8 +181,9 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   // Separate stable state for title that doesn't change with tab navigation
   const [stableTitle, setStableTitle] = useState<string>("Loading...")
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
   const { toast } = useToast()
+  const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist()
+  const shareTabTriggered = useRef(false)
 
   // The guideName param is actually the chat instance ID
   const idVariable = params.guideName
@@ -245,6 +247,46 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
       updateLastViewed();
     }
   }, [activeTab, updateLastViewed]);
+
+  useEffect(() => {
+    // Check if the share tab is active and the step isn't complete yet
+    if (activeTab === 'share' && !setupProgress.shareLinkVisited && !shareTabTriggered.current) {
+      shareTabTriggered.current = true; // Mark as triggered for this session/load
+      
+      const markShareStepViewed = async () => {
+        try {
+          const response = await fetch('/api/onboarding/viewed-step', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ step: 'step5LinkShared' }),
+          });
+
+          if (response.ok) {
+            console.log('Successfully marked share step as viewed.');
+            refetchSetupStatus(); // Refetch status to update UI
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to mark share step as viewed:', errorData.error || response.statusText);
+            // Optionally reset the trigger ref if you want it to retry on next tab switch
+            // shareTabTriggered.current = false; 
+          }
+        } catch (error) {
+          console.error('Error calling viewed-step API for share:', error);
+          // Optionally reset the trigger ref
+          // shareTabTriggered.current = false; 
+        }
+      };
+
+      markShareStepViewed();
+    }
+    // Reset trigger if navigating away from the tab and it wasn't completed
+    else if (activeTab !== 'share' && !setupProgress.shareLinkVisited) {
+        shareTabTriggered.current = false;
+    }
+
+  }, [activeTab, setupProgress, refetchSetupStatus]);
 
   useEffect(() => {
     let isMounted = true;
@@ -644,11 +686,11 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div className="w-full md:max-w-[70%] mb-4 md:mb-0">
                     <h2 className="text-2xl font-semibold mb-2 flex items-center">
-                      Conversation Plan
+                      Interview Plan
                       <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Use this space to review and edit your Conversation Plan. It provides the necessary context and learning objectives that will guide your agent during conversations.
+                      Review & refine Interview Plan. These are the instructions your agent follows.
                     </p>
                   </div>
                   <div className="flex flex-col items-end">

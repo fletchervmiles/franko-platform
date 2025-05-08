@@ -1,0 +1,1 @@
+-- Manually created migration after drizzle-kit push added user_personas table. 

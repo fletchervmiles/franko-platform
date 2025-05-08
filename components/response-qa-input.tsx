@@ -285,8 +285,8 @@ export function ChatInput({
                 <PopoverContent className="w-[400px] p-0 shadow-lg" align="end" side="top" sideOffset={10}>
                   {/* Header */}
                   <div className="p-4 border-b">
-                    <h3 className="text-lg font-normal text-gray-800">Your Conversation Data</h3>
-                    <p className="text-sm text-gray-500">Select the conversation data you want to bring into your AI chat context</p>
+                    <h3 className="text-lg font-normal text-gray-800">Your Data</h3>
+                    <p className="text-sm text-gray-500">Select the interview data you want to bring into your AI chat context</p>
                   </div>
                   
                   {/* Conversation List */}

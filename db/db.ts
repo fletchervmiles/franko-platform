@@ -1,7 +1,16 @@
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { profilesTable, chatInstancesTable, chatResponsesTable, internalChatSessionsTable } from "./schema";
+import {
+  profilesTable,
+  chatInstancesTable,
+  chatResponsesTable,
+  internalChatSessionsTable,
+  responseFieldsTable,
+  responseArrayItemsTable,
+  userPersonasTable,
+  userOnboardingStatusTable,
+} from "./schema";
 
 config({ path: ".env.local" });
 
@@ -10,6 +19,10 @@ const schema = {
   chatInstances: chatInstancesTable,
   chatResponses: chatResponsesTable,
   internalChatSessions: internalChatSessionsTable,
+  responseFields: responseFieldsTable,
+  responseArrayItems: responseArrayItemsTable,
+  userPersonas: userPersonasTable,
+  userOnboardingStatus: userOnboardingStatusTable,
 };
 
 // Configure connection pooling options
