@@ -137,6 +137,7 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
       }
       const data: SelectUserOnboardingStatus = await response.json();
       setDbStatus(data);
+      setIsLoading(false);
       console.log('Onboarding status updated:', JSON.stringify(data));
     } catch (err) {
        const message = err instanceof Error ? err.message : "An unknown error occurred";

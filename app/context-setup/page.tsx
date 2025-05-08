@@ -429,311 +429,309 @@ function ContextSetupInnerPage() {
           </h1>
         </div>
 
-        <PersonaProvider>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-10">
-               <TabsTrigger
-                  value="organization"
-                  className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-               >
-                 <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                   Company
-                   {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
-                 </span>
-               </TabsTrigger>
-               <TabsTrigger
-                 value="branding"
-                 className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-               >
-                  <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                    Branding
-                    {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
-                  </span>
-               </TabsTrigger>
-               <TabsTrigger
-                 value="personas"
-                 className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-               >
-                 <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                   Personas
-                   {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
-                 </span>
-               </TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-10">
+             <TabsTrigger
+                value="organization"
+                className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+             >
+               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                 Company
+                 {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
+               </span>
+             </TabsTrigger>
+             <TabsTrigger
+               value="branding"
+               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+             >
+                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                  Branding
+                  {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
+                </span>
+             </TabsTrigger>
+             <TabsTrigger
+               value="personas"
+               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
+             >
+               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
+                 Personas
+                 {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
+               </span>
+             </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="organization">
-              <div className="space-y-6">
-                <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
-                  <CardHeader className="pb-6">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
-                            <Tag className="h-4 w-4 text-blue-500" /> Company Details
-                          </h2>
-                          <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {!isCardEditing && profile?.organisationDescription && (
-                             <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => onSubmit(form.getValues())}
-                                disabled={isPending || isSavingCardEdits}
-                                className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-                              >
-                                {isPending ? (
-                                  <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    <span>Regenerating...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <RefreshCw className="h-3 w-3" />
-                                    Regenerate Context
-                                  </>
-                                )}
-                            </Button>
-                          )}
-                          {!isCardEditing && (
-                            <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
-                              Edit
-                            </Button>
-                          )}
-                        </div>
+          <TabsContent value="organization">
+            <div className="space-y-6">
+              <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
+                <CardHeader className="pb-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
+                          <Tag className="h-4 w-4 text-blue-500" /> Company Details
+                        </h2>
+                        <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!isCardEditing && profile?.organisationDescription && (
+                           <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => onSubmit(form.getValues())}
+                              disabled={isPending || isSavingCardEdits}
+                              className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                            >
+                              {isPending ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Regenerating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="h-3 w-3" />
+                                  Regenerate Context
+                                </>
+                              )}
+                          </Button>
+                        )}
+                        {!isCardEditing && (
+                          <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
+                            Edit
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingProfile ? (
-                       <div className="flex flex-col items-center space-y-2 py-4">
-                         <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
-                         <p className="text-sm text-gray-500">Loading your profile...</p>
-                       </div>
-                     ) : isPending ? (
-                       <div className="flex flex-col items-center space-y-6 py-8">
-                         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                         <div className="text-center space-y-2">
-                           <p className="text-base font-semibold text-gray-900">
-                             Creating context for your agents...
-                           </p>
-                           <p className="text-sm text-gray-500 px-4">
-                             Fetching pages → extracting information → creating a structured document → generating your personas.
-                             <br />
-                             This usually takes under a minute.
-                           </p>
-                         </div>
-                         <div className="w-full max-w-md px-4 pt-2">
-                            <Progress
-                               value={loadingProgress}
-                               className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
-                            />
-                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                             <span>Progress:</span>
-                             <span>{loadingProgress}%</span>
-                           </div>
-                           {loadingProgress >= 100 && (
-                             <p className="text-center text-sm text-amber-500 mt-3">
-                               Almost ready! Please allow a few more moments for the process to complete.
-                             </p>
-                           )}
-                         </div>
-                       </div>
-                     ) : (
-                       <Form {...form}>
-                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                           <div className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="url"
-                              render={({ field }) => (
-                                <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
-                                  <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                    <Link className="h-4 w-4 text-blue-500" /> Website URL
-                                    <TooltipProvider delayDuration={0}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                          <p>We scan publicly available information from this website to build the AI's foundational understanding of your products, services, and brand voice.</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </FormLabel>
-                                  <p className="text-sm text-gray-500 mb-2">
-                                    Primary source for automated context generation.
-                                  </p>
-                                  <div className="flex flex-col sm:flex-row gap-2">
-                                    <FormControl className="w-full">
-                                      <div className="relative w-full">
-                                        <Input
-                                          placeholder="https://yourcompany.com"
-                                          className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                          {...field}
-                                          disabled={!isCardEditing || isSavingCardEdits}
-                                        />
-                                      </div>
-                                    </FormControl>
-                                  </div>
-                                  {!field.value && !profile?.organisationUrl && (
-                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                      ✨ Enter your company URL to automatically generate context.
-                                    </p>
-                                  )}
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="orgName"
-                              render={({ field }) => (
-                                <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
-                                  <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                    <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
-                                    <TooltipProvider delayDuration={0}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
-                                          <p>Enter the official name your AI should use when referring to your business or primary offering.</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </FormLabel>
-                                  <p className="text-sm text-gray-500 mb-2">
-                                    Ensures your brand is referenced accurately.
-                                  </p>
-                                  <div className="flex flex-col sm:flex-row gap-2">
-                                    <FormControl className="w-full">
-                                      <div className="relative w-full">
-                                        <Input
-                                          placeholder="Your Company Inc."
-                                          className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
-                                          {...field}
-                                          disabled={!isCardEditing || isSavingCardEdits}
-                                        />
-                                      </div>
-                                    </FormControl>
-                                  </div>
-                                  {!field.value && !profile?.organisationName && (
-                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
-                                      ✨ Enter your company or product name.
-                                    </p>
-                                  )}
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                           <div className="flex flex-wrap justify-end items-center gap-3 pt-2">
-                             {isCardEditing && (
-                               <>
-                                 <Button
-                                   type="button"
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={handleCancelCard}
-                                   className="h-8 text-xs px-4"
-                                   disabled={isSavingCardEdits}
-                                 >
-                                   Cancel
-                                 </Button>
-                              <Button
-                                   type="button"
-                                size="sm"
-                                   onClick={handleSaveCardEdits}
-                                   disabled={isSavingCardEdits}
-                                   className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-                                >
-                                     {isSavingCardEdits ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                         Saving...
-                                    </>
-                                  ) : (
-                                       "Save"
-                                  )}
-                                </Button>
-                               </>
-                            )}
-
-                            {!isCardEditing && (url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
-                              <Button
-                                type="submit"
-                                size="sm"
-                                disabled={isPending || isSavingCardEdits}
-                                className={cn(
-                                  "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
-                                  shouldPulse && "animate-pulse-edge",
-                                )}
-                              >
-                                {isPending ? (
-                                  <div className="flex items-center">
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    <span>Generating...</span>
-                                  </div>
-                                ) : (
-                                  "Extract Context from Website"
-                                )}
-                              </Button>
-                            )}
-
-                            {!isCardEditing && !showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={handleAddManualContext}
-                                className="h-9 px-4 flex items-center gap-2"
-                                disabled={isPending || isSavingCardEdits}
-                              >
-                                <PlusCircle className="h-4 w-4" />
-                                Add Context Manually
-                              </Button>
-                            )}
-                          </div>
-                         </form>
-                       </Form>
-                     )}
-                  </CardContent>
-                </Card>
-
-                {(profile?.organisationDescription || showManualContext) && (
-                  <div ref={contextContainerRef}>
-                    <ContextContainer
-                      initialContext={profile?.organisationDescription || ""}
-                      userId={user?.id}
-                      onContextUpdated={handleContextUpdated}
-                      startInEditMode={showManualContext && !profile?.organisationDescription}
-                    />
                   </div>
-                )}
-              </div>
-            </TabsContent>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingProfile ? (
+                     <div className="flex flex-col items-center space-y-2 py-4">
+                       <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+                       <p className="text-sm text-gray-500">Loading your profile...</p>
+                     </div>
+                   ) : isPending ? (
+                     <div className="flex flex-col items-center space-y-6 py-8">
+                       <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                       <div className="text-center space-y-2">
+                         <p className="text-base font-semibold text-gray-900">
+                           Creating context for your agents...
+                         </p>
+                         <p className="text-sm text-gray-500 px-4">
+                           Fetching pages → extracting information → creating a structured document → generating your personas.
+                           <br />
+                           This usually takes under a minute.
+                         </p>
+                       </div>
+                       <div className="w-full max-w-md px-4 pt-2">
+                          <Progress
+                             value={loadingProgress}
+                             className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
+                          />
+                         <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                           <span>Progress:</span>
+                           <span>{loadingProgress}%</span>
+                         </div>
+                         {loadingProgress >= 100 && (
+                           <p className="text-center text-sm text-amber-500 mt-3">
+                             Almost ready! Please allow a few more moments for the process to complete.
+                           </p>
+                         )}
+                       </div>
+                     </div>
+                   ) : (
+                     <Form {...form}>
+                       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                         <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="url"
+                            render={({ field }) => (
+                              <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                                <FormLabel className="text-sm font-semibold flex items-center gap-2">
+                                  <Link className="h-4 w-4 text-blue-500" /> Website URL
+                                  <TooltipProvider delayDuration={0}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                        <p>We scan publicly available information from this website to build the AI's foundational understanding of your products, services, and brand voice.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </FormLabel>
+                                <p className="text-sm text-gray-500 mb-2">
+                                  Primary source for automated context generation.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <FormControl className="w-full">
+                                    <div className="relative w-full">
+                                      <Input
+                                        placeholder="https://yourcompany.com"
+                                        className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                        {...field}
+                                        disabled={!isCardEditing || isSavingCardEdits}
+                                      />
+                                    </div>
+                                  </FormControl>
+                                </div>
+                                {!field.value && !profile?.organisationUrl && (
+                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                    ✨ Enter your company URL to automatically generate context.
+                                  </p>
+                                )}
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-            <TabsContent value="branding">
-               {!isLoadingProfile && profile && user?.id ? (
-                  <BrandingContext
-                    userId={user.id}
-                    initialLogoUrl={profile.logoUrl}
-                    initialButtonColor={profile.buttonColor}
-                    initialTitleColor={profile.titleColor}
+                          <FormField
+                            control={form.control}
+                            name="orgName"
+                            render={({ field }) => (
+                              <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
+                                <FormLabel className="text-sm font-semibold flex items-center gap-2">
+                                  <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
+                                  <TooltipProvider delayDuration={0}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <InfoIcon className="h-4 w-4 text-gray-500 cursor-pointer" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" align="center" className="bg-black text-white border-black max-w-xs p-2 rounded">
+                                        <p>Enter the official name your AI should use when referring to your business or primary offering.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </FormLabel>
+                                <p className="text-sm text-gray-500 mb-2">
+                                  Ensures your brand is referenced accurately.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <FormControl className="w-full">
+                                    <div className="relative w-full">
+                                      <Input
+                                        placeholder="Your Company Inc."
+                                        className="bg-[#FAFAFA] disabled:bg-[#FAFAFA] disabled:text-gray-800 disabled:font-medium transition-colors duration-200"
+                                        {...field}
+                                        disabled={!isCardEditing || isSavingCardEdits}
+                                      />
+                                    </div>
+                                  </FormControl>
+                                </div>
+                                {!field.value && !profile?.organisationName && (
+                                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                    ✨ Enter your company or product name.
+                                  </p>
+                                )}
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                         <div className="flex flex-wrap justify-end items-center gap-3 pt-2">
+                           {isCardEditing && (
+                             <>
+                               <Button
+                                 type="button"
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={handleCancelCard}
+                                 className="h-8 text-xs px-4"
+                                 disabled={isSavingCardEdits}
+                               >
+                                 Cancel
+                               </Button>
+                            <Button
+                                 type="button"
+                                  size="sm"
+                                 onClick={handleSaveCardEdits}
+                                 disabled={isSavingCardEdits}
+                                 className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                              >
+                                   {isSavingCardEdits ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                       Saving...
+                                  </>
+                                ) : (
+                                     "Save"
+                                )}
+                              </Button>
+                             </>
+                          )}
+
+                          {!isCardEditing && (url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription) && (
+                            <Button
+                              type="submit"
+                              size="sm"
+                              disabled={isPending || isSavingCardEdits}
+                              className={cn(
+                                "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
+                                shouldPulse && "animate-pulse-edge",
+                              )}
+                            >
+                              {isPending ? (
+                                <div className="flex items-center">
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  <span>Generating...</span>
+                                </div>
+                              ) : (
+                                "Extract Context from Website"
+                              )}
+                            </Button>
+                          )}
+
+                          {!isCardEditing && !showManualContext && url?.length > 0 && orgName?.length > 0 && !profile?.organisationDescription && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={handleAddManualContext}
+                              className="h-9 px-4 flex items-center gap-2"
+                              disabled={isPending || isSavingCardEdits}
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                              Add Context Manually
+                            </Button>
+                          )}
+                        </div>
+                       </form>
+                     </Form>
+                   )}
+                </CardContent>
+              </Card>
+
+              {(profile?.organisationDescription || showManualContext) && (
+                <div ref={contextContainerRef}>
+                  <ContextContainer
+                    initialContext={profile?.organisationDescription || ""}
+                    userId={user?.id}
+                    onContextUpdated={handleContextUpdated}
+                    startInEditMode={showManualContext && !profile?.organisationDescription}
                   />
-                ) : (
-                  <LoadingPlaceholder />
-                )}
-            </TabsContent>
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
-            <TabsContent value="personas">
-              <PersonaManager />
-            </TabsContent>
-          </Tabs>
-        </PersonaProvider>
+          <TabsContent value="branding">
+             {!isLoadingProfile && profile && user?.id ? (
+                <BrandingContext
+                  userId={user.id}
+                  initialLogoUrl={profile.logoUrl}
+                  initialButtonColor={profile.buttonColor}
+                  initialTitleColor={profile.titleColor}
+                />
+              ) : (
+                <LoadingPlaceholder />
+              )}
+          </TabsContent>
+
+          <TabsContent value="personas">
+            <PersonaManager />
+          </TabsContent>
+        </Tabs>
       </div>
     </NavSidebar>
   )
