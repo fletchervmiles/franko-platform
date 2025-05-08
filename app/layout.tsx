@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SetupChecklistProvider } from "@/contexts/setup-checklist-context";
 import { SetupChecklist } from "@/components/setup-checklist";
+import { ProfileProvider } from "@/components/contexts/profile-context";
 
 export const metadata: Metadata = {
   title: {
@@ -54,20 +55,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           suppressHydrationWarning
         >
           <SetupChecklistProvider>
-            <Providers
-              attribute="class"
-              defaultTheme="light"
-              enableSystem={false}
-              disableTransitionOnChange
-              forcedTheme="light"
-            >
-              <ClerkProfileSync />
-              {children}
-              <Toaster />
-              <Analytics />
-              <SpeedInsights />
-              <SetupChecklist />
-            </Providers>
+            <ProfileProvider>
+              <Providers
+                attribute="class"
+                defaultTheme="light"
+                enableSystem={false}
+                disableTransitionOnChange
+                forcedTheme="light"
+              >
+                <ClerkProfileSync />
+                {children}
+                <Toaster />
+                <Analytics />
+                <SpeedInsights />
+                <SetupChecklist />
+              </Providers>
+            </ProfileProvider>
           </SetupChecklistProvider>
         </body>
       </html>
