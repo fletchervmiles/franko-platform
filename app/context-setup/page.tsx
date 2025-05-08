@@ -183,6 +183,10 @@ function ContextSetupInnerPage() {
         title: "Success!",
         description: "Your context has been generated successfully.",
       })
+
+      // Force a revalidation of server components and fresh data fetches
+      router.refresh();
+
       setLoadingProgress(0)
       refetchSetupStatus();
     },
