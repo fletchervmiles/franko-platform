@@ -404,7 +404,7 @@ export async function POST(request: Request) {
         logger.info('Context Setter Prompt preparation:', { /* ... */ });
 
         try {
-          let attempt = 1; // Initialize attempt counter
+          const attempt = 1; // Initialize attempt counter
           logger.info(`Context Setter attempt ${attempt}/${maxContextSetterRetries}`); // Log attempt 1
           const { text } = await generateText({
             prompt: filledContextSetterPrompt,
