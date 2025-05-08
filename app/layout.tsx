@@ -54,8 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           className="bg-background text-foreground"
           suppressHydrationWarning
         >
-          <ProfileProvider>
-            <SetupChecklistProvider>
+          <SetupChecklistProvider>
+            <ProfileProvider>
               <Providers
                 attribute="class"
                 defaultTheme="light"
@@ -70,8 +70,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <SpeedInsights />
                 <SetupChecklist />
               </Providers>
-            </SetupChecklistProvider>
-          </ProfileProvider>
+            </ProfileProvider>
+          </SetupChecklistProvider>
         </body>
       </html>
     </ClerkProvider>
