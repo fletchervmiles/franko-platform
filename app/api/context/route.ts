@@ -24,7 +24,7 @@ import { db } from '@/db/db'; // Ensure db is imported
 import { getUserPersonas } from "@/db/queries/user-personas-queries"; // Import query function for logging
 import { updateOnboardingStep } from '@/db/queries/user-onboarding-status-queries'; // <<<--- ADDED IMPORT
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
 // Helper function to load the context setter prompt

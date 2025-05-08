@@ -7,6 +7,10 @@ import { chatResponsesTable, userPersonasTable } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import type { Persona } from "@/contexts/persona-context"; // Import frontend type
 
+// Configure Vercel serverless function timeout (Pro plan allows longer timeouts)
+export const maxDuration = 120; // 2 minutes
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch all personas for the user with calculated fields
 export async function GET(request: Request) {
   try {
