@@ -150,8 +150,12 @@ function ContextSetupInnerPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: submitContext,
     onSuccess: (data) => {
+      // Production debugging
+      console.log('Context generation succeeded, response:', JSON.stringify(data));
+      
       // Optimistically update profile cache so UI reflects new description immediately
       if (data && data.description) {
+        console.log('Setting description in cache:', data.description.substring(0, 50) + '...');
         queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
           if (!old) return old;
           return {
@@ -160,7 +164,14 @@ function ContextSetupInnerPage() {
             organisationDescriptionCompleted: true,
           };
         });
+        
+        // Also update local state for immediate UI update
+        setDescription(data.description);
+        setShowManualContext(true); // Force the context container to be visible
+      } else {
+        console.warn('Context generation succeeded but no description returned');
       }
+      
       setSubmittedValues({
         url: profile?.organisationUrl || form.getValues("url"),
         orgName: profile?.organisationName || form.getValues("orgName")
@@ -372,16 +383,34 @@ function ContextSetupInnerPage() {
     }, 100)
   }
 
-  const handleContextUpdated = (updatedContext: string) => {
+  const handleContextUpdated = async (updatedContext: string) => {
+    console.log('Context updated via manual edit, description length:', updatedContext.length);
     setDescription(updatedContext)
     setIsCompanyComplete(!!updatedContext);
-    queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' }).then(() => {
-      const freshProfile = queryClient.getQueryData(queryKeys.profile(user?.id)) as typeof profile
-      if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
-        setHighlightWorkspaceNavItem(true)
-      }
-      refetchSetupStatus();
-    })
+    
+    // Optimistically update cache first for immediate UI feedback
+    queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        organisationDescription: updatedContext,
+        organisationDescriptionCompleted: true,
+      };
+    });
+    
+    // Then do the invalidation to get real server data
+    await queryClient.invalidateQueries({ 
+      queryKey: queryKeys.profile(user?.id), 
+      refetchType: 'active' 
+    });
+    
+    const freshProfile = queryClient.getQueryData(queryKeys.profile(user?.id)) as typeof profile
+    if (!profile?.organisationDescriptionCompleted && freshProfile?.organisationDescriptionCompleted) {
+      setHighlightWorkspaceNavItem(true)
+    }
+    
+    // Update checklist status last
+    refetchSetupStatus();
   }
 
   const renderStatusDot = (isComplete: boolean) => (

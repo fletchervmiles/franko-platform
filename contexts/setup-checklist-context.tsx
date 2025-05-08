@@ -124,11 +124,12 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { user, isLoaded } = useUser();
 
-  const fetchStatus = async () => {
+  const fetchStatus = async (retryCount = 0, maxRetries = 2) => {
     if (!isLoaded || !user?.id) return; // Wait for auth
     setIsLoading(true)
     setError(null)
     try {
+      console.log(`Fetching onboarding status (attempt ${retryCount + 1}/${maxRetries + 1})`);
       const response = await fetch('/api/onboarding/status');
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({})) // Try to get error message
@@ -136,13 +137,22 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
       }
       const data: SelectUserOnboardingStatus = await response.json();
       setDbStatus(data);
+      console.log('Onboarding status updated:', JSON.stringify(data));
     } catch (err) {
        const message = err instanceof Error ? err.message : "An unknown error occurred";
        logger.error("Failed to fetch onboarding status:", message); // Use logger or console.error
-       setError(message);
-       setDbStatus(null); // Clear potentially stale data on error
+       if (retryCount >= maxRetries) {
+         setError(message);
+         setDbStatus(null); // Clear potentially stale data on error
+       } else {
+         console.log(`Retrying onboarding status fetch (${retryCount + 1}/${maxRetries})`);
+         setTimeout(() => fetchStatus(retryCount + 1, maxRetries), 1000 * Math.pow(2, retryCount));
+         return; // Don't set isLoading to false until final attempt
+       }
     } finally {
-      setIsLoading(false);
+      if (retryCount >= maxRetries) {
+        setIsLoading(false);
+      }
     }
   };
 
