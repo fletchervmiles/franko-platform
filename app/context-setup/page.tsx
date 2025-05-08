@@ -153,7 +153,6 @@ function ContextSetupInnerPage() {
       // Production debugging
       console.log('Context generation succeeded, response:', JSON.stringify(data));
       
-      // Optimistically update profile cache so UI reflects new description immediately
       if (data && data.description) {
         console.log('Setting description in cache:', data.description.substring(0, 50) + '...');
         queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
@@ -164,10 +163,8 @@ function ContextSetupInnerPage() {
             organisationDescriptionCompleted: true,
           };
         });
-        
-        // Also update local state for immediate UI update
         setDescription(data.description);
-        setShowManualContext(true); // Force the context container to be visible
+        setShowManualContext(true);
       } else {
         console.warn('Context generation succeeded but no description returned');
       }
@@ -177,18 +174,30 @@ function ContextSetupInnerPage() {
         orgName: profile?.organisationName || form.getValues("orgName")
       })
       setIsCardEditing(false)
+
+      // Invalidate profile first, then refetch personas, then setup status
       queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
-      refetchPersonas()
+        .then(() => {
+          console.log('Profile invalidated, now refetching personas...');
+          return refetchPersonas(); // Ensure this is awaited or handled if async
+        })
+        .then(() => {
+          console.log('Personas refetched, now refetching setup status...');
+          refetchSetupStatus();
+        })
+        .catch(error => {
+          console.error('Error during sequential refetch operations:', error);
+        });
+
       toast({
         title: "Success!",
         description: "Your context has been generated successfully.",
       })
-
-      // Force a revalidation of server components and fresh data fetches
-      router.refresh();
+      
+      // router.refresh(); // Temporarily commented out to isolate its effect
 
       setLoadingProgress(0)
-      refetchSetupStatus();
+      // refetchSetupStatus(); // Moved into the .then() chain
     },
     onError: (error) => {
       toast({

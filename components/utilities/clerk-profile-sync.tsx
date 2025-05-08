@@ -10,24 +10,29 @@ export function ClerkProfileSync() {
   const { isSignedIn, user } = useUser();
 
   useEffect(() => {
-    if (isSignedIn) {
-      (async () => {
+    if (isSignedIn && user?.id) {
+      const performSync = async () => {
+        let profileSyncedSuccessfully = false;
         try {
-          await syncClerkProfileAction();
-          // ensure profile query is up to date immediately
-          queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' });
-          
-          // Production environments may have race conditions - do a second invalidate after a delay
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' });
-            console.log('Performed delayed profile invalidation after clerk sync');
-          }, 1000);
+          console.log(`ClerkProfileSync: Starting sync for user ${user.id}`);
+          const syncResult = await syncClerkProfileAction();
+          if (syncResult.status === "success") {
+            console.log(`ClerkProfileSync: Profile sync/creation successful for user ${user.id}`);
+            profileSyncedSuccessfully = true;
+          } else {
+            console.error(`ClerkProfileSync: Profile sync failed for user ${user.id}:`, syncResult.message);
+          }
         } catch (error) {
-          console.error('Error in clerk profile sync:', error);
-          // Still try to invalidate even on error, in case profile was created
-          queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' });
+          console.error(`ClerkProfileSync: Error during syncClerkProfileAction for user ${user.id}:`, error);
         }
-      })();
+
+        if (!profileSyncedSuccessfully) {
+            console.warn(`ClerkProfileSync: Invalidating queries for user ${user.id} despite sync issues. Dependent queries might fail if profile doesn't exist.`);
+        }
+
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id), refetchType: 'active' });
+      };
+      performSync();
     }
   }, [isSignedIn, user?.id]);
 
