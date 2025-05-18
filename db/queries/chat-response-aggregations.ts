@@ -20,15 +20,15 @@ export async function getPmfCountsByPersona(): Promise<PmfCountsByPersona[]> {
     // Using sql template for conditional counting (FILTER equivalent)
     const results = await db
       .select({
-        persona: chatResponsesTable.persona,
+        persona: chatResponsesTable.persona_category,
         vd_count: sql<number>`count(*) filter (where ${chatResponsesTable.pmf_category} = 'VD')`.mapWith(Number),
         sd_count: sql<number>`count(*) filter (where ${chatResponsesTable.pmf_category} = 'SD')`.mapWith(Number),
         nd_count: sql<number>`count(*) filter (where ${chatResponsesTable.pmf_category} = 'ND')`.mapWith(Number),
         total_count: count(chatResponsesTable.id), // Total count for the persona
       })
       .from(chatResponsesTable)
-      .groupBy(chatResponsesTable.persona)
-      .orderBy(chatResponsesTable.persona); // Optional: order by persona
+      .groupBy(chatResponsesTable.persona_category)
+      .orderBy(chatResponsesTable.persona_category); // Optional: order by persona
 
     return results;
 
