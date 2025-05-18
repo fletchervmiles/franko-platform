@@ -1,1 +1,1 @@
-ALTER TABLE "profiles" DROP COLUMN IF EXISTS "organisation_description_demo_only";
+-- ALTER TABLE "profiles" DROP COLUMN IF EXISTS "organisation_description_demo_only";

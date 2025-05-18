@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "user_personas" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "profiles" ADD COLUMN "organisation_description_demo_only" text;--> statement-breakpoint
+-- ALTER TABLE "profiles" ADD COLUMN "organisation_description_demo_only" text;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "user_personas" ADD CONSTRAINT "user_personas_profile_user_id_profiles_user_id_fk" FOREIGN KEY ("profile_user_id") REFERENCES "public"."profiles"("user_id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION

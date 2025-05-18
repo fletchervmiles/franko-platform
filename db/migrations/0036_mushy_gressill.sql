@@ -1,1 +1,1 @@
-ALTER TABLE "chat_instances" ADD COLUMN "redirect_url" text;
+-- ALTER TABLE "chat_instances" ADD COLUMN "redirect_url" text;

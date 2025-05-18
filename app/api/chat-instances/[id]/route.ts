@@ -185,6 +185,13 @@ export async function PATCH(
     if (body.redirect_url !== undefined) {
       updates.redirect_url = body.redirect_url;
     }
+    if (body.interview_classification !== undefined) {
+      updates.interview_type = body.interview_classification;
+      logger.info('Mapped interview_classification to interview_type', { id, originalValue: body.interview_classification });
+    } else if (body.interview_type !== undefined) {
+      updates.interview_type = body.interview_type;
+      logger.info('Received interview_type directly', { id, value: body.interview_type });
+    }
 
     const updateKeys = Object.keys(updates);
     

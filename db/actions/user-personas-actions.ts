@@ -98,11 +98,11 @@ export async function updateUserPersona(
         // 2. Update chat_responses where userId and old persona name match
         const updateResult = await tx
           .update(chatResponsesTable)
-          .set({ persona: newName })
+          .set({ persona_category: newName })
           .where(
             and(
               eq(chatResponsesTable.userId, profileUserId),
-              eq(chatResponsesTable.persona, oldName)
+              eq(chatResponsesTable.persona_category, oldName)
             )
           );
           console.log(`Updated chat responses associated with persona "${oldName}".`);
@@ -173,11 +173,11 @@ export async function deleteUserPersona(personaId: string): Promise<void> {
       console.log(`Setting chat_responses persona to UNCLASSIFIED from "${name}" for user ${profileUserId}`);
       const updateResult = await tx
         .update(chatResponsesTable)
-        .set({ persona: 'UNCLASSIFIED' })
+        .set({ persona_category: 'UNCLASSIFIED' })
         .where(
           and(
             eq(chatResponsesTable.userId, profileUserId),
-            eq(chatResponsesTable.persona, name)
+            eq(chatResponsesTable.persona_category, name)
           )
         );
        console.log(`Updated chat responses associated with persona "${name}" to UNCLASSIFIED.`);
@@ -240,11 +240,11 @@ export async function mergeUserPersonas(
       console.log(`Merging chat_responses persona from "${sourcePersona.name}" to "${targetPersona.name}" for user ${userId}`);
       await tx
         .update(chatResponsesTable)
-        .set({ persona: targetPersona.name })
+        .set({ persona_category: targetPersona.name })
         .where(
           and(
             eq(chatResponsesTable.userId, userId),
-            eq(chatResponsesTable.persona, sourcePersona.name) // Match by name
+            eq(chatResponsesTable.persona_category, sourcePersona.name)
           )
         );
 

@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // 2. Fetch interview counts for each persona for this user
     const counts = await db
       .select({
-        personaName: chatResponsesTable.persona,
+        personaName: chatResponsesTable.persona_category,
         interviewCount: count(chatResponsesTable.id),
         // Add calculation for veryDisappointedPercentage here (e.g., using countif or filter)
         // Example (needs adjustment based on pmf_category values):
@@ -34,9 +34,9 @@ export async function GET(request: Request) {
       .from(chatResponsesTable)
       .where(and(
          eq(chatResponsesTable.userId, userId),
-         sql`${chatResponsesTable.persona} != 'UNCLASSIFIED'` // Exclude unclassified
+         sql`${chatResponsesTable.persona_category} != 'UNCLASSIFIED'` // Exclude unclassified
       ))
-      .groupBy(chatResponsesTable.persona);
+      .groupBy(chatResponsesTable.persona_category);
 
     const countsMap = new Map<string, { interviewCount: number; /* veryDisappointedCount: number; */ }>();
     counts.forEach(row => {

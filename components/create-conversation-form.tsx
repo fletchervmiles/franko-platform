@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { flushSync } from "react-dom"
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -210,20 +211,6 @@ Agent guidance (framed as learning outcomes)
       icon: Sunrise
     },
     {
-      title: "Time to Value",
-      prompt: `I want to understand:
-
-- the key benefit or value customers originally hoped to achieve when they signed up for ${organisationName};
-- how long it took them to experience their first "aha" moment or meaningful value;
-- the specific feature or experience that delivered this initial value;
-- whether their initial expectations have been met (and if not, what's missing);
-- what they've found most valuable or enjoyable so far; and
-- any early areas of friction, confusion, or opportunities we have to improve their experience.
-
-I'll send this to customers who've recently completed onboarding and experienced their first interactions with ${organisationName}.`,
-      icon: Clock
-    },
-    {
       title: "Product-Market Fit Engine",
       prompt: `Deepening Product-Market Fit for ${organisationName}
 
@@ -423,7 +410,26 @@ Agent guidance
       setHasInitiatedTopic(true); // Mark topic as initiated
       setSelectedTemplate("custom"); // Ensure selectedTemplate is set for the main rendering condition
     }
-  }, [templateType]);
+    // 3. Add this block to handle initial loading of other templates
+    if (templateType && ["pmf", "churn", "onboard"].includes(templateType)) {
+      // Ensure the state is updated based on the template type from the prop
+      // We need to map the prop 'templateType' (e.g., "pmf") to the internal values used by handleTemplateSelected
+      // For example, if your AgentSelectionTabs passes "pmf", "churn", "onboard"
+      let internalTemplateType = templateType;
+      if (templateType === "onboard") { // Assuming URL uses "onboard" but handleTemplateSelected expects "onboard-acquisition" for the prompt
+        internalTemplateType = "onboard"; // Or map to whatever handleTemplateSelected expects for the "Acquisition & First Impressions" template
+      }
+      // It seems handleTemplateSelected already uses "pmf", "churn", "onboard" as valid inputs based on previous edits.
+      handleTemplateSelected(internalTemplateType);
+      // If build your own isn't already set by "custom", make sure it's false
+      // and that we are ready to show the form (if not regenerating)
+      if (templateType !== "custom") {
+        setUseBuildYourOwn(true); // Show the customization cards
+        setVisibleCards(1);     // Start at the first customization card
+        setHasInitiatedTopic(true); // Assume topic is initiated by template
+      }
+    }
+  }, [templateType]); // Rerun when templateType prop changes
   
   // Add effect to scroll to the newly visible card when visibleCards changes
   useEffect(() => {
@@ -470,10 +476,10 @@ Agent guidance
     
     // Set template based on selection
     if (templateType === "pmf") {
-      templatePrompt = conversationTemplates[2].prompt; // Product-Market Fit Engine
-      setSelectedTemplate("product-market-fit");
+      templatePrompt = conversationTemplates[1].prompt; // Product-Market Fit Engine
+      setSelectedTemplate("pmf");
     } else if (templateType === "churn") {
-      templatePrompt = conversationTemplates[3].prompt; // Churn & Exit Insights
+      templatePrompt = conversationTemplates[2].prompt; // Churn & Exit Insights
       setSelectedTemplate("churn");
     } else if (templateType === "onboard") {
       templatePrompt = conversationTemplates[0].prompt; // Acquisition & First Impressions
@@ -522,10 +528,12 @@ Agent guidance
   
   // This is triggered when the Generate Agent button is clicked on a template
   const handleGenerateWithTemplate = (templateType: string) => {
-    // Make sure form values are set based on the template
-    handleTemplateSelected(templateType);
+    // 2. Use flushSync to ensure state updates from handleTemplateSelected are applied before handleSubmit
+    flushSync(() => {
+      handleTemplateSelected(templateType);
+    });
     
-    // This will use the default values we've set and submit the form
+    // Now, handleSubmit will use the updated state
     handleSubmit();
   }
 
@@ -614,23 +622,25 @@ Agent guidance
       const durationString = formatDurationString(numTurns);
       
       setLoadingProgress("Saving details..."); // Update progress
-      // --- Correct the fetch call ---
-      // Use PATCH method and the standard [id] route
+      
+      const chatInstancePayload = {
+        topic,
+        duration: durationString,
+        respondentContacts,
+        incentiveStatus,
+        incentiveCode,
+        incentiveDescription: formattedIncentiveDescription,
+        additionalDetails,
+        interview_type: selectedTemplate,
+      };
+      console.log("[handleSubmit] Data for PATCH /api/chat-instances/:id:", chatInstancePayload);
+
       const response = await fetch(`/api/chat-instances/${targetId}`, {
         method: 'PATCH', // Use PATCH
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          topic,
-          duration: durationString,
-          respondentContacts,
-          incentiveStatus,
-          incentiveCode,
-          incentiveDescription: formattedIncentiveDescription,
-          additionalDetails,
-          // NOTE: published status is not set here, defaults to false
-        }),
+        body: JSON.stringify(chatInstancePayload),
       })
       
       if (!response.ok) {
@@ -638,18 +648,21 @@ Agent guidance
       }
 
       setLoadingProgress("Generating plan..."); // Update progress
-      // Update the plan generation and handling section
+      
+      const planGenerationPayload = {
+        topic,
+        duration: durationString,
+        additionalDetails,
+      };
+      console.log("[handleSubmit] Data for POST /api/conversation-plan/generate:", planGenerationPayload);
+
       // Generate conversation plan - uses chatId query param, which is correct
       const planResponse = await fetch(`/api/conversation-plan/generate?chatId=${targetId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          topic,
-          duration: durationString,
-          additionalDetails,
-        }),
+        body: JSON.stringify(planGenerationPayload),
       });
       
       if (!planResponse.ok) {
