@@ -3,6 +3,8 @@ import {
   chatResponsesTable,
   responseFieldsTable,
   SelectResponseField,
+  signalLevelEnum,
+  pmfCategoryEnum,
 } from "@/db/schema";
 import { eq, and, desc, gte, sql, getTableColumns } from "drizzle-orm";
 
@@ -48,9 +50,9 @@ export async function getLatestSnippetsByCriteria(
       .where(
         and(
           eq(responseFieldsTable.fieldKey, fieldKey),
-          eq(responseFieldsTable.signal, signal),
-          eq(chatResponsesTable.persona, persona),
-          eq(chatResponsesTable.pmf_category, pmfCategory),
+          eq(responseFieldsTable.signal_level, signal as typeof signalLevelEnum.enumValues[number]),
+          eq(chatResponsesTable.persona_category, persona),
+          eq(chatResponsesTable.pmf_category, pmfCategory as typeof pmfCategoryEnum.enumValues[number]),
           gte(chatResponsesTable.createdAt, dateThreshold)
         )
       )
