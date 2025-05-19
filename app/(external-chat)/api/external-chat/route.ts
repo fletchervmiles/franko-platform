@@ -98,6 +98,9 @@ import {
   getCachedPrompt
 } from '@/lib/prompt-cache';
 
+// Import the new JSON parsing utilities
+import { extractJsonFromString, parseRobustJson } from "@/lib/utils/json-parser";
+
 // Remove exports and use internal functions instead
 function _invalidatePromptCache(orgId: string) {
   logger.debug('Invalidating prompt caches for organization:', { orgId });
@@ -446,29 +449,46 @@ export async function POST(request: Request) {
     console.log("=== FULL AI RESPONSE END ===\n");
 
     // Extract the relevant part of the response
-    let parsedContent;
-    let displayText;
+    let parsedContent: any = { response: result.text }; // Default to ensure .response exists for fallback, and for objectives
+    let displayText: string = result.text; // Default displayText to the full raw text initially
+
+    let stringToParse = result.text;
+    const extractedJsonBlock = extractJsonFromString(result.text);
+    if (extractedJsonBlock !== null) { 
+        stringToParse = extractedJsonBlock;
+    }
 
     try {
-      // The result.text might be wrapped in ```json ``` or be plain JSON
-      const jsonText = result.text.includes('```json')
-        ? result.text.split('```json\n')[1].split('\n```')[0]
-        : result.text;
-        
-      parsedContent = JSON.parse(jsonText);
+      const robustlyParsed = parseRobustJson(stringToParse);
+      parsedContent = robustlyParsed; // Assign to the broader scoped parsedContent
+
+      if (typeof parsedContent === 'object' && parsedContent !== null && 'response' in parsedContent) {
+        displayText = String(parsedContent.response); // Ensure string
+      } else {
+        // If robustlyParsed is not an object or no 'response' field,
+        // displayText remains result.text (its initial default from line above).
+        logger.warn('Robustly parsed content is not an object or "response" field missing. DisplayText remains result.text.', {
+          parsedContentType: typeof parsedContent,
+          stringToParsePreview: stringToParse.substring(0, 100)
+        });
+        // displayText is already result.text, so no change needed here for that.
+        // parsedContent is already robustlyParsed, so it could be a string or other non-object type.
+      }
       
-      // Extract just the "response" field for display
-      displayText = parsedContent.response || result.text;
-      
-      logger.debug('Successfully parsed JSON response', { 
+      logger.debug('Successfully parsed JSON response using robust parser', { 
         responseLength: displayText.length,
         contentSnippet: displayText.substring(0, 100) + (displayText.length > 100 ? '...' : '')
       });
+
     } catch (error) {
-      logger.error('Failed to parse JSON response:', error);
-      // Fallback to using the raw text if parsing fails
-      parsedContent = { response: result.text };
-      displayText = result.text;
+      // logJsonParseError is available from json-parser, but using existing logger for consistency here
+      logger.error('Failed to parse JSON response with robust parser:', {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        // Log a snippet of what was attempted to be parsed for easier debugging
+        contentAttemptedToParse: stringToParse.substring(0, 500) 
+      });
+      // Fallbacks are already set: parsedContent = { response: result.text }, displayText = result.text
+      // (These were the initial defaults for these variables)
     }
 
     // Create a complete message for database storage

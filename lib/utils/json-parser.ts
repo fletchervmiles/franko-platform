@@ -50,21 +50,35 @@ export function repairCommonJsonIssues(jsonString: string): string {
  * Attempts to extract JSON from a string that might be wrapped in other content
  */
 export function extractJsonFromString(content: string): string | null {
-  // Extract JSON blocks from markdown code blocks
-  if (content.includes('```json') && content.includes('```')) {
-    const jsonText = content.split('```json\n')[1]?.split('\n```')[0];
-    if (jsonText) {
-      return jsonText;
+  const markerStart = '```json\n';
+  const markerEnd = '\n```';
+  
+  // Attempt to find and extract the last JSON block marked with ```json ... ```
+  const lastJsonBlockStartIndex = content.lastIndexOf(markerStart);
+  if (lastJsonBlockStartIndex !== -1) {
+    const blockContentStart = lastJsonBlockStartIndex + markerStart.length;
+    // Find the corresponding end marker for this last block
+    const blockContentEnd = content.indexOf(markerEnd, blockContentStart);
+    
+    if (blockContentEnd !== -1) {
+      // Found a pair of start and end markers for the last block
+      return content.substring(blockContentStart, blockContentEnd);
     }
+    // If a ```json\n was found but no matching \n```, this block is malformed.
+    // We'll fall through to check if the whole content is JSON.
   }
   
-  // Check if the content itself looks like JSON
-  if ((content.trim().startsWith('{') && content.trim().endsWith('}')) || 
-      (content.trim().startsWith('[') && content.trim().endsWith(']'))) {
-    return content;
+  // If no markdown-style JSON block was successfully extracted (or none existed/was well-formed),
+  // check if the entire content string itself looks like a JSON object or array.
+  const trimmedContent = content.trim();
+  if (
+    (trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) ||
+    (trimmedContent.startsWith('[') && trimmedContent.endsWith(']'))
+  ) {
+    return trimmedContent;
   }
   
-  return null;
+  return null; // No suitable JSON string found
 }
 
 /**
