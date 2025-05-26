@@ -47,7 +47,17 @@ const navMainData = [
     title: "Analysis",
     items: [
       {
-        title: "Response Q&A",
+        title: "PMF",
+        url: "/pmf",
+        icon: <BarChart className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Personas",
+        url: "/persona-dashboard",
+        icon: <User className="mr-0.5 h-4 w-4" />,
+      },
+      {
+        title: "Chat",
         url: "/response-qa",
         icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
       },

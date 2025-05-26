@@ -59,7 +59,7 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
           </div>
 
           <h2 className="text-2xl font-semibold text-center">
-            {!isComplete ? "Generating your Agent Interview Plan..." : `Finalising now${dots}`}
+            {!isComplete ? "Generating your Interview Agent Interview..." : `Finalising now${dots}`}
           </h2>
 
           {isComplete && (

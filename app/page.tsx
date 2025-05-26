@@ -1,20 +1,26 @@
 "use client";
 
-import Nav from '@/components/lp-components/nav';
-import Hero from '@/components/lp-components/hero';
-import WhyComparison from '@/components/lp-components/why-comparison';
+import ResponsiveNavbar from '@/components/lp-redesign/responsive-narbar';
+import HeroSection from "@/components/lp-redesign/hero-section";
+import FeaturesTabs from "@/components/lp-redesign/features-tabs";
+import WhySection from "@/components/lp-redesign/why-section";
+import HowItWorks from "@/components/lp-redesign/how-it-works";
 import Container from '@/components/lp-components/container';
 import Footer from '@/components/lp-components/footer';
-import Journey from '@/components/lp-components/journey';
 import Timeline from '@/components/lp-components/timeline';
 import DemoChat from '@/components/lp-components/demo-chat';
 
 export default function HomePage() {
   return (
     <>
-      <Nav />
-      <Hero />
-      <WhyComparison />
+      <ResponsiveNavbar />
+      <HeroSection />
+      {/* Features Tabs Section */}
+      <FeaturesTabs />
+      {/* Why Section */}
+      <WhySection />
+      {/* How It Works Section - Replaced Journey with HowItWorks */}
+      <HowItWorks />
 
       <Container>
         <section className="py-24 md:py-32">
@@ -31,7 +37,6 @@ export default function HomePage() {
             <p className="text-lg sm:text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
               An always-on feedback engine that meets customers where they are—zero friction, zero scheduling—capturing unfiltered customer feedback while you build.
             </p>
-            <Journey />
           </div>
         </section>
       </Container>

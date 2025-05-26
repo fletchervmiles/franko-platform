@@ -6,6 +6,7 @@ import { ChatInput } from "@/components/response-qa-input"
 import { Message as MessageComponent } from "@/components/message-responses"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
 import { AlertTriangle } from "lucide-react"
+import { PromptSuggestions } from "@/components/prompt-suggestions"
 
 interface Conversation {
   id: string
@@ -25,6 +26,15 @@ interface ContentItem {
   type: string;
   text?: string;
 }
+
+const promptSuggestionsList = [
+  "From all selected interviews, what's the single most important insight, and why does it matter?",
+  "Which recurring pain point costs users the most time, money, or frustration?",
+  "Which specific feature most often turns users into a paying customer?",
+  "What's the #1 reason customers cancel, in their own words?",
+  "Which role + company type shows the strongest 'can't-live-without-it' sentiment?",
+  "Which requested change would create the biggest lift in satisfaction or retention?"
+];
 
 export function ResponseQALanding({ 
   userId, 
@@ -137,6 +147,10 @@ export function ResponseQALanding({
     setInput(e.target.value);
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+  };
+
   // Handle message submission with the AI SDK
   const handleMessageSubmit = async (message: string) => {
     if (selectedConversations.length === 0) {
@@ -226,12 +240,20 @@ export function ResponseQALanding({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-14">
         {/* Welcome message when no messages exist yet */}
-        {messages.length === 0 && !isCreatingSession && (
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground mb-6">
-            Click "Add Responses" to select the data you'd like to include in the AI context and start chatting!
-            </p>
-          </div>
+        {messages.length === 0 && !isCreatingSession && !firstMessageSent && (
+          <>
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground mb-6">
+              Click "Add Responses" to select the data you'd like to include in the AI context and start chatting!
+              </p>
+            </div>
+            <div className="mt-12">
+              <PromptSuggestions 
+                suggestions={promptSuggestionsList} 
+                onSuggestionClick={handleSuggestionClick} 
+              />
+            </div>
+          </>
         )}
         
         {/* Creating session indicator */}

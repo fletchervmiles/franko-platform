@@ -686,11 +686,11 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div className="w-full md:max-w-[70%] mb-4 md:mb-0">
                     <h2 className="text-2xl font-semibold mb-2 flex items-center">
-                      Interview Plan
+                      Agent Instance
                       <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Review & refine Interview Plan. These are the instructions your agent follows.
+                      Review & refine your Agent. These are the instructions your agent follows.
                     </p>
                   </div>
                   <div className="flex flex-col items-end">

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Plus, ArrowUp, Loader2, Check, X } from "lucide-react"
+import { Plus, ArrowUp, Loader2, Check, X, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -71,6 +71,7 @@ export function ChatInput({
   const [isLoadingAny, setIsLoadingAny] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitHintPopoverOpen, setIsSubmitHintPopoverOpen] = useState(false)
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
@@ -255,79 +256,100 @@ export function ChatInput({
               }}
               disabled={isSubmitting}
             />
-            <div className="flex justify-end gap-2 items-center">
-              <Popover open={isPopoverOpen && !isLoadingAny} onOpenChange={(open) => {
-                if (!isLoadingAny) {
-                  setIsPopoverOpen(open);
-                  if (open) fetchConversations();
-                }
-              }}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-8 px-3 text-xs"
-                    disabled={isSubmitting || isLoadingAny}
-                  >
-                    {isLoadingAny ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Responses
-                      </>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0 shadow-lg" align="end" side="top" sideOffset={10}>
-                  {/* Header */}
-                  <div className="p-4 border-b">
-                    <h3 className="text-lg font-normal text-gray-800">Your Data</h3>
-                    <p className="text-sm text-gray-500">Select the interview data you want to bring into your AI chat context</p>
-                  </div>
-                  
-                  {/* Conversation List */}
-                  <ScrollArea className="h-[320px] py-4">
-                    <div className="px-4 space-y-4">
-                      {isLoadingConversations ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        </div>
-                      ) : conversations.length > 0 ? (
-                        conversations.map((conversation) => (
-                          <ConversationCard
-                            key={conversation.id}
-                            conversation={conversation}
-                            onSelect={handleConversationSelect}
-                            isLoading={loadingConversationId === conversation.id}
-                            isSelected={selectedConversations.some((conv) => conv.id === conversation.id)}
-                          />
-                        ))
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1.5 rounded-lg"
+                      onClick={() => {
+                        if (!isPopoverOpen) {
+                          fetchConversations()
+                        }
+                      }}
+                      disabled={firstMessageSent || isLoadingAny} 
+                    >
+                      {isLoadingConversations || loadingConversationId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <div className="text-center py-4 text-muted-foreground">
-                          No additional conversations available
-                        </div>
+                        <Plus className="h-4 w-4" />
                       )}
+                      Add Responses
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <div className="p-4">
+                      <h4 className="font-medium text-sm mb-2">Select Responses</h4>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Choose the response data you want to analyze.
+                      </p>
                     </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="submit"
-                size="icon"
-                className="h-8 w-8 rounded-lg transition-colors bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400"
-                disabled={isSubmitting || !value.trim() || selectedConversations.length === 0}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <ArrowUp className="h-3 w-3" />
-                )}
-                <span className="sr-only">Send message</span>
-              </Button>
+                    {isLoadingConversations ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : conversations.length === 0 ? (
+                      <p className="p-4 text-sm text-muted-foreground">No conversations with responses found.</p>
+                    ) : (
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-1 p-2">
+                          {conversations.map(conv => (
+                            <ConversationCard 
+                              key={conv.id}
+                              conversation={conv}
+                              onSelect={() => handleConversationSelect(conv)}
+                              isLoading={loadingConversationId === conv.id}
+                              isSelected={selectedConversations.some(c => c.id === conv.id)}
+                            />
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              {selectedConversations.length === 0 ? (
+                <Popover open={isSubmitHintPopoverOpen} onOpenChange={setIsSubmitHintPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <div 
+                      onMouseEnter={() => setIsSubmitHintPopoverOpen(true)}
+                      onMouseLeave={() => setIsSubmitHintPopoverOpen(false)}
+                    >
+                      <Button 
+                        type="button"
+                        size="icon" 
+                        className="h-8 w-8 rounded-lg transition-colors bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400 opacity-50 cursor-not-allowed"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                        <span className="sr-only">Send message</span>
+                      </Button>
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="end" className="w-auto">
+                    <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
+                      <Info className="h-4 w-4" />
+                      Please add responses to start chatting.
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Button 
+                  type="submit" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-lg transition-colors bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-400" // Reverted to original classes
+                  disabled={isSubmitting || value.trim().length === 0}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" /> // Original icon size
+                  ) : (
+                    <ArrowUp className="h-3 w-3" /> // Original icon size
+                  )}
+                  <span className="sr-only">Send message</span> {/* Original sr-only text */}
+                </Button>
+              )}
             </div>
           </form>
         </div>

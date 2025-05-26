@@ -86,7 +86,7 @@ export default function AgentSelectionTabs({
     },
     {
       id: "onboard",
-      title: "New-User Agent",
+      title: "Customer Acqusition Agent",
       icon: UserPlus,
       description: "Learn how users discovered your product, why they signed up, and what they're expecting from you.",
       recommended: false,
@@ -157,7 +157,7 @@ export default function AgentSelectionTabs({
                       : selectedAgent === "churn"
                         ? "Customer Churn Agent"
                         : selectedAgent === "onboard"
-                          ? "New-User Agent"
+                          ? "Customer Acquisition Agent"
                           : ""}
                   </h3>
                   {selectedAgent === "pmf" && (
