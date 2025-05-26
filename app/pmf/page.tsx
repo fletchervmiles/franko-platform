@@ -1,3 +1,5 @@
+"use client";
+
 import { FeedbackProvider } from "@/contexts/feedback-context";
 import { NavSidebar } from "@/components/nav-sidebar";
 import dynamic from 'next/dynamic';

@@ -93,6 +93,13 @@ function PersonaDetailSection({
     return { high: 3, medium: 2, low: 1 }[signal]
   }
 
+  // Get icon color based on section title
+  const getIconColor = (title: string) => {
+    return "text-blue-600" // Make all icons blue for consistency
+  }
+
+  const iconColor = getIconColor(sectionTitle)
+
   if (isLoading) {
     // Basic loading skeleton for a section
     return (
@@ -117,7 +124,7 @@ function PersonaDetailSection({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between border-b pb-2">
           <div className="flex items-center space-x-3">
-            <IconComponent className="h-5 w-5 text-slate-700" />
+            <IconComponent className={`h-5 w-5 ${iconColor}`} />
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-700">{sectionTitle}</p>
           </div>
           <TooltipProvider delayDuration={50}>
@@ -178,14 +185,14 @@ function PersonaDetailSection({
                 >
                   <div className="py-2 px-3.5 flex-grow w-[85%] relative">
                     <p className="text-sm text-slate-700 leading-relaxed pr-5">{display_text}</p>
-                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 group-hover:text-blue-600 transition-all" />
                   </div>
                   <div className="py-2 px-2 border-l border-slate-200 w-[15%] min-w-[100px] flex items-center justify-between text-xs">
                     <div className="flex items-end gap-0.5 h-3">
                       {[...Array(3)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-1 rounded-sm ${i < activeBars ? "bg-slate-600" : "bg-slate-200"}`}
+                          className={`w-1 rounded-sm ${i < activeBars ? "bg-green-600" : "bg-slate-200"}`}
                           style={{ height: `${(i + 1) * 3 + 3}px` }}
                         />
                       ))}
@@ -199,7 +206,7 @@ function PersonaDetailSection({
             })}
             {hasMoreItems && (
               <button
-                className="text-sm text-slate-600 hover:text-slate-800 hover:underline mt-1"
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
                 {isExpanded ? "Show less" : `Show ${items.length - 5} more`}

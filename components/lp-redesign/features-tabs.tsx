@@ -14,24 +14,24 @@ const tabItems = [
     image: "/assets/lp-redesign/pmf-desktop.png",
   },
   {
-    id: "benefit-fix",
-    label: "#1 Benefit & Fix",
-    image: "/placeholder-d9bch.png",
+    id: "quantified-personas",
+    label: "Explore Personas",
+    image: "/assets/lp-redesign/persona-desktop.png",
   },
   {
-    id: "quantified-personas",
-    label: "Quantified Personas",
-    image: "/placeholder-gdmpa.png",
+    id: "benefit-fix",
+    label: "Find Insights",
+    image: "/assets/lp-redesign/benefit-desktop.png",
   },
   {
     id: "ask-your-data",
     label: "Ask Your Data",
-    image: "/data-query-interface.png",
+    image: "/assets/lp-redesign/chat-with-data.png",
   },
   {
     id: "deep-dive",
     label: "Deep Dive",
-    image: "/detailed-analytics-dashboard.png",
+    image: "/assets/lp-redesign/response.png",
   },
 ]
 
@@ -212,8 +212,9 @@ export default function FeaturesTabs() {
                     <Image
                       src={tabItems[activeTab].image}
                       alt={`Feature: ${tabItems[activeTab].label}`}
-                      layout="fill"
-                      objectFit="cover"
+                      fill={true}
+                      style={{ objectFit: "cover" }}
+                      quality={95}
                       priority={activeTab === 0} // Prioritize loading the first tab image
                     />
                   </div>

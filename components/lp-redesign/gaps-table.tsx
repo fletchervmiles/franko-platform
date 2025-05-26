@@ -1,34 +1,13 @@
 "use client"
 
 import { tableData } from "./table-data"
-import {
-  CheckCircle,
-  BarChart2,
-  Users,
-  Zap,
-  MessageSquare,
-  ChevronDown,
-  ChevronUp,
-  X,
-  Map,
-  Database,
-} from "lucide-react"
+import { CheckCircle, ChevronDown, ChevronUp, X } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 export default function GapsTable() {
   const [expandedRows, setExpandedRows] = useState<number[]>([0]) // First row expanded by default
   const [showAllRows, setShowAllRows] = useState(false)
-
-  // Map of icons for each gap
-  const gapIcons = {
-    "1. Feedback Area": <Zap className="h-4 w-4 text-blue-500" />,
-    "2. Channels": <MessageSquare className="h-4 w-4 text-blue-500" />,
-    "3. Segmentation": <Users className="h-4 w-4 text-blue-500" />,
-    "4. Metrics": <BarChart2 className="h-4 w-4 text-blue-500" />,
-    "5. Roadmap": <Map className="h-4 w-4 text-blue-500" />,
-    "6. Organization": <Database className="h-4 w-4 text-blue-500" />,
-  }
 
   // Map of border colors for each gap
   const borderColors = {
@@ -136,7 +115,6 @@ export default function GapsTable() {
               <div className="w-5 h-5 bg-white border border-gray-300 flex items-center justify-center shadow-sm rounded-full">
                 <span className="text-xs font-bold text-blue-500">{index + 1}</span>
               </div>
-              {gapIcons[row.gap as keyof typeof gapIcons]}
               <h3 className="text-sm font-bold text-black">{row.gap.replace(/^\d+\.\s*/, "")}</h3>
             </div>
             <p className="text-sm text-gray-700">{row.title}</p>
@@ -164,43 +142,48 @@ export default function GapsTable() {
                   transition={{ duration: 0.2 }}
                   className="mt-3 pt-3 border-t border-gray-200"
                 >
-                  <div className="mb-3">
-                    <h5 className="text-xs uppercase tracking-wider text-gray-600 mb-2 flex items-center font-medium">
-                      <X className="h-3 w-3 text-red-500 mr-1" />
-                      Typical Reality
-                    </h5>
-                    <div className="text-xs text-gray-700">
-                      {row.founderTalk.includes("•") ? (
-                        formatBulletPoints(row.founderTalk, false)
-                      ) : (
-                        <p className="italic">{row.founderTalk}</p>
-                      )}
+                  <div className="space-y-3">
+                    {/* Typical Reality Card */}
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
+                      <h5 className="text-xs uppercase tracking-wider text-gray-600 mb-2 flex items-center font-medium">
+                        <X className="h-3 w-3 text-red-500 mr-1" />
+                        Typical Reality
+                      </h5>
+                      <div className="text-xs text-gray-700">
+                        {row.founderTalk.includes("•") ? (
+                          formatBulletPoints(row.founderTalk, false)
+                        ) : (
+                          <p className="italic">{row.founderTalk}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mb-3">
-                    <h5 className="text-xs uppercase tracking-wider text-gray-600 mb-2 flex items-center font-medium">
-                      <X className="h-3 w-3 text-red-500 mr-1" />
-                      Why It Breaks
-                    </h5>
-                    <div className="text-xs text-gray-700">
-                      {row.whyItFails.includes("•") ? (
-                        formatBulletPoints(row.whyItFails, false)
-                      ) : (
-                        <p>{row.whyItFails}</p>
-                      )}
+                    {/* Why It Breaks Card */}
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-md">
+                      <h5 className="text-xs uppercase tracking-wider text-gray-600 mb-2 flex items-center font-medium">
+                        <X className="h-3 w-3 text-red-500 mr-1" />
+                        Why It Breaks
+                      </h5>
+                      <div className="text-xs text-gray-700">
+                        {row.whyItFails.includes("•") ? (
+                          formatBulletPoints(row.whyItFails, false)
+                        ) : (
+                          <p>{row.whyItFails}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <h5 className="text-xs uppercase tracking-wider text-gray-800 mb-2 flex items-center font-medium">
-                      <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
-                      Franko Fix
-                    </h5>
-                    <div className="text-xs text-gray-800">
-                      {row.withFranko.includes("•")
-                        ? formatBulletPoints(row.withFranko, true)
-                        : formatWithBold(row.withFranko, true)}
+                    {/* Franko Fix Card */}
+                    <div className="bg-white border border-gray-800 p-4 rounded-md">
+                      <h5 className="text-xs uppercase tracking-wider text-gray-800 mb-2 flex items-center font-medium">
+                        <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
+                        Franko Fix
+                      </h5>
+                      <div className="text-xs text-gray-800">
+                        {row.withFranko.includes("•")
+                          ? formatBulletPoints(row.withFranko, true)
+                          : formatWithBold(row.withFranko, true)}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -231,7 +214,6 @@ export default function GapsTable() {
           >
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                {gapIcons[tableData[0].gap as keyof typeof gapIcons]}
                 <h3 className="text-sm font-bold text-black">
                   Feedback
                   <span className="text-gray-500 mx-2">|</span>
@@ -328,7 +310,9 @@ export default function GapsTable() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className={`relative border-l-[3px] pl-8 md:pl-8 transition-all duration-200 mt-8 ${borderColors[row.gap as keyof typeof borderColors] || "border-l-gray-300"}`}
+                    className={`relative border-l-[3px] pl-8 md:pl-8 transition-all duration-200 ${
+                      index === 0 ? "mt-12" : "mt-8"
+                    } ${borderColors[row.gap as keyof typeof borderColors] || "border-l-gray-300"}`}
                   >
                     <div className="absolute -left-2.5 top-0 w-5 h-5 bg-white border border-gray-300 flex items-center justify-center shadow-sm">
                       <span className="text-xs font-bold text-blue-500">{actualIndex + 1}</span>
@@ -341,7 +325,6 @@ export default function GapsTable() {
                     >
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          {gapIcons[row.gap as keyof typeof gapIcons]}
                           <h3 className="text-sm font-bold text-black">
                             {row.gap.replace(/^\d+\.\s*/, "")}
                             <span className="text-gray-500 mx-2">|</span>

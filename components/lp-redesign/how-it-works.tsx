@@ -9,42 +9,45 @@ import Container from "./container"
 const steps = [
   {
     id: 1,
-    title: "Connect your data sources",
-    description: "Integrate with your existing tools in just a few clicks.",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/chat-window-desktop-01-Ddb38JzEnNZJ9QvKNP8gH7sxXGRzPW.png",
+    title: "Set your context",
+    description: "Enter your URL to generate an agent knowledge base and persona descriptions; add branding assets.",
+    image: "/assets/lp-redesign/context.png",
   },
   {
     id: 2,
-    title: "Set up your interview agent",
-    description: "Customize your AI agent to match your brand voice and goals.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-bt1awLrZ89DZIu6Jrnd8bWHClXV5SX.png",
+    title: "Generate an agent",
+    description: "Select a ready-made agent template, or build your own. Once generated, edit configuration details as needed.",
+    image: "/assets/lp-redesign/generate-agent.png",
   },
   {
     id: 3,
-    title: "Deploy to your users",
-    description: "Share your interview link via email, chat, or embed it on your site.",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/chat-window-desktop-01-Ddb38JzEnNZJ9QvKNP8gH7sxXGRzPW.png",
+    title: "Get shareable link",
+    description: "Copy the secure chat link and share it in an email sequence, DM, or anywhere you reach customers.",
+    image: "/assets/lp-redesign/shareable-link.png",
   },
   {
-    id: 4,
-    title: "AI conducts interviews",
-    description: "Your agent automatically engages users and collects insights.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-bt1awLrZ89DZIu6Jrnd8bWHClXV5SX.png",
+    id: "3.1",
+    title: "Example Invite",
+    description: "Paste the link into an email like the one below and hit send to start collecting feedback.",
+    image: "/assets/lp-redesign/email-example.png",
   },
   {
-    id: 5,
-    title: "Analyze feedback in real-time",
-    description: "Watch as your dashboards update with new user insights.",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/chat-window-desktop-01-Ddb38JzEnNZJ9QvKNP8gH7sxXGRzPW.png",
+    id: "4.1",
+    title: "Users join the chat",
+    description: "A quick opt-in screen (name + email) and they're in.",
+    image: "/assets/lp-redesign/chat-modal.png",
   },
   {
-    id: 6,
-    title: "Take action on insights",
-    description: "Use the data to improve your product and grow your business.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-bt1awLrZ89DZIu6Jrnd8bWHClXV5SX.png",
+    id: "4.2",
+    title: "Guided Interview",
+    description: "The agent guides them through a short exploratory conversation. No scheduling required.",
+    image: "/assets/lp-redesign/chat-img-01.png",
+  },
+  {
+    id: "4.3",
+    title: "Wrap & Capture",
+    description: "The agent concludes the conversation. Transcript, summaries, notifications, and dashboard updates happen automatically.",
+    image: "/assets/lp-redesign/chat-img-02.png",
   },
 ]
 
@@ -129,7 +132,7 @@ export default function HowItWorks() {
               <motion.div
                 className="flex"
                 animate={{
-                  x: isMobile ? `calc(50% - ${currentStep * 100}% - 50%)` : `calc(50% - ${currentStep * 84}% - 42%)`,
+                  x: `calc(50% - ${currentStep * 84}% - 42%)`,
                 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
@@ -140,9 +143,9 @@ export default function HowItWorks() {
                   return (
                     <motion.div
                       key={step.id}
-                      className={`flex-shrink-0 ${isMobile ? "w-[100%]" : "w-[84%]"} px-2 md:px-4`}
+                      className="flex-shrink-0 w-[84%] px-2 md:px-4"
                       animate={{
-                        scale: position === 0 ? 1 : isMobile ? 0.85 : 0.9,
+                        scale: position === 0 ? 1 : 0.9,
                         opacity: Math.abs(position) <= 1 ? 1 : 0.4,
                       }}
                       transition={{ duration: 0.2 }}
@@ -150,30 +153,24 @@ export default function HowItWorks() {
                       <div
                         className={`bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200 transition-all duration-300`}
                       >
-                        {/* Step Indicator */}
-                        <div className="p-2 md:p-4 border-b border-gray-100">
-                          <div className="md:flex md:items-center md:justify-between">
-                            <div className="flex flex-col md:flex-row md:items-center pt-1 md:pt-0">
-                              <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 bg-black text-white text-[10px] md:text-xs font-medium mb-2 md:mb-0 md:mr-3 mx-auto md:mx-0">
-                                {step.id}
-                              </div>
-                              <h3 className="text-sm md:text-base font-medium text-center md:text-left">
-                                {step.title}
-                              </h3>
-                            </div>
-                          </div>
-                          <p className="text-xs md:text-sm text-gray-600 mt-1 text-center md:text-left">
-                            {step.description}
-                          </p>
-                        </div>
-
-                        {/* Image Container - different aspect ratio for mobile */}
-                        <div className={`relative overflow-hidden ${isMobile ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
+                        {/* Image Container - consistent aspect ratio for all screen sizes */}
+                        <div className="relative overflow-hidden aspect-[16/9]">
                           <img
                             src={step.image || "/placeholder.svg"}
                             alt={`Step ${step.id}: ${step.title}`}
                             className="w-full h-full object-cover"
                           />
+                        </div>
+
+                        {/* Step Indicator - moved to bottom */}
+                        <div className="p-3 md:p-4 border-t border-gray-300 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 bg-black text-white text-[10px] md:text-xs font-medium mb-2">
+                              {step.id}
+                            </div>
+                            <h3 className="text-sm md:text-base font-medium mb-1">{step.title}</h3>
+                            <p className="text-xs md:text-sm text-gray-600">{step.description}</p>
+                          </div>
                         </div>
                       </div>
                     </motion.div>

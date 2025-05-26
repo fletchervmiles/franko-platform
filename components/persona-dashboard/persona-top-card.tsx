@@ -149,14 +149,24 @@ export function PersonaTopBarOption6({ snapshots = defaultPersonas, initialPerso
       <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{selectedSnapshot.personaLabel}</h3>
+          <div className="flex flex-wrap gap-2">
+            {traits.map((trait, index) => (
+              <span key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">
+                {trait}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" className="w-fit justify-between">
+              <Button variant="outline" role="combobox" className="w-fit justify-between border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700 px-4 py-2">
+                <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0" />
                 Select Persona
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[300px] p-0">
+            <PopoverContent align="end" className="w-[300px] p-0 mr-4">
               <Command>
                 <CommandInput placeholder="Search personas..." />
                 <CommandList>
@@ -186,13 +196,6 @@ export function PersonaTopBarOption6({ snapshots = defaultPersonas, initialPerso
               </Command>
             </PopoverContent>
           </Popover>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {traits.map((trait, index) => (
-            <span key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">
-              {trait}
-            </span>
-          ))}
         </div>
       </div>
 
