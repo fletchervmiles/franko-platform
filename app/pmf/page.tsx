@@ -1,9 +1,11 @@
 import { FeedbackProvider } from "@/contexts/feedback-context";
 import { PMFScoreCard } from "@/components/pmf/pmf-score-card"
 import { PersonaSelector } from "@/components/pmf/persona-selector"
-import { ResponseDistributionChart } from "@/components/pmf/response-distribution-chart"
-import { TrendChart } from "@/components/pmf/pmf-trend-chart"
 import { NavSidebar } from "@/components/nav-sidebar";
+import dynamic from 'next/dynamic';
+
+const ResponseDistributionChart = dynamic(() => import("@/components/pmf/response-distribution-chart").then(mod => mod.ResponseDistributionChart), { ssr: false });
+const TrendChart = dynamic(() => import("@/components/pmf/pmf-trend-chart").then(mod => mod.TrendChart), { ssr: false });
 
 export default function PMFPage() {
   return (
