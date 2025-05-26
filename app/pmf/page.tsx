@@ -1,9 +1,9 @@
 import { FeedbackProvider } from "@/contexts/feedback-context";
-import { PMFScoreCard } from "@/components/pmf/pmf-score-card"
-import { PersonaSelector } from "@/components/pmf/persona-selector"
 import { NavSidebar } from "@/components/nav-sidebar";
 import dynamic from 'next/dynamic';
 
+const PMFScoreCard = dynamic(() => import("@/components/pmf/pmf-score-card").then(mod => mod.PMFScoreCard), { ssr: false });
+const PersonaSelector = dynamic(() => import("@/components/pmf/persona-selector").then(mod => mod.PersonaSelector), { ssr: false });
 const ResponseDistributionChart = dynamic(() => import("@/components/pmf/response-distribution-chart").then(mod => mod.ResponseDistributionChart), { ssr: false });
 const TrendChart = dynamic(() => import("@/components/pmf/pmf-trend-chart").then(mod => mod.TrendChart), { ssr: false });
 
