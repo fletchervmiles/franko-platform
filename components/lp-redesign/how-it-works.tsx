@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import Image from "next/image"
 import Container from "./container"
 
 // Step data
@@ -11,43 +12,43 @@ const steps = [
     id: 1,
     title: "Set your context",
     description: "Enter your URL to generate an agent knowledge base and persona descriptions; add branding assets.",
-    image: "/assets/lp-redesign/context.png",
+    image: "/assets/lp-redesign/optimized/context.png",
   },
   {
     id: 2,
     title: "Generate an agent",
     description: "Select a ready-made agent template, or build your own. Once generated, edit configuration details as needed.",
-    image: "/assets/lp-redesign/generate-agent.png",
+    image: "/assets/lp-redesign/optimized/generate-agent.png",
   },
   {
     id: 3,
     title: "Get shareable link",
     description: "Copy the secure chat link and share it in an email sequence, DM, or anywhere you reach customers.",
-    image: "/assets/lp-redesign/shareable-link.png",
+    image: "/assets/lp-redesign/optimized/shareable-link.png",
   },
   {
     id: "3.1",
     title: "Example Invite",
     description: "Paste the link into an email like the one below and hit send to start collecting feedback.",
-    image: "/assets/lp-redesign/email-example.png",
+    image: "/assets/lp-redesign/optimized/email-example.png",
   },
   {
     id: "4.1",
     title: "Users join the chat",
     description: "A quick opt-in screen (name + email) and they're in.",
-    image: "/assets/lp-redesign/chat-modal.png",
+    image: "/assets/lp-redesign/optimized/chat-modal.png",
   },
   {
     id: "4.2",
     title: "Guided Interview",
     description: "The agent guides them through a short exploratory conversation. No scheduling required.",
-    image: "/assets/lp-redesign/chat-img-01.png",
+    image: "/assets/lp-redesign/optimized/chat-img-01.png",
   },
   {
     id: "4.3",
     title: "Wrap & Capture",
     description: "The agent concludes the conversation. Transcript, summaries, notifications, and dashboard updates happen automatically.",
-    image: "/assets/lp-redesign/chat-img-02.png",
+    image: "/assets/lp-redesign/optimized/chat-img-02.png",
   },
 ]
 
@@ -155,10 +156,15 @@ export default function HowItWorks() {
                       >
                         {/* Image Container - consistent aspect ratio for all screen sizes */}
                         <div className="relative overflow-hidden aspect-[16/9]">
-                          <img
+                          <Image
                             src={step.image || "/placeholder.svg"}
                             alt={`Step ${step.id}: ${step.title}`}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
+                            quality={100}
+                            priority={index <= 2}
+                            unoptimized={true}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 84vw, 84vw"
                           />
                         </div>
 

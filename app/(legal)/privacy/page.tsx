@@ -1,12 +1,12 @@
 'use client';
 
-import Nav from '@/components/lp-components/nav';
+import ResponsiveNavbar from '@/components/lp-redesign/responsive-navbar';
 import Footer from '@/components/lp-components/footer';
 
 export default function PrivacyPolicy() {
   return (
     <>
-      <Nav />
+      <ResponsiveNavbar />
       <div className="max-w-4xl mx-auto px-4 py-12">
         <article className="prose prose-slate lg:prose-lg mx-auto">
           <h1 className="text-3xl font-bold mb-8">Privacy Policy for Franko.ai</h1>

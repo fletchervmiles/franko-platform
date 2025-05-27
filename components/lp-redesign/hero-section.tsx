@@ -7,9 +7,9 @@ export default function HeroSection() {
     <div className="pt-24 pb-16 md:pt-44 md:pb-24 grid-background03">
       <Container>
         <div>
-          <div className="max-w-3xl mb-10">
+          <div className="max-w-5xl mb-10">
             {/* Main heading - large, bold, left-aligned */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-normal mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium tracking-normal mb-6 leading-tight">
               Measure & Grow
               <br />
               Your Product-Market Fit
@@ -19,7 +19,7 @@ export default function HeroSection() {
           <div className="flex flex-col lg:flex-row justify-between items-start">
             <div className="max-w-2xl">
               {/* Subtitle as a single paragraph */}
-              <h2 className="text-sm md:text-base text-gray-700 mb-6 lg:mb-0 leading-snug">
+              <h2 className="text-base md:text-lg text-gray-700 mb-6 lg:mb-0 leading-snug">
                 AI agents interview your users and stream insights into live dashboards. SaaS founders get a continuous
                 feedback loop to spot high-value customer segments, reduce churn, and accelerate growth.
               </h2>
