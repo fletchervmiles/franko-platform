@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useSwipeable } from "react-swipeable"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 const tabItems = [
   {
@@ -49,6 +50,15 @@ export default function FeaturesTabs() {
         tabsRef.current.scrollLeft = tabElement.offsetLeft - 20
       }
     }
+  }
+
+  // Navigation functions
+  const goToPrevious = () => {
+    setActiveTab((prev) => (prev === 0 ? tabItems.length - 1 : prev - 1))
+  }
+
+  const goToNext = () => {
+    setActiveTab((prev) => (prev === tabItems.length - 1 ? 0 : prev + 1))
   }
 
   // Swipe handlers for mobile
@@ -211,7 +221,7 @@ export default function FeaturesTabs() {
         }}
         {...swipeHandlers}
       >
-        <div className="w-full px-0 md:max-w-7xl md:mx-auto md:px-4 md:py-16 py-0">
+        <div className="w-full md:max-w-7xl md:mx-auto md:px-4 md:py-16 py-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -219,9 +229,9 @@ export default function FeaturesTabs() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }} // Fast transition
-              className="flex justify-center items-center min-h-[280px] md:min-h-[550px] mx-4 md:mx-8"
+              className="flex justify-center items-center min-h-[280px] md:min-h-[550px] px-4 md:px-8"
             >
-              <div className="relative w-full shadow-lg">
+              <div className="relative w-full max-w-5xl shadow-lg">
                 {/* This new div creates the subtle padded border effect */}
                 <div className="bg-black/[.30] p-3">
                   <div className="relative w-full aspect-[16/9] overflow-hidden">
@@ -238,6 +248,49 @@ export default function FeaturesTabs() {
               </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Mobile-only navigation arrows below the image */}
+          <div className="md:hidden flex justify-center items-center mt-6 space-x-4">
+            <button
+              onClick={goToPrevious}
+              className="flex items-center justify-center w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-md border border-gray-200 hover:bg-white transition-colors"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            
+            {/* Current tab indicator */}
+            <div className="flex items-center space-x-2">
+              {tabItems.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTab(index)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-200",
+                    activeTab === index 
+                      ? "bg-white w-6" 
+                      : "bg-white/50"
+                  )}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={goToNext}
+              className="flex items-center justify-center w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-md border border-gray-200 hover:bg-white transition-colors"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
+          </div>
+
+          {/* Mobile-only current tab label */}
+          <div className="md:hidden text-center mt-4">
+            <span className="inline-block px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-gray-800 shadow-sm">
+              {tabItems[activeTab].label}
+            </span>
+          </div>
         </div>
       </div>
     </section>
