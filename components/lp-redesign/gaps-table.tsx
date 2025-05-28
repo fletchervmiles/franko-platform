@@ -107,7 +107,13 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
   }
 
   const isRowExpanded = (index: number) => {
-    return expandedRows.includes(index) || window.innerWidth >= 768
+    // On mobile, only show if explicitly expanded
+    // On desktop, always show (or if explicitly expanded)
+    if (isMobile) {
+      return expandedRows.includes(index)
+    } else {
+      return expandedRows.includes(index) || window.innerWidth >= 768
+    }
   }
 
   return (

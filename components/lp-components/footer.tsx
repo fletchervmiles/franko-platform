@@ -12,7 +12,7 @@ export default function Footer() {
     <footer className="w-full bg-white text-gray-900 py-16 border-t border-gray-200">
               <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium leading-tight mb-8 whitespace-nowrap">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium leading-tight mb-8">
               Start measuring and growing your product-market fit.
             </h2>
             
