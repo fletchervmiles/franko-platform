@@ -43,6 +43,7 @@ You must produce **approximately 10 sections** in **Markdown** format with **adh
   `- **Bolded Title (2–5 words):** Explanation with 15–30 words.`
 - Close each bullet with the primary job-to-be-done that the persona hires the product for.
 
+
 ### 4. Features/Services
 - Provide **5–12 bullets** total.
 - Each bullet has:
@@ -172,7 +173,9 @@ if conflicts arise.
 Maintain the **section order**:
 1. Context Overview  
 2. Core Benefits  
+
 3. Customer Personas and Jobs-to-Be-Done
+
 4. Features/Services  
 5. Competitive Advantages  
 6. Pricing  
@@ -262,6 +265,7 @@ Cursor is an AI\-powered code editor designed to significantly enhance developer
 
 - **AI Pair Programmer:**  Cursor functions as an "AI pair programmer," offering intelligent assistance and collaboration within the coding environment. This allows developers to offload repetitive tasks and focus on higher\-level logic and problem\-solving.
 
+## Typical Customer Persona and Jobs to Be Done
 
 ## Customer Personas and Jobs-to-Be-Done
 

@@ -9,13 +9,13 @@ export default function Footer() {
   const [showModal, setShowModal] = useState(false)
 
   return (
+
     <footer className="w-full bg-white text-gray-900 py-16 border-t border-gray-200">
               <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium leading-tight mb-8">
               Start measuring and growing your product-market fit.
             </h2>
-            
             <div className="flex flex-wrap items-center justify-center gap-4">
               <a
                 href="https://cal.com/fletcher-miles/franko.ai-demo-call"
@@ -42,6 +42,7 @@ export default function Footer() {
               No credit card required
             </div>
           </div>
+
                   
           <div className="pt-8 border-t border-gray-200">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-y-4 sm:gap-y-0 text-sm text-gray-600">
@@ -73,6 +74,16 @@ export default function Footer() {
                   Contact
                 </a>
               </nav>
+        </div>
+        
+        <div className="pt-8 border-t border-gray-800 mt-16 sm:mt-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-y-4 sm:gap-y-0 text-sm text-gray-300 pb-4">
+            <div className="flex items-center gap-1 mb-4 sm:mb-0">
+              <span>©{new Date().getFullYear()}</span>
+              <span>-</span>
+              <Link href="https://franko.ai" className="hover:underline">
+                Service provided by Franko.ai
+              </Link>
             </div>
           </div>
       </div>

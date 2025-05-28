@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/utilities/providers";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import Script from 'next/script';
 import "./globals.css";
 import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SetupChecklistProvider } from "@/contexts/setup-checklist-context";
 import { SetupChecklist } from "@/components/setup-checklist";
