@@ -36,6 +36,7 @@ export const chatInstancesTable = pgTable("chat_instances", {
   welcomeDescription: text("welcome_description"), // Added new field
   welcomeHeading: text("welcome_heading"), // Added new field
   welcomeCardDescription: text("welcome_card_description"), // Added new field
+  interview_type: text("interview_type"), // Changed from interview_classification
   published: boolean("published").default(false),
   responseEmailNotifications: boolean("response_email_notifications").default(true),
   redirect_url: text("redirect_url"), // Add the new redirect_url field here

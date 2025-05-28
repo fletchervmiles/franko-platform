@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import { updateProfile, getProfile } from "@/db/queries/profiles-queries"; // Assuming getProfile exists
 import { logger } from "@/lib/logger";
 import { profilesTable } from "@/db/schema/profiles-schema"; // Import for type definition
+import { updateOnboardingStep } from "@/db/queries/user-onboarding-status-queries"; // <<<--- ADDED IMPORT
 
 export const dynamic = 'force-dynamic'; // Ensure dynamic execution for file handling
 
@@ -99,6 +100,12 @@ export async function PATCH(request: Request) {
 
     const updatedProfile = updatedProfileResult[0];
     logger.info('Branding update successful for user:', { userId });
+
+    // <<<--- ADDED ONBOARDING UPDATE for Step 2 --->>>
+    // Update onboarding status regardless of which branding field was updated
+    await updateOnboardingStep(userId, 'step2BrandingComplete');
+    logger.info(`Updated onboarding step 2 (Branding) for user ${userId}`);
+    // <<<--- END ADDED ONBOARDING UPDATE --->>>
 
     // Return the relevant updated fields
     return NextResponse.json({

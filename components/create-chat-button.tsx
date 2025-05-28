@@ -73,13 +73,13 @@ export function CreateChatButton() {
               ) : (
                 <>
                   <Plus className="mr-1 h-3 w-3" />
-                  Create Conversation
+                  Create Interview Agent
                 </>
               )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" align="center" className="bg-gray-800 text-white border-gray-800 p-3 max-w-xs">
-            <p>Please set up your organization context before creating a conversation</p>
+            <p>Please set up your organization context before creating an Interview Agent</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -102,7 +102,7 @@ export function CreateChatButton() {
       ) : (
         <>
           <Plus className="mr-1 h-3 w-3" />
-          Create Conversation
+          Create Interview Agent
         </>
       )}
     </Button>

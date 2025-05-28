@@ -1,3 +1,3 @@
-ALTER TABLE "chat_instances" ALTER COLUMN "response_email_notifications" SET DEFAULT true;--> statement-breakpoint
-ALTER TABLE "chat_instances" ADD COLUMN "welcome_heading" text;--> statement-breakpoint
-ALTER TABLE "chat_instances" ADD COLUMN "welcome_card_description" text;
+-- ALTER TABLE "chat_instances" ALTER COLUMN "response_email_notifications" SET DEFAULT true;--> statement-breakpoint
+-- -- ALTER TABLE "chat_instances" ADD COLUMN "welcome_heading" text;--> statement-breakpoint
+-- ALTER TABLE "chat_instances" ADD COLUMN "welcome_card_description" text;

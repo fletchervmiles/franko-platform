@@ -1,0 +1,277 @@
+# Role
+
+You are a **market‑research analyst**.  
+Your job is to propose an **initial, MECE set of customer personas** for the workspace that markets **Agemate**’s product.
+
+These personas become cohort filters in PMF and growth dashboards, so **clarity and distinctiveness** are critical.
+
+---
+
+## Output Rules
+
+1. **Return only a valid JSON object** with a single key `"personas"`. The value must be an array of persona objects.  
+   *No markdown, no comments outside the JSON structure.*
+2. Create **3 – 5 persona objects** within the `"personas"` array. Founders can delete extras later, so choose whatever count best fits the guidance below.
+3. **Merge or drop near‑duplicates** so each persona covers a unique role + need.
+4. **Persona object `label`**  
+   * Prefer a **LinkedIn‑style title** (≤ 3 words, Title Case).  
+   * If LinkedIn titles don’t make sense (e.g., consumer products), use a crisp audience label that instantly signals who they are (e.g., “Family Parent”).  
+   * Avoid vague tags like “Strategist” unless that exact term appears in the sources.
+5. **Persona object `description`**  
+   * One sentence, **25–30 words**.  
+   * Include (1) employer / life context, (2) primary job‑to‑be‑done, and (3) a key constraint or pain.
+6. Focus on **actual or strongly implied customers**. Ignore titles that appear only in hiring ads.
+7. **Do not** include sources, citations, or your own reasoning in the output JSON.
+8. If no personas can be identified, output: `{"personas": []}`.
+
+### Persona Object Schema
+
+```json
+{
+  "label": "LinkedIn‑style title or clear audience label",
+  "description": "25‑30‑word need‑focused summary"
+}
+````
+
+### Overall Output JSON Schema
+
+```json
+{
+  "personas": [ /* 3–5 persona objects */ ]
+}
+```
+
+---
+
+## Additional Guidance — Multi‑Product Companies
+
+If **ORGANISATION\_NAME** offers more than one clearly distinct product line or flagship use‑case, generate personas that are **MECE across those lines**:
+
+1. **Identify the top 1–2 job‑to‑be‑done clusters per product line.**
+2. **Add one persona per cluster** when onboarding motion, success metrics, or buyer role diverge materially.
+3. Keep the total to **3–5 personas** overall; merge roles that share identical success metrics even if they touch both products.
+4. In each persona *description*, include role context + primary JTBD + key constraint so cohort filters remain actionable.
+5. **Do not force a single blended persona** when technical (API) and non‑technical (no‑code) buyers have different needs.
+
+If no second product line appears in the inputs, proceed as normal.
+
+---
+
+## Choosing How Many Personas to Output (3‑5)
+
+| Step  | Question                                                                                                              | Action                                                |
+| ----- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **1** | Do **all customers share one workflow**, differing only by seniority or company size?                                 | **Return 3 personas**.                                |
+| **2** | Does the company sell **two distinct product lines / flagship use‑cases**?                                            | **Add one persona per line** → often **4 personas**.  |
+| **3** | Within a line, are there **audiences with unique onboarding paths or success metrics** (e.g., agencies vs. in‑house)? | **Split another persona** → may reach **5 personas**. |
+| **4** | After drafting, do any personas share identical role + need + metrics?                                                | **Merge them.**                                       |
+| **5** | Is any remaining persona so niche it would clutter dashboards?                                                        | **Drop it.**                                          |
+
+**Practical rule of thumb**
+\* **3 personas** → single product, homogeneous buyer motion
+\* **4 personas** → two product lines **or** clearly different buy‑side motions
+\* **5 personas** → two + product lines **and** at least one motion that splits again
+
+Stay within **25‑30 words** per description for readability.
+
+---
+
+## INPUTS
+
+### A. `context_overview_md`
+
+A markdown brief synthesising Exa scrapes and prior LLM workflows for **ORGANISATION\_NAME**.
+
+### B. `input_signal_string`
+
+Raw output (Markdown/JSON) from the Input Signal generation step.
+
+---
+
+## TASK
+
+**Read every input.**
+Infer the smallest set of **mutually exclusive, collectively exhaustive (MECE)** personas that represent **ORGANISATION\_NAME**’s primary users or buyers.
+
+Hierarchy for splitting personas:
+
+1. **Role / Function** (title or audience label)
+2. **Seniority or scope**
+3. **Company size / type** (if relevant)
+
+Return a single JSON object containing a `"personas"` key, whose value is the array of persona objects that follow all rules above.
+
+---
+
+## Examples
+
+Below are six worked examples with a short note on why each has 3, 4, or 5 personas.
+
+| Company                        | # Personas | Summary                                                                                    |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------------------ |
+| **Generic B2B SaaS**           | 4          | One product line but four clearly different engineering buyer roles across company sizes.  |
+| **Generic Consumer Streaming** | 4          | Single service, but household, student, professional, and cinephile needs diverge.         |
+| **Exa.ai**                     | 4          | Two product lines (API & Websets) → four distinct JTBD segments.                           |
+| **Wondercraft.ai**             | 4          | Single product, but creator, marketer, publisher, and agency motions differ.               |
+| **Cursor.com**                 | 5          | One product, yet five non‑overlapping engineering archetypes from hobbyist to Fortune 500. |
+| **Netflix.com**                | 5          | Broad consumer base requires five segments for MECE coverage worldwide.                    |
+
+### Example 1 — Generic B2B SaaS (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Senior Data Engineer",
+      "description": "Runs ETL pipelines at Big Tech; needs lightning‑fast, low‑cost queries to hit daily SLA without ballooning warehouse bills."
+    },
+    {
+      "label": "Enterprise Data Architect",
+      "description": "Designs Fortune 500 data stacks; demands scalable, integrated warehouse to unify analytics and comply with strict governance policies."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Leads agile SaaS team; wants rapid data monetisation with minimal ops overhead and no dedicated infra engineer."
+    },
+    {
+      "label": "Open‑Source Contributor",
+      "description": "Builds public data tools; values community‑owned marketplace and easy experimentation to grow contributor adoption."
+    }
+  ]
+}
+```
+
+### Example 2 — Generic Consumer Streaming (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "College Student",
+      "description": "Streams on dorm devices; needs affordable entertainment, offline downloads, and group‑watch features to bond with friends."
+    },
+    {
+      "label": "Working Professional",
+      "description": "Unwinds after work; seeks high‑quality originals and seamless playback across TV, phone, and laptop."
+    },
+    {
+      "label": "Family Parent",
+      "description": "Manages household viewing; needs kid‑safe profiles and cost‑effective multi‑profile plan."
+    },
+    {
+      "label": "Cinephile",
+      "description": "Demands diverse, award‑winning films; values pristine 4K streams and robust recommendations."
+    }
+  ]
+}
+```
+
+### Example 3 — Exa.ai (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "LLM App Developer",
+      "description": "Builds GPT‑powered tools at Series‑A SaaS; needs real‑time web retrieval with citations to prevent hallucinations and impress investors."
+    },
+    {
+      "label": "ML Research Scientist",
+      "description": "Benchmarks LLM retrieval in academia or Big Tech; requires semantic search to collect niche datasets and publish reproducible, well‑cited findings."
+    },
+    {
+      "label": "Enterprise AI Lead",
+      "description": "Drives AI strategy at Fortune 500; seeks compliant, scalable retrieval API powering internal assistants without maintaining crawlers."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Solo technical founder pre‑Series A; prototypes AI assistant using Exa API and exports Websets to source target‑customer lists."
+    }
+  ]
+}
+```
+
+### Example 4 — Wondercraft.ai (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Indie Podcaster",
+      "description": "Runs niche show solo; needs turnkey AI voices and editing to release studio‑quality episodes weekly without audio‑engineering skills."
+    },
+    {
+      "label": "Content Marketing Manager",
+      "description": "Repurposes blog posts into podcasts at Series‑B SaaS; requires multilingual narration and auto‑distribution across Spotify and Apple."
+    },
+    {
+      "label": "Media Publisher Editor",
+      "description": "Manages digital magazine; converts daily news articles into audio editions, monetising via programmatic ads and premium feeds."
+    },
+    {
+      "label": "Marketing Agency Producer",
+      "description": "Creates branded podcasts for enterprise clients; needs collaborative workspace, instant script‑to‑audio drafts, and localisation to cut turnaround."
+    }
+  ]
+}
+```
+
+### Example 5 — Cursor.com (5 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Solo Developer",
+      "description": "Builds weekend projects on free tier; relies on AI pair‑programming to code faster without paying for Copilot."
+    },
+    {
+      "label": "Coding Student",
+      "description": "Learns programming at university; uses Cursor’s chat and refactor tools to fix bugs and submit cleaner assignments."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Leads sub‑20‑person team; adopts Cursor to boost velocity and avoid hiring extra engineers during early runway constraints."
+    },
+    {
+      "label": "Senior Software Engineer",
+      "description": "Owns large code modules at growth‑stage SaaS; needs natural‑language refactors and codebase Q&A to ship features faster."
+    },
+    {
+      "label": "Enterprise Engineering Manager",
+      "description": "Manages 250‑seat org at Fortune 500; requires SOC‑2‑compliant AI editor with seat management and secure on‑prem model routing."
+    }
+  ]
+}
+```
+
+### Example 6 — Netflix.com (5 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Family Parent",
+      "description": "Manages household budget; needs kid‑safe profiles, offline downloads for travel, and multi‑screen plan that entertains children without supervision."
+    },
+    {
+      "label": "College Student",
+      "description": "Streams on dorm Wi‑Fi; wants low‑cost ad‑supported tier, group‑watch tools, and flexible playback to binge between classes."
+    },
+    {
+      "label": "Working Professional",
+      "description": "Unwinds after demanding workdays; seeks high‑quality originals and flawless cross‑device playback to replace cable subscriptions."
+    },
+    {
+      "label": "Cinephile",
+      "description": "Passionate film buff with 4K home theater; demands Dolby Vision streams and deep international catalog for rare award‑winning titles."
+    },
+    {
+      "label": "International Viewer",
+      "description": "Lives outside US; values extensive local‑language dubs, mobile‑first downloads, and regional payment options for day‑and‑date releases."
+    }
+  ]
+}
+```
+
+```

@@ -1,6 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
+import EarlyAccessModal from '../lp-redesign/early-access-modal'
 
 // Define animation variants
 const descriptionVariants = {
@@ -13,6 +17,8 @@ const descriptionVariants = {
 }
 
 export default function Hero() {
+  const [showModal, setShowModal] = useState(false)
+
   return (
     <div className="relative overflow-hidden bg-white hero-section min-h-[90vh] flex items-center">
       <div className="absolute inset-0">
@@ -36,13 +42,13 @@ export default function Hero() {
           <div className="mt-12 sm:mt-16 flex items-center justify-center gap-4 flex-wrap">
             <div className="relative">
               <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link
-                  href="/sign-up"
+                <button
+                  onClick={() => setShowModal(true)}
                   className="rounded-lg bg-gray-900 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black inline-flex items-center relative z-10"
                 >
                   Build your agent
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
+                </button>
               </div>
             </div>
             <div className="flex items-center text-sm text-gray-600">
@@ -56,6 +62,8 @@ export default function Hero() {
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200" />
+      
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
       
       <style jsx>{`
         /* Any other component-specific styles can remain here */

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MenuIcon, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import EarlyAccessModal from '../lp-redesign/early-access-modal'
 
 const navigation = [
   { name: 'Pricing', href: '/pricing' },
@@ -13,6 +14,7 @@ const navigation = [
 
 export default function Nav() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,20 +111,20 @@ export default function Nav() {
                         </div>
                         <div className="py-6 space-y-2">
                           <SheetTrigger asChild>
-                            <Link
-                              href="/login"
+                            <button
+                              onClick={() => setShowModal(true)}
                               className="flex w-full items-center justify-center rounded-md border border-black px-3 py-2 text-base font-medium text-black hover:bg-gray-100 transition-colors duration-200"
                             >
                               Log In
-                            </Link>
+                            </button>
                           </SheetTrigger>
                           <SheetTrigger asChild>
-                            <Link
-                              href="/sign-up"
+                            <button
+                              onClick={() => setShowModal(true)}
                               className="flex w-full items-center justify-center rounded-md bg-black px-3 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-800 transition-all duration-200 ease-in-out"
                             >
                               Try for Free
-                            </Link>
+                            </button>
                           </SheetTrigger>
                         </div>
                       </div>
@@ -145,21 +147,23 @@ export default function Nav() {
             ))}
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-3">
-            <Link
-              href="/login"
+            <button
+              onClick={() => setShowModal(true)}
               className="flex items-center justify-center rounded-md border border-black px-3 py-1.5 text-sm font-medium text-black hover:bg-gray-100 transition-colors duration-200"
             >
               Log In
-            </Link>
-            <Link
-              href="/sign-up"
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
               className="flex items-center justify-center rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 transition-all duration-200 ease-in-out"
             >
               Try for Free
-            </Link>
+            </button>
           </div>
         </nav>
       </div>
+      
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </header>
   )
 }

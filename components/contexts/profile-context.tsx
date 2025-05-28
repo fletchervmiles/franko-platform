@@ -1,27 +1,25 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
-import { getProfileByUserId } from '@/db/queries/profiles-queries';
-
-interface Profile {
-  id: string;
-  userId: string;
-  organisationUrl: string | null;
-  organisationName: string | null;
-  organisationDescription: string | null;
-  organisationDescriptionCompleted: boolean;
-  // Add other profile fields if needed
-}
+import { queryKeys } from '@/lib/queryKeys';
+import type { SelectProfile } from '@/db/schema/profiles-schema';
 
 interface ProfileContextType {
-  profile: Profile | null | undefined;
+  profile: SelectProfile | null;
   isLoading: boolean;
-  hasContext: boolean; // Derived: URL and Name exist
-  contextCompleted: boolean; // Derived: Description exists and is marked complete
-  highlightWorkspaceNavItem: boolean; // New state for nav highlight
-  setHighlightWorkspaceNavItem: (highlight: boolean) => void; // Setter for highlight
+  hasContext: boolean;
+  contextCompleted: boolean; // Legacy - might deprecate later
+  highlightWorkspaceNavItem: boolean;
+  setHighlightWorkspaceNavItem: Dispatch<SetStateAction<boolean>>;
+  isCompanyComplete: boolean;
+  setIsCompanyComplete: Dispatch<SetStateAction<boolean>>;
+  isBrandingComplete: boolean;
+  setIsBrandingComplete: Dispatch<SetStateAction<boolean>>;
+  isPersonasComplete: boolean;
+  setIsPersonasComplete: Dispatch<SetStateAction<boolean>>;
+  isOverallContextComplete: boolean;
   refetchProfile: () => void;
 }
 
@@ -35,51 +33,73 @@ export const useProfile = (): ProfileContextType => {
   return context;
 };
 
-// Function to fetch the profile data (used by useQuery)
-const fetchProfileQueryFn = async (userId: string | undefined): Promise<Profile | null> => {
-  if (!userId) return null;
-  const profileData = await getProfileByUserId(userId);
-  // Ensure the returned structure matches the Profile interface
-  // You might need type casting or validation here depending on what getProfileByUserId returns
-  return profileData as Profile | null; 
-};
-
-// Provider component using useQuery (this is the one we keep and modify)
-export function ProfileProvider({ children }: { children: React.ReactNode }) {
+// Provider component using useQuery
+export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isLoaded } = useUser();
   const [highlightWorkspaceNavItem, setHighlightWorkspaceNavItem] = useState(false);
-  
-  // Query for the profile data using React Query
-  const { 
-    data: profile, 
-    isLoading: isProfileLoading,
-    refetch
-  } = useQuery<Profile | null>({
-    queryKey: ['profile', user?.id],
-    queryFn: () => fetchProfileQueryFn(user?.id),
-    enabled: !!user?.id && isLoaded,
-    staleTime: 60000,
+  const [isCompanyComplete, setIsCompanyComplete] = useState(false);
+  const [isBrandingComplete, setIsBrandingComplete] = useState(false);
+  const [isPersonasComplete, setIsPersonasComplete] = useState(false);
+
+  const userId = user?.id;
+
+  const {
+    data: profile,
+    isLoading: isQueryLoading,
+    refetch: refetchProfile,
+  } = useQuery<SelectProfile | null>({
+    queryKey: queryKeys.profile(userId),
+    enabled: isLoaded && !!userId, // wait until auth is ready
+    queryFn: async () => {
+      const res = await fetch("/api/user/profile", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        // Surface the error so react-query can transition to the error state
+        const errorData = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(errorData.error || `Failed to fetch profile: ${res.status}`);
+      }
+
+      const data = (await res.json()) as Record<string, any>;
+      return "userId" in data ? (data as SelectProfile) : null;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   });
 
-  // Determine derived states based on the fetched profile data
-  const hasContext = !!(profile?.organisationUrl && profile?.organisationName);
-  const contextCompleted = !!profile?.organisationDescriptionCompleted;
-  const isLoading = !isLoaded || (isLoaded && !!user && isProfileLoading);
+  // Update completion status based on fetched profile
+  useEffect(() => {
+    if (profile) { // Check if profile exists
+      setIsCompanyComplete(!!profile.organisationDescriptionCompleted);
+      setIsBrandingComplete(!!(profile.logoUrl || profile.buttonColor || profile.titleColor));
+      // Persona completion is handled elsewhere, but potentially update here if needed
+    }
+  }, [profile]);
 
-  // The value to be provided to consumers, including the new state and setter
-  const value: ProfileContextType = {
-    profile,
-    isLoading,
+  const hasContext = !!profile?.organisationName && !!profile?.organisationUrl; // Optional chaining for safety
+  const contextCompleted = !!profile?.organisationDescriptionCompleted; // Optional chaining for safety
+
+  // Derived state for overall completion
+  const isOverallContextComplete = isCompanyComplete && isBrandingComplete && isPersonasComplete;
+
+  const value = {
+    profile: profile ?? null, // Ensure profile is null if undefined
+    isLoading: isQueryLoading,
     hasContext,
-    contextCompleted,
+    contextCompleted, 
     highlightWorkspaceNavItem,
     setHighlightWorkspaceNavItem,
-    refetchProfile: refetch,
+    isCompanyComplete,
+    setIsCompanyComplete,
+    isBrandingComplete,
+    setIsBrandingComplete,
+    isPersonasComplete,
+    setIsPersonasComplete,
+    isOverallContextComplete,
+    refetchProfile: refetchProfile || (() => {}), // Provide a stable refetch function
   };
 
-  return (
-    <ProfileContext.Provider value={value}>
-      {children}
-    </ProfileContext.Provider>
-  );
-} 
+  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
+}; 

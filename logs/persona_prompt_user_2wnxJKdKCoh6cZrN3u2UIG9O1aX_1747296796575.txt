@@ -1,0 +1,536 @@
+# Role
+
+You are a **market‑research analyst**.  
+Your job is to propose an **initial, MECE set of customer personas** for the workspace that markets **Agemate**'s product.
+
+These personas become cohort filters in PMF and growth dashboards, so **clarity and distinctiveness** are critical.
+
+---
+
+## Output Rules
+
+1. **Return only a valid JSON object** with a single key `"personas"`. The value must be an array of persona objects.  
+   *No markdown, no comments outside the JSON structure.*
+2. Create **3 – 5 persona objects** within the `"personas"` array. Founders can delete extras later, so choose whatever count best fits the guidance below.
+3. **Merge or drop near‑duplicates** so each persona covers a unique role + need.
+4. **Persona object `label`**  
+   * Prefer a **LinkedIn‑style title** (≤ 3 words, Title Case).  
+   * If LinkedIn titles don't make sense (e.g., consumer products), use a crisp audience label that instantly signals who they are (e.g., "Family Parent").  
+   * Avoid vague tags like "Strategist" unless that exact term appears in the sources.
+5. **Persona object `description`**  
+   * One sentence, **25–30 words**.  
+   * Include (1) employer / life context, (2) primary job‑to‑be‑done, and (3) a key constraint or pain.
+6. Focus on **actual or strongly implied customers**. Ignore titles that appear only in hiring ads.
+7. **Do not** include sources, citations, or your own reasoning in the output JSON.
+8. If no personas can be identified, output: `{"personas": []}`.
+
+### Persona Object Schema
+
+```json
+{
+  "label": "LinkedIn‑style title or clear audience label",
+  "description": "25‑30‑word need‑focused summary"
+}
+```
+
+### Overall Output JSON Schema
+
+```json
+{
+  "personas": [ /* 3–5 persona objects */ ]
+}
+```
+
+---
+
+## Additional Guidance — Multi‑Product Companies
+
+If **Agemate** offers more than one clearly distinct product line or flagship use‑case, generate personas that are **MECE across those lines**:
+
+1. **Identify the top 1–2 job‑to‑be‑done clusters per product line.**
+2. **Add one persona per cluster** when onboarding motion, success metrics, or buyer role diverge materially.
+3. Keep the total to **3–5 personas** overall; merge roles that share identical success metrics even if they touch both products.
+4. In each persona *description*, include role context + primary JTBD + key constraint so cohort filters remain actionable.
+5. **Do not force a single blended persona** when technical (API) and non‑technical (no‑code) buyers have different needs.
+
+If no second product line appears in the inputs, proceed as normal.
+
+---
+
+## Choosing How Many Personas to Output (3‑5)
+
+| Step  | Question                                                                                                              | Action                                                |
+| ----- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **1** | Do **all customers share one workflow**, differing only by seniority or company size?                                 | **Return 3 personas**.                                |
+| **2** | Does the company sell **two distinct product lines / flagship use‑cases**?                                            | **Add one persona per line** → often **4 personas**.  |
+| **3** | Within a line, are there **audiences with unique onboarding paths or success metrics** (e.g., agencies vs. in‑house)? | **Split another persona** → may reach **5 personas**. |
+| **4** | After drafting, do any personas share identical role + need + metrics?                                                | **Merge them.**                                       |
+| **5** | Is any remaining persona so niche it would clutter dashboards?                                                        | **Drop it.**                                          |
+
+**Practical rule of thumb**
+* **3 personas** → single product, homogeneous buyer motion
+* **4 personas** → two product lines **or** clearly different buy‑side motions
+* **5 personas** → two + product lines **and** at least one motion that splits again
+
+Stay within **25‑30 words** per description for readability.
+
+---
+
+## INPUTS
+
+### A. `context_overview_md`
+
+A markdown brief synthesising Exa scrapes and prior LLM workflows for **Agemate**.
+
+## Context Overview
+
+AgeMate offers a daily longevity blend supplement designed to address the root causes of aging. The company aims to simplify and make affordable the process of tackling aging, which they believe is optional. Their product contains 18 ingredients, condensing the latest research in longevity into a single daily scoop. The brand emphasizes feeling better as one ages, not just living longer, and supports its approach with human clinical research.
+
+## Core Benefits
+
+- **Boosts Energy Levels:** The daily blend is formulated to increase energy and endurance during physical activity. Customers report feeling more energetic and motivated after using the product.
+
+- **Improves Metabolism:** Ingredients like NR are included to enhance mitochondrial health, which is crucial for metabolic functioning. This supports the body's ability to process energy efficiently.
+
+- **Supports Cognitive Function:** High levels of NAD+, boosted by ingredients like NR, help maintain cognitive functioning. Users have noted improvements in brain fog and memory.
+
+- **Reduces Stress and Improves Sleep:** L\-Theanine and Magnesium Malate are included for their shown ability to reduce cortisol levels and enhance sleep quality. Customers mention sleeping more soundly.
+
+- **Enhances Recovery:** Glycine aids in the production of glutathione, which is key to the body's energy creation process. This helps users bounce back faster from physical exertion.
+
+- **Decreases Inflammation:** Ingredients such as Hyaluronic Acid and MSM are potent anti\-inflammatories. They can help reduce joint pain and discomfort.
+
+- **Simplifies Supplement Routine:** The all\-in\-one blend packs numerous ingredients into one scoop. This eliminates the need for taking multiple individual pills or supplements daily.
+
+## Customer Personas and Jobs-to-Be-Done
+
+- **Individuals Seeking Longevity:** People interested in extending their healthspan and addressing the biological processes of aging. They are looking for science\-backed nutritional support to feel better as they age.
+  - When seeking to proactively manage my health as I age, I want a comprehensive supplement that targets multiple aging pathways, so I can feel confident I am supporting my body's long-term vitality.
+
+- **Those Experiencing Age-Related Symptoms:** Adults noticing common signs of aging like decreased energy, brain fog, joint discomfort, or poor sleep. They seek a solution to alleviate these specific issues.
+  - When feeling the effects of aging like fatigue or joint pain, I want a product that can help restore my energy and reduce discomfort, so I can maintain an active and comfortable lifestyle.
+
+- **Supplement Users Seeking Simplicity:** Consumers who currently take multiple supplements for various health concerns but desire a more streamlined approach. They value convenience and ease of use.
+  - When tired of managing many different pills each morning, I want a single, comprehensive blend that provides all the necessary ingredients, so I can simplify my daily health routine.
+
+- **Skeptical Health Enthusiasts:** Individuals who are cautious about supplements and pseudo\-science but are open to trying products backed by research and positive user experiences. They need evidence and testimonials to build trust.
+  - When evaluating new health products, I need to see verified reviews and understand the science behind the ingredients, so I can make an informed decision about what to put in my body.
+
+## Features/Services
+
+- **Daily Longevity Blend:** The core product is a powder containing 18 ingredients designed to support longevity and combat aging effects. This blend is highlighted on the company's website as an all\-in\-one solution.
+
+- **Key Ingredients Included:** The blend contains specific compounds like NR, Pterostilbene, Glycine, Hyaluronic Acid, L\-Theanine, Magnesium Malate, MSM, Spermidine, Vitamin C, D3, K2, and Methyl Donors. These are listed on the product page.
+
+- **Subscription Management:** Customers have the ability to manage their subscriptions, including options for cancelling, pausing, rescheduling, or swapping products. This is detailed in the FAQ section.
+
+- **Third\-Party Testing:** The company states that its NMN is tested by an independent UK laboratory for purity and heavy metals. This information is available in the FAQ section, emphasizing quality control.
+
+- **Customer Support:** Support is available via email and phone during specified hours. The website and product pages provide contact information for customer inquiries.
+
+- **Online Account Access:** Customers can log in to a subscriber portal to manage their account and subscription details. This provides a self\-service option for managing purchases.
+
+- **FAQs Section:** A comprehensive section addresses common questions about the company, products, shipping, subscriptions, and more. This serves as a primary resource for customer information.
+
+## Competitive Advantages
+
+- **Comprehensive Ingredient Profile:** The blend contains 18 ingredients targeting multiple aspects of aging in one product. This offers a broad approach compared to single\-ingredient supplements.
+
+- **Focus on Root Causes:** The product is formulated to address the 12 proven root causes of aging. This positions the supplement as a foundational approach to longevity.
+
+- **Simplicity and Affordability:** The company aims to make longevity supplementation simple and affordable. This contrasts with the historical perception of such supplements being expensive and complex.
+
+- **Backed by Research:** The formulation is based on the latest research in longevity and supported by human clinical trials. This provides a scientific basis for the product's claims.
+
+- **Positive Customer Outcomes:** A high percentage of customers report positive effects, such as increased energy and improved mood. This strong customer satisfaction provides a competitive edge.
+
+- **Verified Reviews:** The company highlights a large number of verified 5\-star reviews. This social proof builds trust and credibility with potential customers.
+
+## Pricing
+
+- **No Explicit Pricing Details:** No explicit pricing information for the Daily Longevity Blend or other products is mentioned in the available sources.
+
+- **Subscription Model Implied:** The FAQ section mentions managing subscriptions, suggesting a subscription\-based purchase model is available or primary.
+
+- **Value Bundles Offered:** The website lists "NMN Value Bundles," indicating potential options for purchasing multiple products together at a potentially reduced cost.
+
+## Brand Positioning
+
+- **Longevity Made Simple:** The brand positions itself on simplifying the complex field of longevity and anti\-aging supplementation. This is a core message on the website.
+
+- **Science\-Backed Nutrition:** AgeMate emphasizes that its products are based on the latest scientific research and human clinical trials. This builds trust and credibility.
+
+- **All\-in\-One Solution:** The Daily Longevity Blend is positioned as a comprehensive supplement containing multiple key ingredients in one scoop. This highlights convenience and completeness.
+
+- **Tackling Aging Head\-On:** The brand uses strong language like "tackles ageing head\-on" and "reverse your biological age". This conveys a proactive and impactful approach.
+
+- **Customer Transformation Focused:** Testimonials and marketing highlight how the product helps customers feel better and experience significant improvements. This focuses on tangible user outcomes.
+
+- **Trusted and Highly Rated:** The brand prominently displays high star ratings and the number of verified reviews. This leverages social proof to position itself as a trusted provider.
+
+## Customer Feedback
+
+- **Increased Energy and Reduced Fatigue:** Many customers report significant improvements in energy levels and a reduction in fatigue. One user mentioned no longer needing "nana naps" and feeling more alert.
+
+- **Improved Sleep Quality:** Several reviews highlight sleeping more soundly after starting the supplement. This suggests a positive impact on rest and recovery.
+
+- **Better Mood and Mental Clarity:** Customers have noted improved mood, feeling more balanced, and experiencing reduced brain fog. This indicates benefits for cognitive and emotional well\-being.
+
+- **Physical Improvements:** Some users have observed physical changes like stronger nails and even changes in hair color. Relief from achy joints has also been mentioned, particularly by those with autoimmune conditions.
+
+- **Positive Taste and Routine Integration:** The taste of the blend is generally well\-received, and customers appreciate how it simplifies their morning routine by replacing multiple pills.
+
+- **Delayed Delivery Issues:** One customer expressed disappointment regarding a late delivery, having run out of the product before the next shipment arrived. This points to potential logistical challenges.
+
+- **Serving Size Discrepancy:** A user reported getting fewer servings than expected from a tub, even when using level scoops. This suggests a potential issue with product quantity or packaging accuracy.
+
+## Improvement Areas
+
+- **Delivery Consistency:** Addressing issues with delayed deliveries could improve customer satisfaction and prevent interruptions in their routine. Ensuring timely shipping is crucial for subscription models.
+
+- **Product Quantity Accuracy:** Investigating and resolving discrepancies in serving sizes per container would enhance product consistency and meet customer expectations regarding value.
+
+- **Explicit Pricing Information:** Making pricing details readily available on the website would improve transparency for potential customers. This could reduce friction in the purchase process.
+
+- **Handling Initial Adjustment Period:** Providing clearer guidance or support for potential initial gut adjustments, as mentioned by one user, could help new customers manage expectations and persist with the product.
+
+- **Expanding Customer Support Hours:** While support is available, extending hours or offering weekend support could cater to a wider customer base across different time zones.
+
+## Summary
+
+- **Focuses on Longevity:** AgeMate offers a daily supplement blend targeting the root causes of aging to improve healthspan and vitality.
+
+- **Comprehensive Formulation:** The product contains 18 research\-backed ingredients in a single, convenient daily scoop.
+
+- **Addresses Multiple Benefits:** Key benefits reported include increased energy, improved metabolism, better cognition, reduced stress, enhanced recovery, and decreased inflammation.
+
+- **Targets Aging Adults:** The primary audience appears to be individuals experiencing or seeking to prevent age\-related symptoms and those interested in longevity.
+
+- **Positive Customer Outcomes:** Many users report significant improvements in energy, mood, sleep, and physical comfort, contributing to a high overall satisfaction rating.
+
+- **Areas for Refinement:** Opportunities exist to improve delivery reliability, ensure consistent product quantity, enhance pricing transparency, and potentially expand customer support availability.
+
+- **Science and Simplicity:** The brand positions itself on combining scientific research with a simple, all\-in\-one daily routine for managing aging.
+
+### B. `input_signal_string`
+
+Raw output (Markdown/JSON) from the Input Signal generation step.
+
+```json
+{
+  "customerRoles": [
+    {
+      "title": "Customer",
+      "evidence": "Thousands like you have transformed their mornings"
+    },
+    {
+      "title": "Older Adult",
+      "evidence": "Omatochi aims to help aging adults meet their physical needs"
+    },
+    {
+      "title": "Senior",
+      "evidence": "Omatochi is known for its holistic, senior-centric in-home care services"
+    },
+    {
+      "title": "Single",
+      "evidence": "An online dating platform for singles over 40"
+    },
+    {
+      "title": "Older Man",
+      "evidence": "age gap dating site built for older men dating younger women"
+    },
+    {
+      "title": "Older Woman",
+      "evidence": "older women seeking younger men"
+    },
+    {
+      "title": "Middle-Aged Adult",
+      "evidence": "dating site for middle-aged adults who are looking for love"
+    },
+    {
+      "title": "Older Person",
+      "evidence": "looking to make a connection with a younger or older person"
+    },
+    {
+      "title": "Senior Living Resident",
+      "evidence": "streamline communication between staff, residents, and their families"
+    },
+    {
+      "title": "Senior Living Organization",
+      "evidence": "offering custom, branded applications for senior living organizations"
+    },
+    {
+      "title": "Senior Living Community",
+      "evidence": "dedicated focus on senior living communities"
+    },
+    {
+      "title": "Caregiver",
+      "evidence": "Instant communication with caregivers and family members"
+    }
+  ],
+  "featureMenu": [
+    {
+      "name": "Daily Longevity Blend",
+      "alias": "longevity blend"
+    },
+    {
+      "name": "NMN Supplement",
+      "alias": "NMN"
+    },
+    {
+      "name": "Subscription Management",
+      "alias": "manage subscription"
+    },
+    {
+      "name": "Third-Party Testing Certificates",
+      "alias": "testing certificates"
+    },
+    {
+      "name": "FAQs",
+      "alias": "FAQ"
+    },
+    {
+      "name": "Customer Support",
+      "alias": "support"
+    },
+    {
+      "name": "Online Account",
+      "alias": "account"
+    },
+    {
+      "name": "Messaging System",
+      "alias": "messaging"
+    },
+    {
+      "name": "Search Functionality",
+      "alias": "search"
+    },
+    {
+      "name": "Live Broadcasts",
+      "alias": "live stream video chatting"
+    },
+    {
+      "name": "Virtual Gifts",
+      "alias": "send virtual presents"
+    },
+    {
+      "name": "Video Messaging",
+      "alias": "video messaging"
+    },
+    {
+      "name": "Message Blasts",
+      "alias": "send message blasts"
+    },
+    {
+      "name": "Profile Filtering",
+      "alias": "filters"
+    },
+    {
+      "name": "Personalized Care Plans",
+      "alias": "care plans"
+    }
+  ],
+  "customerBenefitClaims": [
+    "Feel better each day",
+    "Feel more energetic",
+    "Improve mood",
+    "Stay mentally sharp",
+    "Boost brain health",
+    "Sharpen memory",
+    "Stay mentally agile",
+    "Boost energy",
+    "Improve sleep quality",
+    "Reduce joint pain"
+  ]
+}
+```
+
+---
+
+## TASK
+
+**Read every input.**
+Infer the smallest set of **mutually exclusive, collectively exhaustive (MECE)** personas that represent **Agemate**'s primary users or buyers.
+
+Hierarchy for splitting personas:
+
+1. **Role / Function** (title or audience label)
+2. **Seniority or scope**
+3. **Company size / type** (if relevant)
+
+Return a single JSON object containing a `"personas"` key, whose value is the array of persona objects that follow all rules above.
+
+---
+
+## Examples
+
+Below are six worked examples with a short note on why each has 3, 4, or 5 personas.
+
+| Company                        | # Personas | Summary                                                                                    |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------------------ |
+| **Generic B2B SaaS**           | 4          | One product line but four clearly different engineering buyer roles across company sizes.  |
+| **Generic Consumer Streaming** | 4          | Single service, but household, student, professional, and cinephile needs diverge.         |
+| **Exa.ai**                     | 4          | Two product lines (API & Websets) → four distinct JTBD segments.                           |
+| **Wondercraft.ai**             | 4          | Single product, but creator, marketer, publisher, and agency motions differ.               |
+| **Cursor.com**                 | 5          | One product, yet five non‑overlapping engineering archetypes from hobbyist to Fortune 500. |
+| **Netflix.com**                | 5          | Broad consumer base requires five segments for MECE coverage worldwide.                    |
+
+### Example 1 — Generic B2B SaaS (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Senior Data Engineer",
+      "description": "Runs ETL pipelines at Big Tech; needs lightning‑fast, low‑cost queries to hit daily SLA without ballooning warehouse bills."
+    },
+    {
+      "label": "Enterprise Data Architect",
+      "description": "Designs Fortune 500 data stacks; demands scalable, integrated warehouse to unify analytics and comply with strict governance policies."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Leads agile SaaS team; wants rapid data monetisation with minimal ops overhead and no dedicated infra engineer."
+    },
+    {
+      "label": "Open‑Source Contributor",
+      "description": "Builds public data tools; values community‑owned marketplace and easy experimentation to grow contributor adoption."
+    }
+  ]
+}
+```
+
+### Example 2 — Generic Consumer Streaming (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "College Student",
+      "description": "Streams on dorm devices; needs affordable entertainment, offline downloads, and group‑watch features to bond with friends."
+    },
+    {
+      "label": "Working Professional",
+      "description": "Unwinds after work; seeks high‑quality originals and seamless playback across TV, phone, and laptop."
+    },
+    {
+      "label": "Family Parent",
+      "description": "Manages household viewing; needs kid‑safe profiles and cost‑effective multi‑profile plan."
+    },
+    {
+      "label": "Cinephile",
+      "description": "Demands diverse, award‑winning films; values pristine 4K streams and robust recommendations."
+    }
+  ]
+}
+```
+
+### Example 3 — Exa.ai (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "LLM App Developer",
+      "description": "Builds GPT‑powered tools at Series‑A SaaS; needs real‑time web retrieval with citations to prevent hallucinations and impress investors."
+    },
+    {
+      "label": "ML Research Scientist",
+      "description": "Benchmarks LLM retrieval in academia or Big Tech; requires semantic search to collect niche datasets and publish reproducible, well‑cited findings."
+    },
+    {
+      "label": "Enterprise AI Lead",
+      "description": "Drives AI strategy at Fortune 500; seeks compliant, scalable retrieval API powering internal assistants without maintaining crawlers."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Solo technical founder pre‑Series A; prototypes AI assistant using Exa API and exports Websets to source target‑customer lists."
+    }
+  ]
+}
+```
+
+### Example 4 — Wondercraft.ai (4 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Indie Podcaster",
+      "description": "Runs niche show solo; needs turnkey AI voices and editing to release studio‑quality episodes weekly without audio‑engineering skills."
+    },
+    {
+      "label": "Content Marketing Manager",
+      "description": "Repurposes blog posts into podcasts at Series‑B SaaS; requires multilingual narration and auto‑distribution across Spotify and Apple."
+    },
+    {
+      "label": "Media Publisher Editor",
+      "description": "Manages digital magazine; converts daily news articles into audio editions, monetising via programmatic ads and premium feeds."
+    },
+    {
+      "label": "Marketing Agency Producer",
+      "description": "Creates branded podcasts for enterprise clients; needs collaborative workspace, instant script‑to‑audio drafts, and localisation to cut turnaround."
+    }
+  ]
+}
+```
+
+### Example 5 — Cursor.com (5 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Solo Developer",
+      "description": "Builds weekend projects on free tier; relies on AI pair‑programming to code faster without paying for Copilot."
+    },
+    {
+      "label": "Coding Student",
+      "description": "Learns programming at university; uses Cursor's chat and refactor tools to fix bugs and submit cleaner assignments."
+    },
+    {
+      "label": "Startup Founder / CTO",
+      "description": "Leads sub‑20‑person team; adopts Cursor to boost velocity and avoid hiring extra engineers during early runway constraints."
+    },
+    {
+      "label": "Senior Software Engineer",
+      "description": "Owns large code modules at growth‑stage SaaS; needs natural‑language refactors and codebase Q&A to ship features faster."
+    },
+    {
+      "label": "Enterprise Engineering Manager",
+      "description": "Manages 250‑seat org at Fortune 500; requires SOC‑2‑compliant AI editor with seat management and secure on‑prem model routing."
+    }
+  ]
+}
+```
+
+### Example 6 — Netflix.com (5 personas)
+
+```json
+{
+  "personas": [
+    {
+      "label": "Family Parent",
+      "description": "Manages household budget; needs kid‑safe profiles, offline downloads for travel, and multi‑screen plan that entertains children without supervision."
+    },
+    {
+      "label": "College Student",
+      "description": "Streams on dorm Wi‑Fi; wants low‑cost ad‑supported tier, group‑watch tools, and flexible playback to binge between classes."
+    },
+    {
+      "label": "Working Professional",
+      "description": "Unwinds after demanding workdays; seeks high‑quality originals and flawless cross‑device playback to replace cable subscriptions."
+    },
+    {
+      "label": "Cinephile",
+      "description": "Passionate film buff with 4K home theater; demands Dolby Vision streams and deep international catalog for rare award‑winning titles."
+    },
+    {
+      "label": "International Viewer",
+      "description": "Lives outside US; values extensive local‑language dubs, mobile‑first downloads, and regional payment options for day‑and‑date releases."
+    }
+  ]
+}
+```
+
+```

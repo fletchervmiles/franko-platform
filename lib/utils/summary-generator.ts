@@ -20,12 +20,14 @@ import {
  * @param cleanTranscript - The cleaned transcript of the conversation
  * @param conversationPlan - The conversation plan as a string or object
  * @param completionRate - The completion rate as a number or string
+ * @param extractionJson - Optional extraction JSON as a record or null
  * @returns Promise resolving to the generated summary
  */
 export async function generateSummary(
   cleanTranscript: string,
   conversationPlan: string | Record<string, unknown>,
-  completionRate: number | string
+  completionRate: number | string,
+  extractionJson?: Record<string, unknown> | null
 ): Promise<string> {
   try {
     // Parse the completion rate if it's a string
@@ -58,13 +60,17 @@ export async function generateSummary(
       ? JSON.stringify(conversationPlan, null, 2) 
       : conversationPlan;
     
+    // Convert extraction JSON to string
+    const extractionString = extractionJson ? JSON.stringify(extractionJson, null, 2) : 'None';
+    
     // Read the prompt template
     const promptTemplate = getPromptTemplate();
     
     // Replace placeholders with actual values
     const systemPrompt = promptTemplate
       .replace('{clean_transcript}', cleanTranscript)
-      .replace('{conversation_plan}', planString);
+      .replace('{conversation_plan}', planString)
+      .replace('{extraction_json}', extractionString);
     
     // Add retry logic with primary and fallback models
     const maxRetries = 2;
@@ -84,19 +90,40 @@ export async function generateSummary(
           model: retryCount === 0 ? gemini25ProPreviewModel : geminiFlashModel,
           system: systemPrompt,
           prompt: "",
-          temperature: 0.5,
-          maxTokens: 1500,
+          temperature: 0.7,
+          maxTokens: 10000,
         });
         
         const summary = response.text || "";
+        const finishReason = response.finishReason;
+        const completionTokens = response.usage.completionTokens;
+
+        logger.debug('[summary-generator] AI response details', {
+          finishReason,
+          completionTokens,
+          model: retryCount === 0 ? 'gemini25ProPreviewModel' : 'geminiFlashModel',
+        });
         
         if (!summary.trim()) {
+          logger.warn('[summary-generator] Empty summary returned by model.', { finishReason, completionTokens });
           throw new Error("Empty summary returned");
         }
         
+        // Check for potentially truncated summary
+        if (summary.trim().length < 50) {
+          logger.warn('[summary-generator] Potentially truncated summary: length is less than 50 characters.', { 
+            summaryLength: summary.trim().length, 
+            summaryContent: summary.trim(),
+            finishReason,
+            completionTokens
+          });
+        }
+
         logger.debug('Summary generated successfully', { 
           model: retryCount === 0 ? 'gemini25ProPreviewModel' : 'geminiFlashModel',
-          summaryLength: summary.length
+          summaryLength: summary.length,
+          finishReason,
+          completionTokens
         });
         
         return summary;
@@ -141,22 +168,36 @@ function getPromptTemplate(): string {
       logger.warn('Could not read transcript_summary.md, using default prompt', { error: fileError });
       
       return `
-# Conversation Summary Generation
+# Conversation Transcript Summary
+
+## Task
+You will create a concise, informative summary of a conversation transcript between an AI agent and a respondent. The summary should capture key insights and findings from the conversation.
 
 ## Instructions
+1. Analyze the entire conversation transcript provided
+2. Consider the conversation plan that guided the agent
+3. Identify the main topics, key points, and notable insights
+4. Create a clear, well-structured summary using bullet points
+5. Focus on what was actually discussed, not the planned objectives
+6. Highlight concrete feedback, opinions, and user experiences
+7. Keep the summary concise (maximum 10 bullet points)
+8. Do not include introductions, greetings, or conclusion remarks
+9. Use markdown formatting for better readability
+10. Organize points logically, not necessarily in the order they appeared
 
-You are tasked with generating a concise summary of a conversation between an AI assistant and a user. The assistant was guided by a conversation plan with specific objectives.
-
-1. Review the full transcript below
-2. Review the conversation plan that guided the assistant
-3. Generate a concise bullet-point summary that captures:
-   - The main topics discussed
-   - Key insights or feedback from the user
-   - Important decisions or outcomes from the conversation
-   - Any action items or next steps mentioned
+## Format 
+Use the following structure for your summary:
+- Use level 3 headings (###) for main topic areas
+- Use bullet points for specific details under each topic
+- Bold (**text**) important terms or concepts
+- Use italic (_text_) for emphasis when appropriate
+- Keep each bullet point focused on a single idea or finding
 
 ## Conversation Plan
 {conversation_plan}
+
+## High-Signal Extraction JSON
+{extraction_json}
 
 ## Transcript
 {clean_transcript}

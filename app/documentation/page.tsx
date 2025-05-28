@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown (tables, etc.)
-import Nav from '@/components/lp-components/nav'; // Import the Nav component
+import ResponsiveNavbar from '@/components/lp-redesign/responsive-navbar'; // Import the ResponsiveNavbar component
 
 // Remove the main heading from the markdown string
 const markdownContent = `This document explains how to configure and utilize webhooks from the Franko platform to receive notifications and data when a conversation is completed.
@@ -133,7 +133,7 @@ To ensure that incoming webhook requests genuinely originate from the Franko pla
 export default function DocumentationPage() {
   return (
     <div>
-      <Nav />
+      <ResponsiveNavbar />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 mt-12 mb-12 border border-gray-200 rounded-md">
         {/* Render the main heading separately and centered */}
         <h1 className="text-3xl font-bold text-center mb-8">

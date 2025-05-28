@@ -35,10 +35,10 @@ export const PLAN_RESPONSES = {
   free: 10,            // Free tier with 10 responses
   starter: 40,         // Starter plan with 40 responses
   pro: 100,            // Pro plan with 100 responses
-  business: 500,       // Business plan with 500 responses
+  business: 200,       // Business plan with 200 responses
   starter_2024: 40,    // Current starter plan
   pro_2024: 100,       // Current pro plan
-  business_2024: 500   // Current business plan
+  business_2024: 200   // Current business plan
 } as const;
 
 // Define internal chat query quotas for each membership tier
@@ -46,10 +46,10 @@ export const PLAN_INTERNAL_CHAT_QUERIES = {
   free: 10,            // Free tier with 10 internal chat queries
   starter: 40,         // Starter plan with 40 internal chat queries
   pro: 100,            // Pro plan with 100 internal chat queries
-  business: 500,       // Business plan with 500 internal chat queries
+  business: 200,       // Business plan with 200 internal chat queries
   starter_2024: 40,    // Current starter plan
   pro_2024: 100,       // Current pro plan
-  business_2024: 500   // Current business plan
+  business_2024: 200   // Current business plan
 } as const;
 
 // Define chat instance generation quotas for each membership tier

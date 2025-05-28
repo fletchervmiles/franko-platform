@@ -1,6 +1,9 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 import { chatInstancesTable } from "./chat-instances-schema";
+
+export const pmfCategoryEnum = pgEnum("pmf_category_enum", ["very", "somewhat", "not"]);
+export const sentimentEnum = pgEnum("sentiment_enum", ["positive", "neutral", "negative"]);
 
 export const chatResponsesTable = pgTable("chat_responses", {
   id: uuid("id").defaultRandom().notNull().primaryKey(),
@@ -10,6 +13,9 @@ export const chatResponsesTable = pgTable("chat_responses", {
   chatInstanceId: uuid("chat_instance_id")
     .notNull()
     .references(() => chatInstancesTable.id, { onDelete: "cascade" }),
+  persona_category: text("persona_category").notNull().default("UNCLASSIFIED"),
+  pmf_category: pmfCategoryEnum("pmf_category"),
+  extraction_json: jsonb("extraction_json"),
   completionStatus: text("completion_status"),
   status: text("status"),
   chatProgress: jsonb("chat_progress"),
@@ -23,6 +29,9 @@ export const chatResponsesTable = pgTable("chat_responses", {
   cleanTranscript: text("clean_transcript"),
   user_words: text("user_words"),
   transcript_summary: text("transcript_summary"),
+  interview_type: text("interview_type"),
+  sentiment: sentimentEnum("sentiment"),
+  characteristics_json: jsonb("characteristics_json"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

@@ -13,6 +13,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SketchPicker, ColorResult } from 'react-color';
 import { cn } from "@/lib/utils";
+import { useSetupChecklist } from "@/contexts/setup-checklist-context";
+import { useProfile } from "@/components/contexts/profile-context";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface BrandingContextProps {
   userId?: string;
@@ -64,9 +67,12 @@ export function BrandingContext({
   const [buttonColor, setButtonColor] = useState(initialButtonColor || '#ffffff'); // Default to white
   const [titleColor, setTitleColor] = useState(initialTitleColor || '#ffffff'); // Default to white
   const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  const { setIsBrandingComplete } = useProfile();
 
   // State for color picker visibility
   const [showButtonColorPicker, setShowButtonColorPicker] = useState(false);
@@ -105,13 +111,20 @@ export function BrandingContext({
   const mutation = useMutation<ApiResponse, Error, FormData>({
     mutationFn: updateBranding,
     onSuccess: (data) => {
+      setIsLoading(false)
+      // Update preview URL if a new logo was uploaded and returned
+      if (data.profile?.logoUrl) {
+        setLogoPreview(data.profile.logoUrl);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId), refetchType: 'active' });
       toast({
         title: "Success!",
         description: "Branding updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      })
+      refetchSetupStatus();
+      setLogoFile(null); // Clear pending file selection
       setIsEditing(false); // Exit edit mode on successful save
-      // Let the useEffect above handle state reset based on invalidated query data
+      setIsBrandingComplete(true); // Explicitly mark as complete on success
     },
     onError: (error) => {
       toast({
@@ -292,7 +305,7 @@ export function BrandingContext({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Logo Section */}
           <div className={cn("space-y-4 bg-white rounded-lg border p-4 transition-opacity", !isEditing && "opacity-70")}>
-            <Label className="text-base font-semibold flex items-center gap-2">
+            <Label className="text-sm font-semibold flex items-center gap-2">
                <ImageIcon className="h-4 w-4 text-blue-500" /> Logo
             </Label>
             <p className="text-sm text-gray-500">Upload your company logo (PNG, JPG, GIF, SVG recommended, max 5MB).</p>
@@ -327,14 +340,14 @@ export function BrandingContext({
 
           {/* Color Section */}
           <div className={cn("space-y-4 bg-white rounded-lg border p-4 transition-opacity", !isEditing && "opacity-70")}>
-             <Label className="text-base font-semibold flex items-center gap-2">
+             <Label className="text-sm font-semibold flex items-center gap-2">
                 <Palette className="h-4 w-4 text-blue-500" /> Brand Colors
              </Label>
              <p className="text-sm text-gray-500">Choose colors for the chat widget elements.</p>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Button Color */}
                 <div className="space-y-2">
-                   <Label htmlFor="buttonColor" className="text-sm font-medium">Button Color</Label>
+                   <Label htmlFor="buttonColor" className="text-sm text-gray-600">Button Color</Label>
                    <Popover open={showButtonColorPicker} onOpenChange={setShowButtonColorPicker}>
                       <PopoverTrigger asChild disabled={!isEditing || mutation.isPending}>
                          <Button
@@ -363,7 +376,7 @@ export function BrandingContext({
                 </div>
                 {/* Title Color */}
                 <div className="space-y-2">
-                   <Label htmlFor="titleColor" className="text-sm font-medium">Modal Heading Color</Label>
+                   <Label htmlFor="titleColor" className="text-sm text-gray-600">Modal Heading Color</Label>
                     <Popover open={showTitleColorPicker} onOpenChange={setShowTitleColorPicker}>
                       <PopoverTrigger asChild disabled={!isEditing || mutation.isPending}>
                          <Button

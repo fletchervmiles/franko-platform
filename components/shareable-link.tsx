@@ -39,11 +39,11 @@ export function ShareableLink({ guideName }: ShareableLinkProps) {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div className="w-full md:max-w-[70%]">
             <h2 className="text-2xl font-semibold mb-2 flex items-center">
-              Shareable Conversation Link
+              Shareable Link
               <StatusDot />
             </h2>
             <p className="text-sm text-gray-500">
-              Share this secure link to invite your participants and customers to your conversation.
+              Share this secure link to invite your customers to chat.
             </p>
           </div>
         </div>

@@ -27,6 +27,11 @@ import { getLatestObjectives } from "./conversation-helper";
 import crypto from 'crypto';
 import { getActiveWebhooksForEvent } from '@/db/queries/webhooks-queries';
 import { Webhook } from '@/db/schema/webhooks';
+import { classifyPmf } from "./pmf-classifier";
+import { classifyPersona, getPersonaCatalogueForUser } from "./persona-classifier";
+import { type chatResponsesTable } from "@/db/schema/chat-responses-schema"; // For PMF category type
+import { extractHighSignalData } from './extraction-processor';
+import { processLlmExtraction } from '@/db/actions/process-llm-extraction';
 
 /**
  * Finalizes a conversation by updating various metrics, generating a summary, and sending notification
@@ -76,6 +81,43 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
       );
     }
     
+    // Initialize PMF and Persona Categories
+    let pmfCategoryResult: typeof chatResponsesTable.$inferInsert.pmf_category = null;
+    let personaCategoryResult: string = "UNCLASSIFIED";
+
+    // Run Classifiers if transcript is available
+    if (transcript && transcript.trim() !== "") {
+      // PMF Classification (conditionally)
+      if (chatInstance.interview_type === 'pmf') {
+        try {
+          logger.info('[finalizeConversation] Running PMF classifier...', { chatResponseId });
+          pmfCategoryResult = await classifyPmf(transcript);
+          logger.info('[finalizeConversation] PMF classifier result:', { chatResponseId, pmfCategory: pmfCategoryResult });
+        } catch (pmfError) {
+          logger.error('[finalizeConversation] Error running PMF classifier:', { chatResponseId, error: pmfError });
+          // Keep pmfCategoryResult as null
+        }
+      }
+
+      // Persona Classification (always, if transcript exists)
+      try {
+        logger.info('[finalizeConversation] Running Persona classifier...', { chatResponseId });
+        const personaCatalogue = await getPersonaCatalogueForUser(chatResponse.userId);
+        if (personaCatalogue.length > 0) {
+          personaCategoryResult = await classifyPersona(transcript, personaCatalogue);
+          logger.info('[finalizeConversation] Persona classifier result:', { chatResponseId, personaCategory: personaCategoryResult });
+        } else {
+          logger.warn('[finalizeConversation] Persona catalogue is empty for user, skipping persona classification.', { userId: chatResponse.userId });
+          // personaCategoryResult remains "UNCLASSIFIED"
+        }
+      } catch (personaError) {
+        logger.error('[finalizeConversation] Error running Persona classifier:', { chatResponseId, error: personaError });
+        // Keep personaCategoryResult as "UNCLASSIFIED"
+      }
+    } else {
+      logger.warn('[finalizeConversation] Transcript is empty, skipping PMF and Persona classification.', { chatResponseId });
+    }
+    
     // Calculate completion status using objectives from the latest message
     let completionStatus = '0%';
     if (chatResponse.messagesJson) {
@@ -100,6 +142,37 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
       countUserWords(chatResponse.messagesJson).toString() : 
       '0';
     
+    // --- Extraction Prompt Processing ---
+    let extractionObject: any = null;
+    try {
+      extractionObject = await extractHighSignalData({
+        interviewType: chatInstance.interview_type || null,
+        pmfCategory: (pmfCategoryResult ?? null) as any,
+        cleanTranscript: transcript,
+        conversationPlan: typeof chatInstance.conversationPlan === 'object' ? JSON.stringify(chatInstance.conversationPlan) : (chatInstance.conversationPlan as string || '')
+      });
+      if (extractionObject) {
+        logger.info('[finalizeConversation] Extraction object generated', { chatResponseId, keys: Object.keys(extractionObject) });
+        // Persist extraction + arrays/fields
+        try {
+          await processLlmExtraction(
+            chatResponseId, 
+            extractionObject, 
+            pmfCategoryResult, 
+            personaCategoryResult,
+            chatInstance.interview_type || null
+          );
+          logger.info('[finalizeConversation] Extraction data persisted successfully');
+        } catch (persistErr) {
+          logger.error('[finalizeConversation] Failed to persist extraction data', persistErr);
+        }
+      }
+    } catch (extractErr) {
+      logger.error('[finalizeConversation] Extraction processing failed', extractErr);
+    }
+
+    // --- Summary Generation (after extraction) ---
+
     // Generate summary if completion rate > 0%
     let summary = '';
     let finalChatResponseData: SelectChatResponse | undefined = undefined;
@@ -108,7 +181,8 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
         summary = await generateSummary(
           transcript,
           chatInstance.conversationPlan as Record<string, unknown> ?? {},
-          completionRate
+          completionRate,
+          extractionObject
         );
       } catch (summaryError) {
         logger.error('Error generating summary:', summaryError);
@@ -127,7 +201,9 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
           completionStatus,
           user_words: userWords,
           transcript_summary: summary,
-          status: 'completed'
+          status: 'completed',
+          pmf_category: pmfCategoryResult, 
+          persona_category: personaCategoryResult
         },
       );
     });

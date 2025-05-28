@@ -189,12 +189,21 @@ export async function POST(request: Request) {
           tools: [] as any,
           
           // Save chat history
-          onFinish: async ({ responseMessages }) => {
+          onFinish: async ({ text, steps }) => {
             try {
               // Process response messages
-              const newProcessedMessages = responseMessages.map(m => {
-                return { ...m, content: m.content };
-              });
+              const newProcessedMessages: CoreMessage[] = [];
+              if (text) {
+                newProcessedMessages.push({ role: 'assistant', content: text });
+              } else {
+                const assistantResponseContent = steps
+                  .filter((step: any) => step.type === 'text-delta' && typeof step.value === 'string')
+                  .map((step: any) => step.value)
+                  .join('');
+                if (assistantResponseContent) {
+                  newProcessedMessages.push({ role: 'assistant', content: assistantResponseContent });
+                }
+              }
               
               // Get existing chat
               const existingSession = await getInternalChatSessionById(internalChatSessionId);

@@ -26,7 +26,12 @@ Use the following structure for your summary:
 ## Conversation Plan
 {conversation_plan}
 
+## High-Signal Extraction JSON
+{extraction_json}
+
 ## Transcript
 {clean_transcript}
 
 ## Your Summary
+
+

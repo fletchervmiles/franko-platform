@@ -6,49 +6,44 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAuth } from "@clerk/nextjs"
 
-const starterFeatures = [
+const freeFeatures = [
   {
-    feature: 'Up to <b>40</b> Conversation Responses',
+    feature: 'Up to <b>10</b> Conversation Responses',
     description: 'Completed customer conversations conducted by your AI agent'
   },
   {
-    feature: 'Up to <b>10</b> Conversation Plans',
+    feature: 'Up to <b>3</b> Conversation Plans',
     description: 'Generated conversation plans to guide your agent'
   },
   {
-    feature: 'Up to <b>40</b> Response Q&A',
+    feature: 'Up to <b>10</b> Response Q&A',
     description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
   }
 ];
 
-const proFeatures = [
+const growthFeatures = [
   {
-    feature: 'Up to <b>100</b> Conversation Responses',
-    description: 'Completed customer conversations conducted by your AI agent'
+    feature: 'AI Agent Interviewers',
+    description: 'Run async AI-driven chat interviews that customers actually complete.'
   },
   {
-    feature: 'Up to <b>20</b> Conversation Plans',
-    description: 'Generated conversation plans to guide your agent'
+    feature: 'Track Product-Market Fit continuously',
+    description: 'Know your customer love metric at a glance, spot gaps early, and accelerate growth.'
   },
   {
-    feature: 'Up to <b>100</b> Response Q&A',
-    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+    feature: 'Quantified personas done for you',
+    description: 'Immediately understand who loves your product, why they do, and precisely how to attract more ideal users.'
+  },
+  {
+    feature: 'Ask direct questions to your customer data',
+    description: 'Easily query your growing proprietary feedback data using plain-language questions, no SQL or tagging required.'
   }
 ];
 
-const businessFeatures = [
-  {
-    feature: 'Up to <b>500</b> Conversation Responses',
-    description: 'Completed customer conversations conducted by your AI agent'
-  },
-  {
-    feature: 'Up to <b>50</b> Conversation Plans',
-    description: 'Generated conversation plans to guide your agent'
-  },
-  {
-    feature: 'Up to <b>500</b> Response Q&A',
-    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
-  }
+const growthLimits = [
+  'Up to 200 Interview Responses/mo',
+  'Generate Up to 50 AI Conversation Plans', 
+  'Up to 200 Questions on your customer data'
 ];
 
 export default function PricingUpgrade() {
@@ -83,60 +78,82 @@ export default function PricingUpgrade() {
 
   // Helper function to generate button text
   const getButtonText = (planName: string) => {
-    if (!isSignedIn) return `Upgrade to ${planName}`
+    if (!isSignedIn) return `Get ${planName}`
     if (isLoading) return 'Loading...'
 
-    const planMap: Record<string, string> = {
-      'starter': 'Starter',
-      'pro': 'Pro',
-      'business': 'Business'
+    if (planName === 'Growth') {
+      if (currentPlan === 'business') {
+        return 'Current Plan'
+      }
+      return 'Upgrade to Growth'
     }
 
-    if (currentPlan === planName.toLowerCase()) {
-      return `Current Plan`
+    if (planName === 'Free') {
+      if (currentPlan === 'free') {
+        return 'Current Plan'
+      }
+      return 'Downgrade to Free'
     }
     
-    return `Upgrade to ${planName}`
+    return `Get ${planName}`
   }
 
   // Helper to check if a button should be disabled
   const isButtonDisabled = (planName: string) => {
-    return currentPlan === planName.toLowerCase()
+    if (planName === 'Growth') {
+      return currentPlan === 'business'
+    }
+    if (planName === 'Free') {
+      return currentPlan === 'free'
+    }
+    return false
+  }
+
+  // Helper to get the upgrade URL
+  const getUpgradeUrl = (planName: string) => {
+    if (planName === 'Growth') {
+      return '/api/upgrade/business'
+    }
+    // For free plan, we could add a downgrade endpoint or just disable
+    return '#'
   }
 
   return (
     <div className="pt-6">
       <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight mb-4">
-          Upgrade Your Plan
+          Choose Your Plan
         </h2>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Start with our free plan and upgrade when you're ready to scale your customer feedback operations.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         <Card className="w-full p-4 grid-background03 flex flex-col">
           <CardHeader className="space-y-6 px-3 py-2">
             <div>
               <h3 className="text-xl md:text-2xl font-mono font-semibold">
-                Starter
+                Free
               </h3>
             </div>
 
             <div className="p-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">$29</span>
-                <span className="text-base text-gray-500">/ per month</span>
+                <span className="text-3xl font-bold">$0</span>
+                <span className="text-base text-gray-500">/ forever</span>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-700 h-14 flex items-center">
-              Start capturing customer conversations
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Get a feel for Franko with starter limits. Includes everything in Growth plan.
             </p>
 
             <div className="flex-grow">
               <ul className="space-y-3">
-                {starterFeatures.map((item, index) => (
+                {freeFeatures.map((item, index) => (
                   <li key={index} className="flex flex-col">
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -151,15 +168,10 @@ export default function PricingUpgrade() {
             </div>
 
             <div className="pt-3 mt-auto">
-              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('starter') ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
-                <Link 
-                  href={isButtonDisabled('starter') ? '#' : "/api/upgrade/starter"} 
-                  className={`rounded-lg ${isButtonDisabled('starter') ? 'bg-gray-100 text-gray-700 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
-                  onClick={(e) => isButtonDisabled('starter') && e.preventDefault()}
-                >
-                  {getButtonText('Starter')}
-                  {!isButtonDisabled('starter') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
-                </Link>
+              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('Free') ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
+                <div className={`rounded-lg ${isButtonDisabled('Free') ? 'bg-gray-100 text-gray-700 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}>
+                  {getButtonText('Free')}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -169,100 +181,60 @@ export default function PricingUpgrade() {
           <CardHeader className="space-y-6 px-3 py-2">
             <div>
               <h3 className="text-xl md:text-2xl font-mono font-semibold text-white">
-                Pro
+                Growth
               </h3>
             </div>
 
             <div className="p-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-white">$59</span>
-                <span className="text-base text-gray-400">/ per month</span>
+                <span className="text-3xl font-bold text-white">$199</span>
+                <span className="text-base text-gray-400">/ month</span>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-300 h-14 flex items-center">
-              Get serious about growing your customer conversation dataset
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Everything you need to automatically measure and grow Product-Market Fit:
             </p>
 
             <div className="flex-grow">
-              <ul className="space-y-3">
-                {proFeatures.map((item, index) => (
+              <ul className="space-y-4">
+                {growthFeatures.map((item, index) => (
                   <li key={index} className="flex flex-col">
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-200 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                      <span className="text-gray-200 text-sm font-medium">{item.feature}</span>
                     </div>
-                    <div className="ml-8 text-xs text-gray-400 italic mt-1">
+                    <div className="ml-8 text-xs text-gray-400 leading-relaxed mt-1">
                       {item.description}
                     </div>
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <p className="text-xs text-gray-400 mb-3 font-medium">Production limits for scale:</p>
+                <ul className="space-y-2">
+                  {growthLimits.map((limit, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="w-1 h-1 bg-gray-500 rounded-full flex-shrink-0"></span>
+                      <span className="text-xs text-gray-400">{limit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div className="pt-3 mt-auto">
-              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('pro') ? 'bg-gray-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
+              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('Growth') ? 'bg-gray-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
                 <Link 
-                  href={isButtonDisabled('pro') ? '#' : "/api/upgrade/pro"}
-                  className={`rounded-lg ${isButtonDisabled('pro') ? 'bg-gray-800 text-gray-400 cursor-default' : 'bg-white text-black hover:bg-gray-100'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
-                  onClick={(e) => isButtonDisabled('pro') && e.preventDefault()}
+                  href={isButtonDisabled('Growth') ? '#' : getUpgradeUrl('Growth')}
+                  className={`rounded-lg ${isButtonDisabled('Growth') ? 'bg-gray-800 text-gray-400 cursor-default' : 'bg-white text-black hover:bg-gray-100'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
+                  onClick={(e) => isButtonDisabled('Growth') && e.preventDefault()}
                 >
-                  {getButtonText('Pro')}
-                  {!isButtonDisabled('pro') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="w-full p-4 grid-background03 flex flex-col">
-          <CardHeader className="space-y-6 px-3 py-2">
-            <div>
-              <h3 className="text-xl md:text-2xl font-mono font-semibold">
-                Business
-              </h3>
-            </div>
-
-            <div className="p-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">$199</span>
-                <span className="text-base text-gray-500">/ per month</span>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-700 h-14 flex items-center">
-              Scale conversations across your entire customer journey
-            </p>
-
-            <div className="flex-grow">
-              <ul className="space-y-3">
-                {businessFeatures.map((item, index) => (
-                  <li key={index} className="flex flex-col">
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
-                    </div>
-                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
-                      {item.description}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="pt-3 mt-auto">
-              <div className={`rounded-lg overflow-hidden ${isButtonDisabled('business') ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} p-[3px] relative`}>
-                <Link 
-                  href={isButtonDisabled('business') ? '#' : "/api/upgrade/business"}
-                  className={`rounded-lg ${isButtonDisabled('business') ? 'bg-gray-100 text-gray-700 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'} px-5 py-2.5 text-sm font-medium shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10`}
-                  onClick={(e) => isButtonDisabled('business') && e.preventDefault()}
-                >
-                  {getButtonText('Business')}
-                  {!isButtonDisabled('business') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
+                  {getButtonText('Growth')}
+                  {!isButtonDisabled('Growth') && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
                 </Link>
               </div>
             </div>

@@ -8,7 +8,10 @@ import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { PostHogProvider } from "@/components/PostHogProvider";
+import { SetupChecklistProvider } from "@/contexts/setup-checklist-context";
+import { SetupChecklist } from "@/components/setup-checklist";
+import { ProfileProvider } from "@/components/contexts/profile-context";
+import { QueryProvider } from "@/components/utilities/query-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -43,31 +46,36 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider appearance={{ baseTheme: undefined }}>
-      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}> 
-        <head>
-          <Script 
-            defer 
-            src="https://cloud.umami.is/script.js" 
-            data-website-id="dd36e2e3-91eb-4464-a0dd-e2cb157066ac"
-          />
-        </head>
-        <body className="bg-background text-foreground" suppressHydrationWarning>
-          <Providers
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-            forcedTheme="light"
-          >
-            <ClerkProfileSync />
-            <PostHogProvider>
-              {children}
-            </PostHogProvider>
-            <Toaster />
-            <Analytics />
-            <SpeedInsights />
-          </Providers>
+    <ClerkProvider
+      appearance={{
+        baseTheme: undefined
+      }}
+    >
+      <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+        <body 
+          className="bg-background text-foreground"
+          suppressHydrationWarning
+        >
+          <QueryProvider>
+            <ProfileProvider>
+              <SetupChecklistProvider>
+                <Providers
+                  attribute="class"
+                  defaultTheme="light"
+                  enableSystem={false}
+                  disableTransitionOnChange
+                  forcedTheme="light"
+                >
+                  <ClerkProfileSync />
+                  {children}
+                  <Toaster />
+                  <Analytics />
+                  <SpeedInsights />
+                  <SetupChecklist />
+                </Providers>
+              </SetupChecklistProvider>
+            </ProfileProvider>
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -274,6 +274,55 @@
       "when": 1744038142735,
       "tag": "0038_friendly_mathemanic",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1746178360057,
+      "tag": "0039_violet_toad",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1746179051637,
+      "tag": "0040_manual_sync_after_changes",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1746179052000,
+      "tag": "0041_add_user_personas",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1746263048356,
+      "tag": "0042_talented_anita_blake",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1746414719854,
+      "tag": "0043_greedy_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1747281709758,
+      "tag": "0044_little_maddog",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1747370407868,
+      "tag": "0045_add-section-cache",
+      "breakpoints": true
     }
   ]
 }

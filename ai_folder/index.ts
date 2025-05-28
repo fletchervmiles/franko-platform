@@ -18,6 +18,8 @@ export let o1HighModel: LanguageModelV1;
 export let o1MiniModel: LanguageModelV1;
 export let gemini25ProPreviewModel: LanguageModelV1;
 export let gemini25ProExperimentalModel: LanguageModelV1;
+export let o3Model: LanguageModelV1;
+export let gemini25FlashPreviewModel: LanguageModelV1;
 
 // Create a function to initialize models with dynamic imports
 export async function initializeModels() {
@@ -51,6 +53,12 @@ export async function initializeModels() {
   // Add the new Gemini 2.5 Pro Experimental model
   gemini25ProExperimentalModel = wrapLanguageModel({
     model: google("gemini-2.5-pro-exp-03-25"),
+    middleware: customMiddleware,
+  });
+
+  // Add the new Gemini 2.5 Flash Preview model
+  gemini25FlashPreviewModel = wrapLanguageModel({
+    model: google("gemini-2.5-flash-preview-04-17"),
     middleware: customMiddleware,
   });
 
@@ -95,6 +103,14 @@ export async function initializeModels() {
   // Create a wrapped version of the OpenAI o1-mini model
   o1MiniModel = wrapLanguageModel({
     model: openai("o1-mini") as unknown as LanguageModelV1,
+    middleware: customMiddleware,
+  });
+
+  // Create a wrapped version of the OpenAI o3 model with medium reasoning effort
+  o3Model = wrapLanguageModel({
+    model: openai("o3", {
+      reasoningEffort: 'medium'  // Configure with medium reasoning effort
+    }) as unknown as LanguageModelV1,
     middleware: customMiddleware,
   });
 }
