@@ -29,13 +29,13 @@ export default function ResponsiveNavbar() {
         <Navbar />
       </div>
       <header
-        className={`md:hidden flex justify-center transition-all duration-300 ease-in-out ${
+        className={`md:hidden flex justify-center transition-all duration-300 ease-in-out bg-white ${
           scrolled ? "fixed top-0 left-0 right-0 z-50 pt-6" : "relative py-4"
         }`}
       >
         <div
-          className={`flex items-center justify-between px-4 ${
-            scrolled ? "bg-white border border-gray-200 rounded-md shadow-sm w-[90%]" : "container mx-auto"
+          className={`flex items-center justify-between px-4 py-3 ${
+            scrolled ? "bg-white border border-gray-200 rounded-md shadow-sm w-[90%]" : "container mx-auto bg-white"
           }`}
         >
           <Link href="/" className="flex items-center">

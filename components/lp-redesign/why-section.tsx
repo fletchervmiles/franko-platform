@@ -1,11 +1,26 @@
 "use client"
 import Container from "./container"
 import GapsTable from "./gaps-table"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function WhySection() {
   const [showTooltip1, setShowTooltip1] = useState(false)
   const [showTooltip2, setShowTooltip2] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+    }
+  }, [])
 
   return (
     <div className="py-24 grid-background03">
@@ -89,7 +104,7 @@ export default function WhySection() {
 
         {/* Gaps Table */}
         <div className="mt-16">
-          <GapsTable />
+          <GapsTable isMobile={isMobile} />
         </div>
 
         {/* Conclusion with two-column layout - more compact and on-brand */}

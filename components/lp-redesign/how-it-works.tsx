@@ -84,7 +84,7 @@ export default function HowItWorks() {
   }
 
   return (
-    <section className="py-20 bg-white border-t border-b border-gray-100">
+    <section className="py-20 bg-white border-t border-b border-gray-100 overflow-hidden">
       <Container>
         {/* Section Header */}
         <div className="max-w-4xl mx-auto text-center mb-16">
@@ -108,8 +108,8 @@ export default function HowItWorks() {
           </h2>
         </div>
 
-        {/* Carousel Section */}
-        <div className="relative mt-12 max-w-6xl mx-auto">
+        {/* Desktop Carousel */}
+        <div className="hidden md:block relative mt-12 max-w-6xl mx-auto">
           {/* Navigation Arrows */}
           <button
             onClick={prevStep}
@@ -128,7 +128,7 @@ export default function HowItWorks() {
           </button>
 
           {/* Carousel Container */}
-          <div ref={carouselRef} className="overflow-hidden px-10 md:px-16">
+          <div ref={carouselRef} className="overflow-hidden px-16">
             <div className="relative">
               <motion.div
                 className="flex"
@@ -144,17 +144,15 @@ export default function HowItWorks() {
                   return (
                     <motion.div
                       key={step.id}
-                      className="flex-shrink-0 w-[84%] px-2 md:px-4"
+                      className="flex-shrink-0 w-[84%] px-4"
                       animate={{
                         scale: position === 0 ? 1 : 0.9,
                         opacity: Math.abs(position) <= 1 ? 1 : 0.4,
                       }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div
-                        className={`bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200 transition-all duration-300`}
-                      >
-                        {/* Image Container - consistent aspect ratio for all screen sizes */}
+                      <div className="bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200 transition-all duration-300">
+                        {/* Image Container */}
                         <div className="relative overflow-hidden aspect-[16/9]">
                           <Image
                             src={step.image || "/placeholder.svg"}
@@ -164,18 +162,18 @@ export default function HowItWorks() {
                             quality={100}
                             priority={index <= 2}
                             unoptimized={true}
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 84vw, 84vw"
+                            sizes="84vw"
                           />
                         </div>
 
-                        {/* Step Indicator - moved to bottom */}
-                        <div className="p-3 md:p-4 border-t border-gray-300 text-center">
+                        {/* Step Indicator */}
+                        <div className="p-4 border-t border-gray-300 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 bg-black text-white text-[10px] md:text-xs font-medium mb-2">
+                            <div className="flex items-center justify-center w-5 h-5 bg-black text-white text-xs font-medium mb-2">
                               {step.id}
                             </div>
-                            <h3 className="text-sm md:text-base font-medium mb-1">{step.title}</h3>
-                            <p className="text-xs md:text-sm text-gray-600">{step.description}</p>
+                            <h3 className="text-base font-medium mb-1">{step.title}</h3>
+                            <p className="text-sm text-gray-600">{step.description}</p>
                           </div>
                         </div>
                       </div>
@@ -199,6 +197,80 @@ export default function HowItWorks() {
                 aria-current={currentStep === index ? "step" : undefined}
               />
             ))}
+          </div>
+        </div>
+
+        {/* Mobile Single Card Display */}
+        <div className="md:hidden mt-12">
+          <div className="px-4">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-md mx-auto"
+            >
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200">
+                {/* Image Container - bigger aspect ratio for mobile */}
+                <div className="relative overflow-hidden aspect-[4/3]">
+                  <Image
+                    src={steps[currentStep].image || "/placeholder.svg"}
+                    alt={`Step ${steps[currentStep].id}: ${steps[currentStep].title}`}
+                    fill
+                    className="object-cover"
+                    quality={100}
+                    priority={currentStep <= 2}
+                    unoptimized={true}
+                    sizes="100vw"
+                  />
+                </div>
+
+                {/* Step Indicator - bigger text on mobile */}
+                <div className="p-6 border-t border-gray-300 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex items-center justify-center w-6 h-6 bg-black text-white text-sm font-medium mb-3">
+                      {steps[currentStep].id}
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">{steps[currentStep].title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{steps[currentStep].description}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Mobile Navigation Controls */}
+          <div className="flex justify-center items-center mt-6 space-x-4">
+            <button
+              onClick={prevStep}
+              className="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+              aria-label="Previous step"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            
+            {/* Step indicators */}
+            <div className="flex items-center space-x-2">
+              {steps.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToStep(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                    currentStep === index ? "bg-gray-800 w-6" : "bg-gray-300"
+                  }`}
+                  aria-label={`Go to step ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={nextStep}
+              className="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+              aria-label="Next step"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
           </div>
         </div>
       </Container>
