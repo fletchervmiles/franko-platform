@@ -30,7 +30,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
       </p>
       
       <p style={{ margin: '14px 0', textAlign: 'left' }}>
-        Franko enables 100s of quick customer conversations, creating a unique knowledge base of what your users really think. Then, just chat with that data to instantly understand your customers—like ChatGPT if it'd gone and interviewed a bunch of your users first.
+        Franko enables 100s of quick customer conversations, creating a unique knowledge base of what your users really think. Then, just chat with that data to better understand your customers—like ChatGPT if it'd gone and interviewed a bunch of your users first.
       </p>
       
       <p style={{ margin: '14px 0', textAlign: 'left' }}>

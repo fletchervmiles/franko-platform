@@ -86,9 +86,21 @@ const nextConfig = {
     scrollRestoration: true, // Better scroll handling
     optimisticClientCache: true,
     serverComponentsExternalPackages: ['sharp'],
-  }
+  },
+  // Add PostHog rewrites
+  async rewrites() {
+    return [
+      {
+        // Make the source path more general to catch all PostHog endpoints
+        source: '/ingest/:path*',
+        // Ensure the destination includes the path
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+    ]
+  },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
 }
 
 // Export the configuration with bundle analyzer wrapper
 module.exports = withBundleAnalyzer(nextConfig) 
-
