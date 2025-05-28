@@ -20,8 +20,8 @@ export default function EarlyAccessModal({ isOpen, onClose }: EarlyAccessModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-        <div className="p-8">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
+        <div className="p-8 bg-white">
           {/* Header with custom close button */}
           <div className="flex justify-between items-start mb-6">
             <div>

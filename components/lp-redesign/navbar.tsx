@@ -5,9 +5,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { ArrowUpRight } from "lucide-react"
+import EarlyAccessModal from "./early-access-modal"
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,16 +75,19 @@ export default function Navbar() {
 
         <div className="flex items-center space-x-4">
           {scrolled ? (
-            <Link
-              href="/login"
+            <button
+              onClick={() => setShowModal(true)}
               className="text-base text-gray-900 border border-gray-300 px-4 py-2 flex items-center font-medium"
             >
               Login <ArrowUpRight className="ml-1 h-4 w-4" />
-            </Link>
+            </button>
           ) : (
-            <Link href="/login" className="text-base text-gray-900 transition-colors flex items-center font-medium">
+            <button 
+              onClick={() => setShowModal(true)}
+              className="text-base text-gray-900 transition-colors flex items-center font-medium"
+            >
               Login <ArrowUpRight className="ml-1 h-4 w-4" />
-            </Link>
+            </button>
           )}
 
           {scrolled && (
@@ -98,6 +103,8 @@ export default function Navbar() {
           )}
         </div>
       </div>
+      
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </header>
   )
 }

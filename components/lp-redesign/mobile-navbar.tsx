@@ -6,9 +6,11 @@ import Image from "next/image"
 import { Menu, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import EarlyAccessModal from "./early-access-modal"
 
 export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
   const [open, setOpen] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   return (
     <div className="md:hidden flex items-center">
@@ -47,15 +49,17 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
               >
                 FAQs
               </Link>
-              <Link
-                href="/login"
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  setShowModal(true)
+                }}
                 className={`text-lg transition-colors flex items-center self-start ${
                   scrolled ? "border border-gray-300 px-4 py-2" : ""
                 }`}
-                onClick={() => setOpen(false)}
               >
                 Login <ArrowUpRight className="ml-1 h-4 w-4" />
-              </Link>
+              </button>
               <a
                 href="https://cal.com/fletcher-miles/franko.ai-demo-call"
                 target="_blank"
@@ -69,6 +73,8 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
           </div>
         </SheetContent>
       </Sheet>
+      
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </div>
   )
 }
