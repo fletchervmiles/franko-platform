@@ -2,7 +2,7 @@
 
 import { tableData } from "./table-data"
 import { CheckCircle, ChevronDown, ChevronUp, X } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface GapsTableProps {
@@ -13,6 +13,11 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
   // Set default expanded state based on mobile/desktop
   const [expandedRows, setExpandedRows] = useState<number[]>(isMobile ? [] : [0]) // First row expanded by default on desktop only
   const [showAllRows, setShowAllRows] = useState(false)
+
+  // Update expandedRows when isMobile prop changes
+  useEffect(() => {
+    setExpandedRows(isMobile ? [] : [0])
+  }, [isMobile])
 
   // Map of border colors for each gap
   const borderColors = {
