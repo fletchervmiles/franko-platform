@@ -218,11 +218,8 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
             <span className="text-xs font-bold text-blue-500">1</span>
           </div>
 
-          {/* Row header - clickable on mobile */}
-          <div
-            className="mb-4 flex items-center justify-between cursor-pointer md:cursor-default"
-            onClick={() => toggleRow(0)}
-          >
+          {/* Row header - desktop only */}
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-black">
@@ -232,63 +229,46 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
                 </h3>
               </div>
             </div>
-            <div className="md:hidden">
-              {isRowExpanded(0) ? (
-                <ChevronUp className="h-4 w-4 text-gray-600" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-gray-600" />
-              )}
-            </div>
           </div>
 
-          {/* Row content - collapsible on mobile */}
-          <AnimatePresence>
-            {isRowExpanded(0) && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="grid md:grid-cols-3 gap-4 mt-3"
-              >
-                <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
-                  <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
-                    <X className="h-4 w-4 text-red-500 mr-2" />
-                    Typical Reality
-                  </h5>
-                  {tableData[0].founderTalk.includes("•") ? (
-                    formatBulletPoints(tableData[0].founderTalk, false)
-                  ) : (
-                    <p className="text-gray-700 text-base font-normal leading-relaxed italic">
-                      {tableData[0].founderTalk}
-                    </p>
-                  )}
-                </div>
+          {/* Row content - always show on desktop */}
+          <div className="grid md:grid-cols-3 gap-4 mt-3">
+            <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
+              <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
+                <X className="h-4 w-4 text-red-500 mr-2" />
+                Typical Reality
+              </h5>
+              {tableData[0].founderTalk.includes("•") ? (
+                formatBulletPoints(tableData[0].founderTalk, false)
+              ) : (
+                <p className="text-gray-700 text-base font-normal leading-relaxed italic">
+                  {tableData[0].founderTalk}
+                </p>
+              )}
+            </div>
 
-                <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
-                  <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
-                    <X className="h-4 w-4 text-red-500 mr-2" />
-                    Why It Breaks
-                  </h5>
-                  {tableData[0].whyItFails.includes("•") ? (
-                    formatBulletPoints(tableData[0].whyItFails, false)
-                  ) : (
-                    <p className="text-gray-700 text-base font-normal leading-relaxed">{tableData[0].whyItFails}</p>
-                  )}
-                </div>
+            <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
+              <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
+                <X className="h-4 w-4 text-red-500 mr-2" />
+                Why It Breaks
+              </h5>
+              {tableData[0].whyItFails.includes("•") ? (
+                formatBulletPoints(tableData[0].whyItFails, false)
+              ) : (
+                <p className="text-gray-700 text-base font-normal leading-relaxed">{tableData[0].whyItFails}</p>
+              )}
+            </div>
 
-                <div className="bg-white border border-gray-800 p-6 min-h-[160px] transition-all duration-200 hover:shadow-md rounded-sm">
-                  <h5 className="text-sm uppercase tracking-wider text-gray-800 mb-4 flex items-center font-medium">
-                    <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                    Franko Fix
-                  </h5>
-                  {tableData[0].withFranko.includes("•")
-                    ? formatBulletPoints(tableData[0].withFranko, true)
-                    : formatWithBold(tableData[0].withFranko, true)}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="bg-white border border-gray-800 p-6 min-h-[160px] transition-all duration-200 hover:shadow-md rounded-sm">
+              <h5 className="text-sm uppercase tracking-wider text-gray-800 mb-4 flex items-center font-medium">
+                <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                Franko Fix
+              </h5>
+              {tableData[0].withFranko.includes("•")
+                ? formatBulletPoints(tableData[0].withFranko, true)
+                : formatWithBold(tableData[0].withFranko, true)}
+            </div>
+          </div>
         </motion.div>
 
         {/* Show all steps button */}
@@ -329,11 +309,8 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
                       <span className="text-xs font-bold text-blue-500">{actualIndex + 1}</span>
                     </div>
 
-                    {/* Row header - clickable on mobile */}
-                    <div
-                      className="mb-4 flex items-center justify-between cursor-pointer md:cursor-default"
-                      onClick={() => toggleRow(actualIndex)}
-                    >
+                    {/* Row header - desktop only */}
+                    <div className="mb-4 flex items-center justify-between">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-black">
@@ -343,63 +320,46 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
                           </h3>
                         </div>
                       </div>
-                      <div className="md:hidden">
-                        {isRowExpanded(actualIndex) ? (
-                          <ChevronUp className="h-4 w-4 text-gray-600" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-gray-600" />
-                        )}
-                      </div>
                     </div>
 
-                    {/* Row content - collapsible on mobile */}
-                    <AnimatePresence>
-                      {isRowExpanded(actualIndex) && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="grid md:grid-cols-3 gap-4 mt-3"
-                        >
-                          <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
-                            <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
-                              <X className="h-4 w-4 text-red-500 mr-2" />
-                              Typical Reality
-                            </h5>
-                            {row.founderTalk.includes("•") ? (
-                              formatBulletPoints(row.founderTalk, false)
-                            ) : (
-                              <p className="text-gray-700 text-base font-normal leading-relaxed italic">
-                                {row.founderTalk}
-                              </p>
-                            )}
-                          </div>
+                    {/* Row content - always show on desktop */}
+                    <div className="grid md:grid-cols-3 gap-4 mt-3">
+                      <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
+                        <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
+                          <X className="h-4 w-4 text-red-500 mr-2" />
+                          Typical Reality
+                        </h5>
+                        {row.founderTalk.includes("•") ? (
+                          formatBulletPoints(row.founderTalk, false)
+                        ) : (
+                          <p className="text-gray-700 text-base font-normal leading-relaxed italic">
+                            {row.founderTalk}
+                          </p>
+                        )}
+                      </div>
 
-                          <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
-                            <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
-                              <X className="h-4 w-4 text-red-500 mr-2" />
-                              Why It Breaks
-                            </h5>
-                            {row.whyItFails.includes("•") ? (
-                              formatBulletPoints(row.whyItFails, false)
-                            ) : (
-                              <p className="text-gray-700 text-base font-normal leading-relaxed">{row.whyItFails}</p>
-                            )}
-                          </div>
+                      <div className="bg-white border border-gray-300 p-6 min-h-[160px] transition-all duration-200 hover:shadow-sm rounded-sm">
+                        <h5 className="text-sm uppercase tracking-wider text-gray-600 mb-4 flex items-center font-medium">
+                          <X className="h-4 w-4 text-red-500 mr-2" />
+                          Why It Breaks
+                        </h5>
+                        {row.whyItFails.includes("•") ? (
+                          formatBulletPoints(row.whyItFails, false)
+                        ) : (
+                          <p className="text-gray-700 text-base font-normal leading-relaxed">{row.whyItFails}</p>
+                        )}
+                      </div>
 
-                          <div className="bg-white border border-gray-800 p-6 min-h-[160px] transition-all duration-200 hover:shadow-md rounded-sm">
-                            <h5 className="text-sm uppercase tracking-wider text-gray-800 mb-4 flex items-center font-medium">
-                              <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                              Franko Fix
-                            </h5>
-                            {row.withFranko.includes("•")
-                              ? formatBulletPoints(row.withFranko, true)
-                              : formatWithBold(row.withFranko, true)}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                      <div className="bg-white border border-gray-800 p-6 min-h-[160px] transition-all duration-200 hover:shadow-md rounded-sm">
+                        <h5 className="text-sm uppercase tracking-wider text-gray-800 mb-4 flex items-center font-medium">
+                          <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                          Franko Fix
+                        </h5>
+                        {row.withFranko.includes("•")
+                          ? formatBulletPoints(row.withFranko, true)
+                          : formatWithBold(row.withFranko, true)}
+                      </div>
+                    </div>
                   </motion.div>
                 )
               })}

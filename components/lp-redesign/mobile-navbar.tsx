@@ -21,8 +21,8 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[300px] sm:w-[400px] pr-0">
-          <div className="flex flex-col h-full">
+        <SheetContent side="right" className="w-[300px] sm:w-[400px] pr-0 bg-white">
+          <div className="flex flex-col h-full bg-white">
             <div className="flex items-center justify-between py-4">
               <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
                 <Image
