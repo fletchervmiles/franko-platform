@@ -1,8 +1,14 @@
+"use client"
+
 import Link from "next/link"
 import Container from "@/components/lp-redesign/container"
 import { ArrowUpRight } from "lucide-react"
+import { useState } from "react"
+import EarlyAccessModal from "./early-access-modal"
 
 export default function HeroSection() {
+  const [showModal, setShowModal] = useState(false)
+
   return (
     <div className="pt-24 pb-16 md:pt-44 md:pb-24 grid-background03">
       <Container>
@@ -27,24 +33,28 @@ export default function HeroSection() {
 
             <div className="mt-6 md:mt-0 flex flex-row items-center gap-4">
               {/* CTA button styled like in the image */}
-              <Link
-                href="/book-call"
+              <a
+                href="https://cal.com/fletcher-miles/franko.ai-demo-call"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center bg-black text-white hover:bg-black/90 px-4 py-3 text-sm font-medium transition-colors"
               >
-                Book a call »
-              </Link>
+                Book a demo »
+              </a>
 
               {/* Build your agent button */}
-              <Link
-                href="/build-agent"
+              <button
+                onClick={() => setShowModal(true)}
                 className="inline-flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900 transition-colors"
               >
                 Build your agent <ArrowUpRight className="ml-1 h-4 w-4" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>
       </Container>
+
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </div>
   )
 }

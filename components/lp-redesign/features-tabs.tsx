@@ -83,6 +83,22 @@ export default function FeaturesTabs() {
 
   return (
     <section className="relative w-full overflow-hidden">
+      {/* Hidden preload images - load all tab images in the background */}
+      <div className="hidden">
+        {tabItems.map((tab, index) => (
+          <Image
+            key={`preload-${tab.id}`}
+            src={tab.image}
+            alt=""
+            width={1200}
+            height={675}
+            priority={index <= 2} // Prioritize first 3 images
+            quality={95}
+            aria-hidden="true"
+          />
+        ))}
+      </div>
+
       {/* Tabs navigation - white background - hidden on mobile */}
       <div className="bg-white sticky top-0 z-10 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -215,7 +231,7 @@ export default function FeaturesTabs() {
                       fill={true}
                       style={{ objectFit: "cover" }}
                       quality={95}
-                      priority={activeTab === 0} // Prioritize loading the first tab image
+                      priority={false} // Don't prioritize since we're preloading
                     />
                   </div>
                 </div>

@@ -87,11 +87,13 @@ export default function Navbar() {
 
           {scrolled && (
             <a
-              href="/book-call"
+              href="https://cal.com/fletcher-miles/franko.ai-demo-call"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-black text-white hover:bg-black px-4 py-2 flex items-center text-sm font-medium"
               style={{ height: "38px" }}
             >
-              Book a call »
+              Book a demo »
             </a>
           )}
         </div>

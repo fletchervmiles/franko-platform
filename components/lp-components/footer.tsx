@@ -1,7 +1,13 @@
+"use client"
+
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
+import { useState } from "react"
+import EarlyAccessModal from "../lp-redesign/early-access-modal"
 
 export default function Footer() {
+  const [showModal, setShowModal] = useState(false)
+
   return (
     <footer className="w-full bg-white text-gray-900 py-16 border-t border-gray-200">
               <div className="container mx-auto px-4">
@@ -11,19 +17,21 @@ export default function Footer() {
             </h2>
             
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/demo/personalized"
+              <a
+                href="https://cal.com/fletcher-miles/franko.ai-demo-call"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center bg-black text-white hover:bg-black/90 px-4 py-3 text-sm font-medium transition-colors"
               >
-                Book a call »
-              </Link>
+                Book a demo »
+              </a>
               
-              <Link
-                href="/sign-up"
+              <button
+                onClick={() => setShowModal(true)}
                 className="inline-flex items-center justify-center border border-gray-300 bg-white hover:bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900 transition-colors"
               >
                 Build your agent <ArrowUpRight className="ml-1 h-4 w-4" />
-              </Link>
+              </button>
             </div>
             
             <div className="flex items-center justify-center text-sm text-gray-600 mt-4">
@@ -68,6 +76,8 @@ export default function Footer() {
             </div>
           </div>
       </div>
+      
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </footer>
   )
 }

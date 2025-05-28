@@ -57,11 +57,13 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
                 Login <ArrowUpRight className="ml-1 h-4 w-4" />
               </Link>
               <a
-                href="/book-call"
+                href="https://cal.com/fletcher-miles/franko.ai-demo-call"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-black text-white hover:bg-black px-4 py-2 flex items-center justify-center text-sm w-full mt-4"
                 onClick={() => setOpen(false)}
               >
-                Book a call »
+                Book a demo »
               </a>
             </nav>
           </div>

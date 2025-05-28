@@ -6,25 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Check, Zap, Rocket, Clock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import TestimonialCard from './pricing-testimonial'
-
-const features = [
-  '5-minute AI-powered phone interviews to understand customer churn',
-  'Interview Agent with Exploratory, Narrative-Driven Approach',
-  'Dedicated and Contextualized to Your Business',
-  'Unique URL to Invite Customers',
-  'Audio Recordings of Interviews',
-  'Full Interview Transcripts',
-  'Comprehensive Per-Interview Analysis including:',
-  'Dashboard with all your interviews'
-];
-
-const analysisFeatures = [
-  'Reasons for canceling',
-  'Unmet expectations',
-  'Suggestions for improvement',
-  'Identification of win-back opportunities',
-  'Recommendations / actions'
-];
+import { useState } from 'react'
+import EarlyAccessModal from '../lp-redesign/early-access-modal'
 
 const freeFeatures = [
   {
@@ -41,52 +24,34 @@ const freeFeatures = [
   }
 ];
 
-const starterFeatures = [
+const growthFeatures = [
   {
-    feature: 'Up to <b>40</b> Conversation Responses',
-    description: 'Completed customer conversations conducted by your AI agent'
+    feature: 'AI Agent Interviewers',
+    description: 'Run async AI-driven chat interviews that customers actually complete.'
   },
   {
-    feature: 'Up to <b>10</b> Conversation Plans',
-    description: 'Generated conversation plans to guide your agent'
+    feature: 'Track Product-Market Fit continuously',
+    description: 'Know your customer love metric at a glance, spot gaps early, and accelerate growth.'
   },
   {
-    feature: 'Up to <b>40</b> Response Q&A',
-    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
+    feature: 'Quantified personas done for you',
+    description: 'Immediately understand who loves your product, why they do, and precisely how to attract more ideal users.'
+  },
+  {
+    feature: 'Ask direct questions to your customer data',
+    description: 'Easily query your growing proprietary feedback data using plain-language questions, no SQL or tagging required.'
   }
 ];
 
-const proFeatures = [
-  {
-    feature: 'Up to <b>100</b> Conversation Responses',
-    description: 'Completed customer conversations conducted by your AI agent'
-  },
-  {
-    feature: 'Up to <b>20</b> Conversation Plans',
-    description: 'Generated conversation plans to guide your agent'
-  },
-  {
-    feature: 'Up to <b>100</b> Response Q&A',
-    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
-  }
-];
-
-const businessFeatures = [
-  {
-    feature: 'Up to <b>500</b> Conversation Responses',
-    description: 'Completed customer conversations conducted by your AI agent'
-  },
-  {
-    feature: 'Up to <b>50</b> Conversation Plans',
-    description: 'Generated conversation plans to guide your agent'
-  },
-  {
-    feature: 'Up to <b>500</b> Response Q&A',
-    description: 'Chat with your aggregated response data, perfectly structured from your customer conversations'
-  }
+const growthLimits = [
+  'Up to 200 Interview Responses/mo',
+  'Generate Up to 50 AI Conversation Plans', 
+  'Up to 200 Questions on your customer data'
 ];
 
 export default function Pricing() {
+  const [showModal, setShowModal] = useState(false)
+
   return (
     <div className="py-20">
       <div className="text-center mb-12">
@@ -100,7 +65,7 @@ export default function Pricing() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         <Card className="w-full p-4 grid-background03 flex flex-col">
           <CardHeader className="space-y-6 px-3 py-2">
             <div>
@@ -112,14 +77,14 @@ export default function Pricing() {
             <div className="p-2">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">$0</span>
-                <span className="text-base text-gray-500">/ once off</span>
+                <span className="text-base text-gray-500">/ forever</span>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-700 h-14 flex items-center">
-              Get a feel for Franko
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Get a feel for Franko with starter limits. Includes everything in Growth plan.
             </p>
 
             <div className="flex-grow">
@@ -140,58 +105,13 @@ export default function Pricing() {
 
             <div className="pt-3 mt-auto">
               <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
+                <button 
+                  onClick={() => setShowModal(true)}
+                  className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10"
+                >
                   Try for free
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="w-full p-4 grid-background03 flex flex-col">
-          <CardHeader className="space-y-6 px-3 py-2">
-            <div>
-              <h3 className="text-xl md:text-2xl font-mono font-semibold">
-                Starter
-              </h3>
-            </div>
-
-            <div className="p-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">$29</span>
-                <span className="text-base text-gray-500">/ per month</span>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-700 h-14 flex items-center">
-              Start capturing customer conversations
-            </p>
-
-            <div className="flex-grow">
-              <ul className="space-y-3">
-                {starterFeatures.map((item, index) => (
-                  <li key={index} className="flex flex-col">
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
-                    </div>
-                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
-                      {item.description}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="pt-3 mt-auto">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Get started
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
+                </button>
               </div>
             </div>
           </CardContent>
@@ -201,93 +121,60 @@ export default function Pricing() {
           <CardHeader className="space-y-6 px-3 py-2">
             <div>
               <h3 className="text-xl md:text-2xl font-mono font-semibold text-white">
-                Pro
+                Growth
               </h3>
             </div>
 
             <div className="p-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-white">$59</span>
-                <span className="text-base text-gray-400">/ per month</span>
+                <span className="text-3xl font-bold text-white">$199</span>
+                <span className="text-base text-gray-400">/ month</span>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-300 h-14 flex items-center">
-              Get serious about growing your customer conversation dataset
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Everything you need to automatically measure and grow Product-Market Fit:
             </p>
 
             <div className="flex-grow">
-              <ul className="space-y-3">
-                {proFeatures.map((item, index) => (
+              <ul className="space-y-4">
+                {growthFeatures.map((item, index) => (
                   <li key={index} className="flex flex-col">
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-200 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
+                      <span className="text-gray-200 text-sm font-medium">{item.feature}</span>
                     </div>
-                    <div className="ml-8 text-xs text-gray-400 italic mt-1">
+                    <div className="ml-8 text-xs text-gray-400 leading-relaxed mt-1">
                       {item.description}
                     </div>
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <p className="text-xs text-gray-400 mb-3 font-medium">Production limits for scale:</p>
+                <ul className="space-y-2">
+                  {growthLimits.map((limit, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="w-1 h-1 bg-gray-500 rounded-full flex-shrink-0"></span>
+                      <span className="text-xs text-gray-400">{limit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div className="pt-3 mt-auto">
               <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/sign-up" className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Get started
+                <button 
+                  onClick={() => setShowModal(true)}
+                  className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10"
+                >
+                  Start for free
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="w-full p-4 grid-background03 flex flex-col">
-          <CardHeader className="space-y-6 px-3 py-2">
-            <div>
-              <h3 className="text-xl md:text-2xl font-mono font-semibold">
-                Business
-              </h3>
-            </div>
-
-            <div className="p-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">$199</span>
-                <span className="text-base text-gray-500">/ per month</span>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-5 px-3 flex-grow flex flex-col">
-            <p className="text-sm text-gray-700 h-14 flex items-center">
-              Scale conversations across your entire customer journey
-            </p>
-
-            <div className="flex-grow">
-              <ul className="space-y-3">
-                {businessFeatures.map((item, index) => (
-                  <li key={index} className="flex flex-col">
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: item.feature }}></span>
-                    </div>
-                    <div className="ml-8 text-xs text-gray-600 italic mt-1">
-                      {item.description}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="pt-3 mt-auto">
-              <div className="rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 p-[3px] relative">
-                <Link href="/sign-up" className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black transition-all duration-200 ease-in-out inline-flex items-center justify-center w-full relative z-10">
-                  Get started
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
+                </button>
               </div>
             </div>
           </CardContent>
@@ -314,6 +201,8 @@ export default function Pricing() {
           overflow: hidden;
         }
       `}</style>
+
+      <EarlyAccessModal isOpen={showModal} onClose={() => setShowModal(false)} />
     </div>
   )
 }

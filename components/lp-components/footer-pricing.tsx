@@ -8,7 +8,8 @@ export default function Footer() {
       <div className="container mx-auto px-4 flex-1 flex flex-col">
       <div className="max-w-4xl mx-auto text-center my-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-tight sm:leading-loose mb-12">
-            Start turning conversations into proprietary customer intelligence.
+          Start measuring and growing your product-market fit.
+
           </h2>
         </div>
         
