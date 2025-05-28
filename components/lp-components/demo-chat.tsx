@@ -45,13 +45,15 @@ export default function DemoChat() {
           >
             No signup required. Just click and chat.
           </p>
-          <Link
-            href="/demo/slack"
+          <a
+            href="https://franko.ai/chat/external/011869d6-932d-40d1-9edb-db966cf935b7"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center bg-white text-black hover:bg-gray-100 px-8 py-4 text-base font-medium transition-colors border border-gray-300 shadow-sm hover:shadow-md"
           >
             <PlayCircle className="mr-2 h-5 w-5" aria-hidden="true" />
             Launch Cursor Demo Chat »
-          </Link>
+          </a>
         </motion.div>
       </div>
     </section>
