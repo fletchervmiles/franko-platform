@@ -17,7 +17,6 @@ export let o1Model: LanguageModelV1;
 export let o1HighModel: LanguageModelV1;
 export let o1MiniModel: LanguageModelV1;
 export let gemini25ProPreviewModel: LanguageModelV1;
-export let gemini25ProExperimentalModel: LanguageModelV1;
 export let o3Model: LanguageModelV1;
 export let gemini25FlashPreviewModel: LanguageModelV1;
 
@@ -32,7 +31,7 @@ export async function initializeModels() {
 
   // Create a wrapped version of the Gemini Pro model with our custom middleware
   geminiProModel = wrapLanguageModel({
-    model: google("gemini-2.0-pro-exp-02-05"),
+    model: google("gemini-2.5-pro-preview-03-25"),
     middleware: customMiddleware,
   });
 
@@ -47,12 +46,6 @@ export async function initializeModels() {
   // Add the new Gemini 2.5 Pro Preview model
   gemini25ProPreviewModel = wrapLanguageModel({
     model: google("gemini-2.5-pro-preview-03-25"),
-    middleware: customMiddleware,
-  });
-
-  // Add the new Gemini 2.5 Pro Experimental model
-  gemini25ProExperimentalModel = wrapLanguageModel({
-    model: google("gemini-2.5-pro-exp-03-25"),
     middleware: customMiddleware,
   });
 
