@@ -36,7 +36,7 @@ import {
 import { logger } from '@/lib/logger';
 
 // Import the AI model configuration
-import { geminiFlashModel, geminiProModel, o3MiniModel } from ".";
+import { geminiFlashModel, o3MiniModel } from ".";
 
 // Import the correct function from the right file
 import { numberedObjectivesToArray } from "@/components/conversationPlanSchema";
