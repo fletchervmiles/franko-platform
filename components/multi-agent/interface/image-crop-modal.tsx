@@ -31,7 +31,6 @@ async function createCroppedImage(
   rotation = 0,
 ): Promise<string> {
   const image = new Image()
-  image.crossOrigin = "anonymous"
   image.src = imageSrc
 
   await new Promise((res, rej) => {
@@ -63,12 +62,8 @@ async function createCroppedImage(
     pixelCrop.height,
   )
 
-  return new Promise<string>((resolve) => {
-    canvas.toBlob((blob) => {
-      if (!blob) throw new Error("Canvas is empty")
-      resolve(URL.createObjectURL(blob))
-    }, "image/png")
-  })
+  // Return base64 data URL so it persists in localStorage and previews reliably
+  return canvas.toDataURL("image/png")
 }
 
 /*****************************

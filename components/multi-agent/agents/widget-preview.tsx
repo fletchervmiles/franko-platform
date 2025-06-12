@@ -50,6 +50,7 @@ export function WidgetPreview({
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const currentTheme = themeOverride || "light"
   
@@ -57,12 +58,12 @@ export function WidgetPreview({
   const themeDefaults = {
     light: {
       headerColor: "#ffffff",
-      userMessageColor: "#3B82F6",
+      userMessageColor: "#3B81F6",
       chatIconColor: "#3B82F6"
     },
     dark: {
       headerColor: "#18181b", // Using one of the specified dark colors
-      userMessageColor: "#3B82F6", 
+      userMessageColor: "#3B81F6", 
       chatIconColor: "#3B82F6"
     }
   }
@@ -97,7 +98,9 @@ export function WidgetPreview({
   const displayInstructions = customInstructions || defaultInstructions
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }
 
   useEffect(scrollToBottom, [messages])
@@ -172,7 +175,7 @@ export function WidgetPreview({
                 onClick={() => handleAgentSelect(agent)}
                 className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 style={{
-                  backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#f1f1f2"
+                  backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#fafafa"
                 }}
               >
                 <p className="font-medium text-gray-800 dark:text-gray-200">{agent.prompt}</p>
@@ -216,11 +219,12 @@ export function WidgetPreview({
               </AvatarFallback>
             </Avatar>
           )}
-          <h2 className={cn("text-lg font-semibold")}>{selectedAgent?.name || "Chat Preview"}</h2>
+          <h2 className={cn("text-lg font-semibold")}>Share Your Thoughts</h2>
         </div>
       </div>
 
       <div
+        ref={messagesContainerRef}
         className={cn(
           "p-4 flex-grow overflow-y-auto h-[calc(100%-140px)]", // Adjust height based on header and footer
         )}
@@ -235,7 +239,7 @@ export function WidgetPreview({
                 className={cn(
                   "max-w-[70%] px-4 py-2.5 text-sm shadow-sm", // Added shadow-sm for a very subtle lift
                   msg.sender === "user"
-                    ? "rounded-2xl rounded-br-md" // User message bubble (speech bubble style) - one corner sharp
+                    ? "rounded-3xl rounded-br-lg border border-gray-200 px-4 py-2.5" // Match production style
                     : "rounded-2xl", // Assistant message bubble
                 )}
                 style={
@@ -245,7 +249,7 @@ export function WidgetPreview({
                         color: userMessageTextColor
                       } 
                     : {
-                        backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#f1f1f2",
+                        backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#fafafa",
                         color: currentTheme === "dark" ? "#ffffff" : "#000000"
                       }
                 }
@@ -293,7 +297,7 @@ export function WidgetPreview({
               currentTheme === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-800",
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
               <path
                 fill="currentColor"
                 d="M20.235 5.686c.432-1.195-.726-2.353-1.921-1.92L3.709 9.048c-1.199.434-1.344 2.07-.241 2.709l4.662 2.699 4.163-4.163a1 1 0 0 1 1.414 1.414L9.544 15.87l2.7 4.662c.638 1.103 2.274.957 2.708-.241z"
