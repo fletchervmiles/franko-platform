@@ -34,11 +34,11 @@ export function AgentsTab() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-semibold mb-2 flex items-center text-gray-900">Select Your Interview Agents</h2>
-            <p className="text-sm text-slate-600">
-              The agents you enable will appear as options your users can select for giving feedback. Each agent will lead a
-              2-3 minute conversation on the chosen topic.
-            </p>
+        <h2 className="font-semibold mb-2 flex items-center text-gray-900">Select Your Interview Agents</h2>
+        <p className="text-sm text-slate-600">
+          The agents you enable will appear as options your users can select for giving feedback. Each agent will lead a
+          2-3 minute conversation on the chosen topic.
+        </p>
           </div>
           {showSaved && (
             <div className="flex items-center gap-2 text-green-600 text-sm font-medium">

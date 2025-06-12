@@ -58,7 +58,7 @@ export function WidgetPreview({
   const effectiveChatHeaderColor = advancedColors 
     ? (chatHeaderColor || (currentTheme === "dark" ? "#1F2937" : "#FFFFFF"))
     : primaryBrandColor
-  const effectiveChatIconColor = advancedColors ? chatIconColor : primaryBrandColor
+  const effectiveChatIconColor = advancedColors ? (chatIconColor || primaryBrandColor) : primaryBrandColor
 
   // Generate gradient styles for header
   const headerStyles = getColorStyles(effectiveChatHeaderColor, true)
@@ -288,13 +288,13 @@ export function WidgetPreview({
 
   return (
     <div className="relative w-[480px] mx-auto">
-      <Card
-        className={cn(
+    <Card
+      className={cn(
           "rounded-2xl overflow-hidden shadow-xl flex flex-col border-0",
-          viewMode === "chatView" ? "h-[600px]" : "min-h-[400px] max-h-[700px]",
+        viewMode === "chatView" ? "h-[600px]" : "min-h-[400px] max-h-[700px]",
           currentTheme === "dark" ? "dark bg-gray-950" : "bg-white",
-        )}
-      >
+      )}
+    >
       {viewMode === "agentSelection" ? renderAgentSelectionView() : renderChatView()}
 
       {/* Powered by Franko.ai Footer - Common for both views if structure allows, or duplicate */}
@@ -346,4 +346,4 @@ export function WidgetPreview({
     )}
   </div>
   )
-} 
+}
