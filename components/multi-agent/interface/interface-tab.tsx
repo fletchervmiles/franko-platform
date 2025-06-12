@@ -175,10 +175,10 @@ export function InterfaceTab() {
           </div>
         </Card>
 
-        {/* Instructions */}
+        {/* Additional Text */}
         <Card className="p-4">
           <div className="space-y-2">
-            <Label htmlFor="instructions">Instructions</Label>
+            <Label htmlFor="instructions">Additional Text</Label>
             <Textarea
               id="instructions"
               value={settings.interface.instructions}
@@ -236,12 +236,12 @@ export function InterfaceTab() {
               <Input
                 value={settings.interface.primaryBrandColor}
                 onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                placeholder="#3B82F6"
+                placeholder=""
                 className="flex-1"
               />
             </div>
             <p className="text-xs text-gray-500">
-              This color will be used for your chat header, user messages, and chat icon.
+              This color will be used for your chat header, user messages, and chat icon. Leave empty to use theme defaults.
             </p>
           </div>
         </Card>
@@ -290,7 +290,7 @@ export function InterfaceTab() {
                   <Input
                     value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
                     onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
-                    placeholder="#3B82F6"
+                    placeholder=""
                     className="flex-1"
                   />
                 </div>
@@ -312,7 +312,7 @@ export function InterfaceTab() {
                   <Input
                     value={settings.interface.chatIconColor}
                     onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
-                    placeholder="#3B82F6"
+                    placeholder=""
                     className="flex-1"
                   />
                 </div>
@@ -334,7 +334,7 @@ export function InterfaceTab() {
                   <Input
                     value={settings.interface.userMessageColor}
                     onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
-                    placeholder="#3B82F6"
+                    placeholder=""
                     className="flex-1"
                   />
                 </div>

@@ -36,10 +36,10 @@ export function WidgetPreview({
   displayName: customDisplayName,
   instructions: customInstructions,
   themeOverride,
-  primaryBrandColor = "#3B82F6",
+  primaryBrandColor = "",
   advancedColors = false,
   profilePictureUrl,
-  userMessageColor = "#3B82F6",
+  userMessageColor = "",
   chatHeaderColor,
   chatIconText,
   chatIconColor,
@@ -53,12 +53,33 @@ export function WidgetPreview({
 
   const currentTheme = themeOverride || "light"
   
+  // Define theme defaults
+  const themeDefaults = {
+    light: {
+      headerColor: "#ffffff",
+      userMessageColor: "#3B82F6",
+      chatIconColor: "#3B82F6"
+    },
+    dark: {
+      headerColor: "#18181b", // Using one of the specified dark colors
+      userMessageColor: "#3B82F6", 
+      chatIconColor: "#3B82F6"
+    }
+  }
+  
   // Use primary brand color when not in advanced mode, otherwise use individual colors
-  const effectiveUserMessageColor = advancedColors ? userMessageColor : primaryBrandColor
+  // Fall back to theme defaults when colors are empty
+  const effectiveUserMessageColor = advancedColors 
+    ? (userMessageColor || themeDefaults[currentTheme].userMessageColor)
+    : (primaryBrandColor || themeDefaults[currentTheme].userMessageColor)
+    
   const effectiveChatHeaderColor = advancedColors 
-    ? (chatHeaderColor || (currentTheme === "dark" ? "#1F2937" : "#FFFFFF"))
-    : primaryBrandColor
-  const effectiveChatIconColor = advancedColors ? (chatIconColor || primaryBrandColor) : primaryBrandColor
+    ? (chatHeaderColor || themeDefaults[currentTheme].headerColor)
+    : (primaryBrandColor || themeDefaults[currentTheme].headerColor)
+    
+  const effectiveChatIconColor = advancedColors 
+    ? (chatIconColor || themeDefaults[currentTheme].chatIconColor)
+    : (primaryBrandColor || themeDefaults[currentTheme].chatIconColor)
 
   // Generate gradient styles for header
   const headerStyles = getColorStyles(effectiveChatHeaderColor, true)
@@ -121,9 +142,9 @@ export function WidgetPreview({
         style={headerStyles}
       >
         {profilePictureUrl && (
-          <Avatar className="absolute top-4 left-4 h-10 w-10 border-2 border-white/20">
-            <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" />
-            <AvatarFallback>
+          <Avatar className="absolute top-4 left-4 h-10 w-10 border-2 border-white/20 rounded-full overflow-hidden">
+            <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
+            <AvatarFallback className="rounded-full">
               <UserIcon className="h-5 w-5" />
             </AvatarFallback>
           </Avatar>
@@ -138,8 +159,10 @@ export function WidgetPreview({
       <div
         className={cn(
           "p-6 flex-grow overflow-y-auto", // Changed from "p-6 min-h-[200px]"
-          currentTheme === "dark" ? "bg-gray-900" : "bg-white",
         )}
+        style={{
+          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff"
+        }}
       >
         {activeAgents.length > 0 ? (
           <div className="space-y-3">
@@ -147,7 +170,10 @@ export function WidgetPreview({
               <button
                 key={agent.id}
                 onClick={() => handleAgentSelect(agent)}
-                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{
+                  backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#f1f1f2"
+                }}
               >
                 <p className="font-medium text-gray-800 dark:text-gray-200">{agent.prompt}</p>
               </button>
@@ -181,37 +207,26 @@ export function WidgetPreview({
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 justify-center">
           {profilePictureUrl && (
-            <Avatar className="h-10 w-10 border-2 border-white/20">
-              <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" />
-              <AvatarFallback>
+            <Avatar className="h-10 w-10 border-2 border-white/20 rounded-full overflow-hidden">
+              <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
+              <AvatarFallback className="rounded-full">
                 <UserIcon className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
           )}
           <h2 className={cn("text-lg font-semibold")}>{selectedAgent?.name || "Chat Preview"}</h2>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            /* Placeholder for refresh */
-          }}
-          className={cn(
-            "text-white/80 hover:text-white hover:bg-white/10",
-            "transition-colors",
-          )}
-        >
-          <RefreshCw className="h-5 w-5" />
-        </Button>
       </div>
 
       <div
         className={cn(
           "p-4 flex-grow overflow-y-auto h-[calc(100%-140px)]", // Adjust height based on header and footer
-          currentTheme === "dark" ? "bg-gray-900" : "bg-white",
         )}
+        style={{
+          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff"
+        }}
       >
         <div className="space-y-3">
           {messages.map((msg) => (
@@ -220,10 +235,8 @@ export function WidgetPreview({
                 className={cn(
                   "max-w-[70%] px-4 py-2.5 text-sm shadow-sm", // Added shadow-sm for a very subtle lift
                   msg.sender === "user"
-                    ? "rounded-3xl rounded-br-lg" // User message bubble (speech bubble style) - removed border
-                    : currentTheme === "dark"
-                      ? "bg-gray-700 text-gray-100 rounded-2xl" // Assistant message bubble dark
-                      : "bg-[#F2F2F2] text-gray-800 rounded-2xl", // Assistant message bubble light
+                    ? "rounded-2xl rounded-br-md" // User message bubble (speech bubble style) - one corner sharp
+                    : "rounded-2xl", // Assistant message bubble
                 )}
                 style={
                   msg.sender === "user" 
@@ -231,7 +244,10 @@ export function WidgetPreview({
                         backgroundColor: effectiveUserMessageColor, 
                         color: userMessageTextColor
                       } 
-                    : {}
+                    : {
+                        backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#f1f1f2",
+                        color: currentTheme === "dark" ? "#ffffff" : "#000000"
+                      }
                 }
               >
                 {msg.text}
@@ -245,8 +261,11 @@ export function WidgetPreview({
       <div
         className={cn(
           "p-3 border-t",
-          currentTheme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200",
         )}
+        style={{
+          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff",
+          borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb"
+        }}
       >
         <form
           onSubmit={(e) => {
@@ -287,7 +306,7 @@ export function WidgetPreview({
   )
 
   return (
-    <div className="relative w-[480px] mx-auto">
+    <div className="relative w-[560px] mx-auto">
     <Card
       className={cn(
           "rounded-2xl overflow-hidden shadow-xl flex flex-col border-0",
@@ -301,9 +320,12 @@ export function WidgetPreview({
       {viewMode === "agentSelection" && (
         <div
           className={cn(
-            "px-4 flex items-center justify-center gap-2 border-t py-2",
-            currentTheme === "dark" ? "bg-gray-900 border-gray-800" : "bg-gray-50 border-gray-200",
+            "px-4 flex items-center justify-center gap-1.5 border-t py-2",
           )}
+          style={{
+            backgroundColor: currentTheme === "dark" ? "#161618" : "#fafafa",
+            borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb"
+          }}
         >
           <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
           <span className="text-xs text-gray-500 dark:text-gray-400">Powered by Franko.ai</span>
@@ -312,13 +334,15 @@ export function WidgetPreview({
       {viewMode === "chatView" && ( // Footer for chat view
         <div
           className={cn(
-            "px-4 flex items-center justify-center gap-2 border-t py-2 text-xs",
-            currentTheme === "dark"
-              ? "bg-gray-950 border-gray-800 text-gray-400"
-              : "bg-gray-50 border-gray-200 text-gray-500",
+            "px-4 flex items-center justify-center gap-1.5 border-t py-2 text-xs",
           )}
+          style={{
+            backgroundColor: currentTheme === "dark" ? "#161618" : "#fafafa",
+            borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb",
+            color: currentTheme === "dark" ? "#9ca3af" : "#6b7280"
+          }}
         >
-          <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-3 h-3 opacity-60" />
+          <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
           Powered by Franko.ai
         </div>
       )}
