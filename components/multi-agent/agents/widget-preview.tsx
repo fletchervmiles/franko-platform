@@ -58,12 +58,12 @@ export function WidgetPreview({
   const themeDefaults = {
     light: {
       headerColor: "#ffffff",
-      userMessageColor: "#3B81F6",
+      userMessageColor: "#3B82F6",
       chatIconColor: "#3B82F6"
     },
     dark: {
       headerColor: "#18181b", // Using one of the specified dark colors
-      userMessageColor: "#3B81F6", 
+      userMessageColor: "#3B82F6", 
       chatIconColor: "#3B82F6"
     }
   }

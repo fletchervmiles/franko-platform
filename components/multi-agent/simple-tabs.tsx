@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { AgentsTab } from "./agents/agents-tab"
-import { InterfaceTab } from "./interface/interface-tab" // Added import
+import { InterfaceTab } from "./interface/interface-tab"
+import ConnectTab from "./connect/connect-tab"
 
 export default function SimpleTabs() {
   const [activeTab, setActiveTab] = useState("agents")
@@ -16,11 +17,8 @@ export default function SimpleTabs() {
     { label: "Integrations", value: "integrations" },
   ]
 
-  const activeTabLabel = tabs.find((tab) => tab.value === activeTab)?.label || "Agents"
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <h1 className="font-bold mb-6 text-gray-900 dark:text-gray-100 text-3xl">{activeTabLabel}</h1>
       <TabsList className="w-full justify-start border-b dark:border-gray-700 rounded-none h-12 bg-transparent p-0">
         {tabs.map(({ label, value }) => (
           <TabsTrigger
@@ -42,13 +40,11 @@ export default function SimpleTabs() {
         </TabsContent>
 
         <TabsContent value="interface" className="mt-0">
-          <InterfaceTab /> {/* Added InterfaceTab */}
+          <InterfaceTab />
         </TabsContent>
 
         <TabsContent value="connect" className="mt-0">
-          <div className="p-6 rounded-lg bg-white dark:bg-gray-850 border dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-300">Connect content goes here.</p>
-          </div>
+          <ConnectTab />
         </TabsContent>
 
         <TabsContent value="playground" className="mt-0">

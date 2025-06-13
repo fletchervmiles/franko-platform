@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, jsonb, pgEnum, varchar } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
 import { chatInstancesTable } from "./chat-instances-schema";
 
@@ -32,6 +32,7 @@ export const chatResponsesTable = pgTable("chat_responses", {
   interview_type: text("interview_type"),
   sentiment: sentimentEnum("sentiment"),
   characteristics_json: jsonb("characteristics_json"),
+  agentType: varchar("agent_type", { length: 50 }), // For analytics - mirrors originating agent
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

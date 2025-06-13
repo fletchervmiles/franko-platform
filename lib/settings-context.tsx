@@ -1,6 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
+import { useUser } from "@clerk/nextjs"
 
 export interface InterfaceSettings {
   displayName: string
@@ -25,12 +26,36 @@ export interface AppSettings {
   agents: AgentSettings
 }
 
+export interface Modal {
+  id: string
+  name: string
+  embedSlug: string
+  brandSettings: AppSettings
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 interface SettingsContextType {
+  // Settings
   settings: AppSettings
   updateInterfaceSettings: (settings: Partial<InterfaceSettings>) => void
   updateAgentSettings: (settings: Partial<AgentSettings>) => void
-  saveSettings: () => void
-  loadSettings: () => void
+  
+  // Modal management
+  currentModal: Modal | null
+  modals: Modal[]
+  createModal: (name: string) => Promise<Modal>
+  loadModal: (modalId: string) => Promise<void>
+  saveModal: () => Promise<void>
+  deleteModal: (modalId: string) => Promise<void>
+  loadUserModals: () => Promise<void>
+  
+  // State management
+  isLoading: boolean
+  isSaving: boolean
+  error: string | null
+  clearError: () => void
 }
 
 const defaultSettings: AppSettings = {
@@ -38,12 +63,12 @@ const defaultSettings: AppSettings = {
     displayName: "We'd love your feedback",
     instructions: "Select a topic below. Each chat is short and sharp, ≈1-3 minutes.",
     theme: "light",
-    primaryBrandColor: "",
+    primaryBrandColor: "#3B82F6",
     advancedColors: false,
     chatIconText: "Feedback",
-    chatIconColor: "",
-    userMessageColor: "",
-    chatHeaderColor: "",
+    chatIconColor: "#3B82F6",
+    userMessageColor: "#3B82F6",
+    chatHeaderColor: null,
     alignChatBubble: "right",
     profilePictureUrl: null,
   },
@@ -60,60 +85,260 @@ const defaultSettings: AppSettings = {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  const { user, isLoaded } = useUser()
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
+  const [currentModal, setCurrentModal] = useState<Modal | null>(null)
+  const [modals, setModals] = useState<Modal[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const lastSavedSettings = useRef<AppSettings | null>(null)
 
-  useEffect(() => {
-    loadSettings()
+  const clearError = useCallback(() => {
+    setError(null)
   }, [])
 
-  const updateInterfaceSettings = (newSettings: Partial<InterfaceSettings>) => {
+  const handleApiError = useCallback((error: any, operation: string) => {
+    console.error(`Failed to ${operation}:`, error)
+    const message = error.response?.data?.error || error.message || `Failed to ${operation}`
+    setError(message)
+  }, [])
+
+  // Load user's modals
+  const loadUserModals = useCallback(async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/modals')
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      setModals(Array.isArray(data) ? data : [])
+    } catch (error) {
+      handleApiError(error, 'load modals')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, handleApiError])
+
+  // Create new modal
+  const createModal = useCallback(async (name: string): Promise<Modal> => {
+    if (!user) throw new Error('User not authenticated')
+    
+    setIsSaving(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/modals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          brandSettings: settings,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      const newModal = data.modal
+      
+      setModals(prev => [...prev, newModal])
+      setCurrentModal(newModal)
+      setSettings(newModal.brandSettings)
+      lastSavedSettings.current = newModal.brandSettings
+      
+      return newModal
+    } catch (error) {
+      handleApiError(error, 'create modal')
+      throw error
+    } finally {
+      setIsSaving(false)
+    }
+  }, [user, settings, handleApiError])
+
+  // Load specific modal
+  const loadModal = useCallback(async (modalId: string) => {
+    if (!user) return
+    
+    // If empty modalId, clear current modal
+    if (!modalId) {
+      setCurrentModal(null)
+      setSettings(defaultSettings)
+      lastSavedSettings.current = null
+      return
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/modals/${modalId}`)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      const modal = data.modal
+      
+      setCurrentModal(modal)
+      setSettings(modal.brandSettings)
+      lastSavedSettings.current = modal.brandSettings
+    } catch (error) {
+      handleApiError(error, 'load modal')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, handleApiError])
+
+  // Save current modal
+  const saveModal = useCallback(async () => {
+    if (!user || !currentModal) return
+    
+    setIsSaving(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/modals/${currentModal.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandSettings: settings,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      const updatedModal = data.modal
+      
+      setCurrentModal(updatedModal)
+      setModals(prev => prev.map(m => m.id === updatedModal.id ? updatedModal : m))
+    } catch (error) {
+      handleApiError(error, 'save modal')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [user, currentModal, settings, handleApiError])
+
+  // Delete modal
+  const deleteModal = useCallback(async (modalId: string) => {
+    if (!user) return
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/modals/${modalId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      setModals(prev => prev.filter(m => m.id !== modalId))
+      if (currentModal?.id === modalId) {
+        setCurrentModal(null)
+        setSettings(defaultSettings)
+      }
+    } catch (error) {
+      handleApiError(error, 'delete modal')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, currentModal, handleApiError])
+
+  // Auto-save when settings change
+  useEffect(() => {
+    if (currentModal && user && isLoaded) {
+      // Check if settings have actually changed
+      const settingsChanged = !lastSavedSettings.current || 
+        JSON.stringify(settings) !== JSON.stringify(lastSavedSettings.current)
+      
+      if (settingsChanged) {
+        const timeoutId = setTimeout(async () => {
+          if (!user || !currentModal) return
+          
+          setIsSaving(true)
+          setError(null)
+          
+          try {
+            const response = await fetch(`/api/modals/${currentModal.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                brandSettings: settings,
+              }),
+            })
+            
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+            }
+            
+            const data = await response.json()
+            const updatedModal = data.modal
+            
+            setCurrentModal(updatedModal)
+            setModals(prev => prev.map(m => m.id === updatedModal.id ? updatedModal : m))
+            lastSavedSettings.current = settings
+          } catch (error) {
+            handleApiError(error, 'save modal')
+          } finally {
+            setIsSaving(false)
+          }
+        }, 2000) // Increased debounce to 2 seconds
+        
+        return () => clearTimeout(timeoutId)
+      }
+    }
+  }, [settings, currentModal, user, isLoaded, handleApiError])
+
+  // Update lastSavedSettings when modal is loaded
+  useEffect(() => {
+    if (currentModal) {
+      lastSavedSettings.current = settings
+    }
+  }, [currentModal])
+
+  // Load user modals when user is loaded
+  useEffect(() => {
+    if (user && isLoaded) {
+      loadUserModals()
+    }
+  }, [user, isLoaded, loadUserModals])
+
+  const updateInterfaceSettings = useCallback((newSettings: Partial<InterfaceSettings>) => {
     setSettings((prev) => ({
       ...prev,
       interface: { ...prev.interface, ...newSettings },
     }))
-  }
+  }, [])
 
-  const updateAgentSettings = (newSettings: Partial<AgentSettings>) => {
+  const updateAgentSettings = useCallback((newSettings: Partial<AgentSettings>) => {
     setSettings((prev) => ({
       ...prev,
       agents: { ...prev.agents, ...newSettings },
     }))
-  }
-
-  const saveSettings = () => {
-    try {
-      localStorage.setItem("franko-chat-settings", JSON.stringify(settings))
-      console.log("Settings saved successfully")
-    } catch (error) {
-      console.error("Failed to save settings:", error)
-    }
-  }
-
-  const loadSettings = () => {
-    try {
-      const savedSettings = localStorage.getItem("franko-chat-settings")
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings)
-        const mergedInterfaceSettings = {
-          ...defaultSettings.interface,
-          ...(parsedSettings.interface || {}),
-        }
-        const mergedAgentSettings = {
-          ...defaultSettings.agents,
-          ...(parsedSettings.agents || {}),
-        }
-        setSettings({
-          interface: mergedInterfaceSettings,
-          agents: mergedAgentSettings,
-        })
-      } else {
-        setSettings(defaultSettings)
-      }
-    } catch (error) {
-      console.error("Failed to load settings:", error)
-      setSettings(defaultSettings)
-    }
-  }
+  }, [])
 
   return (
     <SettingsContext.Provider
@@ -121,8 +346,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         settings,
         updateInterfaceSettings,
         updateAgentSettings,
-        saveSettings,
-        loadSettings,
+        currentModal,
+        modals,
+        createModal,
+        loadModal,
+        saveModal,
+        deleteModal,
+        loadUserModals,
+        isLoading,
+        isSaving,
+        error,
+        clearError,
       }}
     >
       {children}
@@ -136,4 +370,4 @@ export function useSettings() {
     throw new Error("useSettings must be used within a SettingsProvider")
   }
   return context
-} 
+}

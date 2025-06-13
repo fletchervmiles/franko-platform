@@ -16,20 +16,12 @@ import { WidgetPreview } from "../agents/widget-preview"
 import { agentsData } from "@/lib/agents-data"
 
 export function InterfaceTab() {
-  const { settings, updateInterfaceSettings, saveSettings } = useSettings()
+  const { settings, updateInterfaceSettings, isSaving } = useSettings()
   const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false)
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
-  const [showSaved, setShowSaved] = useState(false)
-
-  const showSavedIndicator = () => {
-    setShowSaved(true)
-    setTimeout(() => setShowSaved(false), 2000)
-  }
 
   const handleInputChange = (field: keyof typeof settings.interface, value: string | boolean | null) => {
     updateInterfaceSettings({ [field]: value })
-    saveSettings()
-    showSavedIndicator()
   }
 
   const handlePrimaryColorChange = (color: string) => {
@@ -44,9 +36,27 @@ export function InterfaceTab() {
         userMessageColor: color,
         chatHeaderColor: color,
       })
-      saveSettings()
-      showSavedIndicator()
     }
+  }
+
+  const resetToThemeDefaults = () => {
+    const themeDefaults = {
+      light: {
+        primaryBrandColor: "#3B82F6",
+        chatIconColor: "#3B82F6", 
+        userMessageColor: "#3B82F6",
+        chatHeaderColor: "#ffffff"
+      },
+      dark: {
+        primaryBrandColor: "#3B82F6",
+        chatIconColor: "#3B82F6",
+        userMessageColor: "#3B82F6", 
+        chatHeaderColor: "#18181b"
+      }
+    }
+    
+    const defaults = themeDefaults[settings.interface.theme]
+    updateInterfaceSettings(defaults)
   }
 
   const handleAdvancedToggle = (enabled: boolean) => {
@@ -61,8 +71,6 @@ export function InterfaceTab() {
     } else {
       updateInterfaceSettings({ advancedColors: enabled })
     }
-    saveSettings()
-    showSavedIndicator()
   }
 
   const resetToBrandColor = () => {
@@ -71,8 +79,6 @@ export function InterfaceTab() {
       userMessageColor: settings.interface.primaryBrandColor,
       chatHeaderColor: settings.interface.primaryBrandColor,
     })
-    saveSettings()
-    showSavedIndicator()
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,10 +118,10 @@ export function InterfaceTab() {
               Customize how your chat widget looks and feels to match your brand.
             </p>
           </div>
-          {showSaved && (
-            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-              <Check className="h-4 w-4" />
-              Saved
+          {isSaving && (
+            <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              Saving...
             </div>
           )}
         </div>
@@ -224,7 +230,17 @@ export function InterfaceTab() {
         {/* Primary Brand Color */}
         <Card className="p-4">
           <div className="space-y-4">
-            <Label htmlFor="primary-brand-color">Brand Color</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="primary-brand-color">Brand Color</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetToThemeDefaults}
+                className="text-xs"
+              >
+                Reset to Default
+              </Button>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -241,7 +257,7 @@ export function InterfaceTab() {
               />
             </div>
             <p className="text-xs text-gray-500">
-              This color will be used for your chat header, user messages, and chat icon. Leave empty to use theme defaults.
+              This color will be used for your chat header, user messages, and chat icon when not using advanced colors.
             </p>
           </div>
         </Card>

@@ -7,9 +7,8 @@ import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 
 export function AgentsTab() {
-  const { settings, updateAgentSettings, saveSettings } = useSettings()
+  const { settings, updateAgentSettings, isSaving } = useSettings()
   const enabledAgents = settings.agents.enabledAgents
-  const [showSaved, setShowSaved] = useState(false)
 
   const handleToggle = (id: string) => {
     const newEnabledAgents = {
@@ -17,13 +16,8 @@ export function AgentsTab() {
       [id]: !enabledAgents[id],
     }
 
-    // Auto-save immediately when toggling
+    // Update settings - auto-save is handled by the context
     updateAgentSettings({ enabledAgents: newEnabledAgents })
-    saveSettings()
-    
-    // Show saved indicator
-    setShowSaved(true)
-    setTimeout(() => setShowSaved(false), 2000)
   }
 
   const activeAgents = agentsData.filter((agent) => enabledAgents[agent.id])
@@ -40,10 +34,10 @@ export function AgentsTab() {
           2-3 minute conversation on the chosen topic.
         </p>
           </div>
-          {showSaved && (
-            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-              <Check className="h-4 w-4" />
-              Saved
+          {isSaving && (
+            <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              Saving...
             </div>
           )}
         </div>

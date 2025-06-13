@@ -10,6 +10,7 @@ import {
   responseArrayItemsTable,
   userPersonasTable,
   userOnboardingStatusTable,
+  modalsTable,
 } from "./schema";
 
 config({ path: ".env.local" });
@@ -23,6 +24,7 @@ const schema = {
   responseArrayItems: responseArrayItemsTable,
   userPersonas: userPersonasTable,
   userOnboardingStatus: userOnboardingStatusTable,
+  modals: modalsTable,
 };
 
 // Configure connection pooling options
