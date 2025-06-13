@@ -37,6 +37,7 @@ function InlineNameEditor({
 }) {
   const [name, setName] = useState(initialName)
   const [isSaving, setIsSaving] = useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
   const handleSave = async () => {
     if (name.trim() === '' || name.trim() === initialName) {
@@ -64,8 +65,15 @@ function InlineNameEditor({
     }
   }
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.select()
+    }
+  }, [])
+
   return (
     <Input
+      ref={inputRef}
       value={name}
       onChange={(e) => setName(e.target.value)}
       onKeyDown={handleKeyDown}
@@ -73,7 +81,6 @@ function InlineNameEditor({
       disabled={isSaving}
       className={`${className} ${isSaving ? 'opacity-50' : ''}`}
       autoFocus
-      selectOnFocus
     />
   )
 }
