@@ -40,23 +40,13 @@ export function InterfaceTab() {
   }
 
   const resetToThemeDefaults = () => {
-    const themeDefaults = {
-      light: {
-        primaryBrandColor: "#3B82F6",
-        chatIconColor: "#3B82F6", 
-        userMessageColor: "#3B82F6",
-        chatHeaderColor: "#ffffff"
-      },
-      dark: {
-        primaryBrandColor: "#3B82F6",
-        chatIconColor: "#3B82F6",
-        userMessageColor: "#3B82F6", 
-        chatHeaderColor: "#18181b"
-      }
-    }
-    
-    const defaults = themeDefaults[settings.interface.theme]
-    updateInterfaceSettings(defaults)
+    // Reset to empty strings so theme defaults are used
+    updateInterfaceSettings({
+      primaryBrandColor: "",
+      chatIconColor: "",
+      userMessageColor: "",
+      chatHeaderColor: null
+    })
   }
 
   const handleAdvancedToggle = (enabled: boolean) => {
@@ -227,7 +217,7 @@ export function InterfaceTab() {
           </div>
         </Card>
 
-        {/* Primary Brand Color */}
+        {/* Brand Color */}
         <Card className="p-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -245,19 +235,19 @@ export function InterfaceTab() {
               <input
                 type="color"
                 id="primary-brand-color"
-                value={settings.interface.primaryBrandColor}
+                value={settings.interface.primaryBrandColor || "#3B82F6"}
                 onChange={(e) => handlePrimaryColorChange(e.target.value)}
                 className="w-12 h-8 rounded border border-gray-300"
               />
               <Input
                 value={settings.interface.primaryBrandColor}
                 onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                placeholder=""
+                placeholder="Leave empty for theme default"
                 className="flex-1"
               />
             </div>
             <p className="text-xs text-gray-500">
-              This color will be used for your chat header, user messages, and chat icon when not using advanced colors.
+              Set a custom brand color for your chat interface. Leave empty to use theme defaults (white header for light mode, dark header for dark mode).
             </p>
           </div>
         </Card>

@@ -6,8 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Copy, Check, ExternalLink, Code, Settings } from "lucide-react"
+import { Copy, Check, ExternalLink, Code, Settings, Link, MessageCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
 export function ConnectTab() {
   const { currentModal } = useSettings()
@@ -91,67 +94,84 @@ export function FeedbackWidget() {
     <div className="border border-gray-200 rounded-lg p-6 bg-[#FAFAFA] dark:bg-gray-800">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold mb-2 text-gray-900">Connect Your Widget</h2>
-            <p className="text-sm text-slate-600">
-              Add your chat widget to any website with these embed codes.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {currentModal.embedSlug}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(embedUrl, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Test Widget
-            </Button>
-          </div>
-        </div>
+        <h2 className="font-semibold mb-2 text-gray-900">Connect Your Widget</h2>
+        <p className="text-sm text-slate-600">
+          Add your chat widget to any website with these embed codes.
+        </p>
       </div>
 
-      {/* Widget Status */}
-      <Alert className="mb-6">
-        <Code className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Widget URL:</strong> <code className="bg-muted px-1 py-0.5 rounded text-sm ml-1">{embedUrl}</code>
-        </AlertDescription>
-      </Alert>
-
-      {/* Embed Options */}
-      <Tabs defaultValue="auto" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="auto">Auto Bubble</TabsTrigger>
-          <TabsTrigger value="manual">Manual Trigger</TabsTrigger>
-          <TabsTrigger value="react">React/Next.js</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="auto" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                Auto Bubble Mode
-              </CardTitle>
-              <CardDescription>
-                Automatically shows a floating chat bubble in the bottom-right corner of your website.
-                Visitors can click it to start a conversation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="relative">
-                  <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-sm overflow-x-auto">
-                    <code>{autoEmbedCode}</code>
-                  </pre>
+      {/* Connection Options */}
+      <div className="space-y-6 max-w-4xl">
+        
+        {/* Direct Link */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
+                <Link className="h-4 w-4 text-blue-600" />
+              </div>
+              Direct Link
+            </CardTitle>
+            <CardDescription>
+              Perfect for email signatures or direct sharing. Opens in a new tab. No installation required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Shareable URL:</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={embedUrl} 
+                    readOnly 
+                    className="font-mono text-sm bg-gray-50"
+                  />
                   <Button
-                    size="sm"
                     variant="outline"
-                    className="absolute top-2 right-2"
+                    size="sm"
+                    onClick={() => copyToClipboard(embedUrl, 'direct-link')}
+                  >
+                    {copiedCode === 'direct-link' ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(embedUrl, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Auto Bubble */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="h-8 w-8 bg-green-50 rounded-full flex items-center justify-center mr-3">
+                <MessageCircle className="h-4 w-4 text-green-600" />
+              </div>
+              Floating Chat Bubble
+              <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">Recommended</Badge>
+            </CardTitle>
+            <CardDescription>
+              Automatically shows a floating chat bubble in the bottom-right corner of your website. Visitors can click it to start a conversation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Embed Code:</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => copyToClipboard(autoEmbedCode, 'auto')}
                   >
                     {copiedCode === 'auto' ? (
@@ -161,36 +181,45 @@ export function FeedbackWidget() {
                     )}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Add this code to your website's <code>&lt;head&gt;</code> section or before the closing <code>&lt;/body&gt;</code> tag.
+                <Textarea 
+                  value={autoEmbedCode}
+                  readOnly 
+                  className="font-mono text-xs resize-none bg-gray-50"
+                  rows={8}
+                />
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="text-sm font-medium text-green-900 mb-2">Instructions:</h4>
+                <p className="text-sm text-green-800">
+                  Add this code to your website's &lt;head&gt; section or before the closing &lt;/body&gt; tag. The floating chat icon will appear automatically.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="manual" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                Manual Trigger Mode
-              </CardTitle>
-              <CardDescription>
-                Add custom buttons or links anywhere on your site to open the chat widget.
-                Perfect for "Feedback" buttons in your navigation or footer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="relative">
-                  <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-sm overflow-x-auto">
-                    <code>{manualEmbedCode}</code>
-                  </pre>
+        {/* Manual Trigger */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="h-8 w-8 bg-purple-50 rounded-full flex items-center justify-center mr-3">
+                <Code className="h-4 w-4 text-purple-600" />
+              </div>
+              Custom Trigger
+            </CardTitle>
+            <CardDescription>
+              Add custom buttons or links anywhere on your site to open the chat widget. Perfect for "Feedback" buttons in your navigation or footer.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Integration Code:</Label>
                   <Button
-                    size="sm"
                     variant="outline"
-                    className="absolute top-2 right-2"
+                    size="sm"
                     onClick={() => copyToClipboard(manualEmbedCode, 'manual')}
                   >
                     {copiedCode === 'manual' ? (
@@ -200,70 +229,24 @@ export function FeedbackWidget() {
                     )}
                   </Button>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Custom Trigger Examples:</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• <code>onclick="FrankoChat.open()"</code> - Open widget</li>
-                    <li>• <code>onclick="FrankoChat.close()"</code> - Close widget</li>
-                    <li>• <code>onclick="FrankoChat.toggle()"</code> - Toggle widget</li>
-                  </ul>
-                </div>
+                <Textarea 
+                  value={manualEmbedCode}
+                  readOnly 
+                  className="font-mono text-xs resize-none bg-gray-50"
+                  rows={10}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="react" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-purple-500 rounded-full"></div>
-                React/Next.js Integration
-              </CardTitle>
-              <CardDescription>
-                For React applications, use this component-based approach for better integration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="relative">
-                  <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-sm overflow-x-auto">
-                    <code>{reactEmbedCode}</code>
-                  </pre>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(reactEmbedCode, 'react')}
-                  >
-                    {copiedCode === 'react' ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Usage:</h4>
-                  <pre className="text-sm text-muted-foreground">
-{`// In your app or layout component
-import { FeedbackWidget } from './components/FeedbackWidget';
-
-export default function App() {
-  return (
-    <div>
-      {/* Your app content */}
-      <FeedbackWidget />
-    </div>
-  );
-}`}
-                  </pre>
-                </div>
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="text-sm font-medium text-purple-900 mb-2">Instructions:</h4>
+                <p className="text-sm text-purple-800">
+                  Add the script to your page, then call FrankoChat.open() from any element. Perfect for existing buttons, navigation items, or programmatic control.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 } 

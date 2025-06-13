@@ -59,20 +59,20 @@ export function WidgetPreview({
     light: {
       headerColor: "#ffffff",
       userMessageColor: "#3B82F6",
-      chatIconColor: "#3B82F6"
+      chatIconColor: "#000000" // Dark for light theme
     },
     dark: {
       headerColor: "#18181b", // Using one of the specified dark colors
       userMessageColor: "#3B82F6", 
-      chatIconColor: "#3B82F6"
+      chatIconColor: "#ffffff" // Light for dark theme
     }
   }
   
   // Use primary brand color when not in advanced mode, otherwise use individual colors
   // Fall back to theme defaults when colors are empty
   const effectiveUserMessageColor = advancedColors 
-    ? (userMessageColor || themeDefaults[currentTheme].userMessageColor)
-    : (primaryBrandColor || themeDefaults[currentTheme].userMessageColor)
+    ? (userMessageColor || "#3B82F6") // Always blue for user messages when no custom color
+    : (primaryBrandColor || "#3B82F6") // Always blue for user messages when no brand color
     
   const effectiveChatHeaderColor = advancedColors 
     ? (chatHeaderColor || themeDefaults[currentTheme].headerColor)
@@ -239,8 +239,8 @@ export function WidgetPreview({
                 className={cn(
                   "max-w-[70%] px-4 py-2.5 text-sm shadow-sm", // Added shadow-sm for a very subtle lift
                   msg.sender === "user"
-                    ? "rounded-3xl rounded-br-lg border border-gray-200 px-4 py-2.5" // Match production style
-                    : "rounded-2xl", // Assistant message bubble
+                    ? "rounded-3xl rounded-br-lg border border-gray-200" // User message style
+                    : "rounded-3xl rounded-bl-lg border border-gray-200", // Assistant message - mirror of user style
                 )}
                 style={
                   msg.sender === "user" 

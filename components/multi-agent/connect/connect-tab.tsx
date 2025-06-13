@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { useSettings } from "@/lib/settings-context"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,12 +16,9 @@ import {
   Code, 
   Check
 } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { WidgetPreview } from "../agents/widget-preview"
-import { agentsData } from "@/lib/agents-data"
 
 export default function ConnectTab() {
-  const { currentModal, settings, isSaving } = useSettings()
+  const { currentModal, isSaving } = useSettings()
   const [copiedItem, setCopiedItem] = useState<string | null>(null)
 
   if (!currentModal) {
@@ -66,12 +63,9 @@ export default function ConnectTab() {
   Get Help
 </button>`
 
-  const enabledAgents = settings.agents.enabledAgents
-  const activeAgents = agentsData.filter((agent) => enabledAgents[agent.id])
-
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-[#FAFAFA] dark:bg-gray-800">
-      {/* Full-width Header */}
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
@@ -89,29 +83,31 @@ export default function ConnectTab() {
         </div>
       </div>
 
-      {/* Two-column content below the header */}
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Left Column - Connection Options */}
-        <div className="space-y-6">
-          
-          {/* Option 1: Shareable Link */}
-          <Card className="p-4 bg-white">
+      {/* Connection Options */}
+      <div className="space-y-6 max-w-4xl">
+        
+        {/* Direct Link */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+                         <CardTitle className="text-lg font-semibold flex items-center">
+               <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
+                 <Link className="h-4 w-4 text-blue-600" />
+               </div>
+               Direct Link
+             </CardTitle>
+            <CardDescription>
+              Perfect for email signatures or direct sharing. Opens in a new tab. No installation required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Link className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div>
-                  <h3 className="font-medium">Direct Link</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Perfect for email signatures or direct sharing. Opens in a new tab. No installation required.</p>
-                </div>
-              </div>
-              
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Shareable URL:</Label>
                 <div className="flex gap-2">
                   <Input 
                     value={embedUrl} 
                     readOnly 
-                    className="font-mono text-sm"
+                    className="font-mono text-sm bg-gray-50"
                   />
                   <Button
                     variant="outline"
@@ -134,22 +130,25 @@ export default function ConnectTab() {
                 </div>
               </div>
             </div>
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Option 2: Auto-Bubble Widget */}
-          <Card className="p-4 border-primary/20 bg-white">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <MessageCircle className="h-5 w-5 text-primary mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">Floating Chat Bubble</h3>
-                    <Badge className="bg-green-100 text-green-800 border-green-200">Recommended</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">Best for websites where you want visitors to easily discover conversations.</p>
-                </div>
+        {/* Floating Chat Bubble */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
+                <MessageCircle className="h-4 w-4 text-blue-600" />
               </div>
-              
+              Floating Chat Bubble
+              <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">Recommended</Badge>
+            </CardTitle>
+            <CardDescription>
+              Best for websites where you want visitors to easily discover conversations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">Embed Code:</Label>
@@ -168,31 +167,36 @@ export default function ConnectTab() {
                 <Textarea 
                   value={bubbleScript}
                   readOnly 
-                  className="font-mono text-xs resize-none"
+                  className="font-mono text-xs resize-none bg-gray-50"
                   rows={8}
                 />
               </div>
 
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Instructions:</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Instructions:</h4>
+                <p className="text-sm text-gray-700">
                   Paste this code before the closing &lt;/body&gt; tag on your website. The floating chat icon will appear automatically and visitors can click it to start conversations.
                 </p>
               </div>
             </div>
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Option 3: Custom Button Integration */}
-          <Card className="p-4 bg-white">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Code className="h-5 w-5 text-green-600 mt-0.5" />
-                <div>
-                  <h3 className="font-medium">Custom Trigger</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Full control over the trigger element and user experience.</p>
-                </div>
+        {/* Custom Trigger */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
+                <Code className="h-4 w-4 text-blue-600" />
               </div>
-              
+              Custom Trigger
+            </CardTitle>
+            <CardDescription>
+              Full control over the trigger element and user experience.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">Integration Code:</Label>
@@ -211,36 +215,21 @@ export default function ConnectTab() {
                 <Textarea 
                   value={customScript}
                   readOnly 
-                  className="font-mono text-xs resize-none"
+                  className="font-mono text-xs resize-none bg-gray-50"
                   rows={8}
                 />
               </div>
 
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Instructions:</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Instructions:</h4>
+                <p className="text-sm text-gray-700">
                   Add the script to your page, then call FrankoModal.open() from any element. Perfect for existing buttons, navigation items, or programmatic control.
                 </p>
               </div>
             </div>
-          </Card>
-        </div>
-
-        {/* Right Column - Live Widget Preview */}
-        <div className="hidden md:block">
-          <WidgetPreview
-            activeAgents={activeAgents}
-            displayName={settings.interface.displayName}
-            instructions={settings.interface.instructions}
-            themeOverride={settings.interface.theme}
-            primaryBrandColor={settings.interface.primaryBrandColor}
-            advancedColors={settings.interface.advancedColors}
-            chatIconText={settings.interface.chatIconText}
-            chatIconColor={settings.interface.chatIconColor}
-            alignChatBubble={settings.interface.alignChatBubble}
-          />
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
-}
+} 
