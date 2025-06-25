@@ -1,7 +1,6 @@
 "use client"
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from "react"
 import { useState, useEffect } from "react"
 import { useSignUp } from "@clerk/nextjs"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -10,7 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, ArrowLeft } from "lucide-react"
 
+export const dynamic = 'force-dynamic';
+
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailContent() {
   const { isLoaded, signUp, setActive } = useSignUp()
   const router = useRouter()
   const searchParams = useSearchParams()
