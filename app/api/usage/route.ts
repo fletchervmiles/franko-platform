@@ -3,6 +3,8 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { formatProfileToUiUsageData, UiUsageData } from "@/lib/utils/usage-formatter";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     // Check if this is an external chat request
