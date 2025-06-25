@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SketchPicker, ColorResult } from 'react-color';
 import { cn } from "@/lib/utils";
-import { useSetupChecklist } from "@/contexts/setup-checklist-context";
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 import { useProfile } from "@/components/contexts/profile-context";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -71,7 +71,7 @@ export function BrandingContext({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  // const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
   const { setIsBrandingComplete } = useProfile();
 
   // State for color picker visibility
@@ -121,7 +121,7 @@ export function BrandingContext({
         title: "Success!",
         description: "Branding updated successfully.",
       })
-      refetchSetupStatus();
+      // refetchSetupStatus();
       setLogoFile(null); // Clear pending file selection
       setIsEditing(false); // Exit edit mode on successful save
       setIsBrandingComplete(true); // Explicitly mark as complete on success

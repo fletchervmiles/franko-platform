@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { AgentsTab } from "./agents/agents-tab"
 import { InterfaceTab } from "./interface/interface-tab"
 import ConnectTab from "./connect/connect-tab"
+import { PlaygroundTab } from "./playground/playground-tab"
 
 export default function SimpleTabs() {
   const [activeTab, setActiveTab] = useState("agents")
@@ -48,9 +49,7 @@ export default function SimpleTabs() {
         </TabsContent>
 
         <TabsContent value="playground" className="mt-0">
-          <div className="p-6 rounded-lg bg-white dark:bg-gray-850 border dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-300">Playground content goes here.</p>
-          </div>
+          <PlaygroundTab />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0">

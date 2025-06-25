@@ -22,6 +22,16 @@ export const chatResponsesTable = pgTable("chat_responses", {
   intervieweeFirstName: text("interviewee_first_name"),
   intervieweeSecondName: text("interviewee_second_name"),
   intervieweeEmail: text("interviewee_email"),
+  /**
+   * Optional external identifier for the end-user (supplied by the embedding site).
+   * Verified via HMAC if identity verification is enabled.
+   */
+  intervieweeUserId: text("interviewee_user_id"),
+  /**
+   * Arbitrary user metadata passed from the embedding site (JSON serialisable).
+   * E.g. { company: "Acme", plan: "Pro" }
+   */
+  userMetadata: jsonb("user_metadata"),
   interviewStartTime: timestamp("interview_start_time"),
   interviewEndTime: timestamp("interview_end_time"),
   totalInterviewMinutes: integer("total_interview_minutes"),

@@ -435,18 +435,48 @@ export async function POST(request: Request) {
     }, null, 2));
     console.log("=== FULL REQUEST DETAILS END ===\n");
 
-    const result = await generateText({
-      model: gemini25FlashPreviewModel,
-      system: systemPrompt,
-      messages: coreMessages,
-      maxTokens: 5000,  // Appropriate limit for responses
-      temperature: 1, // Balanced creativity
-    });
+    // Helper to call the model – we may need at most one retry
+    async function callModel() {
+      return generateText({
+        model: gemini25FlashPreviewModel,
+        system: systemPrompt,
+        messages: coreMessages,
+        maxTokens: 5000,
+        temperature: 1,
+      });
+    }
 
-    // Log the complete, untruncated response
-    console.log("\n=== FULL AI RESPONSE BEGIN ===");
-    console.log(result.text);
-    console.log("=== FULL AI RESPONSE END ===\n");
+    let result = await callModel();
+
+    let retried = false;
+
+    // Small helper to decide if we have a good response
+    const isValidAssistantJson = (text: string): boolean => {
+      const block = extractJsonFromString(text) ?? text;
+      try {
+        const parsed = parseRobustJson(block);
+        return (
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          'response' in parsed &&
+          typeof (parsed as any).response === 'string' &&
+          (parsed as any).response.trim().length > 0
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    // Retry once if the first attempt is invalid
+    if (!isValidAssistantJson(result.text)) {
+      retried = true;
+      coreMessages.push({
+        role: 'system',
+        content: 'Your last answer was invalid. Please reply ONLY with a JSON object containing a non-empty "response" field.',
+      } as any);
+
+      result = await callModel();
+    }
 
     // Extract the relevant part of the response
     let parsedContent: any = { response: result.text }; // Default to ensure .response exists for fallback, and for objectives

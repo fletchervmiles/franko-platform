@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PersonaManager } from "@/components/persona-manager/persona-manager"
 import { PersonaProvider, usePersonas } from "@/contexts/persona-context"
 import { Progress } from "@/components/ui/progress"
-import { useSetupChecklist } from "@/contexts/setup-checklist-context";
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 
 // Dynamically import BrandingContext only on the client side
 const BrandingContext = dynamic(
@@ -133,7 +133,7 @@ function ContextSetupInnerPage() {
   const [activeTab, setActiveTab] = useState("organization")
   const [loadingProgress, setLoadingProgress] = useState(0)
   const personasTabTriggered = useRef(false);
-  const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
   const firstPersonaTabVisit = useRef(true);
 
   const form = useForm<ContextSetupValues>({
@@ -184,7 +184,7 @@ function ContextSetupInnerPage() {
         })
         .then(() => {
           console.log('Personas refetched, now refetching setup status...');
-          refetchSetupStatus();
+          // refetchSetupStatus();
         })
         .catch(error => {
           console.error('Error during sequential refetch operations:', error);
@@ -229,7 +229,7 @@ function ContextSetupInnerPage() {
         title: "Success!",
         description: "Fields updated successfully.",
       })
-      refetchSetupStatus();
+      // refetchSetupStatus();
     },
     onError: (error) => {
       toast({
@@ -313,46 +313,6 @@ function ContextSetupInnerPage() {
     return () => clearInterval(interval)
   }, [isPending, submittedValues]) // Depend on isPending and submittedValues
 
-  useEffect(() => {
-    // Check if the personas tab is active and the step isn't complete yet
-    if (activeTab === 'personas' && !setupProgress.personasReviewed && !personasTabTriggered.current) {
-      personasTabTriggered.current = true; // Mark as triggered for this session/load
-      
-      const markPersonaStepViewed = async () => {
-        try {
-          const response = await fetch('/api/onboarding/viewed-step', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ step: 'step3PersonasReviewed' }),
-          });
-
-          if (response.ok) {
-            console.log('Successfully marked personas step as viewed.');
-            refetchSetupStatus(); // Refetch status to update UI
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Failed to mark personas step as viewed:', errorData.error || response.statusText);
-            // Optionally reset the trigger ref if you want it to retry on next tab switch
-            // personasTabTriggered.current = false; 
-          }
-        } catch (error) {
-          console.error('Error calling viewed-step API for personas:', error);
-          // Optionally reset the trigger ref
-          // personasTabTriggered.current = false; 
-        }
-      };
-
-      markPersonaStepViewed();
-    }
-    // Reset trigger if navigating away from the tab and it wasn't completed
-    else if (activeTab !== 'personas' && !setupProgress.personasReviewed) {
-        personasTabTriggered.current = false;
-    }
-
-  }, [activeTab, setupProgress, refetchSetupStatus]);
-
   // When personas tab becomes active the first time, force refetch to ensure DB commit completed
   useEffect(() => {
     if (activeTab === 'personas' && firstPersonaTabVisit.current) {
@@ -433,7 +393,7 @@ function ContextSetupInnerPage() {
     }
     
     // Update checklist status last
-    refetchSetupStatus();
+    // refetchSetupStatus();
   }
 
   const renderStatusDot = (isComplete: boolean) => (

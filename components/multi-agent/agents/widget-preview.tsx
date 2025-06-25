@@ -1,13 +1,18 @@
 "use client"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserIcon, RefreshCw, ArrowLeft } from "lucide-react"
+import { UserIcon, ArrowLeft, Loader2, ChevronRight } from "lucide-react"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import type { Agent } from "@/lib/agents-data"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getColorStyles, pickTextColor } from "@/lib/color-utils"
+import { ModalExternalChat } from "@/components/modal-external-chat"
+import { useSettings } from "@/lib/settings-context"
+import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
+import { getAgentsByIds } from "@/lib/agents-data-client"
 
 type Message = {
   id: string
@@ -16,23 +21,129 @@ type Message = {
   timestamp: number
 }
 
+type ModalState = 'agent-selection' | 'loading' | 'chatting' | 'completion'
+
 export type WidgetPreviewProps = {
-  activeAgents: Agent[]
+  // For server → client boundary: pass only serialisable IDs
+  agentIds?: string[]
+  // For purely client-side callers we still allow full Agent objects
+  activeAgents?: Agent[]
   displayName?: string
   instructions?: string
   themeOverride?: "light" | "dark"
   primaryBrandColor?: string
   advancedColors?: boolean
-  chatIconText?: string // For the separate chat icon button, not used directly in widget preview chat
-  chatIconColor?: string // For the separate chat icon button
+  chatIconText?: string
+  chatIconColor?: string
   profilePictureUrl?: string | null
-  userMessageColor?: string // For user's chat bubbles
-  chatHeaderColor?: string | null // For the chat header background
-  alignChatBubble?: "left" | "right" | "custom" // For chat icon positioning
+  userMessageColor?: string
+  chatHeaderColor?: string | null
+  alignChatBubble?: "left" | "right" | "custom"
+  isPlayground?: boolean
+  onAgentSelect?: (agent: Agent) => void
+  loadingAgentId?: string | null
+  modalId?: string
+  isEmbedMode?: boolean
+}
+
+// Agent color mappings for Tailwind CSS
+const getAgentColorClasses = (color: Agent['color']) => {
+  const colorMap = {
+    cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600', bgDark: 'bg-cyan-500', iconBg: 'bg-cyan-100' },
+    amber: { bg: 'bg-amber-100', text: 'text-amber-600', bgDark: 'bg-amber-500', iconBg: 'bg-amber-100' },
+    red: { bg: 'bg-red-100', text: 'text-red-600', bgDark: 'bg-red-500', iconBg: 'bg-red-100' },
+    green: { bg: 'bg-green-100', text: 'text-green-600', bgDark: 'bg-green-500', iconBg: 'bg-green-100' },
+    blue: { bg: 'bg-blue-100', text: 'text-blue-600', bgDark: 'bg-blue-500', iconBg: 'bg-blue-100' },
+    violet: { bg: 'bg-violet-100', text: 'text-violet-600', bgDark: 'bg-violet-500', iconBg: 'bg-violet-100' },
+    orange: { bg: 'bg-orange-100', text: 'text-orange-600', bgDark: 'bg-orange-500', iconBg: 'bg-orange-100' },
+    gray: { bg: 'bg-gray-100', text: 'text-gray-600', bgDark: 'bg-gray-500', iconBg: 'bg-gray-100' },
+    purple: { bg: 'bg-purple-100', text: 'text-purple-600', bgDark: 'bg-purple-500', iconBg: 'bg-purple-100' },
+    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-600', bgDark: 'bg-emerald-500', iconBg: 'bg-emerald-100' }
+  };
+  return colorMap[color] || colorMap.blue;
+};
+
+// Completion animation component
+function CompletionAnimation({ agent, onAnimationComplete }: { 
+  agent: Agent | null; 
+  onAnimationComplete: () => void;
+}) {
+  const safeAgent = agent || {
+    id: 'AGENT01',
+    name: 'Agent',
+    color: 'blue' as const,
+    Icon: () => null
+  };
+  const [stage, setStage] = useState<'appearing' | 'celebrating' | 'fading'>('appearing');
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setStage('celebrating'), 500);
+    const timer2 = setTimeout(() => setStage('fading'), 2500);
+    const timer3 = setTimeout(onAnimationComplete, 3500);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [onAnimationComplete]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+      <div className="relative mb-6">
+        <div className={cn(
+          "absolute inset-0 rounded-full transition-all duration-1000",
+          getAgentColorClasses(safeAgent.color).bg,
+          stage === 'celebrating' && "scale-150 opacity-30"
+        )} />
+        <div className={cn(
+          "relative flex items-center justify-center w-24 h-24 rounded-full transition-all duration-500",
+          getAgentColorClasses(safeAgent.color).bgDark,
+          "text-white",
+          stage === 'celebrating' && "scale-110"
+        )}>
+          <safeAgent.Icon className="w-12 h-12" />
+        </div>
+      </div>
+      <div className={cn(
+        "transition-all duration-500",
+        stage === 'fading' && "opacity-0 transform translate-y-4"
+      )}>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Conversation Complete!</h3>
+        <p className="text-gray-600">
+          Great job! You've finished the <span className="font-medium">{safeAgent.name}</span> conversation.
+        </p>
+        <p className="text-sm text-gray-500 mt-2">You'll return to the agent selection in a moment...</p>
+      </div>
+    </div>
+  );
+}
+
+function PoweredByFooter({ theme, backgroundColor }: { theme: 'light' | 'dark', backgroundColor: string }) {
+  return (
+    <div
+      className="px-4 flex items-center justify-center gap-1.5 border-t py-3 text-xs font-medium"
+      style={{
+        backgroundColor: backgroundColor,
+        borderColor: theme === 'dark' ? '#333333' : '#e5e7eb',
+        color: '#7A7A82'
+      }}
+    >
+      <a 
+        href="https://franko.ai" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+      >
+        <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
+        <span>Powered By Franko.ai</span>
+      </a>
+    </div>
+  );
 }
 
 export function WidgetPreview({
-  activeAgents,
+  agentIds,
+  activeAgents: initialActiveAgents,
   displayName: customDisplayName,
   instructions: customInstructions,
   themeOverride,
@@ -44,56 +155,82 @@ export function WidgetPreview({
   chatIconText,
   chatIconColor,
   alignChatBubble = "right",
+  isPlayground = false,
+  onAgentSelect,
+  loadingAgentId,
+  modalId,
+  isEmbedMode = false,
 }: WidgetPreviewProps) {
-  const [viewMode, setViewMode] = useState<"agentSelection" | "chatView">("agentSelection")
+  const [modalState, setModalState] = useState<ModalState>('agent-selection')
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
+  const [chatResponseId, setChatResponseId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
+  const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const currentTheme = themeOverride || "light"
+  // Access settings context for modal ID (only when not in embed mode)
+  let currentModal, settings;
   
-  // Define theme defaults
-  const themeDefaults = {
-    light: {
-      headerColor: "#ffffff",
-      userMessageColor: "#3B82F6",
-      chatIconColor: "#000000" // Dark for light theme
-    },
-    dark: {
-      headerColor: "#18181b", // Using one of the specified dark colors
-      userMessageColor: "#3B82F6", 
-      chatIconColor: "#ffffff" // Light for dark theme
-    }
+  if (isEmbedMode) {
+    // In embed mode, use props instead of context
+    currentModal = null;
+    settings = {
+      interface: {
+        displayName: customDisplayName || "Ready to share your thoughts with us?",
+        instructions: customInstructions || "Each topic below starts a 1-2 minute chat.",
+        theme: themeOverride || "light",
+        primaryBrandColor: primaryBrandColor || "",
+        advancedColors: advancedColors || false,
+        chatIconText: chatIconText || "Feedback",
+        chatIconColor: chatIconColor || "",
+        userMessageColor: userMessageColor || "",
+        chatHeaderColor: chatHeaderColor || null,
+        alignChatBubble: alignChatBubble || "right",
+        profilePictureUrl: profilePictureUrl || null,
+      },
+      agents: { enabledAgents: {} }
+    };
+  } else {
+    // In playground mode, use context
+    const contextData = useSettings();
+    currentModal = contextData.currentModal;
+    settings = contextData.settings;
+  }
+
+  const getProcessedPrompt = (prompt: string) => {
+    const orgName = settings.interface.displayName || "your product";
+    return prompt.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
   }
   
-  // Use primary brand color when not in advanced mode, otherwise use individual colors
-  // Fall back to theme defaults when colors are empty
-  const effectiveUserMessageColor = advancedColors 
-    ? (userMessageColor || "#3B82F6") // Always blue for user messages when no custom color
-    : (primaryBrandColor || "#3B82F6") // Always blue for user messages when no brand color
+  const currentTheme = themeOverride || "light"
+  const themeDefaults = {
+    light: { headerColor: "#ffffff", userMessageColor: "#3B82F6", chatIconColor: "#000000" },
+    dark: { headerColor: "#18181b", userMessageColor: "#3B82F6", chatIconColor: "#ffffff" }
+  }
+  
+  const effectiveUserMessageColor = advancedColors
+    ? (userMessageColor || themeDefaults[currentTheme].userMessageColor)
+    : (primaryBrandColor || themeDefaults[currentTheme].userMessageColor)
     
+  const headerDefaultColor = themeDefaults[currentTheme].headerColor
   const effectiveChatHeaderColor = advancedColors 
-    ? (chatHeaderColor || themeDefaults[currentTheme].headerColor)
-    : (primaryBrandColor || themeDefaults[currentTheme].headerColor)
-    
-  const effectiveChatIconColor = advancedColors 
+    ? (chatHeaderColor || headerDefaultColor)
+    : (primaryBrandColor || headerDefaultColor)
+
+  const effectiveChatIconColor = advancedColors
     ? (chatIconColor || themeDefaults[currentTheme].chatIconColor)
     : (primaryBrandColor || themeDefaults[currentTheme].chatIconColor)
 
-  // Generate gradient styles for header
   const headerStyles = getColorStyles(effectiveChatHeaderColor, true)
-  
-  // Generate text color for user message bubbles
   const userMessageTextColor = pickTextColor(effectiveUserMessageColor)
-  
-  // Generate text color for chat icon button
   const chatIconTextColor = pickTextColor(effectiveChatIconColor)
 
   const defaultDisplayName = "Ready to share your thoughts with us?"
   const defaultInstructions = "Each topic below starts a 1-2 minute chat."
-
   const displayHeaderName = customDisplayName || defaultDisplayName
   const displayInstructions = customInstructions || defaultInstructions
 
@@ -105,87 +242,165 @@ export function WidgetPreview({
 
   useEffect(scrollToBottom, [messages])
 
-  const handleAgentSelect = (agent: Agent) => {
-    setSelectedAgent(agent)
-    setMessages([
-      {
-        id: "agent-initial",
-        text: "This is a preview. Navigate to the playground to test out your agents.",
-        sender: "agent",
-        timestamp: Date.now(),
-      },
-    ])
-    setViewMode("chatView")
+  const handleConversationComplete = useCallback(() => {
+    setModalState('completion');
+  }, []);
+
+  const handleAnimationComplete = useCallback(() => {
+    setModalState('agent-selection');
+    setSelectedAgent(null);
+    setChatInstanceId(null);
+    setChatResponseId(null);
+    setMessages([]);
+  }, []);
+
+  const handleAgentSelect = async (agent: Agent) => {
+    if (onAgentSelect) {
+      onAgentSelect(agent);
+      return;
+    }
+
+    if (isPlayground) {
+      const targetModalId = isEmbedMode ? modalId : currentModal?.id;
+      
+      if (!targetModalId) {
+        console.error('No modal ID available for playground testing');
+        return;
+      }
+
+      setSelectedAgent(agent);
+      setModalState('loading');
+      
+      try {
+        const identityData = isEmbedMode ? ((window as any).FrankoUser || {}) : {};
+        
+        const response = await fetch('/api/modal-chat/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            modalId: targetModalId,
+            agentType: agent.id,
+            intervieweeFirstName: null,
+            intervieweeSecondName: null,
+            intervieweeEmail: null,
+            ...(isEmbedMode && identityData.user_id && {
+              user_id: identityData.user_id,
+              user_hash: identityData.user_hash,
+              user_metadata: identityData.user_metadata
+            })
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to initialize chat');
+
+        const data = await response.json();
+        setChatInstanceId(data.chatInstanceId);
+        setChatResponseId(data.chatResponseId);
+        setModalState('chatting');
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+        setModalState('agent-selection');
+        setSelectedAgent(null);
+      }
+    } else {
+      setPopoverAgentId(agent.id)
+      if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current)
+      popoverTimerRef.current = setTimeout(() => setPopoverAgentId(null), 3000)
+    }
   }
 
   const handleSendMessage = () => {
     if (inputValue.trim() === "") return
     setMessages((prevMessages) => [
       ...prevMessages,
-      {
-        id: `user-${Date.now()}`,
-        text: inputValue,
-        sender: "user",
-        timestamp: Date.now(),
-      },
+      { id: `user-${Date.now()}`, text: inputValue, sender: "user", timestamp: Date.now() },
     ])
     setInputValue("")
   }
 
   const handleReturnToSelection = () => {
-    setViewMode("agentSelection")
+    setModalState('agent-selection')
     setSelectedAgent(null)
     setMessages([])
+    setChatInstanceId(null)
+    setChatResponseId(null)
   }
+
+  // Resolve active agents: prefer explicit objects, otherwise map IDs to objects
+  const activeAgents = useMemo<Agent[]>(
+    () => {
+      if (initialActiveAgents && initialActiveAgents.length > 0) {
+        return initialActiveAgents
+      }
+      if (agentIds && agentIds.length > 0) {
+        return getAgentsByIds(agentIds)
+      }
+      return []
+    },
+    [initialActiveAgents, agentIds]
+  )
 
   const renderAgentSelectionView = () => (
     <>
-      <div
-        className={cn("h-40 px-6 py-8 flex flex-col justify-center relative")}
-        style={headerStyles}
-      >
-        {profilePictureUrl && (
-          <Avatar className="absolute top-4 left-4 h-10 w-10 border-2 border-white/20 rounded-full overflow-hidden">
-            <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
-            <AvatarFallback className="rounded-full">
-              <UserIcon className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
-        )}
-        <h1 className={cn("text-2xl font-bold mb-2", profilePictureUrl ? "ml-14" : "")}>
-          {displayHeaderName}
-        </h1>
-        <p className={cn("text-base opacity-90", profilePictureUrl ? "ml-14" : "")}>
-          {displayInstructions}
-        </p>
+      <div className={cn("px-6 py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
+        <div className="flex items-center gap-4">
+          {profilePictureUrl && (
+            <Avatar className="h-12 w-12 rounded-full overflow-hidden flex-shrink-0">
+              <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
+              <AvatarFallback className="rounded-full">
+                <UserIcon className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold mb-1">{displayHeaderName}</h1>
+            <p className="text-base opacity-90">{displayInstructions}</p>
+          </div>
+        </div>
       </div>
-      <div
-        className={cn(
-          "p-6 flex-grow overflow-y-auto", // Changed from "p-6 min-h-[200px]"
-        )}
-        style={{
-          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff"
-        }}
-      >
+      <div className={cn("p-6 flex-grow overflow-y-auto")} style={{ backgroundColor: headerDefaultColor }}>
         {activeAgents.length > 0 ? (
           <div className="space-y-3">
             {activeAgents.map((agent) => (
-              <button
-                key={agent.id}
-                onClick={() => handleAgentSelect(agent)}
-                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                style={{
-                  backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#fafafa"
-                }}
-              >
-                <p className="font-medium text-gray-800 dark:text-gray-200">{agent.prompt}</p>
-              </button>
+              <Popover key={agent.id} open={!isPlayground && popoverAgentId === agent.id}>
+                <PopoverTrigger asChild>
+                  <button
+                    onClick={() => handleAgentSelect(agent)}
+                    disabled={isPlayground && loadingAgentId === agent.id}
+                    className={cn(
+                      "w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      isPlayground && loadingAgentId === agent.id
+                        ? "opacity-60 cursor-not-allowed"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                    )}
+                    style={{ backgroundColor: headerDefaultColor }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <p className={cn(
+                          "font-normal leading-snug",
+                          currentTheme === "dark" ? "text-white" : "text-gray-800"
+                        )}>
+                          {getProcessedPrompt(agent.prompt)}
+                        </p>
+                      </div>
+                      {isPlayground && loadingAgentId === agent.id && (
+                        <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#E4F222" }} />
+                      )}
+                    </div>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="center" className="text-sm">
+                  Head to the <span className="font-semibold">Playground</span> tab to test this conversation.
+                </PopoverContent>
+              </Popover>
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full pt-10">
-            <p className="text-center text-gray-500 dark:text-gray-400">
-              Enable an agent on the left to see its starting prompt here.
+          <div className="text-center py-12">
+            <p className={cn("text-sm", currentTheme === "dark" ? "text-gray-400" : "text-gray-500")}>
+              No agents selected. Configure agents in the Agents tab.
             </p>
           </div>
         )}
@@ -193,185 +408,126 @@ export function WidgetPreview({
     </>
   )
 
-  const renderChatView = () => (
-    <>
-      <div
-        className={cn("h-20 px-4 py-2 flex items-center justify-between relative")}
-        style={headerStyles}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleReturnToSelection}
-          className={cn(
-            "text-white/80 hover:text-white hover:bg-white/10",
-            "transition-colors",
-          )}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex items-center gap-3 flex-1 justify-center">
-          {profilePictureUrl && (
-            <Avatar className="h-10 w-10 border-2 border-white/20 rounded-full overflow-hidden">
-              <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
-              <AvatarFallback className="rounded-full">
-                <UserIcon className="h-5 w-5" />
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <h2 className={cn("text-lg font-semibold")}>Share Your Thoughts</h2>
+  const renderLoadingView = () => (
+    <div className="flex flex-col items-center justify-center h-full p-8" style={{ backgroundColor: headerDefaultColor }}>
+      <div className="flex items-center justify-center mb-6">
+        {profilePictureUrl && (
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={profilePictureUrl} alt="Logo" />
+            <AvatarFallback>🏷</AvatarFallback>
+          </Avatar>
+        )}
+      </div>
+      <div className="text-center">
+        <h3 className="text-xl font-semibold mb-2" style={{ color: pickTextColor(headerDefaultColor) }}>
+          Starting Conversation...
+        </h3>
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#E4F222" }} />
         </div>
       </div>
+    </div>
+  )
 
-      <div
-        ref={messagesContainerRef}
-        className={cn(
-          "p-4 flex-grow overflow-y-auto h-[calc(100%-140px)]", // Adjust height based on header and footer
-        )}
-        style={{
-          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff"
-        }}
-      >
-        <div className="space-y-3">
-          {messages.map((msg) => (
-            <div key={msg.id} className={cn("flex", msg.sender === "user" ? "justify-end" : "justify-start")}>
-              <div
-                className={cn(
-                  "max-w-[70%] px-4 py-2.5 text-sm shadow-sm", // Added shadow-sm for a very subtle lift
-                  msg.sender === "user"
-                    ? "rounded-3xl rounded-br-lg border border-gray-200" // User message style
-                    : "rounded-3xl rounded-bl-lg border border-gray-200", // Assistant message - mirror of user style
-                )}
-                style={
-                  msg.sender === "user" 
-                    ? { 
-                        backgroundColor: effectiveUserMessageColor, 
-                        color: userMessageTextColor
-                      } 
-                    : {
-                        backgroundColor: currentTheme === "dark" ? "#1f1f22" : "#fafafa",
-                        color: currentTheme === "dark" ? "#ffffff" : "#000000"
-                      }
-                }
-              >
-                {msg.text}
+  const renderChatView = () => {
+    if (isPlayground && chatInstanceId && chatResponseId) {
+      return (
+        <div className="flex flex-col h-full">
+          <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
+            <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            {profilePictureUrl && (
+              <Avatar className="h-7 w-7 mr-3">
+                <AvatarImage src={profilePictureUrl} alt="Logo" />
+                <AvatarFallback>🏷</AvatarFallback>
+              </Avatar>
+            )}
+            <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
+          </div>
+          <div className="flex-1 min-h-0">
+            <ModalExternalChat
+              chatInstanceId={chatInstanceId}
+              chatResponseId={chatResponseId}
+              onConversationComplete={handleConversationComplete}
+              initialMessages={[]}
+              disableProgressBar={true}
+              bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
+            />
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <>
+          <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
+            <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            {profilePictureUrl && (
+              <Avatar className="h-7 w-7 mr-3">
+                <AvatarImage src={profilePictureUrl} alt="Logo" />
+                <AvatarFallback>🏷</AvatarFallback>
+              </Avatar>
+            )}
+            <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
+          </div>
+          <div ref={messagesContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4" style={{ backgroundColor: headerDefaultColor }}>
+            {messages.map((message) => (
+              <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
+                <div
+                  className={cn(
+                    "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm",
+                    message.sender === "user"
+                      ? "text-white"
+                      : currentTheme === "dark"
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-100 text-gray-900"
+                  )}
+                  style={{
+                    backgroundColor: message.sender === "user" ? effectiveUserMessageColor : undefined,
+                    color: message.sender === "user" ? userMessageTextColor : undefined,
+                  }}
+                >
+                  {message.text}
+                </div>
               </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="border-t p-4">
+            <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
+              <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Type your message..." className="flex-grow" />
+              <Button type="submit" size="sm">Send</Button>
+            </form>
+          </div>
+        </>
+      )
+    }
+  }
 
-      <div
-        className={cn(
-          "p-3 border-t",
-        )}
-        style={{
-          backgroundColor: currentTheme === "dark" ? "#000000" : "#ffffff",
-          borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb"
-        }}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            handleSendMessage()
-          }}
-          className="flex items-center gap-2"
-        >
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Message..."
-            className={cn(
-              "flex-1 bg-transparent border-none shadow-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
-              currentTheme === "dark"
-                ? "text-gray-200 placeholder:text-gray-500"
-                : "text-gray-800 placeholder:text-gray-400",
-            )}
-          />
-          <Button
-            type="submit"
-            variant="ghost"
-            className={cn(
-              "p-2.5 h-auto w-auto",
-              currentTheme === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-800",
-            )}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
-              <path
-                fill="currentColor"
-                d="M20.235 5.686c.432-1.195-.726-2.353-1.921-1.92L3.709 9.048c-1.199.434-1.344 2.07-.241 2.709l4.662 2.699 4.163-4.163a1 1 0 0 1 1.414 1.414L9.544 15.87l2.7 4.662c.638 1.103 2.274.957 2.708-.241z"
-              />
-            </svg>
-          </Button>
-        </form>
-      </div>
-    </>
+  const renderCompletionView = () => (
+    <CompletionAnimation agent={selectedAgent} onAnimationComplete={handleAnimationComplete} />
   )
 
   return (
-    <div className="relative w-[560px] mx-auto">
-    <Card
-      className={cn(
-          "rounded-2xl overflow-hidden shadow-xl flex flex-col border-0",
-        viewMode === "chatView" ? "h-[600px]" : "min-h-[400px] max-h-[700px]",
-          currentTheme === "dark" ? "dark bg-gray-950" : "bg-white",
-      )}
-    >
-      {viewMode === "agentSelection" ? renderAgentSelectionView() : renderChatView()}
-
-      {/* Powered by Franko.ai Footer - Common for both views if structure allows, or duplicate */}
-      {viewMode === "agentSelection" && (
-        <div
-          className={cn(
-            "px-4 flex items-center justify-center gap-1.5 border-t py-2",
-          )}
-          style={{
-            backgroundColor: currentTheme === "dark" ? "#161618" : "#fafafa",
-            borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb"
-          }}
-        >
-          <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">Powered by Franko.ai</span>
-        </div>
-      )}
-      {viewMode === "chatView" && ( // Footer for chat view
-        <div
-          className={cn(
-            "px-4 flex items-center justify-center gap-1.5 border-t py-2 text-xs",
-          )}
-          style={{
-            backgroundColor: currentTheme === "dark" ? "#161618" : "#fafafa",
-            borderColor: currentTheme === "dark" ? "#333333" : "#e5e7eb",
-            color: currentTheme === "dark" ? "#9ca3af" : "#6b7280"
-          }}
-        >
-          <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
-          Powered by Franko.ai
-        </div>
+    <Card className="w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative">
+      <div className="h-[650px] flex flex-col">
+        {modalState === 'agent-selection' && renderAgentSelectionView()}
+        {modalState === 'loading' && renderLoadingView()}
+        {modalState === 'chatting' && renderChatView()}
+        {modalState === 'completion' && renderCompletionView()}
+      </div>
+      <PoweredByFooter theme={currentTheme} backgroundColor={effectiveChatHeaderColor} />
+      {alignChatBubble !== "custom" && modalState === "agent-selection" && (
+        <FloatingChatIcon
+          text={chatIconText || "Feedback"}
+          backgroundColor={effectiveChatIconColor}
+          position={alignChatBubble as "left" | "right"}
+        />
       )}
     </Card>
-
-    {/* Floating Chat Button - Only show if not custom */}
-    {alignChatBubble !== "custom" && (
-      <button
-        className={cn(
-          "absolute top-full mt-4 px-3 py-1.5 rounded-full shadow-lg text-xs font-medium transition-all hover:shadow-xl",
-          "flex items-center gap-1.5",
-          alignChatBubble === "left" ? "left-0" : "right-0"
-        )}
-        style={{ 
-          backgroundColor: effectiveChatIconColor,
-          color: chatIconTextColor
-        }}
-        onClick={() => {/* Preview only - no action */}}
-      >
-        {chatIconText}
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-          <path d="M20.235 5.686c.432-1.195-.726-2.353-1.921-1.92L3.709 9.048c-1.199.434-1.344 2.07-.241 2.709l4.662 2.699 4.163-4.163a1 1 0 0 1 1.414 1.414L9.544 15.87l2.7 4.662c.638 1.103 2.274.957 2.708-.241z"/>
-        </svg>
-      </button>
-    )}
-  </div>
   )
 }
+
+export default WidgetPreview; 

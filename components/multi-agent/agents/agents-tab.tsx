@@ -31,7 +31,7 @@ export function AgentsTab() {
         <h2 className="font-semibold mb-2 flex items-center text-gray-900">Select Your Interview Agents</h2>
         <p className="text-sm text-slate-600">
           The agents you enable will appear as options your users can select for giving feedback. Each agent will lead a
-          2-3 minute conversation on the chosen topic.
+          1-2 minute conversation on the chosen topic.
         </p>
           </div>
           {isSaving && (
@@ -63,6 +63,7 @@ export function AgentsTab() {
             advancedColors={settings.interface.advancedColors}
             chatIconText={settings.interface.chatIconText}
             chatIconColor={settings.interface.chatIconColor}
+            profilePictureUrl={settings.interface.profilePictureUrl}
             alignChatBubble={settings.interface.alignChatBubble}
           />
         </div>

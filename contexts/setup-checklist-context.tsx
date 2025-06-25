@@ -43,7 +43,8 @@ const defaultProgress: SetupProgress = {
   shareLinkVisited: false,
 }
 
-const dbFieldToProgressKey: Record<keyof Omit<SelectUserOnboardingStatus, 'userId' | 'createdAt' | 'updatedAt'>, keyof SetupProgress> = {
+// Only map the manual onboarding fields to SetupProgress
+const dbFieldToProgressKey: Record<string, keyof SetupProgress> = {
     step1ContextComplete: 'contextAdded',
     step2BrandingComplete: 'brandingAdded',
     step3PersonasReviewed: 'personasReviewed',

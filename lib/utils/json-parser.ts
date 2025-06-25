@@ -160,8 +160,18 @@ export function extractResponseFromAIOutput(
   // Try parsing with our robust parser
   try {
     const parsed = parseRobustJson(jsonContent);
-    if (parsed[fallbackField]) {
-      return parsed[fallbackField];
+    if (Object.prototype.hasOwnProperty.call(parsed, fallbackField)) {
+      const value = parsed[fallbackField];
+      // Only treat as valid if it's a non-empty string after trimming
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+      // If the field is empty or not a useful string, we'll fall through to error handling
+    }
+
+    // If parsed successfully but response is missing or empty, and we have an error message, return it immediately
+    if (defaultErrorMessage) {
+      return defaultErrorMessage;
     }
   } catch (e) {
     logJsonParseError('extractResponseFromAIOutput', e, jsonContent);
@@ -169,16 +179,12 @@ export function extractResponseFromAIOutput(
   
   // Last resort: try regex extraction
   const regexExtracted = extractFieldWithRegex(jsonContent, fallbackField);
-  if (regexExtracted) {
+  if (regexExtracted !== null && regexExtracted.trim().length > 0) {
     return regexExtracted;
   }
   
-  // Check if we should return a custom error message instead of raw content
-  if (defaultErrorMessage && 
-      // Only use error message if content looks like JSON but failed to parse
-      ((content.includes('```json') && content.includes('```')) || 
-       content.trim().startsWith('{') || 
-       content.trim().startsWith('['))) {
+  // If we reach here and have a default error message, use it instead of raw content
+  if (defaultErrorMessage) {
     return defaultErrorMessage;
   }
   
@@ -207,9 +213,9 @@ export function extractResponseWithDebug(content: any): {
   // Tier 1: Standard JSON.parse()
   try {
     const parsed = JSON.parse(jsonContent);
-    if (parsed.response) {
+    if (Object.prototype.hasOwnProperty.call(parsed, 'response')) {
       return {
-        result: parsed.response,
+        result: String(parsed.response ?? ''),
         debugInfo: { method: 'standard', success: true }
       };
     }
@@ -221,9 +227,9 @@ export function extractResponseWithDebug(content: any): {
   try {
     const repairedJson = repairCommonJsonIssues(jsonContent);
     const parsed = JSON.parse(repairedJson);
-    if (parsed.response) {
+    if (Object.prototype.hasOwnProperty.call(parsed, 'response')) {
       return {
-        result: parsed.response,
+        result: String(parsed.response ?? ''),
         debugInfo: { method: 'repaired', success: true }
       };
     }
@@ -234,9 +240,9 @@ export function extractResponseWithDebug(content: any): {
   // Tier 3: JSON5
   try {
     const parsed = json5.parse(jsonContent);
-    if (parsed.response) {
+    if (Object.prototype.hasOwnProperty.call(parsed, 'response')) {
       return {
-        result: parsed.response,
+        result: String(parsed.response ?? ''),
         debugInfo: { method: 'json5', success: true }
       };
     }
@@ -247,9 +253,9 @@ export function extractResponseWithDebug(content: any): {
   // Tier 4: Relaxed JSON
   try {
     const parsed = parseRelaxedJson(jsonContent);
-    if (parsed.response) {
+    if (Object.prototype.hasOwnProperty.call(parsed, 'response')) {
       return {
-        result: parsed.response,
+        result: String(parsed.response ?? ''),
         debugInfo: { method: 'relaxed', success: true }
       };
     }
@@ -259,13 +265,15 @@ export function extractResponseWithDebug(content: any): {
 
   // Tier 5: Regex extraction
   const regexExtracted = extractFieldWithRegex(jsonContent, 'response');
-  if (regexExtracted) {
+  if (regexExtracted !== null && regexExtracted.trim().length > 0) {
     return {
       result: regexExtracted,
       debugInfo: { method: 'regex', success: true }
     };
   }
   
+  // No suitable response extracted; fall through to original content
+
   // Ultimate fallback: return original content
   return {
     result: content,

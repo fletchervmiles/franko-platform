@@ -25,6 +25,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.brandfetch.io',
+        port: '',
+        pathname: '/**',
+      },
     ],
     // Add image optimization settings
     formats: ['image/avif', 'image/webp'],

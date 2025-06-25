@@ -74,7 +74,7 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               placeholder="Send a message..."
               className={cn(
                 "w-full resize-none px-3 py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-base leading-relaxed",
-                disabled && "bg-gray-50 cursor-not-allowed",
+                disabled && "cursor-not-allowed",
               )}
               style={{
                 minHeight: "64px",

@@ -23,7 +23,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import React from "react"
 import { useQuotaAvailability } from "@/hooks/use-quota-availability"
-import { useSetupChecklist } from "@/contexts/setup-checklist-context"
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context"
 
 // Dynamically import components for each tab to reduce initial bundle size
 const ShareableLink = dynamic(
@@ -182,7 +182,7 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
   const [stableTitle, setStableTitle] = useState<string>("Loading...")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist()
+  // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist()
   const shareTabTriggered = useRef(false)
 
   // The guideName param is actually the chat instance ID
@@ -248,45 +248,45 @@ export const ConversationPageClient = React.memo(function ConversationPageClient
     }
   }, [activeTab, updateLastViewed]);
 
-  useEffect(() => {
-    // Check if the share tab is active and the step isn't complete yet
-    if (activeTab === 'share' && !setupProgress.shareLinkVisited && !shareTabTriggered.current) {
-      shareTabTriggered.current = true; // Mark as triggered for this session/load
-      
-      const markShareStepViewed = async () => {
-        try {
-          const response = await fetch('/api/onboarding/viewed-step', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ step: 'step5LinkShared' }),
-          });
+  // useEffect(() => {
+  //   // Check if the share tab is active and the step isn't complete yet
+  //   if (activeTab === 'share' && !setupProgress.shareLinkVisited && !shareTabTriggered.current) {
+  //     shareTabTriggered.current = true; // Mark as triggered for this session/load
+  //     
+  //     const markShareStepViewed = async () => {
+  //       try {
+  //         const response = await fetch('/api/onboarding/viewed-step', {
+  //           method: 'POST',
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //           },
+  //           body: JSON.stringify({ step: 'step5LinkShared' }),
+  //         });
 
-          if (response.ok) {
-            console.log('Successfully marked share step as viewed.');
-            refetchSetupStatus(); // Refetch status to update UI
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Failed to mark share step as viewed:', errorData.error || response.statusText);
-            // Optionally reset the trigger ref if you want it to retry on next tab switch
-            // shareTabTriggered.current = false; 
-          }
-        } catch (error) {
-          console.error('Error calling viewed-step API for share:', error);
-          // Optionally reset the trigger ref
-          // shareTabTriggered.current = false; 
-        }
-      };
+  //         if (response.ok) {
+  //           console.log('Successfully marked share step as viewed.');
+  //           refetchSetupStatus(); // Refetch status to update UI
+  //         } else {
+  //           const errorData = await response.json().catch(() => ({}));
+  //           console.error('Failed to mark share step as viewed:', errorData.error || response.statusText);
+  //           // Optionally reset the trigger ref if you want it to retry on next tab switch
+  //           // shareTabTriggered.current = false; 
+  //         }
+  //       } catch (error) {
+  //         console.error('Error calling viewed-step API for share:', error);
+  //         // Optionally reset the trigger ref
+  //         // shareTabTriggered.current = false; 
+  //       }
+  //     };
 
-      markShareStepViewed();
-    }
-    // Reset trigger if navigating away from the tab and it wasn't completed
-    else if (activeTab !== 'share' && !setupProgress.shareLinkVisited) {
-        shareTabTriggered.current = false;
-    }
+  //     markShareStepViewed();
+  //   }
+  //   // Reset trigger if navigating away from the tab and it wasn't completed
+  //   else if (activeTab !== 'share' && !setupProgress.shareLinkVisited) {
+  //       shareTabTriggered.current = false;
+  //   }
 
-  }, [activeTab, setupProgress, refetchSetupStatus]);
+  // }, [activeTab, setupProgress, refetchSetupStatus]);
 
   useEffect(() => {
     let isMounted = true;

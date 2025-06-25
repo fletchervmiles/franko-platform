@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getOnboardingStatus } from "@/db/queries/user-onboarding-status-queries";
+import { getProfileByUserId } from "@/db/queries/profiles-queries";
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [status, profile] = await Promise.all([
+      getOnboardingStatus(userId),
+      getProfileByUserId(userId)
+    ]);
+
+    // Check individual completion status
+    const isResearchComplete = status?.step1ContextComplete || false; // Exa requests done
+    const isContextReportComplete = status?.step2BrandingComplete || false; // Context description generated
+    const isBrandingComplete = status?.step4AgentCreated || false; // Branding extraction done
+    const isModalComplete = status?.step3PersonasReviewed || false; // Modal created
+    const hasContextDescription = !!profile?.organisationDescription;
+    const hasBrandingData = !!(profile?.logoUrl || profile?.buttonColor);
+
+    // Enhanced progress calculation with separated steps
+    let progress = 0;
+    let message = "Starting setup...";
+    
+    if (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete) {
+      progress = 100;
+      message = "Setup complete!";
+    } else if (isResearchComplete && isContextReportComplete && isBrandingComplete) {
+      progress = 85;
+      message = "Creating your feedback modal with 6 agents...";
+    } else if (isResearchComplete && isContextReportComplete) {
+      progress = 60;
+      message = "Retrieving your brand assets for your modal...";
+    } else if (isResearchComplete) {
+      progress = 30;
+      message = "Writing a context-rich report for your agents...";
+    } else if (profile?.organisationUrl) {
+      progress = 15;
+      message = "Researching your company...";
+    } else {
+      progress = 10;
+      message = "Starting company research...";
+    }
+
+    return NextResponse.json({
+      isComplete: isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete,
+      progress,
+      message,
+      shouldRedirect: (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete) ? "/create-modal?tab=playground" : null
+    });
+
+  } catch (error) {
+    console.error('Error fetching progress:', error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+} 

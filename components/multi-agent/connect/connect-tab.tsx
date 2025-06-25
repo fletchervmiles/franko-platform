@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useSettings } from "@/lib/settings-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,45 @@ import {
 export default function ConnectTab() {
   const { currentModal, isSaving } = useSettings()
   const [copiedItem, setCopiedItem] = useState<string | null>(null)
+
+  // Identity verification state
+  const [verificationSecret, setVerificationSecret] = useState<string | null>(null)
+  const [isSecretLoading, setIsSecretLoading] = useState(false)
+
+  // Fetch secret on mount
+  useEffect(() => {
+    async function fetchSecret() {
+      setIsSecretLoading(true)
+      try {
+        const res = await fetch('/api/verification-secret')
+        const data = await res.json()
+        if (res.ok) {
+          setVerificationSecret(data.verificationSecret)
+        }
+      } catch (err) {
+        console.error('Failed to fetch verification secret', err)
+      } finally {
+        setIsSecretLoading(false)
+      }
+    }
+    fetchSecret()
+  }, [])
+
+  const regenerateSecret = async () => {
+    setIsSecretLoading(true)
+    try {
+      const res = await fetch('/api/verification-secret', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setVerificationSecret(data.verificationSecret)
+        copyToClipboard(data.verificationSecret, 'verification-secret')
+      }
+    } catch (err) {
+      console.error('Failed to regenerate secret', err)
+    } finally {
+      setIsSecretLoading(false)
+    }
+  }
 
   if (!currentModal) {
     return (
@@ -43,6 +82,19 @@ export default function ConnectTab() {
   }
 
   const bubbleScript = `<script>
+  // Optional: Pass user identity for personalized feedback
+  window.FrankoUser = {
+    user_id: "user-123",
+    user_hash: "hash-generated-on-server", 
+    user_metadata: {
+      name: "John Doe",
+      email: "john@example.com",
+      company: "Acme Inc"
+    }
+  };
+</script>
+
+<script>
   (function() {
     var s = document.createElement('script');
     s.src = '${baseUrl}/embed.js';
@@ -53,7 +105,19 @@ export default function ConnectTab() {
   })();
 </script>`
 
-  const customScript = `<!-- Include the script -->
+  const customScript = `<!-- Optional: Pass user identity -->
+<script>
+  window.FrankoUser = {
+    user_id: "user-123",
+    user_hash: "hash-generated-on-server",
+    user_metadata: {
+      name: "John Doe", 
+      email: "john@example.com"
+    }
+  };
+</script>
+
+<!-- Include the script -->
 <script src="${baseUrl}/embed.js" 
         data-modal-slug="${currentModal.embedSlug}" 
         data-mode="manual"></script>
@@ -226,6 +290,34 @@ export default function ConnectTab() {
                   Add the script to your page, then call FrankoModal.open() from any element. Perfect for existing buttons, navigation items, or programmatic control.
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Identity Verification */}
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              Identity verification (optional)
+            </CardTitle>
+            <CardDescription>
+              Pass your signed-in user's ID to Franko for personalised feedback.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Secret key (server-side)</Label>
+              <div className="flex gap-2">
+                <Input value={verificationSecret || ''} readOnly placeholder={isSecretLoading ? 'Loading…' : ''} className="font-mono text-sm bg-gray-50" />
+                <Button variant="outline" size="sm" disabled={!verificationSecret} onClick={() => verificationSecret && copyToClipboard(verificationSecret, 'verification-secret')}>
+                  {copiedItem === 'verification-secret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button variant="outline" size="sm" disabled={isSecretLoading} onClick={regenerateSecret}>
+                  Regenerate
+                </Button>
+              </div>
+
+              <p className="text-xs text-gray-500">Use this secret to generate an HMAC of your user_id on your server. Include <code>user_id</code>, <code>user_hash</code>, and optional <code>user_metadata</code> in <code>window.FrankoUser</code> before the embed script.</p>
             </div>
           </CardContent>
         </Card>

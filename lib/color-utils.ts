@@ -3,18 +3,30 @@ import tinycolor from "tinycolor2"
 /**
  * Generate a subtle vertical gradient from a base color
  * @param baseHex - Base color in hex format (e.g., "#3E455D")
- * @param adjustment - Lightness adjustment percentage (default: 6)
+ * @param adjustment - Lightness adjustment percentage (default: 3 for subtle effect)
  * @returns CSS gradient string
  */
-export function generateGradient(baseHex: string, adjustment: number = 6): string {
+export function generateGradient(baseHex: string, adjustment: number = 3): string {
   const base = tinycolor(baseHex)
   
   // For very light or dark colors, reduce the adjustment to prevent clamping
   const lightness = base.toHsl().l
-  const adjustedDelta = lightness > 0.9 || lightness < 0.1 ? Math.min(adjustment, 3) : adjustment
+  const adjustedDelta = lightness > 0.9 || lightness < 0.1 ? Math.min(adjustment, 1) : adjustment
   
-  const topStop = base.clone().lighten(adjustedDelta).toHexString()
-  const bottomStop = base.clone().darken(adjustedDelta).toHexString()
+  // For light themes we still want a subtle darker tail for contrast;
+  // for dark themes we only lighten so header isn't darker than body.
+  let topStop: string
+  let bottomStop: string
+
+  if (lightness > 0.5) {
+    // Light background: lighten top, darken bottom
+    topStop = base.clone().lighten(adjustedDelta).toHexString()
+    bottomStop = base.clone().darken(adjustedDelta).toHexString()
+  } else {
+    // Dark background: lighten both stops
+    topStop = base.clone().lighten(adjustedDelta).toHexString()
+    bottomStop = base.clone().lighten(adjustedDelta).toHexString()
+  }
   
   return `linear-gradient(180deg, ${topStop} 0%, ${baseHex} 50%, ${bottomStop} 100%)`
 }
@@ -63,4 +75,12 @@ export function getColorStyles(color: string, useGradient: boolean = true) {
     backgroundColor: color,
     color: textColor
   }
+}
+
+/**
+ * Very small helper: determine if color is dark using tinycolor luminance
+ */
+export function isDarkColor(hex: string): boolean {
+  const tc = tinycolor(hex)
+  return !tc.isValid() ? false : tc.getLuminance() < 0.5
 } 

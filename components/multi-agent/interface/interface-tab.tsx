@@ -45,7 +45,8 @@ export function InterfaceTab() {
       primaryBrandColor: "",
       chatIconColor: "",
       userMessageColor: "",
-      chatHeaderColor: null
+      chatHeaderColor: null,
+      advancedColors: false
     })
   }
 
@@ -228,14 +229,14 @@ export function InterfaceTab() {
                 onClick={resetToThemeDefaults}
                 className="text-xs"
               >
-                Reset to Default
+                Reset to Defaults
               </Button>
             </div>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 id="primary-brand-color"
-                value={settings.interface.primaryBrandColor || "#3B82F6"}
+                value={settings.interface.primaryBrandColor || "#ffffff"}
                 onChange={(e) => handlePrimaryColorChange(e.target.value)}
                 className="w-12 h-8 rounded border border-gray-300"
               />
@@ -275,7 +276,7 @@ export function InterfaceTab() {
             <Card className="p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="chat-header-color">Chat Header Color</Label>
+                  <Label htmlFor="chat-header-color">Modal Header Color</Label>
                   <Button
                     variant="outline"
                     size="sm"
@@ -306,7 +307,7 @@ export function InterfaceTab() {
             {/* Chat Icon Color */}
             <Card className="p-4">
               <div className="space-y-2">
-                <Label htmlFor="chat-icon-color">Chat Icon Color</Label>
+                <Label htmlFor="chat-icon-color">Feedback Icon Color</Label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
