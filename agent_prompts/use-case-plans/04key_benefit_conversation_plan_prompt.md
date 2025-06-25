@@ -106,15 +106,81 @@ Always weave in **specific details**—like unique selling propositions or known
 
 1. Description of the Conversation Topic:
 
-{conversation_topic}
+KEY BENEFIT
 
-2. Conversation Duration:
+(active customer)
 
-{conversation_duration}
+OBJECTIVE – Learn the single biggest benefit a user gets from {organisation_name} and why that benefit matters to them.
 
-3. Any Additional Details (Optional):
+Duration
+• Turn count = 4 messages
+• Objective count = 1 objective
 
-{additional_details}
+Founder wants to learn
+• User-stated “favourite thing” (feature, workflow, or outcome) in their own words
+• Underlying driver (time saved, money earned, stress reduced, status, growth, etc.)
+• Seek to understand the outcome of the benefit and why it matters to them for their use case.
+• Size / frequency of that impact (daily, weekly, per project; rough time- or dollar-range if natural)
+• What would happen if the benefit disappeared (fallback or pain)
+
+Reference buckets
+(use to create 2-4-item recognition lists if the user is vague)
+
+Possible top benefits
+– Saves me hours every week
+– Boosts revenue / conversion
+– Instant insight & visibility
+– All data in one place
+– Avoids mistakes / compliance risk   
+– Makes me look good to clients / boss
+– Delightful, effortless experience     
+– Cheaper than alternatives
+
+Why that benefit matters
+– Hit KPIs / targets
+– Free up team bandwidth
+– Reduce stress / burnout
+– Impress stakeholders
+– Accelerate launches
+– Stay on budget
+– Build confidence / skill
+
+Fallback if it vanished
+– Manual workaround
+– Switch to another tool
+– Hire help
+– Accept slower pace / worse results
+
+Planner note
+When you sense a broad answer (“everything,” “it’s just great”), either ask for a recent concrete example or offer a recognition list drawn from the buckets above.
+
+Agent must (Important)
+• Open with this single required line, substituting variables:
+“Thanks for joining! We’ll keep this short and sharp! To start, what’s the single thing you love most about {organisation_name}?”
+(This is the only verbatim text; everything after is guided improvisation.)
+
+Agent guidance (flexible probes—use what fits the flow)
+
+Clarify the benefit
+– If the user names several things, encourage them to pick the standout.
+– Capture their exact wording for later copy ideas.
+
+Explore why it matters
+– Prompt lightly: “How does that help day-to-day?”
+– Seek an example of recent moment or result.
+– If numbers emerge naturally, log a range (e.g., “saves 1–3 hrs a week”).
+
+Understand the stakes
+– Ask what they’d do if that benefit vanished: look for pain, cost, or a fallback plan.
+– Recognition list can help (“more manual work, hire help, slower launches, etc.”).
+
+Wrap when both pieces—benefit + reason—are clear.
+– Skip any probe the user has already answered; don’t lengthen the chat unnecessarily.
+
+Success criteria
+• One clear “top benefit” captured verbatim from the user
+• Reason it matters documented with at least one impact detail (time, money, stress, status, goal)
+• Fallback / consequence noted if provided
 
 2. Organisation Description:
 

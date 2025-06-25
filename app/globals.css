@@ -151,6 +151,15 @@ body {
   }
 }
 
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
 /* New diagonal grid pattern - Denser */
 .diagonal-grid-dark {
   background-color: #000000; /* Slightly darker base */

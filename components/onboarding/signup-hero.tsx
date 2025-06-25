@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { useSignUp } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
-import { Loader2, Mail, User, Chrome } from "lucide-react"
+import { Loader2, Chrome } from "lucide-react"
 
 const BLOCKED_DOMAINS = [
   'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
@@ -303,9 +304,9 @@ export default function SignupHero() {
 
             <p className="mt-6 text-sm text-gray-600">
               Already have an account?{" "}
-              <a href="/sign-in" className="text-[#E4F222] hover:underline font-medium">
+              <Link href="/sign-in" className="text-[#E4F222] hover:underline font-medium">
                 Sign in
-              </a>
+              </Link>
             </p>
           </div>
 

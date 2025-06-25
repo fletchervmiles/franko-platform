@@ -1,5 +1,6 @@
 "use client"
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserIcon, ArrowLeft, Loader2, ChevronRight } from "lucide-react"
@@ -134,7 +135,7 @@ function PoweredByFooter({ theme, backgroundColor }: { theme: 'light' | 'dark', 
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
       >
-        <img src="/assets/franko-chat-icon.svg" alt="Franko.ai" className="w-4 h-4 opacity-60" />
+        <Image src="/assets/franko-chat-icon.svg" alt="Franko.ai" width={16} height={16} className="opacity-60" />
         <span>Powered By Franko.ai</span>
       </a>
     </div>
@@ -172,6 +173,8 @@ export function WidgetPreview({
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  const contextData = useSettings();
+
   // Access settings context for modal ID (only when not in embed mode)
   let currentModal, settings;
   
@@ -196,7 +199,6 @@ export function WidgetPreview({
     };
   } else {
     // In playground mode, use context
-    const contextData = useSettings();
     currentModal = contextData.currentModal;
     settings = contextData.settings;
   }
@@ -227,7 +229,6 @@ export function WidgetPreview({
 
   const headerStyles = getColorStyles(effectiveChatHeaderColor, true)
   const userMessageTextColor = pickTextColor(effectiveUserMessageColor)
-  const chatIconTextColor = pickTextColor(effectiveChatIconColor)
 
   const defaultDisplayName = "Ready to share your thoughts with us?"
   const defaultInstructions = "Each topic below starts a 1-2 minute chat."
@@ -269,9 +270,9 @@ export function WidgetPreview({
       }
 
       setSelectedAgent(agent);
-      setModalState('loading');
       
       try {
+        // Initialize chat in background
         const identityData = isEmbedMode ? ((window as any).FrankoUser || {}) : {};
         
         const response = await fetch('/api/modal-chat/initialize', {
@@ -296,6 +297,16 @@ export function WidgetPreview({
         const data = await response.json();
         setChatInstanceId(data.chatInstanceId);
         setChatResponseId(data.chatResponseId);
+        
+        console.log('WidgetPreview - Chat initialized:', {
+          agentId: agent.id,
+          agentName: agent.name,
+          chatInstanceId: data.chatInstanceId,
+          chatResponseId: data.chatResponseId,
+          organizationName: customDisplayName || "our product"
+        });
+        
+        // Go straight to chatting - no loading state!
         setModalState('chatting');
       } catch (error) {
         console.error('Error initializing chat:', error);
@@ -449,6 +460,8 @@ export function WidgetPreview({
             <ModalExternalChat
               chatInstanceId={chatInstanceId}
               chatResponseId={chatResponseId}
+              agentType={selectedAgent?.id}
+              organizationName={customDisplayName || "our product"}
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
               disableProgressBar={true}

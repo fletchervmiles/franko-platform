@@ -170,7 +170,7 @@ Agent must (**Important**):
 • Open the conversation by asking exactly the sentence below.
 – Replace {{product_name}} with the product supplied in the context (e.g. “{organisation_name}”, “Vercel”, etc.).
 – If a {{persona_role}} value is provided in the context, include the role clause; if it is blank, omit it—nothing else changes.
-“Thanks for joining! We’ll keep this short and sharp! To start, could you tell me {{#if persona_role}}about your role and {{/if}}what you hoped {{product_name}} would help you achieve?”
+“Thanks for joining! We’ll keep this short and sharp! To start, could you tell me yourself and what you hoped {organisation_name} would help you achieve?”
 • Copy this requirement verbatim into the first agent-guidance bullet of objective01.
 
 Agent guidance  (use flexibly — cover as many as flow allows; order is not fixed; prioritise digging deeper when available)

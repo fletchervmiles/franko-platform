@@ -18,6 +18,7 @@ export type Agent = {
   color: "green" | "blue" | "violet" | "amber" | "red" | "orange" | "cyan" | "gray" | "purple" | "emerald"
   initialQuestion: string
   whyFoundersCare: string
+  cachedFirstResponse: string
 }
 
 export const agentsData: Agent[] = [
@@ -31,6 +32,7 @@ export const agentsData: Agent[] = [
     color: "cyan",
     initialQuestion: "How did you first discover {organisation_name}?",
     whyFoundersCare: "Tells founders: Where should we spend marketing dollars?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, how did you first hear about {organisation_name}?",
   },
   {
     id: "AGENT02", 
@@ -42,6 +44,7 @@ export const agentsData: Agent[] = [
     color: "amber",
     initialQuestion: "Could you tell us a bit about your role and the main challenge you're trying to solve?",
     whyFoundersCare: "Tells founders: Who are we winning with and why?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, could you tell me yourself and what you hoped {organisation_name} would help you achieve?",
   },
   {
     id: "AGENT03",
@@ -53,6 +56,7 @@ export const agentsData: Agent[] = [
     color: "red",
     initialQuestion: "What's your main consideration when thinking about upgrading to a paid plan?",
     whyFoundersCare: "Tells founders: What will make our free users pay and our paid users stay even longer?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! Thinking about the actually paying for {organisation_name}, did anything give you pause—or maybe push you to say 'yes' right away?",
   },
   {
     id: "AGENT04",
@@ -64,6 +68,7 @@ export const agentsData: Agent[] = [
     color: "green",
     initialQuestion: "What's the main thing you love about using {organisation_name}?",
     whyFoundersCare: "Tells founders: What's driving the most value for our customers?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, what's the single thing you love most about {organisation_name}?",
   },
   {
     id: "AGENT05",
@@ -75,6 +80,7 @@ export const agentsData: Agent[] = [
     color: "blue",
     initialQuestion: "If you could improve one thing about {product}, what would it be?",
     whyFoundersCare: "Tells founders: What's driving support tickets and tomorrow's churn?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, what's the one thing we could do to improve {organisation_name} for you?",
   },
   {
     id: "AGENT06",
@@ -86,5 +92,6 @@ export const agentsData: Agent[] = [
     color: "violet", 
     initialQuestion: "What new feature would be most valuable to you right now?",
     whyFoundersCare: "Tells founders: What should we build next that users actually want?",
+    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! So, which feature would you love us to build next for {organisation_name}?",
   },
 ] 

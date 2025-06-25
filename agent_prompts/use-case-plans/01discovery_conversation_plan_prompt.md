@@ -166,9 +166,7 @@ Planner note: Use the reference buckets above to create 2-4-item recognition lis
 Agent must
 • Open with a brief welcome (≤ 15 words) and ask exactly:  
 
-“Thanks for joining! We'll keep this short and sharp! 
-
-To start, how did you first hear about {organisation_name}?”
+“Thanks for joining! We'll keep this short and sharp! To start, how did you first hear about {organisation_name}?”
 
 Agent guidance  (use flexibly — cover as many as flow allows; order is not fixed; prioritise digging deeper when available)
 - **Clarify channel & context** – Nail down the specific source and circumstance.
