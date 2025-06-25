@@ -166,6 +166,7 @@ export function WidgetPreview({
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
   const [chatResponseId, setChatResponseId] = useState<string | null>(null)
+  const [organizationName, setOrganizationName] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -297,13 +298,14 @@ export function WidgetPreview({
         const data = await response.json();
         setChatInstanceId(data.chatInstanceId);
         setChatResponseId(data.chatResponseId);
+        setOrganizationName(data.organizationName);
         
         console.log('WidgetPreview - Chat initialized:', {
           agentId: agent.id,
           agentName: agent.name,
           chatInstanceId: data.chatInstanceId,
           chatResponseId: data.chatResponseId,
-          organizationName: customDisplayName || "our product"
+          organizationName: data.organizationName
         });
         
         // Go straight to chatting - no loading state!
@@ -335,6 +337,7 @@ export function WidgetPreview({
     setMessages([])
     setChatInstanceId(null)
     setChatResponseId(null)
+    setOrganizationName(null)
   }
 
   // Resolve active agents: prefer explicit objects, otherwise map IDs to objects
@@ -461,7 +464,7 @@ export function WidgetPreview({
               chatInstanceId={chatInstanceId}
               chatResponseId={chatResponseId}
               agentType={selectedAgent?.id}
-              organizationName={customDisplayName || "our product"}
+              organizationName={organizationName || "our product"}
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
               disableProgressBar={true}

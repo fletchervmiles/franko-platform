@@ -4,6 +4,8 @@ import { getChatInstancesByUserId } from "@/db/queries/chat-instances-queries";
 import { getChatResponsesByChatInstanceId } from "@/db/queries/chat-responses-queries";
 import { numberedObjectivesToArray } from "@/components/conversationPlanSchema";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     console.log("[chat-instances] Starting GET request");

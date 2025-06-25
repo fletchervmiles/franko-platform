@@ -107,6 +107,10 @@ export async function POST(request: Request) {
         }
       }
 
+      // Get profile for organization name (needed for variable substitution)
+      const profile = await getProfileByUserId(chatInstance.userId);
+      const organizationName = profile?.organisationName || '';
+
       await tx.insert(chatResponsesTable).values({
         id: chatResponseId,
         userId: chatInstance.userId, // Use the modal owner's user ID
@@ -136,7 +140,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         chatInstanceId: chatInstance.id,
-        chatResponseId
+        chatResponseId,
+        organizationName
       });
     });
 
