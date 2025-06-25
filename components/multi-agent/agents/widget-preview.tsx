@@ -174,7 +174,16 @@ export function WidgetPreview({
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const contextData = useSettings();
+  // Try to get context data, but handle gracefully if not available (embed mode)
+  let contextData = null;
+  try {
+    contextData = useSettings();
+  } catch (error) {
+    // In embed mode, context won't be available - that's fine
+    if (!isEmbedMode) {
+      throw error; // Re-throw if not in embed mode, as it's unexpected
+    }
+  }
 
   // Access settings context for modal ID (only when not in embed mode)
   let currentModal, settings;
@@ -200,8 +209,23 @@ export function WidgetPreview({
     };
   } else {
     // In playground mode, use context
-    currentModal = contextData.currentModal;
-    settings = contextData.settings;
+    currentModal = contextData?.currentModal || null;
+    settings = contextData?.settings || {
+      interface: {
+        displayName: customDisplayName || "Ready to share your thoughts with us?",
+        instructions: customInstructions || "Each topic below starts a 1-2 minute chat.",
+        theme: "light",
+        primaryBrandColor: "",
+        advancedColors: false,
+        chatIconText: "Feedback",
+        chatIconColor: "",
+        userMessageColor: "",
+        chatHeaderColor: null,
+        alignChatBubble: "right",
+        profilePictureUrl: null,
+      },
+      agents: { enabledAgents: {} }
+    };
   }
 
   const getProcessedPrompt = (prompt: string) => {
