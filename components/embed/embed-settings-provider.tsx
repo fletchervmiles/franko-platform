@@ -26,14 +26,19 @@ const EmbedSettingsContext = createContext<SettingsContextType | undefined>(unde
 interface EmbedSettingsProviderProps {
   children: React.ReactNode
   brandSettings: AppSettings
+  modal?: {
+    id: string
+    name: string
+    embedSlug: string
+  }
 }
 
-export function EmbedSettingsProvider({ children, brandSettings }: EmbedSettingsProviderProps) {
+export function EmbedSettingsProvider({ children, brandSettings, modal }: EmbedSettingsProviderProps) {
   const contextValue: SettingsContextType = {
     settings: brandSettings,
     updateInterfaceSettings: () => {}, // No-op in embed context
     updateAgentSettings: () => {}, // No-op in embed context
-    currentModal: null,
+    currentModal: modal || null,
     modals: [],
     createModal: async () => {
       throw new Error("createModal not available in embed context")
