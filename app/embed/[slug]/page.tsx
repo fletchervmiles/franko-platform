@@ -30,23 +30,23 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
           embedSlug: modal.embedSlug
         }}
       >
-        <WidgetPreview 
-          agentIds={agentIds}
-          displayName={brandSettings.interface.displayName}
-          instructions={brandSettings.interface.instructions}
-          themeOverride={brandSettings.interface.theme}
-          primaryBrandColor={brandSettings.interface.primaryBrandColor}
-          advancedColors={brandSettings.interface.advancedColors}
-          profilePictureUrl={brandSettings.interface.profilePictureUrl}
-          userMessageColor={brandSettings.interface.userMessageColor}
-          chatHeaderColor={brandSettings.interface.chatHeaderColor}
-          chatIconText={brandSettings.interface.chatIconText}
-          chatIconColor={brandSettings.interface.chatIconColor}
-          alignChatBubble={brandSettings.interface.alignChatBubble}
-          isPlayground={true}
-          modalId={modal.id}
-          isEmbedMode={true}
-        />
+      <WidgetPreview 
+        agentIds={agentIds}
+        displayName={brandSettings.interface.displayName}
+        instructions={brandSettings.interface.instructions}
+        themeOverride={brandSettings.interface.theme}
+        primaryBrandColor={brandSettings.interface.primaryBrandColor}
+        advancedColors={brandSettings.interface.advancedColors}
+        profilePictureUrl={brandSettings.interface.profilePictureUrl}
+        userMessageColor={brandSettings.interface.userMessageColor}
+        chatHeaderColor={brandSettings.interface.chatHeaderColor}
+        chatIconText={brandSettings.interface.chatIconText}
+        chatIconColor={brandSettings.interface.chatIconColor}
+        alignChatBubble={brandSettings.interface.alignChatBubble}
+        isPlayground={true}
+        modalId={modal.id}
+        isEmbedMode={true}
+      />
       </EmbedSettingsProvider>
     </div>
   );

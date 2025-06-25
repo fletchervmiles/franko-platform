@@ -84,6 +84,9 @@ const defaultSettings: AppSettings = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
+// Export the context for use in embed scenarios
+export { SettingsContext }
+
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser()
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)

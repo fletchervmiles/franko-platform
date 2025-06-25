@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext } from "react"
 import type { AppSettings } from "@/lib/settings-context"
+import { SettingsContext } from "@/lib/settings-context"
 
 // Import the context type from the original settings context
 interface SettingsContextType {
@@ -20,8 +21,6 @@ interface SettingsContextType {
   error: string | null
   clearError: () => void
 }
-
-const EmbedSettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 interface EmbedSettingsProviderProps {
   children: React.ReactNode
@@ -54,15 +53,15 @@ export function EmbedSettingsProvider({ children, brandSettings, modal }: EmbedS
   }
 
   return (
-    <EmbedSettingsContext.Provider value={contextValue}>
+    <SettingsContext.Provider value={contextValue}>
       {children}
-    </EmbedSettingsContext.Provider>
+    </SettingsContext.Provider>
   )
 }
 
-// Export a useSettings hook that works in embed context
+// Keep the old function for backward compatibility, but it's no longer needed
 export function useEmbedSettings() {
-  const context = useContext(EmbedSettingsContext)
+  const context = useContext(SettingsContext)
   if (context === undefined) {
     throw new Error("useEmbedSettings must be used within an EmbedSettingsProvider")
   }

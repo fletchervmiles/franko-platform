@@ -174,18 +174,10 @@ export function WidgetPreview({
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Try to get context data, but handle gracefully if not available (embed mode)
-  let contextData = null;
-  try {
-    contextData = useSettings();
-  } catch (error) {
-    // In embed mode, context won't be available - that's fine
-    if (!isEmbedMode) {
-      throw error; // Re-throw if not in embed mode, as it's unexpected
-    }
-  }
+  // Always call useSettings hook (no conditional calling)
+  const contextData = useSettings();
 
-  // Access settings context for modal ID (only when not in embed mode)
+  // Access settings context for modal ID (conditional data usage, not hook calling)
   let currentModal, settings;
   
   if (isEmbedMode) {
