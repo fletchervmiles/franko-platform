@@ -3,6 +3,8 @@ import { finalizeConversation } from '@/lib/utils/conversation-finalizer';
 import { logger } from '@/lib/logger';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 // Simple secret check - use an environment variable
 const BACKGROUND_TASK_SECRET = process.env.BACKGROUND_TASK_SECRET;
 

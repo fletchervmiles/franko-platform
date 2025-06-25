@@ -15,6 +15,8 @@ import { and, eq, isNull, lt, ne } from "drizzle-orm";
 import { finalizeConversation } from "@/lib/utils/conversation-finalizer";
 import { logger } from "@/lib/logger";
 
+export const dynamic = 'force-dynamic';
+
 // API key for authentication (e.g., for manual triggers or external services)
 const API_KEY = process.env.CRON_API_KEY || '';
 // Secret provided by Vercel Cron Job Security (added as env var)
