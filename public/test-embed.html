@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franko Embed Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 2px dashed #e5e7eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            background-color: #f9fafb;
+        }
+        .code-block {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Franko Embed Test Page</h1>
+        <p>This page tests the Franko chat widget embedding functionality.</p>
+        
+        <div class="test-section">
+            <h2>Test 1: Floating Chat Bubble</h2>
+            <p>The floating chat bubble should appear in the bottom-right corner of this page.</p>
+            <p>If you don't see it, check the browser console for errors.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 2: Custom Trigger</h2>
+            <p>Click the button below to open the chat modal manually:</p>
+            <button onclick="if(window.FrankoModal) { FrankoModal.open(); } else { alert('FrankoModal not loaded yet!'); }">
+                Open Chat Modal
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <p>Open your browser's developer console to see any error messages or debug information.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Script Information</h2>
+            <div class="code-block">
+                <div>Script URL: <span id="script-url">Loading...</span></div>
+                <div>Modal Slug: <span id="modal-slug">Loading...</span></div>
+                <div>Mode: <span id="mode">Loading...</span></div>
+                <div>FrankoModal Available: <span id="franko-available">Checking...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional: Pass user identity for personalized feedback -->
+    <script>
+        window.FrankoUser = {
+            user_id: "test-user-123",
+            user_hash: "test-hash-123", 
+            user_metadata: {
+                name: "Test User",
+                email: "test@example.com",
+                company: "Test Company"
+            }
+        };
+    </script>
+
+    <!-- Franko Embed Script -->
+    <!-- Replace YOUR_MODAL_SLUG with your actual modal slug -->
+    <script>
+        (function() {
+            // Update this with your local development URL or production URL
+            var baseUrl = window.location.origin; // This will use the current domain
+            var modalSlug = 'YOUR_MODAL_SLUG'; // Replace with your actual modal slug
+            
+            var s = document.createElement('script');
+            s.src = baseUrl + '/embed.js';
+            s.setAttribute('data-modal-slug', modalSlug);
+            s.setAttribute('data-mode', 'bubble');
+            s.setAttribute('data-position', 'bottom-right');
+            
+            // Debug info
+            s.onload = function() {
+                document.getElementById('script-url').textContent = s.src;
+                document.getElementById('modal-slug').textContent = modalSlug;
+                document.getElementById('mode').textContent = 'bubble';
+                document.getElementById('franko-available').textContent = window.FrankoModal ? 'Yes' : 'No';
+                console.log('[Test] Franko embed script loaded successfully');
+                console.log('[Test] FrankoModal available:', !!window.FrankoModal);
+            };
+            
+            s.onerror = function(e) {
+                console.error('[Test] Failed to load Franko embed script:', e);
+                document.getElementById('franko-available').textContent = 'Error loading script';
+            };
+            
+            document.head.appendChild(s);
+        })();
+    </script>
+</body>
+</html> 

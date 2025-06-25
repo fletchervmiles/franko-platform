@@ -52,18 +52,31 @@ const isPublicApiRoute = createRouteMatcher([
   "/api/chat-instances/:id",
   "/api/chat/initialize",
   "/api/internal-chat",
-  "/api/webhooks/stripe/webhook"
+  "/api/webhooks/stripe/webhook",
+  "/api/modal-chat/initialize",
+  "/api/embed/:path*"
 ]);
 
 // Public routes don't require authentication
 const isPublicRoute = createRouteMatcher([
   "/external-chat/:path*",
-  "/interview-complete/:path*"
+  "/interview-complete/:path*",
+  "/embed/:path*"  // Add embed routes as public
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   // Explicit bypasses for specific routes
   const url = req.nextUrl.pathname;
+  
+  // Bypass auth for embed routes
+  if (url.startsWith('/embed/') || url === '/embed.js') {
+    // Apply CORS headers for embed routes
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    return response;
+  }
   
   // Bypass auth for external chat pages and their API endpoints
   if (url === '/api/external-chat/finalize') {
