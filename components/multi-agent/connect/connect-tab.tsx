@@ -81,117 +81,14 @@ export default function ConnectTab() {
     }
   }
 
-  const bubbleScript = `<!-- Franko Feedback Widget -->
-<script>
-(function(){
-  var w=window;
-  var f=w.FrankoModal;
-  if(f)return; // Already loaded
-  
-  // Create API stub immediately (available before script loads)
-  var stub=function(action){
-    if(action==='open')stub.q.push(['open']);
-    else if(action==='close')stub.q.push(['close']);
-  };
-  stub.q=[];
-  
-  // Expose API immediately
-  w.FrankoModal={
-    open:function(){stub('open')},
-    close:function(){stub('close')},
-    getState:function(){return stub.q.length?'loading':'closed'}
-  };
-  
-  // Load main script asynchronously
-  var s=document.createElement('script');
-  s.async=true;
-  s.src='${baseUrl}/embed.js';
-  s.setAttribute('data-modal-slug','${currentModal.embedSlug}');
-  s.setAttribute('data-mode','bubble');
-  s.setAttribute('data-position','bottom-right');
-  
-  s.onload=function(){
-    // Process any queued calls
-    if(w.FrankoModal && w.FrankoModal.open && stub.q.length){
-      stub.q.forEach(function(call){
-        if(call[0]==='open')w.FrankoModal.open();
-        else if(call[0]==='close')w.FrankoModal.close();
-      });
-      stub.q=[];
-    }
-  };
-  
-  s.onerror=function(){
-    console.warn('Franko widget failed to load');
-  };
-  
-  (document.head||document.body).appendChild(s);
-})();
-</script>
-
-<!-- Optional: User identity (place before widget script) -->
-<script>
-window.FrankoUser = {
-  user_id: "user-123",
-  user_hash: "hash-generated-on-server", 
-  user_metadata: {
-    name: "John Doe",
-    email: "john@example.com",
-    company: "Acme Inc"
-  }
-};
+  const bubbleScript = `<script>
+(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
 </script>`
 
-  const customScript = `<!-- Franko Custom Trigger -->
-<script>
-(function(){
-  var w=window;
-  var f=w.FrankoModal;
-  if(f)return;
-  
-  // Create API stub
-  var stub=function(action){stub.q.push([action])};
-  stub.q=[];
-  w.FrankoModal={
-    open:function(){stub('open')},
-    close:function(){stub('close')},
-    getState:function(){return 'loading'}
-  };
-  
-  // Load script
-  var s=document.createElement('script');
-  s.async=true;
-  s.src='${baseUrl}/embed.js';
-  s.setAttribute('data-modal-slug','${currentModal.embedSlug}');
-  s.setAttribute('data-mode','manual');
-  
-  s.onload=function(){
-    stub.q.forEach(function(call){
-      if(w.FrankoModal[call[0]])w.FrankoModal[call[0]]();
-    });
-    stub.q=[];
-  };
-  
-  (document.head||document.body).appendChild(s);
-})();
+  const customScript = `<script>
+(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","manual");document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
 </script>
-
-<!-- Optional: User identity -->
-<script>
-window.FrankoUser = {
-  user_id: "user-123",
-  user_hash: "hash-generated-on-server",
-  user_metadata: {
-    name: "John Doe", 
-    email: "john@example.com"
-  }
-};
-</script>
-
-<!-- Your custom button -->
-<button onclick="FrankoModal.open()">
-  Get Help
-</button>`
+<button onclick="FrankoModal.open()">Get Help</button>`
 
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-[#FAFAFA] dark:bg-gray-800">
