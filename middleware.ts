@@ -68,8 +68,20 @@ export default clerkMiddleware(async (auth, req) => {
   // Explicit bypasses for specific routes
   const url = req.nextUrl.pathname;
   
+  // CRITICAL: Bypass auth completely for embed.js (static file)
+  if (url === '/embed.js') {
+    console.log('[Middleware] Bypassing auth for embed.js');
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    response.headers.set('Cache-Control', 'public, max-age=3600');
+    return response;
+  }
+  
   // Bypass auth for embed routes
-  if (url.startsWith('/embed/') || url === '/embed.js') {
+  if (url.startsWith('/embed/')) {
+    console.log('[Middleware] Bypassing auth for embed route:', url);
     // Apply CORS headers for embed routes
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
@@ -216,9 +228,8 @@ export const config = {
     // Match root
     '/',
     // Match other pages, excluding static files, _next, embed.js, and specific explicit bypasses already handled in code if needed
-    // Note: The original complex regex might need adjustment based on what Clerk truly needs to see vs. what can be fully bypassed.
-    // Keeping the original bypasses AND this matcher exclusion is safest.
-     '/((?!.+\\.[\\w]+$|_next|embed\\.js|chat/external|api/chat-instances/[^/]+$|api/usage|api/external-chat/finalize).*)',
+    // IMPORTANT: Exclude embed.js explicitly
+     '/((?!^/embed\\.js$|.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage|api/external-chat/finalize).*)',
   ]
 };
 
