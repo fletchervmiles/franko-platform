@@ -5,6 +5,8 @@ import { getChatResponsesByChatInstanceId } from "@/db/queries/chat-responses-qu
 import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { logger } from "@/lib/logger";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler for preloading chat responses
  * 

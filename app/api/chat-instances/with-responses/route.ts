@@ -6,6 +6,8 @@ import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getChatInstancesWithResponses } from "@/db/queries/chat-instances-queries";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Verify user is authenticated
