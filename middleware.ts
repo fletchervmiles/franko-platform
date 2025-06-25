@@ -54,7 +54,8 @@ const isPublicApiRoute = createRouteMatcher([
   "/api/internal-chat",
   "/api/webhooks/stripe/webhook",
   "/api/modal-chat/initialize",
-  "/api/embed/:path*"
+  "/api/embed/:path*",
+  "/api/embed.js"
 ]);
 
 // Public routes don't require authentication
