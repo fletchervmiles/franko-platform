@@ -1,7 +1,7 @@
 // middleware sits between the request and the response, i.e. the frontend and the backend
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 // Simple rate limit tracking with a basic counter
 const ratelimitCache = new Map();
@@ -65,13 +65,13 @@ const isPublicRoute = createRouteMatcher([
   "/embed/:path*"  // Add embed routes as public
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // Explicit bypasses for specific routes
+// Pre-middleware bypass function
+async function handlePublicRoutes(req: NextRequest) {
   const url = req.nextUrl.pathname;
   
-  // CRITICAL: Bypass auth completely for embed.js (static file)
-  if (url === '/embed.js') {
-    console.log('[Middleware] Bypassing auth for embed.js');
+  // CRITICAL: Bypass auth completely for embed.js and API route
+  if (url === '/embed.js' || url === '/api/embed.js') {
+    console.log('[Pre-Middleware] Bypassing auth completely for:', url);
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -82,8 +82,7 @@ export default clerkMiddleware(async (auth, req) => {
   
   // Bypass auth for embed routes
   if (url.startsWith('/embed/')) {
-    console.log('[Middleware] Bypassing auth for embed route:', url);
-    // Apply CORS headers for embed routes
+    console.log('[Pre-Middleware] Bypassing auth for embed route:', url);
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -91,15 +90,30 @@ export default clerkMiddleware(async (auth, req) => {
     return response;
   }
   
-  // Bypass auth for external chat pages and their API endpoints
-  if (url === '/api/external-chat/finalize') {
-    // Explicitly handle finalize route early to avoid potential body stream issues
-    return NextResponse.next();
-  } else if (url.includes('/chat/external/') || 
-      url === '/api/usage' || 
-      url.startsWith('/api/external-chat/history') ||
-      url.startsWith('/api/chat-responses/') ||
-      (url.startsWith('/api/chat-instances/') && url.split('/').length === 4)) {
+  return null;
+}
+
+export default async function middleware(req: NextRequest) {
+  // Try public routes first, BEFORE Clerk gets involved
+  const publicResponse = await handlePublicRoutes(req);
+  if (publicResponse) {
+    return publicResponse;
+  }
+  
+  // Only run Clerk middleware for non-public routes
+  const clerkHandler = clerkMiddleware(async (auth, req) => {
+    // Explicit bypasses for specific routes
+    const url = req.nextUrl.pathname;
+    
+    // Bypass auth for external chat pages and their API endpoints
+    if (url === '/api/external-chat/finalize') {
+      // Explicitly handle finalize route early to avoid potential body stream issues
+      return NextResponse.next();
+    } else if (url.includes('/chat/external/') || 
+        url === '/api/usage' || 
+        url.startsWith('/api/external-chat/history') ||
+        url.startsWith('/api/chat-responses/') ||
+        (url.startsWith('/api/chat-instances/') && url.split('/').length === 4)) {
     
     // Apply rate limiting to public endpoints
     // Skip rate limiting for webhook route which might have high traffic from Stripe
@@ -218,9 +232,12 @@ export default clerkMiddleware(async (auth, req) => {
     });
   }
 
-  // Fallback for any other case (e.g., public route reached here without early return)
-  return NextResponse.next();
-});
+    // Fallback for any other case (e.g., public route reached here without early return)
+    return NextResponse.next();
+  });
+  
+  return clerkHandler(req, {} as any);
+}
 
 export const config = {
   matcher: [
