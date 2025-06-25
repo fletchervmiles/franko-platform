@@ -81,46 +81,112 @@ export default function ConnectTab() {
     }
   }
 
-  const bubbleScript = `<script>
-  // Optional: Pass user identity for personalized feedback
-  window.FrankoUser = {
-    user_id: "user-123",
-    user_hash: "hash-generated-on-server", 
-    user_metadata: {
-      name: "John Doe",
-      email: "john@example.com",
-      company: "Acme Inc"
+  const bubbleScript = `<!-- Franko Feedback Widget -->
+<script>
+(function(){
+  var w=window;
+  var f=w.FrankoModal;
+  if(f)return; // Already loaded
+  
+  // Create API stub immediately (available before script loads)
+  var stub=function(action){
+    if(action==='open')stub.q.push(['open']);
+    else if(action==='close')stub.q.push(['close']);
+  };
+  stub.q=[];
+  
+  // Expose API immediately
+  w.FrankoModal={
+    open:function(){stub('open')},
+    close:function(){stub('close')},
+    getState:function(){return stub.q.length?'loading':'closed'}
+  };
+  
+  // Load main script asynchronously
+  var s=document.createElement('script');
+  s.async=true;
+  s.src='${baseUrl}/embed.js';
+  s.setAttribute('data-modal-slug','${currentModal.embedSlug}');
+  s.setAttribute('data-mode','bubble');
+  s.setAttribute('data-position','bottom-right');
+  
+  s.onload=function(){
+    // Process any queued calls
+    if(w.FrankoModal && w.FrankoModal.open && stub.q.length){
+      stub.q.forEach(function(call){
+        if(call[0]==='open')w.FrankoModal.open();
+        else if(call[0]==='close')w.FrankoModal.close();
+      });
+      stub.q=[];
     }
   };
+  
+  s.onerror=function(){
+    console.warn('Franko widget failed to load');
+  };
+  
+  (document.head||document.body).appendChild(s);
+})();
 </script>
 
+<!-- Optional: User identity (place before widget script) -->
 <script>
-  (function() {
-    var s = document.createElement('script');
-    s.src = '${baseUrl}/embed.js';
-    s.setAttribute('data-modal-slug', '${currentModal.embedSlug}');
-    s.setAttribute('data-mode', 'bubble');
-    s.setAttribute('data-position', 'bottom-right');
-    document.head.appendChild(s);
-  })();
+window.FrankoUser = {
+  user_id: "user-123",
+  user_hash: "hash-generated-on-server", 
+  user_metadata: {
+    name: "John Doe",
+    email: "john@example.com",
+    company: "Acme Inc"
+  }
+};
 </script>`
 
-  const customScript = `<!-- Optional: Pass user identity -->
+  const customScript = `<!-- Franko Custom Trigger -->
 <script>
-  window.FrankoUser = {
-    user_id: "user-123",
-    user_hash: "hash-generated-on-server",
-    user_metadata: {
-      name: "John Doe", 
-      email: "john@example.com"
-    }
+(function(){
+  var w=window;
+  var f=w.FrankoModal;
+  if(f)return;
+  
+  // Create API stub
+  var stub=function(action){stub.q.push([action])};
+  stub.q=[];
+  w.FrankoModal={
+    open:function(){stub('open')},
+    close:function(){stub('close')},
+    getState:function(){return 'loading'}
   };
+  
+  // Load script
+  var s=document.createElement('script');
+  s.async=true;
+  s.src='${baseUrl}/embed.js';
+  s.setAttribute('data-modal-slug','${currentModal.embedSlug}');
+  s.setAttribute('data-mode','manual');
+  
+  s.onload=function(){
+    stub.q.forEach(function(call){
+      if(w.FrankoModal[call[0]])w.FrankoModal[call[0]]();
+    });
+    stub.q=[];
+  };
+  
+  (document.head||document.body).appendChild(s);
+})();
 </script>
 
-<!-- Include the script -->
-<script src="${baseUrl}/embed.js" 
-        data-modal-slug="${currentModal.embedSlug}" 
-        data-mode="manual"></script>
+<!-- Optional: User identity -->
+<script>
+window.FrankoUser = {
+  user_id: "user-123",
+  user_hash: "hash-generated-on-server",
+  user_metadata: {
+    name: "John Doe", 
+    email: "john@example.com"
+  }
+};
+</script>
 
 <!-- Your custom button -->
 <button onclick="FrankoModal.open()">
