@@ -12,7 +12,7 @@ export default function SimpleTabs() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const initialTabParam = searchParams.get("tab")
+  const initialTabParam = searchParams?.get("tab") || null
   const validValues = ["agents", "interface", "connect", "playground", "integrations"] as const
   const defaultTab = validValues.includes(initialTabParam as any) ? (initialTabParam as string) : "agents"
 
@@ -20,13 +20,15 @@ export default function SimpleTabs() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value)
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === "agents") {
-      params.delete("tab") // default
-    } else {
-      params.set("tab", value)
+    if (searchParams) {
+      const params = new URLSearchParams(searchParams.toString())
+      if (value === "agents") {
+        params.delete("tab") // default
+      } else {
+        params.set("tab", value)
+      }
+      router.replace(`?${params.toString()}`)
     }
-    router.replace(`?${params.toString()}`)
   }
 
   const tabs = [
