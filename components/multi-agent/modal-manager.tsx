@@ -395,7 +395,7 @@ export default function ModalManager() {
   // If a modal is selected, show the tabs interface
   if (currentModal) {
     return (
-      <div className="w-full p-4 md:p-8 lg:p-12 space-y-6">
+      <div className="space-y-6">
         {/* Modal Header */}
         <ModalHeader 
           title={currentModal.name}
@@ -446,7 +446,7 @@ export default function ModalManager() {
 
   if (isLoading) {
     return (
-      <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading chat modals...</p>
@@ -457,7 +457,7 @@ export default function ModalManager() {
 
   if (error) {
     return (
-      <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">{error}</p>
           <Button onClick={loadUserModals} className="mt-4">
@@ -475,7 +475,7 @@ export default function ModalManager() {
 
   // Show modal list (matching workspace-list style exactly)
   return (
-    <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-black">Chat Modals</h1>
