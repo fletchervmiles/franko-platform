@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
-import { runAutoOnboarding } from "@/lib/workers/auto-onboard";
+import { generateContextForUser } from "@/lib/context-generation";
 import { getOnboardingStatus, startAutomatedOnboarding, failAutomatedOnboarding } from "@/db/queries/user-onboarding-status-queries";
 
 export const dynamic = 'force-dynamic';
@@ -164,7 +164,7 @@ async function processAutoOnboarding(userId: string, companyUrl: string, company
   try {
     logger.info(`Starting background auto-onboarding for user ${userId}`);
     
-    await runAutoOnboarding(userId, companyUrl, companyName);
+    await generateContextForUser(userId, companyUrl, companyName);
     
     logger.info(`✅ Auto-onboarding completed for user ${userId}`);
 

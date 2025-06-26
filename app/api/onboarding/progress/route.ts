@@ -19,35 +19,31 @@ export async function GET() {
       getModalsByUserId(userId)
     ]);
 
-    // Check individual completion status
-    const isResearchComplete = status?.step1XaAiComplete || false; // XA.AI research done
-    const isContextReportComplete = status?.step2ContextReportComplete || false; // Context description generated
-    const isBrandingComplete = status?.step3BrandFetchComplete || false; // Branding extraction done
-    const isConversationPlansComplete = status?.step4ConversationPlansComplete || false; // Conversation plans created
-    const isModalComplete = status?.step5ModalCreated || false; // Modal created
+    // Check individual completion status using ORIGINAL fields that generateContextForUser updates
+    const isResearchComplete = status?.step1ContextComplete || false; // EXA research done
+    const isContextReportComplete = status?.step2BrandingComplete || false; // Context description generated  
+    const isBrandingComplete = status?.step4AgentCreated || false; // Branding extraction done
+    const isModalComplete = status?.step3PersonasReviewed || false; // Modal created
     const hasContextDescription = !!profile?.organisationDescription;
     const hasBrandingData = !!(profile?.logoUrl || profile?.buttonColor);
 
     const firstModalId = modals.length > 0 ? modals[0].id : null;
 
-    // Enhanced progress calculation with separated steps
+    // Enhanced progress calculation with the original 4-step flow
     let progress = 0;
     let message = "Starting setup...";
     
-    if (isResearchComplete && isContextReportComplete && isBrandingComplete && isConversationPlansComplete && isModalComplete) {
+    if (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete) {
       progress = 100;
       message = "Setup complete!";
-    } else if (isResearchComplete && isContextReportComplete && isBrandingComplete && isConversationPlansComplete) {
+    } else if (isResearchComplete && isContextReportComplete && isBrandingComplete) {
       progress = 85;
       message = "Creating your feedback modal with 6 agents...";
-    } else if (isResearchComplete && isContextReportComplete && isBrandingComplete) {
-      progress = 70;
-      message = "Generating conversation plans for your agents...";
     } else if (isResearchComplete && isContextReportComplete) {
-      progress = 50;
-      message = "Retrieving your brand assets for your modal...";
+      progress = 65;
+      message = "Extracting your brand assets...";
     } else if (isResearchComplete) {
-      progress = 30;
+      progress = 40;
       message = "Writing a context-rich report for your agents...";
     } else if (profile?.organisationUrl) {
       progress = 15;
@@ -58,10 +54,10 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      isComplete: isResearchComplete && isContextReportComplete && isBrandingComplete && isConversationPlansComplete && isModalComplete,
+      isComplete: isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete,
       progress,
       message,
-      shouldRedirect: (isResearchComplete && isContextReportComplete && isBrandingComplete && isConversationPlansComplete && isModalComplete && firstModalId) ? `/workspace?modalId=${firstModalId}&tab=playground` : null
+      shouldRedirect: (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete && firstModalId) ? `/workspace?modalId=${firstModalId}&tab=playground` : null
     });
 
   } catch (error) {
