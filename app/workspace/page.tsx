@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { NavSidebar } from "@/components/nav-sidebar";
 import { SettingsProvider } from "@/lib/settings-context";
 import ModalManager from "@/components/multi-agent/modal-manager";
@@ -19,7 +20,14 @@ export default function WorkspacePage() {
             </div>
             
             <div className="space-y-6">
-              <ModalManager />
+              <Suspense fallback={
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                  <span className="ml-2">Loading modal manager...</span>
+                </div>
+              }>
+                <ModalManager />
+              </Suspense>
             </div>
           </div>
         </div>
