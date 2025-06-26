@@ -258,7 +258,7 @@ export default function ModalManager() {
 
   // Load modal based on URL param on mount / param change
   useEffect(() => {
-    if (!isMounted) return
+    if (!isMounted || !searchParams) return
     const idFromUrl = searchParams.get("modalId")
     if (idFromUrl && (!currentModal || currentModal.id !== idFromUrl)) {
       loadModal(idFromUrl)
@@ -267,11 +267,11 @@ export default function ModalManager() {
 
   // Whenever currentModal changes, reflect in URL (preserve tab param)
   useEffect(() => {
-    if (!currentModal) return
+    if (!currentModal || !searchParams) return
     const params = new URLSearchParams(searchParams.toString())
     params.set("modalId", currentModal.id)
     router.replace(`?${params.toString()}`)
-  }, [currentModal?.id])
+  }, [currentModal?.id, searchParams])
 
   const handleDeleteClick = useCallback((id: string, name: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -494,9 +494,11 @@ export default function ModalManager() {
             }`}
             onClick={() => {
               loadModal(modal.id)
-              const params = new URLSearchParams(searchParams.toString())
-              params.set("modalId", modal.id)
-              router.push(`?${params.toString()}`)
+              if (searchParams) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set("modalId", modal.id)
+                router.push(`?${params.toString()}`)
+              }
             }}
           >
             <div className="text-sm font-semibold text-foreground order-1">
