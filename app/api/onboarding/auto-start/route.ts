@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
-import { generateContextForUser } from "@/lib/context-generation";
+import { runAutoOnboarding } from "@/lib/workers/auto-onboard";
 import { getOnboardingStatus, startAutomatedOnboarding, failAutomatedOnboarding } from "@/db/queries/user-onboarding-status-queries";
 
 export const dynamic = 'force-dynamic';
@@ -130,10 +130,10 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Start context generation in background
-    processContextGeneration(userId, companyInfo.domain, companyInfo.companyName)
+    // Start auto-onboarding in background
+    processAutoOnboarding(userId, companyInfo.domain, companyInfo.companyName)
       .catch(error => {
-        logger.error(`Background context generation failed for user ${userId}:`, error);
+        logger.error(`Background auto-onboarding failed for user ${userId}:`, error);
         // Mark automation as failed
         failAutomatedOnboarding(userId, error.message || 'Unknown error')
           .catch(failError => {
@@ -142,11 +142,11 @@ export async function POST(request: Request) {
       });
 
     const duration = Date.now() - startTime;
-    logger.info(`Context generation started for user ${userId}. Duration: ${duration}ms`);
+    logger.info(`Auto-onboarding started for user ${userId}. Duration: ${duration}ms`);
 
     return NextResponse.json({ 
       success: true,
-      message: "Context generation started",
+      message: "Auto-onboarding started",
       companyName: companyInfo.companyName
     });
 
@@ -160,22 +160,16 @@ export async function POST(request: Request) {
   }
 }
 
-async function processContextGeneration(userId: string, companyUrl: string, companyName: string) {
+async function processAutoOnboarding(userId: string, companyUrl: string, companyName: string) {
   try {
-    logger.info(`Starting background context generation for user ${userId}`);
+    logger.info(`Starting background auto-onboarding for user ${userId}`);
     
-    const result = await generateContextForUser(userId, companyUrl, companyName);
-
-    if (result.success) {
-      logger.info(`✅ Context generation completed for user ${userId}`);
-    } else {
-      logger.error(`❌ Context generation failed for user ${userId}: ${result.error}`);
-      // Mark automation as failed
-      await failAutomatedOnboarding(userId, result.error || 'Context generation failed');
-    }
+    await runAutoOnboarding(userId, companyUrl, companyName);
+    
+    logger.info(`✅ Auto-onboarding completed for user ${userId}`);
 
   } catch (error) {
-    logger.error(`Context generation error for user ${userId}:`, error);
+    logger.error(`Auto-onboarding error for user ${userId}:`, error);
     // Mark automation as failed
     await failAutomatedOnboarding(userId, error instanceof Error ? error.message : 'Unknown error');
   }
