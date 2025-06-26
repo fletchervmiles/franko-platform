@@ -35,13 +35,11 @@ export async function initializeModels() {
     middleware: customMiddleware,
   });
 
-  // Similarly wrap the Gemini Flash model with the same middleware
+  // Similarly wrap the Gemini Flash model (production) with thinking tokens enabled
   geminiFlashModel = wrapLanguageModel({
-    model: google("gemini-2.5-flash-preview-04-17"),
+    model: google("gemini-2.5-flash"),
     middleware: customMiddleware,
   });
-
-  // gemini-2.5-flash-preview-04-17
 
   // Add the new Gemini 2.5 Pro Preview model
   gemini25ProPreviewModel = wrapLanguageModel({
@@ -49,9 +47,9 @@ export async function initializeModels() {
     middleware: customMiddleware,
   });
 
-  // Add the new Gemini 2.5 Flash Preview model
+  // Add the new Gemini 2.5 Flash model (production) for backward compatibility with previous import names
   gemini25FlashPreviewModel = wrapLanguageModel({
-    model: google("gemini-2.5-flash-preview-04-17"),
+    model: google("gemini-2.5-flash"),
     middleware: customMiddleware,
   });
 

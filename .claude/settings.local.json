@@ -10,7 +10,8 @@
       "Bash(npx tsc --noEmit)",
       "Bash(npx tsc:*)",
       "Bash(sed:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
