@@ -30,7 +30,13 @@
     },
     "types": [
       "react",
-      "react-dom"
+      "react-dom",
+      "node",
+      "next"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
     ]
   },
   "include": [
