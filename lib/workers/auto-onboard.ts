@@ -5,7 +5,7 @@ import {
   failAutomatedOnboarding
 } from "@/db/queries/user-onboarding-status-queries";
 import { updateProfile } from "@/db/queries/profiles-queries";
-import { createModal } from "@/db/queries/modals-queries";
+import { createModal, isEmbedSlugAvailable } from "@/db/queries/modals-queries";
 import { createModalChatInstances } from "@/db/queries/modal-chat-instances-queries";
 import { fetchBrandDetails } from "@/lib/brandfetch";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
@@ -207,22 +207,19 @@ async function generateConversationPlans(userId: string, agentTypes: string[], c
         continue;
       }
 
-      // Create a basic conversation plan
+      // Create conversation plan in the format expected by the API
       const plan = {
-        id: agentType,
         title: agentData.name,
         description: agentData.description,
-        initialPrompt: agentData.prompt || `You are conducting a customer interview for ${companyName}. Focus on ${agentData.name.toLowerCase()}.`,
-        objectives: [
-          {
-            id: "obj1",
-            title: agentData.name,
-            description: agentData.description,
-            questions: [agentData.initialQuestion || "Tell me about your experience..."]
+        initialQuestion: agentData.initialQuestion,
+        objectives: {
+          "1": {
+            objective: agentData.prompt || `You are conducting a customer interview for ${companyName}. Focus on ${agentData.name.toLowerCase()}.`,
+            questions: [agentData.initialQuestion || "Tell me about your experience..."],
+            expected_min: 2,
+            expected_max: 4
           }
-        ],
-        estimatedDuration: "10-15 minutes",
-        agentPersonality: "professional and empathetic"
+        }
       };
 
       plans[agentType] = plan;
@@ -250,24 +247,54 @@ async function createAutoModal(
   
   try {
     // Generate unique embed slug
-    const embedSlug = `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`.substring(0, 50);
+    const baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    let embedSlug = `${baseSlug}-${Date.now().toString(36)}`.substring(0, 50);
     
-    // Create modal with brand settings
+    // Ensure slug is unique (retry with different timestamp if needed)
+    let attempts = 0;
+    while (!(await isEmbedSlugAvailable(embedSlug)) && attempts < 5) {
+      embedSlug = `${baseSlug}-${Date.now().toString(36)}`.substring(0, 50);
+      attempts++;
+      // Small delay between attempts
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (attempts >= 5) {
+      throw new Error("Unable to generate unique embed slug");
+    }
+
+    // Build enabled agents object
+    const enabledAgents: Record<string, boolean> = {};
+    agentTypes.forEach(agentType => {
+      enabledAgents[agentType] = true;
+    });
+
+    // Create brand settings in the expected format
+    const brandSettings = {
+      interface: {
+        displayName: `${companyName} Research`,
+        instructions: `Help us improve ${companyName} by sharing your feedback`,
+        theme: "light" as const,
+        primaryBrandColor: brandDetails.primaryColor || "",
+        advancedColors: false,
+        chatIconText: "Give Feedback",
+        chatIconColor: brandDetails.primaryColor || "",
+        userMessageColor: brandDetails.primaryColor || "",
+        alignChatBubble: "right" as const,
+        profilePictureUrl: brandDetails.logoUrl || null,
+        chatHeaderColor: brandDetails.secondaryColor || null,
+      },
+      agents: {
+        enabledAgents
+      }
+    };
+
+    // Create modal with proper brand settings structure
     const modal = await createModal({
       userId,
       name: `${companyName} Customer Feedback`,
       embedSlug,
-              brandSettings: {
-        displayName: `${companyName} Research`,
-        instructions: `Help us improve ${companyName} by sharing your feedback`,
-        theme: "light",
-        primaryBrandColor: brandDetails.primaryColor || "",
-        profilePictureUrl: brandDetails.logoUrl || null,
-        chatIconText: "Give Feedback",
-        userMessageColor: brandDetails.primaryColor || "",
-        chatHeaderColor: brandDetails.secondaryColor || "",
-        alignChatBubble: "right"
-      },
+      brandSettings,
       isActive: true
     });
 
@@ -275,13 +302,13 @@ async function createAutoModal(
       throw new Error("Failed to create modal");
     }
 
-    // Create chat instances for each agent
-    const enabledAgents = agentTypes.map(agentType => ({
+    // Create chat instances for each agent with the generated conversation plans
+    const enabledAgentData = agentTypes.map(agentType => ({
       agentType,
       conversationPlan: conversationPlans[agentType]
     }));
 
-    await createModalChatInstances(modal.id, userId, enabledAgents);
+    await createModalChatInstances(modal.id, userId, enabledAgentData);
 
     logger.info(`Modal created successfully: ${modal.id} with slug: ${embedSlug}`);
     return modal.id;
