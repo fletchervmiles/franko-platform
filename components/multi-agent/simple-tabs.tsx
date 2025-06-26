@@ -6,9 +6,28 @@ import { AgentsTab } from "./agents/agents-tab"
 import { InterfaceTab } from "./interface/interface-tab"
 import ConnectTab from "./connect/connect-tab"
 import { PlaygroundTab } from "./playground/playground-tab"
+import { useSearchParams, useRouter } from "next/navigation"
 
 export default function SimpleTabs() {
-  const [activeTab, setActiveTab] = useState("agents")
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const initialTabParam = searchParams.get("tab")
+  const validValues = ["agents", "interface", "connect", "playground", "integrations"] as const
+  const defaultTab = validValues.includes(initialTabParam as any) ? (initialTabParam as string) : "agents"
+
+  const [activeTab, setActiveTab] = useState(defaultTab)
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === "agents") {
+      params.delete("tab") // default
+    } else {
+      params.set("tab", value)
+    }
+    router.replace(`?${params.toString()}`)
+  }
 
   const tabs = [
     { label: "Agents", value: "agents" },
@@ -19,7 +38,7 @@ export default function SimpleTabs() {
   ]
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="w-full justify-start border-b dark:border-gray-700 rounded-none h-12 bg-transparent p-0">
         {tabs.map(({ label, value }) => (
           <TabsTrigger

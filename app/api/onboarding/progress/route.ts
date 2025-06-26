@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getOnboardingStatus } from "@/db/queries/user-onboarding-status-queries";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
+import { getModalsByUserId } from "@/db/queries/modals-queries";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [status, profile] = await Promise.all([
+    const [status, profile, modals] = await Promise.all([
       getOnboardingStatus(userId),
-      getProfileByUserId(userId)
+      getProfileByUserId(userId),
+      getModalsByUserId(userId)
     ]);
 
     // Check individual completion status
@@ -24,6 +26,8 @@ export async function GET() {
     const isModalComplete = status?.step3PersonasReviewed || false; // Modal created
     const hasContextDescription = !!profile?.organisationDescription;
     const hasBrandingData = !!(profile?.logoUrl || profile?.buttonColor);
+
+    const firstModalId = modals.length > 0 ? modals[0].id : null;
 
     // Enhanced progress calculation with separated steps
     let progress = 0;
@@ -53,7 +57,7 @@ export async function GET() {
       isComplete: isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete,
       progress,
       message,
-      shouldRedirect: (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete) ? "/create-modal?tab=playground" : null
+      shouldRedirect: (isResearchComplete && isContextReportComplete && isBrandingComplete && isModalComplete && firstModalId) ? `/workspace?modalId=${firstModalId}&tab=playground` : null
     });
 
   } catch (error) {

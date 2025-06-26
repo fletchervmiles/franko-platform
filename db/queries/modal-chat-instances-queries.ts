@@ -1,6 +1,6 @@
 import { db } from "@/db/db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 /**
  * Create chat instances for a modal (pre-create one per enabled agent)
@@ -193,4 +193,19 @@ export async function updateModalConversationPlans(
   }
   
   return results;
+}
+
+// Helper: get the most recent chat instance for a given user & agent (any modal)
+export async function getUserAgentChatInstance(
+  userId: string,
+  agentType: string
+): Promise<SelectChatInstance | undefined> {
+  const [instance] = await db
+    .select()
+    .from(chatInstancesTable)
+    .where(and(eq(chatInstancesTable.userId, userId), eq(chatInstancesTable.agentType, agentType)))
+    .orderBy(desc(chatInstancesTable.updatedAt))
+    .limit(1);
+
+  return instance;
 } 

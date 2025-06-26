@@ -6,7 +6,8 @@ import {
   isEmbedSlugAvailable 
 } from "@/db/queries/modals-queries";
 import { 
-  createModalChatInstances 
+  createModalChatInstances,
+  getUserAgentChatInstance
 } from "@/db/queries/modal-chat-instances-queries";
 import { agentsData } from "@/lib/agents-data";
 
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("[modals] Request body received:", JSON.stringify(body, null, 2));
     
-    const { name, brandSettings } = body;
+    const { name, brandSettings, reuseExistingPlans } = body;
 
     // Validation
     if (!name || typeof name !== "string") {
@@ -126,17 +127,27 @@ export async function POST(request: Request) {
 
     console.log("[modals] Modal created with ID:", modal.id);
 
-    // Create chat instances for enabled agents
-    const enabledAgentData = enabledAgents.map(agentId => {
-      const agent = agentsData.find(a => a.id === agentId);
-      if (!agent) {
-        throw new Error(`Agent ${agentId} not found`);
+    // Build enabledAgentData array with conversation plans
+    const enabledAgentData: Array<{ agentType: string; conversationPlan: any }> = [];
+
+    for (const agentId of enabledAgents) {
+      let conversationPlan: any | null = null;
+
+      // If flag set, attempt to reuse existing plan
+      if (reuseExistingPlans) {
+        const existingInstance = await getUserAgentChatInstance(userId, agentId);
+        if (existingInstance?.conversationPlan) {
+          conversationPlan = existingInstance.conversationPlan;
+        }
       }
-      
-      // Create a basic conversation plan for the agent
-      return {
-        agentType: agentId,
-        conversationPlan: {
+
+      // If no existing plan found, generate a basic one from agentsData
+      if (!conversationPlan) {
+        const agent = agentsData.find(a => a.id === agentId);
+        if (!agent) {
+          throw new Error(`Agent ${agentId} not found`);
+        }
+        conversationPlan = {
           title: agent.name,
           description: agent.description,
           initialQuestion: agent.initialQuestion,
@@ -148,10 +159,13 @@ export async function POST(request: Request) {
               expected_max: 4
             }
           }
-        }
-      };
-    });
+        };
+      }
 
+      enabledAgentData.push({ agentType: agentId, conversationPlan });
+    }
+
+    // Create chat instances for agents (reusing plans where provided)
     console.log("[modals] Creating chat instances for agents:", enabledAgents);
     const chatInstances = await createModalChatInstances(
       modal.id,

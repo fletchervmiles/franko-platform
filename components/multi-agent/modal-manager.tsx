@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
+import { useSearchParams, useRouter } from "next/navigation"
 
 // Inline Name Editor Component
 function InlineNameEditor({ 
@@ -233,6 +234,9 @@ export default function ModalManager() {
     loadUserModals,
   } = useSettings()
 
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [isMounted, setIsMounted] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [modalToDelete, setModalToDelete] = useState<string | null>(null)
@@ -251,6 +255,23 @@ export default function ModalManager() {
       loadUserModals()
     }
   }, [isMounted, loadUserModals])
+
+  // Load modal based on URL param on mount / param change
+  useEffect(() => {
+    if (!isMounted) return
+    const idFromUrl = searchParams.get("modalId")
+    if (idFromUrl && (!currentModal || currentModal.id !== idFromUrl)) {
+      loadModal(idFromUrl)
+    }
+  }, [isMounted, searchParams, currentModal, loadModal])
+
+  // Whenever currentModal changes, reflect in URL (preserve tab param)
+  useEffect(() => {
+    if (!currentModal) return
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("modalId", currentModal.id)
+    router.replace(`?${params.toString()}`)
+  }, [currentModal?.id])
 
   const handleDeleteClick = useCallback((id: string, name: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -471,7 +492,12 @@ export default function ModalManager() {
             className={`flex flex-col gap-4 p-4 hover:bg-muted/50 lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-center cursor-pointer ${
               index !== modals.length - 1 ? "border-b" : ""
             }`}
-            onClick={() => loadModal(modal.id)}
+            onClick={() => {
+              loadModal(modal.id)
+              const params = new URLSearchParams(searchParams.toString())
+              params.set("modalId", modal.id)
+              router.push(`?${params.toString()}`)
+            }}
           >
             <div className="text-sm font-semibold text-foreground order-1">
               {editingModalId === modal.id ? (

@@ -145,6 +145,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           name,
           brandSettings: settings,
+          reuseExistingPlans: true
         }),
       })
       
