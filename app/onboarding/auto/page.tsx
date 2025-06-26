@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
