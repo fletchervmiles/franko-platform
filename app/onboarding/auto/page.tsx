@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
-import { Loader2 } from "lucide-react"
 import ProcessingSteps from "@/components/onboarding/processing-steps"
 
 export default function AutoOnboardingPage() {
@@ -130,7 +129,11 @@ export default function AutoOnboardingPage() {
   }, [isInitializing, router])
 
   if (!isLoaded || !user) {
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center p-4">
+        <ProcessingSteps />
+      </div>
+    )
   }
 
   if (error) {
