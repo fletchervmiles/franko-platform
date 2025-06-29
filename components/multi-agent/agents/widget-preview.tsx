@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserIcon, ArrowLeft, Loader2, ChevronRight, User } from "lucide-react"
+import { UserIcon, ArrowLeft, Loader2, ChevronRight, User, X } from "lucide-react"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import type { Agent } from "@/lib/agents-data"
@@ -47,6 +47,15 @@ export type WidgetPreviewProps = {
   modalId?: string
   isEmbedMode?: boolean
   organizationName?: string
+  /**
+   * Where the embed is rendered. "modal" = overlay inside host page; "standalone" = full tab.
+   * Defaults to "standalone" for backwards compatibility.
+   */
+  displayMode?: "modal" | "standalone"
+  /**
+   * Optional close handler – shown as ❌ on the agent-selection screen when displayMode="modal".
+   */
+  onClose?: () => void
 }
 
 // Per-agent colour support removed per design guidelines. We now use the Franko lime palette consistently.
@@ -159,6 +168,8 @@ export function WidgetPreview({
   modalId,
   isEmbedMode = false,
   organizationName,
+  displayMode = "standalone",
+  onClose,
 }: WidgetPreviewProps) {
   // Instantiate shared modal core once at the top so it is available to subsequent destructuring
   const coreDemo = useSharedModalCore()
@@ -376,6 +387,18 @@ export function WidgetPreview({
 
   const renderAgentSelectionView = () => (
     <>
+      {displayMode === "modal" && onClose && (
+        <button
+          onClick={onClose}
+          aria-label="Close chat"
+          className="absolute top-3 right-3 z-10 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 focus:outline-none"
+          style={{
+            top: "calc(env(safe-area-inset-top) + 12px)",
+          }}
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
       <div className={cn("px-6 py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
         <div className="flex items-center gap-4">
           {profilePictureUrl && (
@@ -467,18 +490,20 @@ export function WidgetPreview({
     if (isPlayground && chatInstanceId && chatResponseId) {
       return (
         <div className="flex flex-col h-full">
-          <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
-            <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            {profilePictureUrl && (
-              <Avatar className="h-7 w-7 mr-3">
-                <AvatarImage src={profilePictureUrl} alt="Logo" />
-                <AvatarFallback>🏷</AvatarFallback>
-              </Avatar>
-            )}
-            <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
-          </div>
+          {(isPlayground || displayMode === "modal") && (
+            <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
+              <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              {profilePictureUrl && (
+                <Avatar className="h-7 w-7 mr-3">
+                  <AvatarImage src={profilePictureUrl} alt="Logo" />
+                  <AvatarFallback>🏷</AvatarFallback>
+                </Avatar>
+              )}
+              <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
+            </div>
+          )}
           <div className="flex-1 min-h-0">
             <ModalExternalChat
               chatInstanceId={chatInstanceId}
@@ -496,18 +521,20 @@ export function WidgetPreview({
     } else {
       return (
         <>
-          <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
-            <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            {profilePictureUrl && (
-              <Avatar className="h-7 w-7 mr-3">
-                <AvatarImage src={profilePictureUrl} alt="Logo" />
-                <AvatarFallback>🏷</AvatarFallback>
-              </Avatar>
-            )}
-            <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
-          </div>
+          {(isPlayground || displayMode === "modal") && (
+            <div className="flex items-center px-6 py-4 border-b" style={headerStyles}>
+              <Button variant="ghost" size="sm" onClick={handleReturnToSelection} className="mr-3 p-2 h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              {profilePictureUrl && (
+                <Avatar className="h-7 w-7 mr-3">
+                  <AvatarImage src={profilePictureUrl} alt="Logo" />
+                  <AvatarFallback>🏷</AvatarFallback>
+                </Avatar>
+              )}
+              <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
+            </div>
+          )}
           <div ref={messagesContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4" style={{ backgroundColor: headerDefaultColor }}>
             {messages.map((message) => (
               <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
@@ -547,8 +574,8 @@ export function WidgetPreview({
   )
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative">
-      <div className="h-[650px] flex flex-col">
+    <Card className="w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full relative">
+      <div className="flex flex-col flex-1 min-h-0">
         {coreDemo.view === 'agent-selection' && renderAgentSelectionView()}
         {coreDemo.view === 'loading' && renderLoadingView()}
         {coreDemo.view === 'chatting' && renderChatView()}

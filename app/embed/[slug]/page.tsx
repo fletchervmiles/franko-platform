@@ -10,9 +10,10 @@ const EmbeddedChatModal = dynamic(() => import("@/components/embed/embedded-chat
 
 interface EmbedPageProps {
   params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function EmbedPage({ params }: EmbedPageProps) {
+export default async function EmbedPage({ params, searchParams }: EmbedPageProps) {
   const modal = await getModalBySlug(params.slug);
   if (!modal || !modal.isActive) {
     notFound();
@@ -24,6 +25,8 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
   const agentIds = chatInstances.map((ci) => ci.agentType).filter((id): id is string => Boolean(id));
   const brandSettings = modal.brandSettings as AppSettings;
   const organizationName = profile?.organisationName || brandSettings?.interface?.displayName || "your product";
+
+  const displayMode = searchParams?.mode === "modal" ? "modal" : "standalone"
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F9F8F6] p-4">
@@ -53,6 +56,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         modalId={modal.id}
         isEmbedMode={true}
         organizationName={organizationName}
+        displayMode={displayMode}
       />
       </EmbedSettingsProvider>
     </div>

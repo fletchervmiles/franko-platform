@@ -3,10 +3,15 @@ import dynamic from "next/dynamic"
 import type { WidgetPreviewProps } from "@/components/multi-agent/agents/widget-preview"
 import { SharedModalCore } from "@/components/chat/shared-modal-core"
 import { useEffect, useCallback, useState } from "react"
-import { X } from "lucide-react"
 
 // Dynamically import existing WidgetPreview (client-only)
 const WidgetPreview = dynamic(() => import("@/components/multi-agent/agents/widget-preview"), { ssr: false })
+
+export type DisplayMode = "modal" | "standalone"
+
+interface EmbeddedChatModalProps extends WidgetPreviewProps {
+  displayMode: DisplayMode
+}
 
 /**
  * EmbeddedChatModal – production-grade fullscreen modal used by the public
@@ -14,7 +19,7 @@ const WidgetPreview = dynamic(() => import("@/components/multi-agent/agents/widg
  * WidgetPreview component, wrapped in the SharedModalCore so that we can
  * migrate business logic gradually without breaking existing behaviour.
  */
-export function EmbeddedChatModal(props: WidgetPreviewProps) {
+export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalProps) {
   const [isVisible, setIsVisible] = useState(true)
 
   // Close handler – hides iframe by calling parent script
@@ -41,28 +46,24 @@ export function EmbeddedChatModal(props: WidgetPreviewProps) {
   return (
     <SharedModalCore>
       <div
-        className="fixed inset-0 flex flex-col items-center justify-center bg-[#F9F8F6]"
+        className="fixed inset-0 flex flex-col items-center justify-start overflow-y-auto bg-[#F9F8F6]"
         style={{
           touchAction: "manipulation",
-          overscrollBehavior: "none",
+          overscrollBehavior: "contain",
           transition: "opacity 0.2s ease",
           opacity: isVisible ? 1 : 0,
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 h-12 flex items-center justify-end px-4">
-          <button
-            onClick={handleClose}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 focus:outline-none"
-            aria-label="Close chat"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
         {/* Chat content */}
-        <div className="flex-1 w-full max-w-none flex items-center justify-center px-2 md:px-0 pb-6 pt-12">
-          <WidgetPreview {...props} />
+        <div className="flex-1 w-full max-w-none flex items-center justify-center px-2 md:px-0 pb-6 pt-4">
+          <WidgetPreview 
+            {...rest}
+            isEmbedMode
+            displayMode={displayMode}
+            onClose={handleClose}
+          />
         </div>
       </div>
     </SharedModalCore>

@@ -22,7 +22,7 @@
   // Extract the origin from the script URL
   var scriptUrl = new URL(loader.src);
   var origin = scriptUrl.origin;
-  var iframeUrl = origin + '/embed/' + slug;
+  var iframeUrl = origin + '/embed/' + slug + '?mode=modal';
   console.log('[Franko] Origin:', origin);
   console.log('[Franko] Iframe URL:', iframeUrl);
 
