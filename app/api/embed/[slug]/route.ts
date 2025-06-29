@@ -64,8 +64,7 @@ export async function GET(
         name: agentData.name,
         description: processTextWithOrgName(agentData.description, organizationName),
         prompt: processTextWithOrgName(agentData.prompt, organizationName),
-        icon: agentData.Icon?.name || 'MessageCircle', // Icon name for the embed script
-        color: agentData.color || 'blue'
+        icon: agentData.Icon?.name || 'MessageCircle' // Icon name for the embed script
       };
     });
 

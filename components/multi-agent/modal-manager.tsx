@@ -260,18 +260,32 @@ export default function ModalManager() {
   useEffect(() => {
     if (!isMounted || !searchParams) return
     const idFromUrl = searchParams.get("modalId")
+    
     if (idFromUrl && (!currentModal || currentModal.id !== idFromUrl)) {
       loadModal(idFromUrl)
+    } else if (!idFromUrl && currentModal) {
+      // Clear current modal if no modalId in URL (clean /workspace navigation)
+      loadModal("")
     }
   }, [isMounted, searchParams, currentModal, loadModal])
 
   // Whenever currentModal changes, reflect in URL (preserve tab param)
   useEffect(() => {
     if (!currentModal || !searchParams) return
+
+    // Read modalId currently in the URL
+    const idFromUrl = searchParams.get("modalId")
+
+    // If the user is on the clean /workspace URL (no modalId) do nothing – avoid reinserting it
+    if (!idFromUrl) return
+
+    // If the URL already has the same modalId, no update is necessary
+    if (idFromUrl === currentModal.id) return
+
     const params = new URLSearchParams(searchParams.toString())
     params.set("modalId", currentModal.id)
     router.replace(`?${params.toString()}`)
-  }, [currentModal?.id, searchParams])
+  }, [currentModal?.id, searchParams, router])
 
   const handleDeleteClick = useCallback((id: string, name: string, e: React.MouseEvent) => {
     e.preventDefault()

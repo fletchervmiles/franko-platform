@@ -171,7 +171,7 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     if (isWorkspaceItem && highlightWorkspaceNavItem) {
       setHighlightWorkspaceNavItem(false);
     }
-    // Allow default link navigation to proceed
+    // no modal clearing here; ModalManager handles state reset
   };
 
   // Special handling for Workspace to ensure clean navigation
