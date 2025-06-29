@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserIcon, ArrowLeft, Loader2, ChevronRight } from "lucide-react"
+import { UserIcon, ArrowLeft, Loader2, ChevronRight, User } from "lucide-react"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import type { Agent } from "@/lib/agents-data"
@@ -56,17 +56,19 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
   onAnimationComplete: () => void;
 }) {
   // Fallback agent in case none is provided
-  const safeAgent: Agent = agent || {
+  const fallbackAgent: Agent = {
     id: "AGENT01",
     name: "Agent",
     benefit: "",
     prompt: "",
     description: "",
-    Icon: () => null,
+    Icon: User,
     initialQuestion: "",
     whyFoundersCare: "",
     cachedFirstResponse: "",
   }
+
+  const safeAgent: Agent = agent ?? fallbackAgent
 
   const [stage, setStage] = useState<'appearing' | 'celebrating' | 'fading'>('appearing');
 
