@@ -22,8 +22,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useProfile } from "@/components/contexts/profile-context"
 import dynamic from "next/dynamic"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PersonaManager } from "@/components/persona-manager/persona-manager"
-import { PersonaProvider, usePersonas } from "@/contexts/persona-context"
 import { Progress } from "@/components/ui/progress"
 // import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 
@@ -128,13 +126,10 @@ function ContextSetupInnerPage() {
   const { toast } = useToast()
   const [description, setDescription] = useState<string>("")
   const contextContainerRef = useRef<HTMLDivElement>(null)
-  const { profile, isLoading: isLoadingProfile, setHighlightWorkspaceNavItem, isCompanyComplete, setIsCompanyComplete, isBrandingComplete, setIsBrandingComplete, isPersonasComplete, setIsPersonasComplete } = useProfile()
-  const { personas, isLoadingPersonas, refetchPersonas } = usePersonas()
+  const { profile, isLoading: isLoadingProfile, setHighlightWorkspaceNavItem, isCompanyComplete, setIsCompanyComplete, isBrandingComplete, setIsBrandingComplete } = useProfile()
   const [activeTab, setActiveTab] = useState("organization")
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const personasTabTriggered = useRef(false);
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
-  const firstPersonaTabVisit = useRef(true);
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -176,14 +171,10 @@ function ContextSetupInnerPage() {
       })
       setIsCardEditing(false)
 
-      // Invalidate profile first, then refetch personas, then setup status
+      // Invalidate profile first, then setup status
       queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
         .then(() => {
-          console.log('Profile invalidated, now refetching personas...');
-          return refetchPersonas(); // Ensure this is awaited or handled if async
-        })
-        .then(() => {
-          console.log('Personas refetched, now refetching setup status...');
+          console.log('Profile invalidated, now refetching setup status...');
           // refetchSetupStatus();
         })
         .catch(error => {
@@ -265,12 +256,7 @@ function ContextSetupInnerPage() {
        setIsCompanyComplete(false);
        setIsBrandingComplete(false);
     }
-
-    if (!isLoadingPersonas) {
-      const personasDone = personas.length > 0;
-      setIsPersonasComplete(personasDone);
-    }
-  }, [profile, form, personas, isLoadingPersonas, setIsCompanyComplete, setIsBrandingComplete, setIsPersonasComplete])
+  }, [profile, form, setIsCompanyComplete, setIsBrandingComplete])
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -312,15 +298,6 @@ function ContextSetupInnerPage() {
 
     return () => clearInterval(interval)
   }, [isPending, submittedValues]) // Depend on isPending and submittedValues
-
-  // When personas tab becomes active the first time, force refetch to ensure DB commit completed
-  useEffect(() => {
-    if (activeTab === 'personas' && firstPersonaTabVisit.current) {
-      firstPersonaTabVisit.current = false;
-      console.log('Persona tab activated – forcing personas refetch');
-      refetchPersonas();
-    }
-  }, [activeTab, refetchPersonas]);
 
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
@@ -430,15 +407,6 @@ function ContextSetupInnerPage() {
                 <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
                   Branding
                   {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
-                </span>
-             </TabsTrigger>
-             <TabsTrigger
-               value="personas"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                 Personas
-                 {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
                </span>
              </TabsTrigger>
           </TabsList>
@@ -451,7 +419,10 @@ function ContextSetupInnerPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
-                          <Tag className="h-4 w-4 text-blue-500" /> Company Details
+                          <div className="w-6 h-6 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                            <Tag className="h-4 w-4 text-[#1C1617]" />
+                          </div>
+                          Company Details
                         </h2>
                         <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
                       </div>
@@ -462,7 +433,7 @@ function ContextSetupInnerPage() {
                               size="sm"
                               onClick={() => onSubmit(form.getValues())}
                               disabled={isPending || isSavingCardEdits}
-                              className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                              className="h-8 text-xs px-4 flex items-center gap-1 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
                             >
                               {isPending ? (
                                 <>
@@ -500,7 +471,7 @@ function ContextSetupInnerPage() {
                            Creating context for your agents...
                          </p>
                          <p className="text-sm text-gray-500 px-4">
-                           Fetching pages → extracting information → creating a structured document → generating your personas.
+                           Fetching pages → extracting information → creating a structured document.
                            <br />
                            This usually takes under a minute.
                          </p>
@@ -508,7 +479,7 @@ function ContextSetupInnerPage() {
                        <div className="w-full max-w-md px-4 pt-2">
                           <Progress
                              value={loadingProgress}
-                             className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
+                             className="h-3 bg-gray-100 [&>div]:bg-[#E4F222]"
                           />
                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
                            <span>Progress:</span>
@@ -531,7 +502,10 @@ function ContextSetupInnerPage() {
                             render={({ field }) => (
                               <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                                 <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Link className="h-4 w-4 text-blue-500" /> Website URL
+                                  <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                                    <Link className="h-3 w-3 text-[#1C1617]" />
+                                  </div>
+                                  Website URL
                                   <TooltipProvider delayDuration={0}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -574,7 +548,10 @@ function ContextSetupInnerPage() {
                             render={({ field }) => (
                               <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                                 <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
+                                  <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                                    <Building className="h-3 w-3 text-[#1C1617]" />
+                                  </div>
+                                  Company or Product Name
                                   <TooltipProvider delayDuration={0}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -630,7 +607,7 @@ function ContextSetupInnerPage() {
                                   size="sm"
                                  onClick={handleSaveCardEdits}
                                  disabled={isSavingCardEdits}
-                                 className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                                 className="h-8 text-xs px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
                               >
                                    {isSavingCardEdits ? (
                                   <>
@@ -650,7 +627,7 @@ function ContextSetupInnerPage() {
                               size="sm"
                               disabled={isPending || isSavingCardEdits}
                               className={cn(
-                                "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
+                                "h-9 px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black",
                                 shouldPulse && "animate-pulse-edge",
                               )}
                             >
@@ -710,10 +687,6 @@ function ContextSetupInnerPage() {
                 <LoadingPlaceholder />
               )}
           </TabsContent>
-
-          <TabsContent value="personas">
-            <PersonaManager />
-          </TabsContent>
         </Tabs>
       </div>
     </NavSidebar>
@@ -721,9 +694,5 @@ function ContextSetupInnerPage() {
 }
 
 export default function ContextSetupPage() {
-  return (
-    <PersonaProvider>
-      <ContextSetupInnerPage />
-    </PersonaProvider>
-  );
+  return <ContextSetupInnerPage />
 }

@@ -45,6 +45,7 @@ export type WidgetPreviewProps = {
   loadingAgentId?: string | null
   modalId?: string
   isEmbedMode?: boolean
+  organizationName?: string
 }
 
 // Agent color mappings for Tailwind CSS
@@ -161,12 +162,12 @@ export function WidgetPreview({
   loadingAgentId,
   modalId,
   isEmbedMode = false,
+  organizationName,
 }: WidgetPreviewProps) {
   const [modalState, setModalState] = useState<ModalState>('agent-selection')
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
   const [chatResponseId, setChatResponseId] = useState<string | null>(null)
-  const [organizationName, setOrganizationName] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -221,7 +222,12 @@ export function WidgetPreview({
   }
 
   const getProcessedPrompt = (prompt: string) => {
-    const orgName = settings.interface.displayName || "your product";
+    // Use the organization name from props if in embed mode, otherwise use profile data
+    const orgName = isEmbedMode && organizationName 
+      ? organizationName 
+      : contextData?.profile?.organisationName || 
+        settings.interface.displayName || 
+        "your product";
     return prompt.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
   }
   
@@ -314,7 +320,6 @@ export function WidgetPreview({
         const data = await response.json();
         setChatInstanceId(data.chatInstanceId);
         setChatResponseId(data.chatResponseId);
-        setOrganizationName(data.organizationName);
         
         console.log('WidgetPreview - Chat initialized:', {
           agentId: agent.id,
@@ -353,7 +358,6 @@ export function WidgetPreview({
     setMessages([])
     setChatInstanceId(null)
     setChatResponseId(null)
-    setOrganizationName(null)
   }
 
   // Resolve active agents: prefer explicit objects, otherwise map IDs to objects

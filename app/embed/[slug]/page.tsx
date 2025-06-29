@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getModalBySlug } from "@/db/queries/modals-queries";
 import { getEnabledModalChatInstances } from "@/db/queries/modal-chat-instances-queries";
+import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { EmbedSettingsProvider } from "@/components/embed/embed-settings-provider";
+import type { AppSettings } from "@/lib/settings-context";
 
 const WidgetPreview = dynamic(() => import("@/components/multi-agent/agents/widget-preview"), { ssr: false });
 
@@ -16,9 +18,12 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
     notFound();
   }
 
+  // Get modal owner's profile to get organization name
+  const profile = await getProfileByUserId(modal.userId);
   const chatInstances = await getEnabledModalChatInstances(modal.id);
   const agentIds = chatInstances.map((ci) => ci.agentType).filter((id): id is string => Boolean(id));
-  const brandSettings = modal.brandSettings as any;
+  const brandSettings = modal.brandSettings as AppSettings;
+  const organizationName = profile?.organisationName || brandSettings?.interface?.displayName || "your product";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F9F8F6] p-4">
@@ -29,6 +34,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
           name: modal.name,
           embedSlug: modal.embedSlug
         }}
+        profile={profile}
       >
       <WidgetPreview 
         agentIds={agentIds}
@@ -46,6 +52,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         isPlayground={true}
         modalId={modal.id}
         isEmbedMode={true}
+        organizationName={organizationName}
       />
       </EmbedSettingsProvider>
     </div>

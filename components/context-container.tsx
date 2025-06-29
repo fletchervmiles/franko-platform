@@ -115,7 +115,10 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold flex items-center gap-2">
-                <Tag className="h-4 w-4 text-blue-500" /> AI Knowledge Base
+                <div className="w-6 h-6 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                  <Tag className="h-4 w-4 text-[#1C1617]" />
+                </div>
+                AI Knowledge Base
               </h2>
               {isLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
               <TooltipProvider delayDuration={0}>
@@ -143,7 +146,9 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
           <p className="text-sm text-gray-500">This AI-generated summary acts as background knowledge for your interview Agents.</p>
           <div className="pt-2 flex items-center space-x-2">
             <div className="bg-white p-2 rounded-lg border flex items-center gap-2">
-              <Bot className="h-4 w-4 text-blue-600" />
+              <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                <Bot className="h-3 w-3 text-[#1C1617]" />
+              </div>
               <span className="text-sm font-medium">
                 {wordCount.toLocaleString()} words
               </span>
@@ -176,7 +181,7 @@ export function ContextContainer({ initialContext, userId, onContextUpdated, sta
                     <Button
                       onClick={handleSave}
                       size="sm"
-                      className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                      className="h-8 text-xs px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
                       disabled={isSaving}
                     >
                       {isSaving ? (

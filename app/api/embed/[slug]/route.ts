@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { getModalBySlug } from "@/db/queries/modals-queries";
 import { getEnabledModalChatInstances } from "@/db/queries/modal-chat-instances-queries";
+import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { agentsData } from "@/lib/agents-data";
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
+
+// Helper function to process text with organization name
+function processTextWithOrgName(text: string, orgName: string): string {
+  return text.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
+}
 
 // GET - Get modal configuration for embed script (public access)
 export async function GET(
@@ -26,6 +32,10 @@ export async function GET(
       return NextResponse.json({ error: "Modal is not active" }, { status: 404 });
     }
 
+    // Get modal owner's profile to get organization name
+    const profile = await getProfileByUserId(modal.userId);
+    const organizationName = profile?.organisationName || modal.brandSettings?.interface?.displayName || "your product";
+
     // Get enabled chat instances for this modal
     const chatInstances = await getEnabledModalChatInstances(modal.id);
     
@@ -37,15 +47,34 @@ export async function GET(
     // Map chat instances to agent information for the widget
     const agents = chatInstances.map(instance => {
       const agentData = agentsData.find(a => a.id === instance.agentType);
+      if (!agentData) {
+        return {
+          id: instance.id,
+          agentType: instance.agentType,
+          name: instance.agentType,
+          description: '',
+          prompt: '',
+          icon: 'MessageCircle',
+          color: 'blue'
+        };
+      }
+
       return {
         id: instance.id, // Chat instance ID for starting conversations
         agentType: instance.agentType,
-        name: agentData?.name || instance.agentType,
-        description: agentData?.description || '',
-        prompt: agentData?.prompt || '',
-        icon: agentData?.Icon?.name || 'MessageCircle', // Icon name for the embed script
-        color: agentData?.color || 'blue'
+        name: agentData.name,
+        description: processTextWithOrgName(agentData.description, organizationName),
+        prompt: processTextWithOrgName(agentData.prompt, organizationName),
+        icon: agentData.Icon?.name || 'MessageCircle', // Icon name for the embed script
+        color: agentData.color || 'blue'
       };
+    });
+
+    // Sort agents based on the order defined in agentsData
+    const sortedAgents = agents.sort((a, b) => {
+      const aIndex = agentsData.findIndex(agent => agent.id === a.agentType);
+      const bIndex = agentsData.findIndex(agent => agent.id === b.agentType);
+      return aIndex - bIndex;
     });
 
     // Prepare widget configuration
@@ -53,6 +82,7 @@ export async function GET(
       modalId: modal.id,
       embedSlug: modal.embedSlug,
       name: modal.name,
+      organizationName, // Include the organization name for client-side processing
       brandSettings: modal.brandSettings || {
         displayName: "We'd love your feedback",
         instructions: "Select a topic below. Each chat is short and sharp, ≈1-3 minutes.",
@@ -66,12 +96,12 @@ export async function GET(
         alignChatBubble: "right",
         profilePictureUrl: null
       },
-      agents,
+      agents: sortedAgents,
       createdAt: modal.createdAt,
       updatedAt: modal.updatedAt
     };
 
-    console.log("[embed/[slug]] Widget config prepared with", agents.length, "agents");
+    console.log("[embed/[slug]] Widget config prepared with", agents.length, "agents and org name:", organizationName);
     
     // Set CORS headers for embed script access
     const response = NextResponse.json(widgetConfig);

@@ -239,7 +239,7 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
     return (
       <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E4F222] border-t-transparent mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading workspaces...</p>
         </div>
       </div>

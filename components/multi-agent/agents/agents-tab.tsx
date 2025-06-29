@@ -7,17 +7,24 @@ import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 
 export function AgentsTab() {
-  const { settings, updateAgentSettings, isSaving } = useSettings()
+  const { settings, updateAgentSettings, isSaving, profile } = useSettings()
   const enabledAgents = settings.agents.enabledAgents
 
-  const handleToggle = (id: string) => {
-    const newEnabledAgents = {
-      ...enabledAgents,
-      [id]: !enabledAgents[id],
-    }
+  const handleToggle = (agentId: string) => {
+    updateAgentSettings({
+      enabledAgents: {
+        ...enabledAgents,
+        [agentId]: !enabledAgents[agentId],
+      },
+    })
+  }
 
-    // Update settings - auto-save is handled by the context
-    updateAgentSettings({ enabledAgents: newEnabledAgents })
+  // Process agent descriptions with actual organisation name
+  const getProcessedText = (text: string) => {
+    const orgName = profile?.organisationName || 
+                   settings.interface.displayName || 
+                   "your product";
+    return text.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
   }
 
   const activeAgents = agentsData.filter((agent) => enabledAgents[agent.id])
@@ -35,8 +42,8 @@ export function AgentsTab() {
         </p>
           </div>
           {isSaving && (
-            <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <div className="flex items-center gap-2 text-[#1C1617] text-sm font-medium">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#E4F222] border-t-transparent"></div>
               Saving...
             </div>
           )}
@@ -48,7 +55,13 @@ export function AgentsTab() {
         <div>
           <div className="space-y-4">
             {agentsData.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} isEnabled={!!enabledAgents[agent.id]} onToggle={handleToggle} />
+              <AgentCard 
+                key={agent.id} 
+                agent={agent} 
+                isEnabled={!!enabledAgents[agent.id]} 
+                onToggle={handleToggle}
+                processedDescription={getProcessedText(agent.description)}
+              />
             ))}
           </div>
         </div>

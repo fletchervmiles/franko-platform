@@ -47,16 +47,6 @@ const navMainData = [
     title: "Analysis",
     items: [
       {
-        title: "PMF",
-        url: "/pmf",
-        icon: <BarChart className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Personas",
-        url: "/persona-dashboard",
-        icon: <User className="mr-0.5 h-4 w-4" />,
-      },
-      {
         title: "Chat",
         url: "/response-qa",
         icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
@@ -202,14 +192,6 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
             {item.icon}
           </span>
           <span className="ml-2 font-medium">{item.title}</span>
-          
-          {/* Original pulsating dot for Context Setup */}
-          {item.title === "Context" && !isLoading && !contextCompleted && (
-            <span 
-              className="ml-auto h-2 w-2 rounded-full bg-yellow-400 animate-pulse" // Use ml-auto to push to the right
-              aria-hidden="true"
-            />
-          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>

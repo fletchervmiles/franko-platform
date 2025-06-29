@@ -17,8 +17,6 @@ interface ProfileContextType {
   setIsCompanyComplete: Dispatch<SetStateAction<boolean>>;
   isBrandingComplete: boolean;
   setIsBrandingComplete: Dispatch<SetStateAction<boolean>>;
-  isPersonasComplete: boolean;
-  setIsPersonasComplete: Dispatch<SetStateAction<boolean>>;
   isOverallContextComplete: boolean;
   refetchProfile: () => void;
 }
@@ -39,7 +37,6 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [highlightWorkspaceNavItem, setHighlightWorkspaceNavItem] = useState(false);
   const [isCompanyComplete, setIsCompanyComplete] = useState(false);
   const [isBrandingComplete, setIsBrandingComplete] = useState(false);
-  const [isPersonasComplete, setIsPersonasComplete] = useState(false);
 
   const userId = user?.id;
 
@@ -74,7 +71,6 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (profile) { // Check if profile exists
       setIsCompanyComplete(!!profile.organisationDescriptionCompleted);
       setIsBrandingComplete(!!(profile.logoUrl || profile.buttonColor || profile.titleColor));
-      // Persona completion is handled elsewhere, but potentially update here if needed
     }
   }, [profile]);
 
@@ -82,7 +78,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
   const contextCompleted = !!profile?.organisationDescriptionCompleted; // Optional chaining for safety
 
   // Derived state for overall completion
-  const isOverallContextComplete = isCompanyComplete && isBrandingComplete && isPersonasComplete;
+  const isOverallContextComplete = isCompanyComplete && isBrandingComplete;
 
   const value = {
     profile: profile ?? null, // Ensure profile is null if undefined
@@ -95,8 +91,6 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsCompanyComplete,
     isBrandingComplete,
     setIsBrandingComplete,
-    isPersonasComplete,
-    setIsPersonasComplete,
     isOverallContextComplete,
     refetchProfile: refetchProfile || (() => {}), // Provide a stable refetch function
   };

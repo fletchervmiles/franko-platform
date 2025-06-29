@@ -103,7 +103,7 @@ export default function ConnectTab() {
           </div>
           {isSaving && (
             <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#E4F222] border-t-transparent"></div>
               Saving...
             </div>
           )}

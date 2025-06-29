@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 import { useUser } from "@clerk/nextjs"
+import { useQuery } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/queryKeys"
+import type { SelectProfile } from "@/db/schema/profiles-schema"
 
 export interface InterfaceSettings {
   displayName: string
@@ -41,6 +44,10 @@ interface SettingsContextType {
   settings: AppSettings
   updateInterfaceSettings: (settings: Partial<InterfaceSettings>) => void
   updateAgentSettings: (settings: Partial<AgentSettings>) => void
+  
+  // Profile data
+  profile: SelectProfile | null
+  isLoadingProfile: boolean
   
   // Modal management
   currentModal: Modal | null
@@ -96,6 +103,31 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const lastSavedSettings = useRef<AppSettings | null>(null)
+
+  // Fetch user profile data
+  const {
+    data: profile,
+    isLoading: isLoadingProfile,
+  } = useQuery<SelectProfile | null>({
+    queryKey: queryKeys.profile(user?.id),
+    enabled: isLoaded && !!user?.id,
+    queryFn: async () => {
+      const res = await fetch("/api/user/profile", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(errorData.error || `Failed to fetch profile: ${res.status}`);
+      }
+
+      const data = (await res.json()) as Record<string, any>;
+      return "userId" in data ? (data as SelectProfile) : null;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
 
   const clearError = useCallback(() => {
     setError(null)
@@ -350,6 +382,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         settings,
         updateInterfaceSettings,
         updateAgentSettings,
+        profile,
+        isLoadingProfile,
         currentModal,
         modals,
         createModal,

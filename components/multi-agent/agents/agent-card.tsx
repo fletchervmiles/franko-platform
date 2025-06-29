@@ -9,9 +9,15 @@ type AgentCardProps = {
   agent: Agent
   isEnabled: boolean
   onToggle: (id: string) => void
+  processedDescription?: string
 }
 
-export function AgentCard({ agent, isEnabled, onToggle }: AgentCardProps) {
+export function AgentCard({ 
+  agent, 
+  isEnabled, 
+  onToggle, 
+  processedDescription 
+}: AgentCardProps) {
   return (
     <Card
       role="button"
@@ -28,13 +34,11 @@ export function AgentCard({ agent, isEnabled, onToggle }: AgentCardProps) {
       )}
     >
       <div className="flex items-center">
-        <div
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full mr-3",
-            isEnabled ? "text-blue-600" : "text-gray-400",
-          )}
-        >
-          <agent.Icon className="h-5 w-5" />
+        <div className={cn(
+          "w-6 h-6 rounded-full flex items-center justify-center mr-3",
+          isEnabled ? "bg-[#F5FF78]" : "bg-[#F4F2F0]"
+        )}>
+          <agent.Icon className="h-3 w-3 text-[#1C1617]" />
         </div>
         <div className="flex-grow">
           <p className="font-semibold text-sm">{agent.name}</p>
@@ -50,11 +54,13 @@ export function AgentCard({ agent, isEnabled, onToggle }: AgentCardProps) {
             // when the Switch itself is clicked.
             e.stopPropagation()
           }}
-          className="data-[state=checked]:bg-blue-600 scale-75"
+          className="data-[state=checked]:bg-[#E4F222] scale-75"
           aria-label={`Toggle ${agent.name} agent`}
         />
       </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 pl-2.5">{agent.description}</p>
+      <div className="mt-2 pl-2.5 space-y-1">
+        <p className="text-xs text-[#0c0a09]">{processedDescription || agent.description}</p>
+      </div>
     </Card>
   )
 }

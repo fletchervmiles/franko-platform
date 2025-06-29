@@ -3,12 +3,15 @@
 import React, { createContext, useContext } from "react"
 import type { AppSettings } from "@/lib/settings-context"
 import { SettingsContext } from "@/lib/settings-context"
+import type { SelectProfile } from "@/db/schema/profiles-schema"
 
 // Import the context type from the original settings context
 interface SettingsContextType {
   settings: AppSettings
   updateInterfaceSettings: (settings: any) => void
   updateAgentSettings: (settings: any) => void
+  profile: SelectProfile | null
+  isLoadingProfile: boolean
   currentModal: any
   modals: any[]
   createModal: (name: string) => Promise<any>
@@ -25,18 +28,21 @@ interface SettingsContextType {
 interface EmbedSettingsProviderProps {
   children: React.ReactNode
   brandSettings: AppSettings
-  modal?: {
+  modal: {
     id: string
     name: string
     embedSlug: string
   }
+  profile?: SelectProfile | null
 }
 
-export function EmbedSettingsProvider({ children, brandSettings, modal }: EmbedSettingsProviderProps) {
+export function EmbedSettingsProvider({ children, brandSettings, modal, profile }: EmbedSettingsProviderProps) {
   const contextValue: SettingsContextType = {
     settings: brandSettings,
     updateInterfaceSettings: () => {}, // No-op in embed context
     updateAgentSettings: () => {}, // No-op in embed context
+    profile: profile || null,
+    isLoadingProfile: false,
     currentModal: modal || null,
     modals: [],
     createModal: async () => {
