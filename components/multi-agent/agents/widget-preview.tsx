@@ -49,7 +49,7 @@ export type WidgetPreviewProps = {
 }
 
 // Agent color mappings for Tailwind CSS
-const getAgentColorClasses = (color: Agent['color']) => {
+const getAgentColorClasses = (color: string) => {
   const colorMap = {
     cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600', bgDark: 'bg-cyan-500', iconBg: 'bg-cyan-100' },
     amber: { bg: 'bg-amber-100', text: 'text-amber-600', bgDark: 'bg-amber-500', iconBg: 'bg-amber-100' },
