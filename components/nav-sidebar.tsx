@@ -58,7 +58,7 @@ const navMainData = [
     items: [
       {
         title: "Workspace",
-        url: "/workspace  ",
+        url: "/workspace",
         icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
       },
       {
@@ -173,6 +173,29 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     }
     // Allow default link navigation to proceed
   };
+
+  // Special handling for Workspace to ensure clean navigation
+  if (isWorkspaceItem) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Link 
+            href="/workspace"
+            className="flex items-center relative"
+            onClick={handleWorkspaceClick}
+          >
+            <span className="text-gray-800">
+              {item.icon}
+            </span>
+            <span className="ml-2 font-medium">{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
 
   // Regular menu items
   return (

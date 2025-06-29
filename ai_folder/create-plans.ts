@@ -318,7 +318,7 @@ export async function createAutomatedModal(
     logger.info(`Modal created with ID: ${modal.id}`);
     
     // Create chat instances without conversation plans first
-    const agentIds = ['AGENT01', 'AGENT02', 'AGENT03', 'AGENT04', 'AGENT05', 'AGENT06'];
+    const agentIds = ['AGENT04', 'AGENT05', 'AGENT03', 'AGENT02', 'AGENT01', 'AGENT06'];
     const enabledAgents = agentIds.map(agentId => ({
       agentType: agentId,
       conversationPlan: null, // Will be populated by conversation plan generation

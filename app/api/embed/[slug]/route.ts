@@ -3,6 +3,7 @@ import { getModalBySlug } from "@/db/queries/modals-queries";
 import { getEnabledModalChatInstances } from "@/db/queries/modal-chat-instances-queries";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { agentsData } from "@/lib/agents-data";
+import type { AppSettings } from "@/lib/settings-context";
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -22,19 +23,17 @@ export async function GET(
     
     // Get modal by slug (public access, no auth required)
     const modal = await getModalBySlug(params.slug);
-    if (!modal) {
-      console.log("[embed/[slug]] Modal not found for slug:", params.slug);
-      return NextResponse.json({ error: "Modal not found" }, { status: 404 });
-    }
-
-    if (!modal.isActive) {
-      console.log("[embed/[slug]] Modal is inactive for slug:", params.slug);
-      return NextResponse.json({ error: "Modal is not active" }, { status: 404 });
+    if (!modal || !modal.isActive) {
+      console.log("[embed/[slug]] Modal not found or inactive for slug:", params.slug);
+      return NextResponse.json({ error: "Modal not found or inactive" }, { status: 404 });
     }
 
     // Get modal owner's profile to get organization name
     const profile = await getProfileByUserId(modal.userId);
-    const organizationName = profile?.organisationName || modal.brandSettings?.interface?.displayName || "your product";
+    const brandSettings = modal.brandSettings as AppSettings | null;
+    const organizationName = profile?.organisationName || 
+                           brandSettings?.interface?.displayName || 
+                           "your product";
 
     // Get enabled chat instances for this modal
     const chatInstances = await getEnabledModalChatInstances(modal.id);

@@ -37,8 +37,7 @@ export function AgentsTab() {
           <div>
         <h2 className="font-semibold mb-2 flex items-center text-gray-900">Select Your Interview Agents</h2>
         <p className="text-sm text-slate-600">
-          The agents you enable will appear as options your users can select for giving feedback. Each agent will lead a
-          1-2 minute conversation on the chosen topic.
+        Enabled agents appear on your modal. Each opens to a 1-2 minute customer interview.
         </p>
           </div>
           {isSaving && (

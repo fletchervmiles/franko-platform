@@ -47,7 +47,10 @@ export async function getModalChatInstances(
  * Get enabled chat instances for a modal (for public embed access)
  */
 export async function getEnabledModalChatInstances(modalId: string): Promise<SelectChatInstance[]> {
-  return await db
+  // Import agentsData to get the correct order
+  const { agentsData } = await import("@/lib/agents-data");
+  
+  const chatInstances = await db
     .select()
     .from(chatInstancesTable)
     .where(
@@ -57,8 +60,14 @@ export async function getEnabledModalChatInstances(modalId: string): Promise<Sel
         eq(chatInstancesTable.isEnabled, true),
         eq(chatInstancesTable.published, true)
       )
-    )
-    .orderBy(chatInstancesTable.createdAt);
+    );
+
+  // Sort by the order defined in agentsData
+  return chatInstances.sort((a, b) => {
+    const aIndex = agentsData.findIndex(agent => agent.id === a.agentType);
+    const bIndex = agentsData.findIndex(agent => agent.id === b.agentType);
+    return aIndex - bIndex;
+  });
 }
 
 /**
