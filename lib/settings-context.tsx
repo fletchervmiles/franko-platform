@@ -76,7 +76,7 @@ const defaultSettings: AppSettings = {
     chatIconColor: "",
     userMessageColor: "",
     chatHeaderColor: null,
-    alignChatBubble: "right",
+    alignChatBubble: "custom",
     profilePictureUrl: null,
   },
   agents: {

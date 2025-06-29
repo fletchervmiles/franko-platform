@@ -291,7 +291,7 @@ export async function createAutomatedModal(
         chatIconColor: profile.buttonColor || "",
         userMessageColor: profile.buttonColor || "",
         chatHeaderColor: profile.titleColor || null,
-        alignChatBubble: "right" as const,
+        alignChatBubble: "custom" as const,
         profilePictureUrl: profile.logoUrl || null,
       },
       agents: {

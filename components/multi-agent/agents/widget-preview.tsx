@@ -48,34 +48,26 @@ export type WidgetPreviewProps = {
   organizationName?: string
 }
 
-// Agent color mappings for Tailwind CSS
-const getAgentColorClasses = (color: string) => {
-  const colorMap = {
-    cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600', bgDark: 'bg-cyan-500', iconBg: 'bg-cyan-100' },
-    amber: { bg: 'bg-amber-100', text: 'text-amber-600', bgDark: 'bg-amber-500', iconBg: 'bg-amber-100' },
-    red: { bg: 'bg-red-100', text: 'text-red-600', bgDark: 'bg-red-500', iconBg: 'bg-red-100' },
-    green: { bg: 'bg-green-100', text: 'text-green-600', bgDark: 'bg-green-500', iconBg: 'bg-green-100' },
-    blue: { bg: 'bg-blue-100', text: 'text-blue-600', bgDark: 'bg-blue-500', iconBg: 'bg-blue-100' },
-    violet: { bg: 'bg-violet-100', text: 'text-violet-600', bgDark: 'bg-violet-500', iconBg: 'bg-violet-100' },
-    orange: { bg: 'bg-orange-100', text: 'text-orange-600', bgDark: 'bg-orange-500', iconBg: 'bg-orange-100' },
-    gray: { bg: 'bg-gray-100', text: 'text-gray-600', bgDark: 'bg-gray-500', iconBg: 'bg-gray-100' },
-    purple: { bg: 'bg-purple-100', text: 'text-purple-600', bgDark: 'bg-purple-500', iconBg: 'bg-purple-100' },
-    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-600', bgDark: 'bg-emerald-500', iconBg: 'bg-emerald-100' }
-  };
-  return colorMap[color] || colorMap.blue;
-};
+// Per-agent colour support removed per design guidelines. We now use the Franko lime palette consistently.
 
 // Completion animation component
 function CompletionAnimation({ agent, onAnimationComplete }: { 
   agent: Agent | null; 
   onAnimationComplete: () => void;
 }) {
-  const safeAgent = agent || {
-    id: 'AGENT01',
-    name: 'Agent',
-    color: 'blue' as const,
-    Icon: () => null
-  };
+  // Fallback agent in case none is provided
+  const safeAgent: Agent = agent || {
+    id: "AGENT01",
+    name: "Agent",
+    benefit: "",
+    prompt: "",
+    description: "",
+    Icon: () => null,
+    initialQuestion: "",
+    whyFoundersCare: "",
+    cachedFirstResponse: "",
+  }
+
   const [stage, setStage] = useState<'appearing' | 'celebrating' | 'fading'>('appearing');
 
   useEffect(() => {
@@ -92,17 +84,18 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
   return (
     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
       <div className="relative mb-6">
-        <div className={cn(
-          "absolute inset-0 rounded-full transition-all duration-1000",
-          getAgentColorClasses(safeAgent.color).bg,
-          stage === 'celebrating' && "scale-150 opacity-30"
-        )} />
-        <div className={cn(
-          "relative flex items-center justify-center w-24 h-24 rounded-full transition-all duration-500",
-          getAgentColorClasses(safeAgent.color).bgDark,
-          "text-white",
-          stage === 'celebrating' && "scale-110"
-        )}>
+        <div
+          className={cn(
+            "absolute inset-0 rounded-full transition-all duration-1000 bg-[#F5FF78]",
+            stage === "celebrating" && "scale-150 opacity-30"
+          )}
+        />
+        <div
+          className={cn(
+            "relative flex items-center justify-center w-24 h-24 rounded-full transition-all duration-500 bg-[#E4F222] text-[#1C1617]",
+            stage === "celebrating" && "scale-110"
+          )}
+        >
           <safeAgent.Icon className="w-12 h-12" />
         </div>
       </div>
@@ -156,7 +149,7 @@ export function WidgetPreview({
   chatHeaderColor,
   chatIconText,
   chatIconColor,
-  alignChatBubble = "right",
+  alignChatBubble = "custom",
   isPlayground = false,
   onAgentSelect,
   loadingAgentId,
@@ -195,7 +188,7 @@ export function WidgetPreview({
         chatIconColor: chatIconColor || "",
         userMessageColor: userMessageColor || "",
         chatHeaderColor: chatHeaderColor || null,
-        alignChatBubble: alignChatBubble || "right",
+        alignChatBubble: alignChatBubble || "custom",
         profilePictureUrl: profilePictureUrl || null,
       },
       agents: { enabledAgents: {} }
@@ -214,7 +207,7 @@ export function WidgetPreview({
         chatIconColor: "",
         userMessageColor: "",
         chatHeaderColor: null,
-        alignChatBubble: "right",
+        alignChatBubble: "custom",
         profilePictureUrl: null,
       },
       agents: { enabledAgents: {} }

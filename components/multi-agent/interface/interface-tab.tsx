@@ -104,9 +104,9 @@ export function InterfaceTab() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-semibold mb-2 text-gray-900">Interface Design</h2>
+            <h2 className="font-semibold mb-2 text-gray-900">Modal Design</h2>
             <p className="text-sm text-slate-600">
-              Customize how your chat widget looks and feels to match your brand.
+              Edit your chat modal to match your brand.
             </p>
           </div>
           {isSaving && (
@@ -122,256 +122,238 @@ export function InterfaceTab() {
       <div className="grid md:grid-cols-2 gap-8">
         {/* Left Column - Interface Controls */}
         <div className="space-y-6">
-        {/* Profile Picture */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <Label htmlFor="profile-picture">Profile Picture (Optional)</Label>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={settings.interface.profilePictureUrl || undefined} alt="Profile Picture" />
-                <AvatarFallback>
-                  <UserIcon className="h-8 w-8" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById("profile-picture-input")?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-                {settings.interface.profilePictureUrl && (
-                  <Button variant="outline" size="sm" onClick={handleRemoveImage}>
-                    Remove
-                  </Button>
-                )}
+          {/* Group 1: Profile, Theme, Brand Color, Advanced Colors */}
+          <Card className="p-4">
+            <div className="space-y-4">
+              {/* Profile Picture */}
+              <div className="space-y-4">
+                <Label htmlFor="profile-picture">Profile Picture (Optional)</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={settings.interface.profilePictureUrl || undefined} alt="Profile Picture" />
+                    <AvatarFallback>
+                      <UserIcon className="h-8 w-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById("profile-picture-input")?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </Button>
+                    {settings.interface.profilePictureUrl && (
+                      <Button variant="outline" size="sm" onClick={handleRemoveImage}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <input
+                    id="profile-picture-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
               </div>
-              <input
-                id="profile-picture-input"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Display Name */}
-        <Card className="p-4">
-          <div className="space-y-2">
-            <Label htmlFor="display-name">Display Name</Label>
-            <Input
-              id="display-name"
-              value={settings.interface.displayName}
-              onChange={(e) => handleInputChange("displayName", e.target.value)}
-              placeholder="We'd love your feedback"
-            />
-          </div>
-        </Card>
-
-        {/* Additional Text */}
-        <Card className="p-4">
-          <div className="space-y-2">
-            <Label htmlFor="instructions">Additional Text</Label>
-            <Textarea
-              id="instructions"
-              value={settings.interface.instructions}
-              onChange={(e) => handleInputChange("instructions", e.target.value)}
-              placeholder="Select a topic below. Each chat is short and sharp, ≈1-3 minutes."
-              rows={3}
-            />
-          </div>
-        </Card>
-
-        {/* Theme */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <Label>Theme</Label>
-            <Select
-              value={settings.interface.theme}
-              onValueChange={(value: "light" | "dark") => handleInputChange("theme", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select theme" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </Card>
-
-        {/* Chat Icon Text */}
-        <Card className="p-4">
-          <div className="space-y-2">
-            <Label htmlFor="chat-icon-text">Chat Icon Text</Label>
-            <Input
-              id="chat-icon-text"
-              value={settings.interface.chatIconText}
-              onChange={(e) => handleInputChange("chatIconText", e.target.value)}
-              placeholder="Feedback"
-            />
-          </div>
-        </Card>
-
-        {/* Brand Color */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="primary-brand-color">Brand Color</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetToThemeDefaults}
-                className="text-xs"
-              >
-                Reset to Defaults
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                id="primary-brand-color"
-                value={settings.interface.primaryBrandColor || "#ffffff"}
-                onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                className="w-12 h-8 rounded border border-gray-300"
-              />
-              <Input
-                value={settings.interface.primaryBrandColor}
-                onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                placeholder="Leave empty for theme default"
-                className="flex-1"
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              Set a custom brand color for your chat interface. Leave empty to use theme defaults (white header for light mode, dark header for dark mode).
-            </p>
-          </div>
-        </Card>
-
-        {/* Advanced Colors Toggle */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Advanced Color Controls</Label>
-              <Switch
-                checked={settings.interface.advancedColors}
-                onCheckedChange={handleAdvancedToggle}
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              Enable to customize header, message, and icon colors individually.
-            </p>
-          </div>
-        </Card>
-
-        {/* Individual Color Controls - Only show when advanced is enabled */}
-        {settings.interface.advancedColors && (
-          <>
-            {/* Chat Header Color */}
-            <Card className="p-4">
-              <div className="space-y-2">
+              {/* Theme */}
+              <div className="space-y-4">
+                <Label>Theme</Label>
+                <Select
+                  value={settings.interface.theme}
+                  onValueChange={(value: "light" | "dark") => handleInputChange("theme", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Brand Color */}
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="chat-header-color">Modal Header Color</Label>
+                  <Label htmlFor="primary-brand-color">Brand Color</Label>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={resetToBrandColor}
+                    onClick={resetToThemeDefaults}
                     className="text-xs"
                   >
-                    Reset to Brand Color
+                    Reset to Defaults
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    id="chat-header-color"
-                    value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
-                    onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
+                    id="primary-brand-color"
+                    value={settings.interface.primaryBrandColor || "#ffffff"}
+                    onChange={(e) => handlePrimaryColorChange(e.target.value)}
                     className="w-12 h-8 rounded border border-gray-300"
                   />
                   <Input
-                    value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
-                    onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
-                    placeholder=""
+                    value={settings.interface.primaryBrandColor}
+                    onChange={(e) => handlePrimaryColorChange(e.target.value)}
+                    placeholder="Leave empty for theme default"
                     className="flex-1"
                   />
                 </div>
+                <p className="text-xs text-gray-500">
+                  Set a custom brand color for your modal. Hit reset to use theme defaults (white header for light mode, dark header for dark mode).
+                </p>
               </div>
-            </Card>
+              {/* Advanced Colors Toggle */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Advanced Color Controls</Label>
+                  <Switch
+                    checked={settings.interface.advancedColors}
+                    onCheckedChange={handleAdvancedToggle}
+                    className="data-[state=checked]:bg-[#E4F222]"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Enable to customize header, message, and icon colors individually.
+                </p>
+              </div>
+              {/* Individual Color Controls - Only show when advanced is enabled */}
+              {settings.interface.advancedColors && (
+                <>
+                  {/* Chat Header Color */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="chat-header-color">Modal Header Color</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetToBrandColor}
+                        className="text-xs"
+                      >
+                        Reset to Brand Color
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        id="chat-header-color"
+                        value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
+                        onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
+                        className="w-12 h-8 rounded border border-gray-300"
+                      />
+                      <Input
+                        value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
+                        onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
+                        placeholder=""
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  {/* Chat Icon Color */}
+                  <div className="space-y-2">
+                    <Label htmlFor="chat-icon-color">Feedback Icon Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        id="chat-icon-color"
+                        value={settings.interface.chatIconColor}
+                        onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
+                        className="w-12 h-8 rounded border border-gray-300"
+                      />
+                      <Input
+                        value={settings.interface.chatIconColor}
+                        onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
+                        placeholder=""
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  {/* User Message Color */}
+                  <div className="space-y-2">
+                    <Label htmlFor="user-message-color">User Message Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        id="user-message-color"
+                        value={settings.interface.userMessageColor}
+                        onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
+                        className="w-12 h-8 rounded border border-gray-300"
+                      />
+                      <Input
+                        value={settings.interface.userMessageColor}
+                        onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
+                        placeholder=""
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
 
-            {/* Chat Icon Color */}
-            <Card className="p-4">
+          {/* Group 2: Display Name and Additional Text */}
+          <Card className="p-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="chat-icon-color">Feedback Icon Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="chat-icon-color"
-                    value={settings.interface.chatIconColor}
-                    onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
-                    className="w-12 h-8 rounded border border-gray-300"
-                  />
-                  <Input
-                    value={settings.interface.chatIconColor}
-                    onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
-                    placeholder=""
-                    className="flex-1"
-                  />
-                </div>
+                <Label htmlFor="display-name">Display Name</Label>
+                <Input
+                  id="display-name"
+                  value={settings.interface.displayName}
+                  onChange={(e) => handleInputChange("displayName", e.target.value)}
+                  placeholder="We'd love your feedback"
+                />
               </div>
-            </Card>
-
-            {/* User Message Color */}
-            <Card className="p-4">
               <div className="space-y-2">
-                <Label htmlFor="user-message-color">User Message Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="user-message-color"
-                    value={settings.interface.userMessageColor}
-                    onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
-                    className="w-12 h-8 rounded border border-gray-300"
-                  />
-                  <Input
-                    value={settings.interface.userMessageColor}
-                    onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
-                    placeholder=""
-                    className="flex-1"
-                  />
-                </div>
+                <Label htmlFor="instructions">Additional Text</Label>
+                <Textarea
+                  id="instructions"
+                  value={settings.interface.instructions}
+                  onChange={(e) => handleInputChange("instructions", e.target.value)}
+                  placeholder="Select a topic below. Each chat is short and sharp, ≈1-3 minutes."
+                  rows={3}
+                />
               </div>
-            </Card>
-          </>
-        )}
+            </div>
+          </Card>
 
-        {/* Chat Icon Position */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <Label>Chat Icon Position</Label>
-            <Select
-              value={settings.interface.alignChatBubble}
-              onValueChange={(value: "left" | "right" | "custom") => handleInputChange("alignChatBubble", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select position" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left aligned - Auto chat icon</SelectItem>
-                <SelectItem value="right">Right aligned - Auto chat icon</SelectItem>
-                <SelectItem value="custom">Custom button - No auto icon</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500">
-              Choose "Custom button" if you want to trigger the modal from your own website button instead of showing an automatic floating chat icon.
-            </p>
-          </div>
-        </Card>
+          {/* Group 3: Floating Chat Button Text and Position */}
+          <Card className="p-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="chat-icon-text">Floating Chat Button Text</Label>
+                <Input
+                  id="chat-icon-text"
+                  value={settings.interface.chatIconText}
+                  onChange={(e) => handleInputChange("chatIconText", e.target.value)}
+                  placeholder="Feedback"
+                />
+              </div>
+              <div className="space-y-4">
+                <Label>Floating Chat Button Position</Label>
+                <Select
+                  value={settings.interface.alignChatBubble}
+                  onValueChange={(value: "left" | "right" | "custom") => handleInputChange("alignChatBubble", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left Aligned</SelectItem>
+                    <SelectItem value="right">Right Aligned</SelectItem>
+                    <SelectItem value="custom">No Button</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  In the Connect tab, you can choose to embed a floating chat button or a custom trigger to launch your modal. A custom trigger is your own linked button.
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Right Column - Live Widget Preview */}

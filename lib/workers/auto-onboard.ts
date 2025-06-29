@@ -280,7 +280,7 @@ async function createAutoModal(
         chatIconText: "Give Feedback",
         chatIconColor: brandDetails.primaryColor || "",
         userMessageColor: brandDetails.primaryColor || "",
-        alignChatBubble: "right" as const,
+        alignChatBubble: "custom" as const,
         profilePictureUrl: brandDetails.logoUrl || null,
         chatHeaderColor: brandDetails.secondaryColor || null,
       },

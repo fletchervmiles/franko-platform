@@ -91,7 +91,7 @@ export async function GET(
         chatIconColor: "#3B82F6",
         userMessageColor: "#3B82F6",
         chatHeaderColor: "#3B82F6",
-        alignChatBubble: "right",
+        alignChatBubble: "custom",
         profilePictureUrl: null
       },
       agents: sortedAgents,
