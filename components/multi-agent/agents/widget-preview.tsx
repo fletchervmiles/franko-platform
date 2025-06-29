@@ -14,6 +14,7 @@ import { ModalExternalChat } from "@/components/modal-external-chat"
 import { useSettings } from "@/lib/settings-context"
 import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
 import { getAgentsByIds } from "@/lib/agents-data-client"
+import { useSharedModalCore } from "@/components/chat/use-shared-modal-core"
 
 type Message = {
   id: string
@@ -159,14 +160,26 @@ export function WidgetPreview({
   isEmbedMode = false,
   organizationName,
 }: WidgetPreviewProps) {
-  const [modalState, setModalState] = useState<ModalState>('agent-selection')
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
-  const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
-  const [chatResponseId, setChatResponseId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState("")
+  // Instantiate shared modal core once at the top so it is available to subsequent destructuring
+  const coreDemo = useSharedModalCore()
+
+  const {
+    selectedAgent,
+    messages,
+    inputValue,
+    setInputValue,
+    setMessages,
+  } = coreDemo as unknown as {
+    selectedAgent: Agent | null;
+    messages: Message[];
+    inputValue: string;
+    setInputValue: (val: string) => void;
+    setMessages: (fn: (prev: Message[]) => Message[]) => void;
+  }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
+  const [chatResponseId, setChatResponseId] = useState<string | null>(null)
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -262,22 +275,21 @@ export function WidgetPreview({
   useEffect(scrollToBottom, [messages])
 
   const handleConversationComplete = useCallback(() => {
-    setModalState('completion');
-  }, []);
+    coreDemo.handleConversationComplete();
+  }, [coreDemo]);
 
   const handleAnimationComplete = useCallback(() => {
-    setModalState('agent-selection');
-    setSelectedAgent(null);
-    setChatInstanceId(null);
-    setChatResponseId(null);
-    setMessages([]);
-  }, []);
+    coreDemo.handleReturnToSelection();
+  }, [coreDemo]);
 
   const handleAgentSelect = async (agent: Agent) => {
     if (onAgentSelect) {
       onAgentSelect(agent);
       return;
     }
+
+    // Show loading state immediately
+    coreDemo.setView("loading")
 
     if (isPlayground) {
       const targetModalId = isEmbedMode ? modalId : currentModal?.id;
@@ -287,8 +299,6 @@ export function WidgetPreview({
         return;
       }
 
-      setSelectedAgent(agent);
-      
       try {
         // Initialize chat in background
         const identityData = isEmbedMode ? ((window as any).FrankoUser || {}) : {};
@@ -324,12 +334,11 @@ export function WidgetPreview({
           organizationName: data.organizationName
         });
         
-        // Go straight to chatting - no loading state!
-        setModalState('chatting');
+        // After successful init switch to chatting via shared handler
+        coreDemo.handleAgentSelect(agent)
       } catch (error) {
         console.error('Error initializing chat:', error);
-        setModalState('agent-selection');
-        setSelectedAgent(null);
+        coreDemo.handleReturnToSelection();
       }
     } else {
       setPopoverAgentId(agent.id)
@@ -340,7 +349,7 @@ export function WidgetPreview({
 
   const handleSendMessage = () => {
     if (inputValue.trim() === "") return
-    setMessages((prevMessages) => [
+    setMessages((prevMessages: Message[]) => [
       ...prevMessages,
       { id: `user-${Date.now()}`, text: inputValue, sender: "user", timestamp: Date.now() },
     ])
@@ -348,11 +357,7 @@ export function WidgetPreview({
   }
 
   const handleReturnToSelection = () => {
-    setModalState('agent-selection')
-    setSelectedAgent(null)
-    setMessages([])
-    setChatInstanceId(null)
-    setChatResponseId(null)
+    coreDemo.handleReturnToSelection()
   }
 
   // Resolve active agents: prefer explicit objects, otherwise map IDs to objects
@@ -544,13 +549,13 @@ export function WidgetPreview({
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative">
       <div className="h-[650px] flex flex-col">
-        {modalState === 'agent-selection' && renderAgentSelectionView()}
-        {modalState === 'loading' && renderLoadingView()}
-        {modalState === 'chatting' && renderChatView()}
-        {modalState === 'completion' && renderCompletionView()}
+        {coreDemo.view === 'agent-selection' && renderAgentSelectionView()}
+        {coreDemo.view === 'loading' && renderLoadingView()}
+        {coreDemo.view === 'chatting' && renderChatView()}
+        {coreDemo.view === 'completion' && renderCompletionView()}
       </div>
       <PoweredByFooter theme={currentTheme} backgroundColor={effectiveChatHeaderColor} />
-      {alignChatBubble !== "custom" && modalState === "agent-selection" && (
+      {alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && (
         <FloatingChatIcon
           text={chatIconText || "Feedback"}
           backgroundColor={effectiveChatIconColor}

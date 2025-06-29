@@ -6,7 +6,7 @@ import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { EmbedSettingsProvider } from "@/components/embed/embed-settings-provider";
 import type { AppSettings } from "@/lib/settings-context";
 
-const WidgetPreview = dynamic(() => import("@/components/multi-agent/agents/widget-preview"), { ssr: false });
+const EmbeddedChatModal = dynamic(() => import("@/components/embed/embedded-chat-modal"), { ssr: false });
 
 interface EmbedPageProps {
   params: { slug: string };
@@ -36,7 +36,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         }}
         profile={profile}
       >
-      <WidgetPreview 
+      <EmbeddedChatModal 
         agentIds={agentIds}
         displayName={brandSettings.interface.displayName}
         instructions={brandSettings.interface.instructions}
