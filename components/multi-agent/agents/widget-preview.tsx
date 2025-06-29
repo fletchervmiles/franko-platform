@@ -399,10 +399,10 @@ export function WidgetPreview({
           <X className="h-5 w-5" />
         </button>
       )}
-      <div className={cn("px-6 py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
+      <div className={cn("px-4 py-4 sm:px-6 sm:py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
         <div className="flex items-center gap-4">
           {profilePictureUrl && (
-            <Avatar className="h-12 w-12 rounded-full overflow-hidden flex-shrink-0">
+            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 rounded-full overflow-hidden flex-shrink-0">
               <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
               <AvatarFallback className="rounded-full">
                 <UserIcon className="h-5 w-5" />
@@ -410,8 +410,8 @@ export function WidgetPreview({
             </Avatar>
           )}
           <div>
-            <h1 className="text-2xl font-bold mb-1">{displayHeaderName}</h1>
-            <p className="hidden sm:block text-base opacity-90">{displayInstructions}</p>
+            <h1 className="text-2xl leading-tight font-bold">{displayHeaderName}</h1>
+            <p className="mt-1 text-sm sm:text-base opacity-80">{displayInstructions}</p>
           </div>
         </div>
       </div>
@@ -425,7 +425,7 @@ export function WidgetPreview({
                     onClick={() => handleAgentSelect(agent)}
                     disabled={isPlayground && loadingAgentId === agent.id}
                     className={cn(
-                      "w-full border border-gray-300 dark:border-gray-700 rounded-lg p-4 text-left shadow-sm hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 sm:px-5 sm:py-4 text-left shadow-sm sm:shadow-md active:bg-gray-100 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isPlayground && loadingAgentId === agent.id
                         ? "opacity-60 cursor-not-allowed"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
@@ -436,8 +436,8 @@ export function WidgetPreview({
                       <div className="flex items-center space-x-3">
                         <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                         <p className={cn(
-                          "font-normal leading-snug",
-                          currentTheme === "dark" ? "text-white" : "text-gray-800"
+                          "font-medium text-base sm:text-lg leading-snug",
+                          currentTheme === "dark" ? "text-white" : "text-gray-700"
                         )}>
                           {getProcessedPrompt(agent.prompt)}
                         </p>
