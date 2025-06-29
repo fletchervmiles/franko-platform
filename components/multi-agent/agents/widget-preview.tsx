@@ -411,7 +411,7 @@ export function WidgetPreview({
           )}
           <div>
             <h1 className="text-2xl font-bold mb-1">{displayHeaderName}</h1>
-            <p className="text-base opacity-90">{displayInstructions}</p>
+            <p className="hidden sm:block text-base opacity-90">{displayInstructions}</p>
           </div>
         </div>
       </div>
@@ -434,7 +434,7 @@ export function WidgetPreview({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                         <p className={cn(
                           "font-normal leading-snug",
                           currentTheme === "dark" ? "text-white" : "text-gray-800"
@@ -573,8 +573,10 @@ export function WidgetPreview({
     <CompletionAnimation agent={selectedAgent} onAnimationComplete={handleAnimationComplete} />
   )
 
+  const cardHeightClasses = displayMode === "modal" ? "h-full" : ""
+
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full relative">
+    <Card className={cn("w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses)}>
       <div className="flex flex-col flex-1 min-h-0">
         {coreDemo.view === 'agent-selection' && renderAgentSelectionView()}
         {coreDemo.view === 'loading' && renderLoadingView()}
@@ -582,7 +584,7 @@ export function WidgetPreview({
         {coreDemo.view === 'completion' && renderCompletionView()}
       </div>
       <PoweredByFooter theme={currentTheme} backgroundColor={effectiveChatHeaderColor} />
-      {alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && (
+      {displayMode === "modal" && alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && (
         <FloatingChatIcon
           text={chatIconText || "Feedback"}
           backgroundColor={effectiveChatIconColor}
