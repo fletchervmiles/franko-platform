@@ -112,6 +112,13 @@ export function ModalExternalChat({
   // Use optimized hook for fetching user data
   const { data: userData, isLoading: isLoadingUserData } = useChatResponseUser(chatResponseId);
 
+  // Auto-scroll to latest message
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [uiMessages]);
+
   // Safety fallback: ensure component always initializes within 2 seconds
   useEffect(() => {
     const safetyTimer = setTimeout(() => {

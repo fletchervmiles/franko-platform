@@ -46,7 +46,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
   return (
     <SharedModalCore>
       <div
-        className="fixed inset-0 flex flex-col items-center justify-start overflow-y-auto bg-[#F9F8F6]"
+        className="fixed inset-0 flex flex-col items-start justify-start overflow-y-auto bg-[#F9F8F6]"
         style={{
           touchAction: "manipulation",
           overscrollBehavior: "contain",
@@ -57,7 +57,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
         }}
       >
         {/* Chat content */}
-        <div className="flex-1 w-full max-w-none flex items-center justify-center px-2 md:px-0 pb-6 pt-4">
+        <div className="flex-1 w-full max-w-none flex items-center justify-center px-2 md:px-0 pb-6 pt-4 min-h-full">
           <WidgetPreview 
             {...rest}
             isEmbedMode

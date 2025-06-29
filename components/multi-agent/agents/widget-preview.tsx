@@ -400,7 +400,7 @@ export function WidgetPreview({
         </button>
       )}
       <div className={cn("px-4 py-4 sm:px-6 sm:py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-[auto,1fr] gap-x-4 items-start">
           {profilePictureUrl && (
             <Avatar className="h-10 w-10 sm:h-12 sm:w-12 rounded-full overflow-hidden flex-shrink-0">
               <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
@@ -409,10 +409,12 @@ export function WidgetPreview({
               </AvatarFallback>
             </Avatar>
           )}
-          <div>
-            <h1 className="text-2xl leading-tight font-bold">{displayHeaderName}</h1>
-            <p className="mt-1 text-sm sm:text-base opacity-80">{displayInstructions}</p>
+          <div className="col-start-2">
+            <h1 className="text-xl sm:text-2xl leading-tight font-semibold">{displayHeaderName}</h1>
           </div>
+          <p className="col-span-2 ml-14 sm:ml-0 mt-1 text-sm sm:text-base text-gray-600">
+            {displayInstructions}
+          </p>
         </div>
       </div>
       <div className={cn("p-6 flex-grow overflow-y-auto")} style={{ backgroundColor: headerDefaultColor }}>
@@ -436,7 +438,7 @@ export function WidgetPreview({
                       <div className="flex items-center space-x-3">
                         <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                         <p className={cn(
-                          "font-medium text-base sm:text-lg leading-snug",
+                          "text-base sm:text-lg leading-snug font-medium sm:font-normal",
                           currentTheme === "dark" ? "text-white" : "text-gray-700"
                         )}>
                           {getProcessedPrompt(agent.prompt)}
