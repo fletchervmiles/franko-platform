@@ -46,7 +46,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
   return (
     <SharedModalCore>
       <div
-        className="fixed inset-0 flex flex-col items-start justify-start overflow-y-auto bg-[#F9F8F6]"
+        className="fixed inset-0 bg-[#F9F8F6] flex flex-col"
         style={{
           touchAction: "manipulation",
           overscrollBehavior: "contain",
@@ -56,14 +56,31 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {/* Chat content */}
-        <div className="flex-1 w-full max-w-none flex items-center justify-center px-2 md:px-0 pb-6 pt-4 min-h-full">
+        {/* Mobile: Full-screen layout */}
+        <div className="flex-1 flex flex-col min-h-0 md:hidden">
           <WidgetPreview 
             {...rest}
             isEmbedMode
             displayMode={displayMode}
             onClose={handleClose}
           />
+        </div>
+
+        {/* Desktop: Fixed-size centered modal */}
+        <div className="hidden md:flex flex-1 items-center justify-center p-4">
+          <div 
+            className="w-full max-w-[600px] h-[700px] flex flex-col"
+            style={{
+              maxHeight: "calc(100vh - 2rem)", // Ensure it fits in viewport with padding
+            }}
+          >
+            <WidgetPreview 
+              {...rest}
+              isEmbedMode
+              displayMode={displayMode}
+              onClose={handleClose}
+            />
+          </div>
         </div>
       </div>
     </SharedModalCore>

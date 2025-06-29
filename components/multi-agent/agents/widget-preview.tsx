@@ -575,10 +575,18 @@ export function WidgetPreview({
     <CompletionAnimation agent={selectedAgent} onAnimationComplete={handleAnimationComplete} />
   )
 
-  const cardHeightClasses = displayMode === "modal" ? "h-full" : ""
+  // Different height handling for embed vs playground
+  const cardHeightClasses = isEmbedMode 
+    ? "h-full" // Always full height in embed mode (mobile full-screen, desktop constrained by parent)
+    : displayMode === "modal" 
+      ? "h-full" 
+      : ""
+
+  // Different max-width for embed mode
+  const cardMaxWidth = isEmbedMode ? "max-w-none" : "max-w-4xl"
 
   return (
-    <Card className={cn("w-full max-w-4xl mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses)}>
+    <Card className={cn("w-full mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}>
       <div className="flex flex-col flex-1 min-h-0">
         {coreDemo.view === 'agent-selection' && renderAgentSelectionView()}
         {coreDemo.view === 'loading' && renderLoadingView()}
