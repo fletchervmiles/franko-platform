@@ -382,7 +382,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         settings,
         updateInterfaceSettings,
         updateAgentSettings,
-        profile,
+        profile: profile ?? null,
         isLoadingProfile,
         currentModal,
         modals,
