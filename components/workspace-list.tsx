@@ -41,7 +41,7 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
       <div className="mb-6">
         <Image
-          src="/assets/user_avatar.svg"
+          src="/favicon/agent_icon.svg"
           alt="Franko logo"
           width={64}
           height={64}
@@ -299,7 +299,7 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
             </div>
             <div className="flex items-center gap-3 order-6">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Rectangle%201-zNq3ZeSKpAcDWZtxAfVWG0VVquUKB2.svg"
+                src="/favicon/agent_icon.svg"
                 className="h-6 w-6 rounded-full"
                 alt="User avatar"
               />
@@ -441,7 +441,7 @@ export const ModalWorkspaceList = React.memo(function ModalWorkspaceList() {
       <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
         <div className="mb-6">
           <Image
-            src="/assets/user_avatar.svg"
+            src="/favicon/agent_icon.svg"
             alt="Franko logo"
             width={64}
             height={64}

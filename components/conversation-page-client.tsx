@@ -129,8 +129,8 @@ const ConversationHeader = React.memo(function ConversationHeader({
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
-          alt="User avatar"
+          src="/favicon/agent_icon.svg"
+          alt="Avatar"
           className="h-8 w-8"
         />
         <DropdownMenu>

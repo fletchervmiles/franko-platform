@@ -118,7 +118,7 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
       <div className="mb-6">
         <Image
-          src="/assets/user_avatar.svg"
+          src="/favicon/agent_icon.svg"
           alt="Franko logo"
           width={64}
           height={64}
@@ -180,8 +180,8 @@ const ModalHeader = React.memo(function ModalHeader({
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/user_avatar-P2kgEUysCcRUdgA5eE93X7hWpXLVKx.svg"
-          alt="User avatar"
+          src="/favicon/agent_icon.svg"
+          alt="Avatar"
           className="h-8 w-8"
         />
         <DropdownMenu>
@@ -556,9 +556,9 @@ export default function ModalManager() {
             </div>
             <div className="flex items-center gap-3 order-6">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Rectangle%201-zNq3ZeSKpAcDWZtxAfVWG0VVquUKB2.svg"
+                src="/favicon/agent_icon.svg"
                 className="h-6 w-6 rounded-full"
-                alt="User avatar"
+                alt="Avatar"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

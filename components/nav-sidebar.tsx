@@ -350,7 +350,7 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
                   <SidebarMenuItem>
                     <div className="flex items-center px-3 py-2">
                       <img
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/favicon-96x96-EfO2cfAnyLgYAtFmWJqcJSvnpZlMgh.png"
+                        src="/favicon/icon1.png"
                         alt="Franko logo"
                         className="h-6 w-6"
                       />

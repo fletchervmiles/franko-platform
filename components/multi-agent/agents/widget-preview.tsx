@@ -300,10 +300,9 @@ export function WidgetPreview({
       return;
     }
 
-    // Show loading state immediately
-    coreDemo.setView("loading")
-
     if (isPlayground) {
+      // Show loading state immediately for playground mode
+      coreDemo.setView("loading")
       const targetModalId = isEmbedMode ? modalId : currentModal?.id;
       
       if (!targetModalId) {
@@ -355,6 +354,8 @@ export function WidgetPreview({
         setResolvedOrgName(null);
       }
     } else {
+      // Reset modal core to selection state and show popup
+      coreDemo.handleReturnToSelection()
       setPopoverAgentId(agent.id)
       if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current)
       popoverTimerRef.current = setTimeout(() => setPopoverAgentId(null), 3000)
@@ -403,27 +404,40 @@ export function WidgetPreview({
           <X className="h-5 w-5" />
         </button>
       )}
-      <div className={cn("px-4 py-4 sm:px-6 sm:py-6 flex flex-col gap-2 justify-center")} style={headerStyles}>
-        <div className="grid grid-cols-[auto,1fr] gap-x-4 items-start">
+      <div 
+        className={cn("px-6 py-5 flex flex-col gap-2 border-b")} 
+        style={{
+          ...headerStyles,
+          borderColor: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          background: currentTheme === 'dark' 
+            ? `linear-gradient(to bottom, ${effectiveChatHeaderColor}, ${effectiveChatHeaderColor})`
+            : `linear-gradient(to bottom, ${effectiveChatHeaderColor}, rgba(255,255,255,0.85))`
+        }}
+      >
+        <div className="flex items-start gap-4">
           {profilePictureUrl && (
-            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 rounded-full overflow-hidden flex-shrink-0">
+            <Avatar className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
               <AvatarImage src={profilePictureUrl || undefined} alt="Profile Picture" className="object-cover" />
               <AvatarFallback className="rounded-full">
                 <UserIcon className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
           )}
-          <div className="col-start-2">
-            <h1 className="text-xl sm:text-2xl leading-tight font-semibold">{displayHeaderName}</h1>
+          <div className="flex flex-col min-h-[40px] justify-center">
+            <h1 className={cn(
+              "text-lg font-semibold leading-tight",
+              currentTheme === "dark" ? "text-white" : "text-gray-900"
+            )}>{displayHeaderName}</h1>
+            <p className={cn(
+              "mt-1 text-sm hidden sm:block",
+              currentTheme === "dark" ? "text-white/60" : "text-gray-600"
+            )}>{displayInstructions}</p>
           </div>
-          <p className="col-span-2 ml-14 sm:ml-0 mt-1 text-sm sm:text-base text-gray-600">
-            {displayInstructions}
-          </p>
         </div>
       </div>
-      <div className={cn("p-6 flex-grow overflow-y-auto")} style={{ backgroundColor: headerDefaultColor }}>
+      <div className={cn("px-6 py-4 flex-grow overflow-y-auto")} style={{ backgroundColor: headerDefaultColor }}>
         {activeAgents.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {activeAgents.map((agent) => (
               <Popover key={agent.id} open={!isPlayground && popoverAgentId === agent.id}>
                 <PopoverTrigger asChild>
@@ -431,25 +445,28 @@ export function WidgetPreview({
                     onClick={() => handleAgentSelect(agent)}
                     disabled={isPlayground && loadingAgentId === agent.id}
                     className={cn(
-                      "w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 sm:px-5 sm:py-4 text-left shadow-sm sm:shadow-md active:bg-gray-100 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "w-full rounded-lg px-4 py-3 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      currentTheme === "dark" 
+                        ? "bg-gray-800/40 hover:bg-gray-800/60" 
+                        : "border border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                       isPlayground && loadingAgentId === agent.id
-                        ? "opacity-60 cursor-not-allowed"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                        ? "opacity-70 cursor-not-allowed"
+                        : "hover:translate-x-0.5 hover:translate-y-0 active:translate-y-0.5"
                     )}
-                    style={{ backgroundColor: headerDefaultColor }}
+                    style={{ backgroundColor: currentTheme === "dark" ? undefined : headerDefaultColor }}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+                      <div className="flex items-center gap-2.5">
+                        <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-gray-400/70" />
                         <p className={cn(
-                          "text-base sm:text-lg leading-snug font-medium sm:font-normal",
-                          currentTheme === "dark" ? "text-white" : "text-gray-700"
+                          "text-[15px] leading-snug",
+                          currentTheme === "dark" ? "text-gray-100" : "text-gray-700"
                         )}>
                           {getProcessedPrompt(agent.prompt)}
                         </p>
                       </div>
                       {isPlayground && loadingAgentId === agent.id && (
-                        <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#E4F222" }} />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "#E4F222" }} />
                       )}
                     </div>
                   </button>
