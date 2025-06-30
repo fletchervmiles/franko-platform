@@ -191,6 +191,7 @@ export function WidgetPreview({
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [chatInstanceId, setChatInstanceId] = useState<string | null>(null)
   const [chatResponseId, setChatResponseId] = useState<string | null>(null)
+  const [resolvedOrgName, setResolvedOrgName] = useState<string | null>(null)
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -241,12 +242,12 @@ export function WidgetPreview({
   }
 
   const getProcessedPrompt = (prompt: string) => {
-    // Use the organization name from props if in embed mode, otherwise use profile data
-    const orgName = isEmbedMode && organizationName 
-      ? organizationName 
-      : contextData?.profile?.organisationName || 
-        settings.interface.displayName || 
-        "your product";
+    // Use resolved organization name from initialization first, then fallback chain
+    const orgName = resolvedOrgName || 
+      (isEmbedMode && organizationName ? organizationName : null) ||
+      contextData?.profile?.organisationName || 
+      settings.interface.displayName || 
+      "your product";
     return prompt.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
   }
   
@@ -336,6 +337,7 @@ export function WidgetPreview({
         const data = await response.json();
         setChatInstanceId(data.chatInstanceId);
         setChatResponseId(data.chatResponseId);
+        setResolvedOrgName(data.organizationName);
         
         console.log('WidgetPreview - Chat initialized:', {
           agentId: agent.id,
@@ -350,6 +352,7 @@ export function WidgetPreview({
       } catch (error) {
         console.error('Error initializing chat:', error);
         coreDemo.handleReturnToSelection();
+        setResolvedOrgName(null);
       }
     } else {
       setPopoverAgentId(agent.id)
@@ -369,6 +372,7 @@ export function WidgetPreview({
 
   const handleReturnToSelection = () => {
     coreDemo.handleReturnToSelection()
+    setResolvedOrgName(null)
   }
 
   // Resolve active agents: prefer explicit objects, otherwise map IDs to objects
@@ -511,7 +515,7 @@ export function WidgetPreview({
               chatInstanceId={chatInstanceId}
               chatResponseId={chatResponseId}
               agentType={selectedAgent?.id}
-              organizationName={organizationName || "our product"}
+              organizationName={resolvedOrgName || organizationName || "our product"}
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
               disableProgressBar={false}
