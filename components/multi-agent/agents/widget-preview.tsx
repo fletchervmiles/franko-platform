@@ -272,7 +272,7 @@ export function WidgetPreview({
 
   // Centralized gradient values for easy adjustment
   const themeGradients = {
-    light: `linear-gradient(to bottom, ${effectiveChatHeaderColor}, rgba(0,0,0,0.03))`,
+    light: `linear-gradient(to bottom, ${effectiveChatHeaderColor}, rgba(0,0,0,0.02))`,
     dark: `linear-gradient(to bottom, ${effectiveChatHeaderColor}, #222225)`
   };
 
