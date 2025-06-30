@@ -15,6 +15,8 @@ import { useSettings } from "@/lib/settings-context"
 import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
 import { getAgentsByIds } from "@/lib/agents-data-client"
 import { useSharedModalCore } from "@/components/chat/use-shared-modal-core"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 type Message = {
   id: string
@@ -171,6 +173,9 @@ export function WidgetPreview({
   displayMode = "standalone",
   onClose,
 }: WidgetPreviewProps) {
+  const isMobile = useIsMobile()
+  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
+
   // Instantiate shared modal core once at the top so it is available to subsequent destructuring
   const coreDemo = useSharedModalCore()
 
@@ -570,34 +575,38 @@ export function WidgetPreview({
               <h3 className="font-semibold text-sm">Quick Feedback Chat</h3>
             </div>
           )}
-          <div ref={messagesContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4" style={{ backgroundColor: headerDefaultColor }}>
-            {messages.map((message) => (
-              <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm",
-                    message.sender === "user"
-                      ? "text-white"
-                      : currentTheme === "dark"
-                      ? "bg-gray-800 text-white"
-                      : "bg-gray-100 text-gray-900"
-                  )}
-                  style={{
-                    backgroundColor: message.sender === "user" ? effectiveUserMessageColor : undefined,
-                    color: message.sender === "user" ? userMessageTextColor : undefined,
-                  }}
-                >
-                  {message.text}
+          <div ref={messagesContainerRef} className="flex-grow overflow-y-auto px-4 md:px-8 lg:px-14 py-6 space-y-4" style={{ backgroundColor: headerDefaultColor }}>
+            <div className="max-w-4xl mx-auto space-y-4">
+              {messages.map((message) => (
+                <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
+                  <div
+                    className={cn(
+                      "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm",
+                      message.sender === "user"
+                        ? "text-white"
+                        : currentTheme === "dark"
+                        ? "bg-gray-800 text-white"
+                        : "bg-gray-100 text-gray-900"
+                    )}
+                    style={{
+                      backgroundColor: message.sender === "user" ? effectiveUserMessageColor : undefined,
+                      color: message.sender === "user" ? userMessageTextColor : undefined,
+                    }}
+                  >
+                    {message.text}
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
           <div className="border-t p-4">
-            <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
-              <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Type your message..." className="flex-grow" />
-              <Button type="submit" size="sm">Send</Button>
-            </form>
+            <div className="max-w-4xl mx-auto">
+              <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
+                <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Type your message..." className="flex-grow" />
+                <Button type="submit" size="sm">Send</Button>
+              </form>
+            </div>
           </div>
         </>
       )
@@ -609,14 +618,18 @@ export function WidgetPreview({
   )
 
   // Different height handling for embed vs playground
-  const cardHeightClasses = isEmbedMode 
-    ? "h-full" // Always full height in embed mode (mobile full-screen, desktop constrained by parent)
-    : displayMode === "modal" 
-      ? "h-full" 
-      : ""
+  const cardHeightClasses = isMobile
+    ? "h-full" // Keep mobile as is
+    : isTablet
+      ? "h-[540px]" // Tablet height
+      : "h-[600px]" // Desktop height
 
   // Different max-width for embed mode
-  const cardMaxWidth = isEmbedMode ? "max-w-none" : "max-w-4xl"
+  const cardMaxWidth = isMobile
+    ? "max-w-none" // Keep mobile as is
+    : isTablet
+      ? "max-w-[640px]" // Tablet width
+      : "max-w-[800px]" // Desktop width
 
   return (
     <Card className={cn("w-full mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}>
