@@ -125,13 +125,13 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
   );
 }
 
-function PoweredByFooter({ theme, backgroundColor }: { theme: 'light' | 'dark', backgroundColor: string }) {
+function PoweredByFooter({ gradient, borderColor }: { gradient: string, borderColor: string }) {
   return (
     <div
       className="px-4 flex items-center justify-center gap-1.5 border-t py-3 text-xs font-medium"
       style={{
-        backgroundColor: backgroundColor,
-        borderColor: theme === 'dark' ? '#333333' : '#e5e7eb',
+        background: gradient,
+        borderColor: borderColor,
         color: '#7A7A82'
       }}
     >
@@ -227,7 +227,7 @@ export function WidgetPreview({
       interface: {
         displayName: customDisplayName || "Ready to share your thoughts with us?",
         instructions: customInstructions || "Each topic below starts a 1-2 minute chat.",
-        theme: "light",
+        theme: contextData?.settings?.interface?.theme || "light",
         primaryBrandColor: "",
         advancedColors: false,
         chatIconText: "Feedback",
@@ -251,10 +251,10 @@ export function WidgetPreview({
     return prompt.replace(/{organisation_name}/g, orgName).replace(/{product}/g, orgName);
   }
   
-  const currentTheme = themeOverride || "light"
+  const currentTheme = settings.interface.theme;
   const themeDefaults = {
-    light: { headerColor: "#ffffff", userMessageColor: "#3B82F6", chatIconColor: "#000000" },
-    dark: { headerColor: "#18181b", userMessageColor: "#3B82F6", chatIconColor: "#ffffff" }
+    light: { headerColor: "#ffffff", userMessageColor: "#3B82F6", chatIconColor: "#000000", borderColor: "rgba(0,0,0,0.06)" },
+    dark: { headerColor: "#18181b", userMessageColor: "#3B82F6", chatIconColor: "#ffffff", borderColor: "rgba(255,255,255,0.1)" }
   }
   
   const effectiveUserMessageColor = advancedColors
@@ -270,7 +270,21 @@ export function WidgetPreview({
     ? (chatIconColor || themeDefaults[currentTheme].chatIconColor)
     : (primaryBrandColor || themeDefaults[currentTheme].chatIconColor)
 
-  const headerStyles = getColorStyles(effectiveChatHeaderColor, true)
+  // Centralized gradient values for easy adjustment
+  const themeGradients = {
+    light: `linear-gradient(to bottom, ${effectiveChatHeaderColor}, rgba(0,0,0,0.03))`,
+    dark: `linear-gradient(to bottom, ${effectiveChatHeaderColor}, #222225)`
+  };
+
+  // Use solid color if brand color is set, otherwise use gradient
+  const shouldUseGradient = !primaryBrandColor;
+  const headerBackground = shouldUseGradient ? themeGradients[currentTheme] : effectiveChatHeaderColor;
+
+  const headerStyles = {
+    ...getColorStyles(effectiveChatHeaderColor, true),
+    background: headerBackground,
+    borderColor: themeDefaults[currentTheme].borderColor,
+  }
   const userMessageTextColor = pickTextColor(effectiveUserMessageColor)
 
   const defaultDisplayName = "Ready to share your thoughts with us?"
@@ -408,10 +422,8 @@ export function WidgetPreview({
         className={cn("px-6 py-5 flex flex-col gap-2 border-b")} 
         style={{
           ...headerStyles,
-          borderColor: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-          background: currentTheme === 'dark' 
-            ? `linear-gradient(to bottom, ${effectiveChatHeaderColor}, ${effectiveChatHeaderColor})`
-            : `linear-gradient(to bottom, ${effectiveChatHeaderColor}, rgba(255,255,255,0.85))`
+          borderColor: themeDefaults[currentTheme].borderColor,
+          background: headerBackground
         }}
       >
         <div className="flex items-start gap-4">
@@ -424,14 +436,14 @@ export function WidgetPreview({
             </Avatar>
           )}
           <div className="flex flex-col min-h-[40px] justify-center">
-            <h1 className={cn(
-              "text-lg font-semibold leading-tight",
-              currentTheme === "dark" ? "text-white" : "text-gray-900"
-            )}>{displayHeaderName}</h1>
-            <p className={cn(
-              "mt-1 text-sm hidden sm:block",
-              currentTheme === "dark" ? "text-white/60" : "text-gray-600"
-            )}>{displayInstructions}</p>
+            <h1 
+              className="text-lg font-semibold leading-tight"
+              style={{ color: pickTextColor(effectiveChatHeaderColor) }}
+            >{displayHeaderName}</h1>
+            <p 
+              className="mt-1 text-sm hidden sm:block"
+              style={{ color: `${pickTextColor(effectiveChatHeaderColor)}99` }}
+            >{displayInstructions}</p>
           </div>
         </div>
       </div>
@@ -614,7 +626,10 @@ export function WidgetPreview({
         {coreDemo.view === 'chatting' && renderChatView()}
         {coreDemo.view === 'completion' && renderCompletionView()}
       </div>
-      <PoweredByFooter theme={currentTheme} backgroundColor={effectiveChatHeaderColor} />
+      <PoweredByFooter 
+        gradient={headerBackground}
+        borderColor={themeDefaults[currentTheme].borderColor}
+      />
       {displayMode === "modal" && alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && (
         <FloatingChatIcon
           text={chatIconText || "Feedback"}

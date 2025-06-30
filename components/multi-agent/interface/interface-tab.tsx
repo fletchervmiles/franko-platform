@@ -9,32 +9,77 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Upload, UserIcon, Check } from "lucide-react"
 import { useSettings } from "@/lib/settings-context"
 import { ImageCropModal } from "./image-crop-modal"
 import { WidgetPreview } from "../agents/widget-preview"
 import { agentsData } from "@/lib/agents-data"
+import { SketchPicker, ColorResult } from 'react-color'
 
 export function InterfaceTab() {
   const { settings, updateInterfaceSettings, isSaving } = useSettings()
   const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false)
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
 
+  // Helper function to validate and format hex colors
+  const validateHexColor = (color: string): string => {
+    // Remove any whitespace
+    color = color.trim()
+    
+    // If empty, return empty
+    if (!color) return ""
+    
+    // Add # if missing
+    if (!color.startsWith('#')) {
+      color = '#' + color
+    }
+    
+    // Validate hex format (3 or 6 characters after #)
+    const hexRegex = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/
+    if (hexRegex.test(color)) {
+      return color.toUpperCase()
+    }
+    
+    // If invalid, return the original value (let user see the error)
+    return color
+  }
+
+  // Helper function to check if a color is a valid hex
+  const isValidHexColor = (color: string): boolean => {
+    if (!color) return true // Empty is valid (uses default)
+    const hexRegex = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/
+    return hexRegex.test(color)
+  }
+
   const handleInputChange = (field: keyof typeof settings.interface, value: string | boolean | null) => {
     updateInterfaceSettings({ [field]: value })
   }
 
-  const handlePrimaryColorChange = (color: string) => {
+  // Enhanced color change handler with validation
+  const handleColorChange = (field: keyof typeof settings.interface, value: string) => {
+    const validatedColor = validateHexColor(value)
+    updateInterfaceSettings({ [field]: validatedColor })
+  }
+
+  // Color picker handlers for react-color
+  const handleColorPickerChange = (field: keyof typeof settings.interface) => (color: ColorResult) => {
+    updateInterfaceSettings({ [field]: color.hex })
+  }
+
+  const handlePrimaryColorPickerChange = (color: ColorResult) => {
+    const validatedColor = validateHexColor(color.hex)
+    
     if (settings.interface.advancedColors) {
       // Only update primary color if advanced mode is on
-      handleInputChange("primaryBrandColor", color)
+      updateInterfaceSettings({ primaryBrandColor: validatedColor })
     } else {
       // Sync all colors when not in advanced mode
       updateInterfaceSettings({
-        primaryBrandColor: color,
-        chatIconColor: color,
-        userMessageColor: color,
-        chatHeaderColor: color,
+        primaryBrandColor: validatedColor,
+        chatIconColor: validatedColor,
+        userMessageColor: validatedColor,
+        chatHeaderColor: validatedColor,
       })
     }
   }
@@ -188,21 +233,43 @@ export function InterfaceTab() {
                     Reset to Defaults
                   </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="primary-brand-color"
-                    value={settings.interface.primaryBrandColor || "#ffffff"}
-                    onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                    className="w-12 h-8 rounded border border-gray-300"
-                  />
-                  <Input
-                    value={settings.interface.primaryBrandColor}
-                    onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                    placeholder="Leave empty for theme default"
-                    className="flex-1"
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal h-10 px-3"
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div
+                          className="h-6 w-6 rounded border border-gray-300"
+                          style={{ backgroundColor: settings.interface.primaryBrandColor || "#ffffff" }}
+                        />
+                        <span className="text-sm font-mono text-gray-600 flex-grow">
+                          {settings.interface.primaryBrandColor || "Default theme color"}
+                        </span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 border-none" align="start">
+                    <SketchPicker
+                      color={settings.interface.primaryBrandColor || "#ffffff"}
+                      onChangeComplete={handlePrimaryColorPickerChange}
+                      disableAlpha
+                      presetColors={[]}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  value={settings.interface.primaryBrandColor}
+                  onChange={(e) => handleColorChange("primaryBrandColor", e.target.value)}
+                  placeholder="e.g., #FF0000 or leave empty for theme default"
+                  className={`${!isValidHexColor(settings.interface.primaryBrandColor) ? 'border-red-500' : ''}`}
+                />
+                {!isValidHexColor(settings.interface.primaryBrandColor) && (
+                  <p className="text-xs text-red-500">
+                    Please enter a valid hex color (e.g., #FF0000 or #F00)
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">
                   Set a custom brand color for your modal. Hit reset to use theme defaults (white header for light mode, dark header for dark mode).
                 </p>
@@ -237,59 +304,125 @@ export function InterfaceTab() {
                         Reset to Brand Color
                       </Button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        id="chat-header-color"
-                        value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
-                        onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
-                        className="w-12 h-8 rounded border border-gray-300"
-                      />
-                      <Input
-                        value={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor}
-                        onChange={(e) => handleInputChange("chatHeaderColor", e.target.value)}
-                        placeholder=""
-                        className="flex-1"
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal h-10 px-3"
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div
+                              className="h-6 w-6 rounded border border-gray-300"
+                              style={{ backgroundColor: settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "#ffffff" }}
+                            />
+                            <span className="text-sm font-mono text-gray-600 flex-grow">
+                              {settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "Default color"}
+                            </span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none" align="start">
+                        <SketchPicker
+                          color={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "#ffffff"}
+                          onChangeComplete={handleColorPickerChange("chatHeaderColor")}
+                          disableAlpha
+                          presetColors={[]}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      value={settings.interface.chatHeaderColor || ""}
+                      onChange={(e) => handleColorChange("chatHeaderColor", e.target.value)}
+                      placeholder="e.g., #FF0000"
+                      className={`${!isValidHexColor(settings.interface.chatHeaderColor || "") ? 'border-red-500' : ''}`}
+                    />
+                    {!isValidHexColor(settings.interface.chatHeaderColor || "") && (
+                      <p className="text-xs text-red-500">
+                        Please enter a valid hex color (e.g., #FF0000 or #F00)
+                      </p>
+                    )}
                   </div>
                   {/* Chat Icon Color */}
                   <div className="space-y-2">
                     <Label htmlFor="chat-icon-color">Feedback Icon Color</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        id="chat-icon-color"
-                        value={settings.interface.chatIconColor}
-                        onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
-                        className="w-12 h-8 rounded border border-gray-300"
-                      />
-                      <Input
-                        value={settings.interface.chatIconColor}
-                        onChange={(e) => handleInputChange("chatIconColor", e.target.value)}
-                        placeholder=""
-                        className="flex-1"
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal h-10 px-3"
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div
+                              className="h-6 w-6 rounded border border-gray-300"
+                              style={{ backgroundColor: settings.interface.chatIconColor || "#ffffff" }}
+                            />
+                            <span className="text-sm font-mono text-gray-600 flex-grow">
+                              {settings.interface.chatIconColor || "Default color"}
+                            </span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none" align="start">
+                        <SketchPicker
+                          color={settings.interface.chatIconColor || "#ffffff"}
+                          onChangeComplete={handleColorPickerChange("chatIconColor")}
+                          disableAlpha
+                          presetColors={[]}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      value={settings.interface.chatIconColor}
+                      onChange={(e) => handleColorChange("chatIconColor", e.target.value)}
+                      placeholder="e.g., #FF0000"
+                      className={`${!isValidHexColor(settings.interface.chatIconColor) ? 'border-red-500' : ''}`}
+                    />
+                    {!isValidHexColor(settings.interface.chatIconColor) && (
+                      <p className="text-xs text-red-500">
+                        Please enter a valid hex color (e.g., #FF0000 or #F00)
+                      </p>
+                    )}
                   </div>
                   {/* User Message Color */}
                   <div className="space-y-2">
                     <Label htmlFor="user-message-color">User Message Color</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        id="user-message-color"
-                        value={settings.interface.userMessageColor}
-                        onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
-                        className="w-12 h-8 rounded border border-gray-300"
-                      />
-                      <Input
-                        value={settings.interface.userMessageColor}
-                        onChange={(e) => handleInputChange("userMessageColor", e.target.value)}
-                        placeholder=""
-                        className="flex-1"
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal h-10 px-3"
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div
+                              className="h-6 w-6 rounded border border-gray-300"
+                              style={{ backgroundColor: settings.interface.userMessageColor || "#ffffff" }}
+                            />
+                            <span className="text-sm font-mono text-gray-600 flex-grow">
+                              {settings.interface.userMessageColor || "Default color"}
+                            </span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none" align="start">
+                        <SketchPicker
+                          color={settings.interface.userMessageColor || "#ffffff"}
+                          onChangeComplete={handleColorPickerChange("userMessageColor")}
+                          disableAlpha
+                          presetColors={[]}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      value={settings.interface.userMessageColor}
+                      onChange={(e) => handleColorChange("userMessageColor", e.target.value)}
+                      placeholder="e.g., #FF0000"
+                      className={`${!isValidHexColor(settings.interface.userMessageColor) ? 'border-red-500' : ''}`}
+                    />
+                    {!isValidHexColor(settings.interface.userMessageColor) && (
+                      <p className="text-xs text-red-500">
+                        Please enter a valid hex color (e.g., #FF0000 or #F00)
+                      </p>
+                    )}
                   </div>
                 </>
               )}
