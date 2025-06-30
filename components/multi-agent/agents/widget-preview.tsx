@@ -15,8 +15,6 @@ import { useSettings } from "@/lib/settings-context"
 import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
 import { getAgentsByIds } from "@/lib/agents-data-client"
 import { useSharedModalCore } from "@/components/chat/use-shared-modal-core"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { useMediaQuery } from "@/hooks/use-media-query"
 
 type Message = {
   id: string
@@ -173,9 +171,6 @@ export function WidgetPreview({
   displayMode = "standalone",
   onClose,
 }: WidgetPreviewProps) {
-  const isMobile = useIsMobile()
-  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
-
   // Instantiate shared modal core once at the top so it is available to subsequent destructuring
   const coreDemo = useSharedModalCore()
 
@@ -454,7 +449,7 @@ export function WidgetPreview({
       </div>
       <div className={cn("px-6 py-4 flex-grow overflow-y-auto")} style={{ backgroundColor: headerDefaultColor }}>
         {activeAgents.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-2 md:space-y-3">
             {activeAgents.map((agent) => (
               <Popover key={agent.id} open={!isPlayground && popoverAgentId === agent.id}>
                 <PopoverTrigger asChild>
@@ -464,13 +459,12 @@ export function WidgetPreview({
                     className={cn(
                       "w-full rounded-lg px-4 py-3 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       currentTheme === "dark" 
-                        ? "bg-gray-800/40 hover:bg-gray-800/60" 
-                        : "border border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+                        ? "bg-gray-700/45 hover:bg-gray-700/60" 
+                        : "bg-slate-50/70 border border-gray-200 hover:border-gray-300",
                       isPlayground && loadingAgentId === agent.id
                         ? "opacity-70 cursor-not-allowed"
                         : "hover:translate-x-0.5 hover:translate-y-0 active:translate-y-0.5"
                     )}
-                    style={{ backgroundColor: currentTheme === "dark" ? undefined : headerDefaultColor }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -554,6 +548,7 @@ export function WidgetPreview({
               initialMessages={[]}
               disableProgressBar={false}
               bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
+              hideProgressBarUI={true}
             />
           </div>
         </div>
@@ -617,19 +612,10 @@ export function WidgetPreview({
     <CompletionAnimation agent={selectedAgent} onAnimationComplete={handleAnimationComplete} />
   )
 
-  // Different height handling for embed vs playground
-  const cardHeightClasses = isMobile
-    ? "h-full" // Keep mobile as is
-    : isTablet
-      ? "h-[540px]" // Tablet height
-      : "h-[600px]" // Desktop height
-
-  // Different max-width for embed mode
-  const cardMaxWidth = isMobile
-    ? "max-w-none" // Keep mobile as is
-    : isTablet
-      ? "max-w-[640px]" // Tablet width
-      : "max-w-[800px]" // Desktop width
+  // Fixed dimensions for consistent modal sizing
+  // Use responsive classes that work within containers
+  const cardHeightClasses = "h-[600px] max-md:h-full"
+  const cardMaxWidth = "max-w-[800px] max-lg:max-w-[640px] max-md:max-w-none"
 
   return (
     <Card className={cn("w-full mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}>

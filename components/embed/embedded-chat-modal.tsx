@@ -69,7 +69,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
         {/* Desktop: Fixed-size centered modal */}
         <div className="hidden md:flex flex-1 items-center justify-center p-4">
           <div 
-            className="w-full max-w-[600px] h-[700px] flex flex-col"
+            className="w-full max-w-[800px] h-[600px] flex flex-col"
             style={{
               maxHeight: "calc(100vh - 2rem)", // Ensure it fits in viewport with padding
             }}

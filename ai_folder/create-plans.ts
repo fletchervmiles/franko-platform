@@ -283,7 +283,7 @@ export async function createAutomatedModal(
     const brandSettings = {
       interface: {
         displayName: `We'd love your feedback`,
-        instructions: `Help us improve ${organisationName} Each conversation is just 1-2 minutes.`,
+        instructions: `Help us improve ${organisationName}. Each conversation is just 1-2 minutes.`,
         theme: themeDefault as "light" | "dark",
         primaryBrandColor: profile.buttonColor || "",
         advancedColors: false,

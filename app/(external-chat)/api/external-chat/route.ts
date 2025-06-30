@@ -72,7 +72,7 @@ import path from 'path';
 import { LRUCache } from 'lru-cache';
 
 // Import custom modules and functions
-import { o3MiniLowModel, gemini25FlashPreviewModel } from "@/ai_folder";  // AI model configuration
+import { o3MiniLowModel, geminiFlashModel } from "@/ai_folder";  // AI model configuration
 import {
   performWebSearch,
   thinkingHelp,
@@ -429,7 +429,7 @@ export async function POST(request: Request) {
     console.log("System Prompt:", systemPrompt);
     console.log("\nMessage History:", JSON.stringify(coreMessages, null, 2));
     console.log("\nRequest Configuration:", JSON.stringify({
-      model: gemini25FlashPreviewModel,
+      model: geminiFlashModel,
       maxTokens: 5000,
       temperature: 1,
     }, null, 2));
@@ -438,7 +438,7 @@ export async function POST(request: Request) {
     // Helper to call the model – we may need at most one retry
     async function callModel() {
       return generateText({
-        model: gemini25FlashPreviewModel,
+        model: geminiFlashModel,
         system: systemPrompt,
         messages: coreMessages,
         maxTokens: 5000,
@@ -470,9 +470,10 @@ export async function POST(request: Request) {
     // Retry once if the first attempt is invalid
     if (!isValidAssistantJson(result.text)) {
       retried = true;
+      // Gemini only allows one system message (the initial prompt). Use a user role for retry instructions.
       coreMessages.push({
-        role: 'system',
-        content: 'Your last answer was invalid. Please reply ONLY with a JSON object containing a non-empty "response" field.',
+        role: 'user',
+        content: '❌ That was not valid JSON. Please reply ONLY with a JSON object containing a non-empty "response" field.',
       } as any);
 
       result = await callModel();

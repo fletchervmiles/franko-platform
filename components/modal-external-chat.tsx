@@ -35,6 +35,7 @@ interface ModalExternalChatProps {
   onConversationComplete?: () => void;
   disableProgressBar?: boolean;
   bodyBackground?: string;
+  hideProgressBarUI?: boolean; // Add this prop definition
 }
 
 // Custom hook to prevent zooming on mobile
@@ -77,6 +78,7 @@ export function ModalExternalChat({
   onConversationComplete,
   disableProgressBar = false,
   bodyBackground,
+  hideProgressBarUI = false,
 }: ModalExternalChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -452,7 +454,7 @@ export function ModalExternalChat({
       <LazyDirectProgressBar 
         messages={uiMessages} 
         onAllObjectivesDone={handleAllObjectivesDone}
-        hideUI={true}  // Hide the visual progress bar but keep the completion logic
+        hideUI={true}  // Always hide the UI
       />
     );
   }, [disableProgressBar, showProgressBar, uiMessages, handleAllObjectivesDone]);
@@ -503,7 +505,7 @@ export function ModalExternalChat({
     }
   }, [uiMessages, isFinished, isSending]);
 
-  // Check for ending phrases after each message
+  // Effect to check for ending phrases after each message
   useEffect(() => {
     checkEndConditions();
   }, [uiMessages, checkEndConditions]);
@@ -589,9 +591,9 @@ export function ModalExternalChat({
           onChange={handleInputChange}
           onSubmit={handleSubmit}
           disabled={isSending || isFinished}
-          showProgressBar={showProgressBar}
+          showProgressBar={false}  // Always hide the progress bar UI
           progressBar={progressBarElement}
-          stop={() => {}} // No-op since we're not using streaming
+          stop={() => {}}
           messageContainerRef={messagesContainerRef}
           wrapperBackground={bodyBackground}
           containerBackground={bodyBackground}
