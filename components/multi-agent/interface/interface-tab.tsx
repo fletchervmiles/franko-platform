@@ -9,18 +9,20 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Upload, UserIcon, Check } from "lucide-react"
 import { useSettings } from "@/lib/settings-context"
 import { ImageCropModal } from "./image-crop-modal"
 import { WidgetPreview } from "../agents/widget-preview"
 import { agentsData } from "@/lib/agents-data"
 import { SketchPicker, ColorResult } from 'react-color'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 export function InterfaceTab() {
   const { settings, updateInterfaceSettings, isSaving } = useSettings()
   const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false)
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
+  const [showColorPicker, setShowColorPicker] = useState(false)
 
   // Helper function to validate and format hex colors
   const validateHexColor = (color: string): string => {
@@ -56,19 +58,12 @@ export function InterfaceTab() {
     updateInterfaceSettings({ [field]: value })
   }
 
-  // Enhanced color change handler with validation
-  const handleColorChange = (field: keyof typeof settings.interface, value: string) => {
-    const validatedColor = validateHexColor(value)
-    updateInterfaceSettings({ [field]: validatedColor })
+  const handleColorChange = (color: ColorResult) => {
+    handlePrimaryColorChange(color.hex)
   }
 
-  // Color picker handlers for react-color
-  const handleColorPickerChange = (field: keyof typeof settings.interface) => (color: ColorResult) => {
-    updateInterfaceSettings({ [field]: color.hex })
-  }
-
-  const handlePrimaryColorPickerChange = (color: ColorResult) => {
-    const validatedColor = validateHexColor(color.hex)
+  const handlePrimaryColorChange = (color: string) => {
+    const validatedColor = validateHexColor(color)
     
     if (settings.interface.advancedColors) {
       // Only update primary color if advanced mode is on
@@ -233,43 +228,32 @@ export function InterfaceTab() {
                     Reset to Defaults
                   </Button>
                 </div>
-                <Popover>
+                <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-left font-normal h-10 px-3"
+                      className="w-full justify-start text-left font-normal h-10 px-2"
                     >
-                      <div className="flex items-center gap-3 w-full">
+                      <div className="flex items-center gap-2 w-full">
                         <div
-                          className="h-6 w-6 rounded border border-gray-300"
-                          style={{ backgroundColor: settings.interface.primaryBrandColor || "#ffffff" }}
+                          className="h-6 w-6 rounded border"
+                          style={{ backgroundColor: settings.interface.primaryBrandColor || '#ffffff' }}
                         />
                         <span className="text-sm font-mono text-gray-600 flex-grow">
-                          {settings.interface.primaryBrandColor || "Default theme color"}
+                          {settings.interface.primaryBrandColor || '#ffffff'}
                         </span>
                       </div>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 border-none" align="start">
                     <SketchPicker
-                      color={settings.interface.primaryBrandColor || "#ffffff"}
-                      onChangeComplete={handlePrimaryColorPickerChange}
+                      color={settings.interface.primaryBrandColor || '#ffffff'}
+                      onChangeComplete={handleColorChange}
                       disableAlpha
                       presetColors={[]}
                     />
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={settings.interface.primaryBrandColor}
-                  onChange={(e) => handleColorChange("primaryBrandColor", e.target.value)}
-                  placeholder="e.g., #FF0000 or leave empty for theme default"
-                  className={`${!isValidHexColor(settings.interface.primaryBrandColor) ? 'border-red-500' : ''}`}
-                />
-                {!isValidHexColor(settings.interface.primaryBrandColor) && (
-                  <p className="text-xs text-red-500">
-                    Please enter a valid hex color (e.g., #FF0000 or #F00)
-                  </p>
-                )}
                 <p className="text-xs text-gray-500">
                   Set a custom brand color for your modal. Hit reset to use theme defaults (white header for light mode, dark header for dark mode).
                 </p>
@@ -308,39 +292,28 @@ export function InterfaceTab() {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start text-left font-normal h-10 px-3"
+                          className="w-full justify-start text-left font-normal h-10 px-2"
                         >
-                          <div className="flex items-center gap-3 w-full">
+                          <div className="flex items-center gap-2 w-full">
                             <div
-                              className="h-6 w-6 rounded border border-gray-300"
-                              style={{ backgroundColor: settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "#ffffff" }}
+                              className="h-6 w-6 rounded border"
+                              style={{ backgroundColor: settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || '#ffffff' }}
                             />
                             <span className="text-sm font-mono text-gray-600 flex-grow">
-                              {settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "Default color"}
+                              {settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || '#ffffff'}
                             </span>
                           </div>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 border-none" align="start">
                         <SketchPicker
-                          color={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || "#ffffff"}
-                          onChangeComplete={handleColorPickerChange("chatHeaderColor")}
+                          color={settings.interface.chatHeaderColor || settings.interface.primaryBrandColor || '#ffffff'}
+                          onChangeComplete={(color) => handleInputChange("chatHeaderColor", color.hex)}
                           disableAlpha
                           presetColors={[]}
                         />
                       </PopoverContent>
                     </Popover>
-                    <Input
-                      value={settings.interface.chatHeaderColor || ""}
-                      onChange={(e) => handleColorChange("chatHeaderColor", e.target.value)}
-                      placeholder="e.g., #FF0000"
-                      className={`${!isValidHexColor(settings.interface.chatHeaderColor || "") ? 'border-red-500' : ''}`}
-                    />
-                    {!isValidHexColor(settings.interface.chatHeaderColor || "") && (
-                      <p className="text-xs text-red-500">
-                        Please enter a valid hex color (e.g., #FF0000 or #F00)
-                      </p>
-                    )}
                   </div>
                   {/* Chat Icon Color */}
                   <div className="space-y-2">
@@ -349,39 +322,28 @@ export function InterfaceTab() {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start text-left font-normal h-10 px-3"
+                          className="w-full justify-start text-left font-normal h-10 px-2"
                         >
-                          <div className="flex items-center gap-3 w-full">
+                          <div className="flex items-center gap-2 w-full">
                             <div
-                              className="h-6 w-6 rounded border border-gray-300"
-                              style={{ backgroundColor: settings.interface.chatIconColor || "#ffffff" }}
+                              className="h-6 w-6 rounded border"
+                              style={{ backgroundColor: settings.interface.chatIconColor || '#ffffff' }}
                             />
                             <span className="text-sm font-mono text-gray-600 flex-grow">
-                              {settings.interface.chatIconColor || "Default color"}
+                              {settings.interface.chatIconColor || '#ffffff'}
                             </span>
                           </div>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 border-none" align="start">
                         <SketchPicker
-                          color={settings.interface.chatIconColor || "#ffffff"}
-                          onChangeComplete={handleColorPickerChange("chatIconColor")}
+                          color={settings.interface.chatIconColor || '#ffffff'}
+                          onChangeComplete={(color) => handleInputChange("chatIconColor", color.hex)}
                           disableAlpha
                           presetColors={[]}
                         />
                       </PopoverContent>
                     </Popover>
-                    <Input
-                      value={settings.interface.chatIconColor}
-                      onChange={(e) => handleColorChange("chatIconColor", e.target.value)}
-                      placeholder="e.g., #FF0000"
-                      className={`${!isValidHexColor(settings.interface.chatIconColor) ? 'border-red-500' : ''}`}
-                    />
-                    {!isValidHexColor(settings.interface.chatIconColor) && (
-                      <p className="text-xs text-red-500">
-                        Please enter a valid hex color (e.g., #FF0000 or #F00)
-                      </p>
-                    )}
                   </div>
                   {/* User Message Color */}
                   <div className="space-y-2">
@@ -390,39 +352,28 @@ export function InterfaceTab() {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start text-left font-normal h-10 px-3"
+                          className="w-full justify-start text-left font-normal h-10 px-2"
                         >
-                          <div className="flex items-center gap-3 w-full">
+                          <div className="flex items-center gap-2 w-full">
                             <div
-                              className="h-6 w-6 rounded border border-gray-300"
-                              style={{ backgroundColor: settings.interface.userMessageColor || "#ffffff" }}
+                              className="h-6 w-6 rounded border"
+                              style={{ backgroundColor: settings.interface.userMessageColor || '#ffffff' }}
                             />
                             <span className="text-sm font-mono text-gray-600 flex-grow">
-                              {settings.interface.userMessageColor || "Default color"}
+                              {settings.interface.userMessageColor || '#ffffff'}
                             </span>
                           </div>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 border-none" align="start">
                         <SketchPicker
-                          color={settings.interface.userMessageColor || "#ffffff"}
-                          onChangeComplete={handleColorPickerChange("userMessageColor")}
+                          color={settings.interface.userMessageColor || '#ffffff'}
+                          onChangeComplete={(color) => handleInputChange("userMessageColor", color.hex)}
                           disableAlpha
                           presetColors={[]}
                         />
                       </PopoverContent>
                     </Popover>
-                    <Input
-                      value={settings.interface.userMessageColor}
-                      onChange={(e) => handleColorChange("userMessageColor", e.target.value)}
-                      placeholder="e.g., #FF0000"
-                      className={`${!isValidHexColor(settings.interface.userMessageColor) ? 'border-red-500' : ''}`}
-                    />
-                    {!isValidHexColor(settings.interface.userMessageColor) && (
-                      <p className="text-xs text-red-500">
-                        Please enter a valid hex color (e.g., #FF0000 or #F00)
-                      </p>
-                    )}
                   </div>
                 </>
               )}
