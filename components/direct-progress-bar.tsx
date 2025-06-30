@@ -27,11 +27,13 @@ interface ExtendedMessage extends Message {
 interface DirectProgressBarProps {
   messages: Message[] | ExtendedMessage[];  // Accept either type for backward compatibility
   onAllObjectivesDone?: (isDone: boolean) => void;
+  hideUI?: boolean; // New prop to hide the visual progress bar while keeping logic
 }
 
 export const DirectProgressBar = React.memo(function DirectProgressBar({ 
   messages,
-  onAllObjectivesDone
+  onAllObjectivesDone,
+  hideUI = false
 }: DirectProgressBarProps) {
   // State to track parsed objectives
   const [objectives, setObjectives] = useState<Record<string, { status: string, count?: number, target?: number, guidance?: string }> | null>(null);
@@ -126,6 +128,12 @@ export const DirectProgressBar = React.memo(function DirectProgressBar({
         };
       }) as Step[];
   }, [objectives]);
+
+  // If hideUI is true, don't render anything but keep all the logic above
+  if (hideUI) {
+    console.log('Progress bar logic running but UI hidden (hideUI=true)');
+    return null;
+  }
 
   // Only render if we have steps
   if (steps.length === 0) {

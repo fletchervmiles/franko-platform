@@ -514,7 +514,7 @@ export function WidgetPreview({
               organizationName={organizationName || "our product"}
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
-              disableProgressBar={true}
+              disableProgressBar={false}
               bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
             />
           </div>

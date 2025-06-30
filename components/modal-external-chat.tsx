@@ -452,6 +452,7 @@ export function ModalExternalChat({
       <LazyDirectProgressBar 
         messages={uiMessages} 
         onAllObjectivesDone={handleAllObjectivesDone}
+        hideUI={true}  // Hide the visual progress bar but keep the completion logic
       />
     );
   }, [disableProgressBar, showProgressBar, uiMessages, handleAllObjectivesDone]);
