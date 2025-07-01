@@ -43,6 +43,17 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
     return () => window.removeEventListener("keydown", onKey)
   }, [handleClose])
 
+  // Listen for visibility reset from parent window
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'RESET_VISIBILITY') {
+        setIsVisible(true);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   return (
     <SharedModalCore>
       <div

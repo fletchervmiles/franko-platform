@@ -118,8 +118,8 @@
   // Modal control funcs
   function openModal() {
     if (iframe.style.display === 'none') {
-      // Reload iframe to reset internal visibility state
-      iframe.src = iframeUrl;
+      // Tell iframe to reset internal visibility state
+      iframe.contentWindow.postMessage({ type: 'RESET_VISIBILITY' }, '*');
     }
     iframe.style.display = 'block';
     iframe.setAttribute('aria-hidden', 'false');
