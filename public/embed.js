@@ -65,8 +65,8 @@
   function bubblePositionStyles(pos) {
     var style = {
       position: 'fixed',
-      width: '56px',
-      height: '56px',
+      height: '40px',
+      padding: '0 16px',
       borderRadius: '9999px',
       background: '#000',
       color: '#fff',
@@ -74,9 +74,11 @@
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
+      fontSize: '14px',
+      lineHeight: '1',
       cursor: 'pointer',
       zIndex: '2147483646',
+      whiteSpace: 'nowrap',
     };
     var pad = '24px';
     if (pos === 'bottom-left') {
@@ -97,8 +99,9 @@
     var styles = bubblePositionStyles(position);
     Object.assign(bubbleBtn.style, styles);
     
-    // Use a more visible default icon
-    bubbleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>';
+    // Text for bubble – default "Feedback" or custom via attribute
+    var bubbleText = loader.getAttribute('data-bubble-text') || 'Feedback';
+    bubbleBtn.textContent = bubbleText;
     bubbleBtn.setAttribute('aria-label', 'Open chat');
     bubbleBtn.onclick = openModal;
     
@@ -114,6 +117,10 @@
 
   // Modal control funcs
   function openModal() {
+    if (iframe.style.display === 'none') {
+      // Reload iframe to reset internal visibility state
+      iframe.src = iframeUrl;
+    }
     iframe.style.display = 'block';
     iframe.setAttribute('aria-hidden', 'false');
     if (bubbleBtn) bubbleBtn.style.display = 'none';

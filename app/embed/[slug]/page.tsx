@@ -29,7 +29,10 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
   const displayMode = searchParams?.mode === "modal" ? "modal" : "standalone"
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F9F8F6] p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: displayMode === "standalone" ? "#F9F8F6" : "transparent" }}
+    >
       <EmbedSettingsProvider 
         brandSettings={brandSettings}
         modal={{

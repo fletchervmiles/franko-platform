@@ -46,7 +46,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
   return (
     <SharedModalCore>
       <div
-        className="fixed inset-0 bg-[#F9F8F6] flex flex-col"
+        className="fixed inset-0 flex flex-col"
         style={{
           touchAction: "manipulation",
           overscrollBehavior: "contain",
@@ -54,6 +54,8 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
           opacity: isVisible ? 1 : 0,
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
+          background: displayMode === "modal" ? "rgba(0,0,0,0.35)" : "#F9F8F6",
+          backdropFilter: displayMode === "modal" ? "blur(4px)" : undefined,
         }}
       >
         {/* Mobile: Full-screen layout */}
