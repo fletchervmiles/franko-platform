@@ -65,26 +65,23 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
   agent: Agent | null; 
   onAnimationComplete: () => void;
 }) {
-  // Fallback agent in case none is provided
-  const fallbackAgent: Agent = {
-    id: "AGENT01",
-    name: "Agent",
-    benefit: "",
-    prompt: "",
-    description: "",
-    Icon: User,
-    initialQuestion: "",
-    whyFoundersCare: "",
-  }
-
-  const safeAgent: Agent = agent ?? fallbackAgent
+  // Get the organization name for the message
+  const getOrganizationName = () => {
+    if (agent && typeof window !== 'undefined') {
+      const orgName = (window as any).frankoOrgName || 
+        (window as any).FrankoUser?.user_metadata?.organization_name ||
+        "our";
+      return orgName;
+    }
+    return "our";
+  };
 
   const [stage, setStage] = useState<'appearing' | 'celebrating' | 'fading'>('appearing');
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setStage('celebrating'), 500);
-    const timer2 = setTimeout(() => setStage('fading'), 2500);
-    const timer3 = setTimeout(onAnimationComplete, 3500);
+    const timer1 = setTimeout(() => setStage('celebrating'), 300);
+    const timer2 = setTimeout(() => setStage('fading'), 2000);
+    const timer3 = setTimeout(onAnimationComplete, 2800);
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -97,28 +94,32 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
       <div className="relative mb-6">
         <div
           className={cn(
-            "absolute inset-0 rounded-full transition-all duration-1000 bg-[#F5FF78]",
-            stage === "celebrating" && "scale-150 opacity-30"
-          )}
-        />
-        <div
-          className={cn(
-            "relative flex items-center justify-center w-24 h-24 rounded-full transition-all duration-500 bg-[#E4F222] text-[#1C1617]",
+            "flex items-center justify-center w-16 h-16 rounded-full transition-all duration-500",
+            "border-2 border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-400",
             stage === "celebrating" && "scale-110"
           )}
         >
-          <safeAgent.Icon className="w-12 h-12" />
+          <svg 
+            className={cn(
+              "w-8 h-8 text-green-600 dark:text-green-400 transition-all duration-500",
+              stage === 'appearing' ? "scale-0 opacity-0" : "scale-100 opacity-100"
+            )}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
         </div>
       </div>
       <div className={cn(
         "transition-all duration-500",
         stage === 'fading' && "opacity-0 transform translate-y-4"
       )}>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Conversation Complete!</h3>
-        <p className="text-gray-600">
-          Great job! You've finished the <span className="font-medium">{safeAgent.name}</span> conversation.
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Thank You!</h3>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          Your feedback has been sent to the {getOrganizationName()} team.
         </p>
-        <p className="text-sm text-gray-500 mt-2">You'll return to the agent selection in a moment...</p>
       </div>
     </div>
   );
@@ -127,7 +128,7 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
 function PoweredByFooter({ gradient, borderColor }: { gradient: string, borderColor: string }) {
   return (
     <div
-      className="px-4 flex items-center justify-center gap-1.5 border-t py-3 text-xs font-medium"
+      className="px-4 flex items-center justify-center gap-1.5 border-t py-2 text-xs font-medium"
       style={{
         background: gradient,
         borderColor: borderColor,
@@ -140,7 +141,7 @@ function PoweredByFooter({ gradient, borderColor }: { gradient: string, borderCo
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
       >
-        <Image src="/assets/franko-chat-icon.svg" alt="Franko.ai" width={16} height={16} className="opacity-60" />
+        <Image src="/favicon/grey-icon.svg" alt="Franko.ai" width={14} height={14} className="opacity-60" />
         <span>Powered By Franko.ai</span>
       </a>
     </div>
@@ -577,14 +578,16 @@ export function WidgetPreview({
                     className={cn(
                       "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm",
                       message.sender === "user"
-                        ? "text-white"
+                        ? currentTheme === "dark" 
+                          ? "text-white"
+                          : "bg-slate-50/70 text-gray-700"
                         : currentTheme === "dark"
                         ? "bg-gray-800 text-white"
                         : "bg-gray-100 text-gray-900"
                     )}
                     style={{
-                      backgroundColor: message.sender === "user" ? effectiveUserMessageColor : undefined,
-                      color: message.sender === "user" ? userMessageTextColor : undefined,
+                      backgroundColor: message.sender === "user" && currentTheme === "dark" ? effectiveUserMessageColor : undefined,
+                      color: message.sender === "user" && currentTheme === "dark" ? userMessageTextColor : undefined,
                     }}
                   >
                     {message.text}
