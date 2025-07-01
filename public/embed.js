@@ -101,7 +101,9 @@
     
     // Text for bubble – default "Feedback" or custom via attribute
     var bubbleText = loader.getAttribute('data-bubble-text') || 'Feedback';
-    bubbleBtn.textContent = bubbleText;
+    // Icon (paper airplane) SVG
+    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    bubbleBtn.innerHTML = iconSvg + '<span style="font-size:12px;font-weight:500;">' + bubbleText + '</span>';
     bubbleBtn.setAttribute('aria-label', 'Open chat');
     bubbleBtn.onclick = openModal;
     
