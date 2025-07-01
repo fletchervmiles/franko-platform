@@ -231,6 +231,10 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               </div>
             </div>
           )}
+          {/* Ensure progress logic always runs even when UI is hidden */}
+          {!showProgressBar && progressBar && (
+            <div style={{ display: "none" }}>{progressBar}</div>
+          )}
         </div>
       </div>
     </div>

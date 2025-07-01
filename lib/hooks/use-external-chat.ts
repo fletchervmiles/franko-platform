@@ -3,6 +3,7 @@ import { Message } from 'ai';
 import { generateUUID } from '@/lib/utils';
 import { extractResponseFromAIOutput } from '@/lib/utils/json-parser';
 import { isFeatureEnabled } from '@/lib/utils/feature-flags';
+import { buildApiMessages } from '@/lib/utils/api-messages';
 
 // Extended Message interface to include objectives data
 interface ExtendedMessage extends Message {
@@ -140,32 +141,27 @@ export function useExternalChat({
       try {
         console.log('Sending API request to:', api);
         
-        // Prepare messages with original content when available
-        const apiMessages = messages.map(message => {
-          // If it's an assistant message with fullContent, use the original content
-          if (message.role === 'assistant' && 'fullContent' in message) {
-            return {
-              ...message,
-              content: message.fullContent
-            };
-          }
-          return message;
-        });
+        // Build the conversation history using shared helper to guarantee that
+        // every assistant turn includes its raw JSON.
+        const apiMessages = buildApiMessages(
+          messages as any,
+          "Hi, I'm ready"
+        );
 
         // Log the API messages for debugging
         console.log('Sending messages to API:');
-        apiMessages.forEach((message, index) => {
-          if (message.role === 'assistant') {
-            const hasFullContent = 'fullContent' in message && typeof message.fullContent === 'string';
-            const originalContent = hasFullContent ? (message as any).fullContent : message.content;
-            const sentContent = message.content;
+        apiMessages.forEach((msg: any, index) => {
+          if (msg.role === 'assistant') {
+            const hasFullContent = 'fullContent' in msg && typeof msg.fullContent === 'string';
+            const originalContent = hasFullContent ? msg.fullContent : msg.content;
+            const sentContent = msg.content;
             
             console.log(`Assistant message ${index}:`, {
-              id: message.id,
+              id: msg.id,
               hasFullContent,
               originalLength: hasFullContent ? originalContent.length : 0,
               sentLength: typeof sentContent === 'string' ? sentContent.length : 0,
-              usingFullContent: hasFullContent && sentContent === originalContent
+              usingFullContent: hasFullContent && sentContent === originalContent,
             });
           }
         });

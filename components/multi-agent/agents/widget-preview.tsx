@@ -75,7 +75,6 @@ function CompletionAnimation({ agent, onAnimationComplete }: {
     Icon: User,
     initialQuestion: "",
     whyFoundersCare: "",
-    cachedFirstResponse: "",
   }
 
   const safeAgent: Agent = agent ?? fallbackAgent

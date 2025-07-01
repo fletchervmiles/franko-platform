@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 import { isDarkColor } from "@/lib/color-utils"
 import { generateUUID } from "@/lib/utils"
 import { agentsData } from "@/lib/agents-data"
+import { buildApiMessages } from '@/lib/utils/api-messages'
 
 // Import existing components we'll reuse
 import { Message as ChatMessage } from "@/components/message"
@@ -172,6 +173,18 @@ export function ModalExternalChat({
       hiddenMessageCompleteRef.current = true;
       setIsHiddenMessageSent(true); // Mark the hidden message as sent
       
+      // Update UI with real response
+      const realFirstMessage: UIMessage = {
+        id: data.id || generateUUID(),
+        role: 'assistant',
+        content: data.content,
+        objectives: data.objectives || null,
+        fullResponse: data.fullResponse, // ← KEY: Include the full JSON
+        createdAt: new Date(),
+      };
+
+      setUiMessages([realFirstMessage]); // Replace typing indicator
+      
       // Process any queued message
       if (queuedMessageRef.current) {
         const queued = queuedMessageRef.current;
@@ -180,40 +193,26 @@ export function ModalExternalChat({
         // Process the queued message
         await sendMessage(queued);
       }
-      
-      // Log any mismatch for monitoring (but don't show to user)
-      if (data.content !== uiMessages[0]?.content) {
-        console.log('First response mismatch:', {
-          cached: uiMessages[0]?.content,
-          actual: data.content
-        });
-      }
     } catch (error) {
       console.error('Failed to send hidden first message:', error);
       hiddenMessageCompleteRef.current = true; // Allow messages even on error
       setIsHiddenMessageSent(true); // Mark as sent even on error to avoid blocking UI
+      
+      // Show error message instead of cached response
+      const errorMessage: UIMessage = {
+        id: generateUUID(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+        createdAt: new Date(),
+      };
+      
+      setUiMessages([errorMessage]);
     }
   };
 
-  // NEW: Show typing indicator then cached response
+  // NEW: Show typing indicator then real response
   useEffect(() => {
-    console.log('ModalExternalChat useEffect - Running initialization');
-    
-    if (!agent) {
-      console.log('ModalExternalChat useEffect - No agent found, using fallback initialization');
-      setIsFirstMessageSent(false);
-      setVisible(true);
-      return;
-    }
-    
-    if (initialMessages.length > 0) {
-      console.log('ModalExternalChat useEffect - Has initial messages, skipping');
-      setIsFirstMessageSent(false);
-      setVisible(true);
-      return;
-    }
-    
-    console.log('ModalExternalChat useEffect - Starting typing indicator and cached response');
+    if (!agent || !organizationName) return;
     
     // Step 1: Show typing indicator immediately
     const typingMessage: UIMessage = {
@@ -227,33 +226,15 @@ export function ModalExternalChat({
     setUiMessages([typingMessage]);
     console.log('ModalExternalChat - Set typing indicator message');
     
-    // Step 2: After 1 second, replace with cached response
-    const typingTimer = setTimeout(() => {
-      const cachedResponse = agent.cachedFirstResponse
-        .replace(/{organisation_name}/g, organizationName || 'our product')
-        .replace(/{product}/g, organizationName || 'our product');
-      
-      const cachedFirstMessage: UIMessage = {
-        id: generateUUID(),
-        role: 'assistant',
-        content: cachedResponse,
-        createdAt: new Date(),
-        isTyping: false,
-      };
-      
-      console.log('ModalExternalChat - Showing cached response:', cachedResponse);
-      setUiMessages([cachedFirstMessage]);
-      setIsFirstMessageSent(false);
-      setVisible(true);
-    }, 1000); // 1 second delay
+    // Show typing indicator until real response arrives
+    setVisible(true);
     
-    // Step 3: Send hidden first message in background (starts immediately)
+    // Step 2: Send hidden first message in background (starts immediately)
     if (!isFirstMessageSent) {
       sendHiddenFirstMessage();
     }
     
-    // Cleanup
-    return () => clearTimeout(typingTimer);
+    // No cleanup needed
   }, [agent, organizationName]); // Only depend on agent and org name
 
   // NEW: Handle user messages with queueing
@@ -293,22 +274,16 @@ export function ModalExternalChat({
     try {
       // Reconstruct full conversation for API
       // IMPORTANT: Use the full JSON response, not just the text shown in UI
-      const apiMessages = [
-        { role: 'user', content: 'Hi, I\'m ready' }, // Hidden
-        { 
-          role: 'assistant', 
-          // Use the full API response if available, otherwise construct it
-          content: firstApiResponseRef.current?.fullResponse || JSON.stringify({
-            response: uiMessages[0]?.content || '',
-            currentObjectives: {} // Default empty objectives
-          })
-        },
-        ...uiMessages.slice(1).map(msg => ({ // All visible messages except first
-          role: msg.role,
-          content: msg.content
+      const apiMessagesBase = buildApiMessages(
+        uiMessages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          fullResponse: (m as any).fullResponse,
         })),
-        { role: 'user', content: userInput } // Current message
-      ];
+        "Hi, I'm ready"
+      );
+
+      const apiMessages = [...apiMessagesBase, { role: 'user', content: userInput }];
       
       const response = await fetch('/api/external-chat', {
         method: 'POST',
@@ -373,13 +348,16 @@ export function ModalExternalChat({
   
   // Track user messages for progress bar with memoization
   const userMessageCount = useMemo(() => {
-    return uiMessages.filter(m => m.role === 'user').length;
-  }, [uiMessages]);
+    const count = uiMessages.filter(m => m.role === 'user').length;
+    console.log('User message count:', count, 'showProgressBar:', showProgressBar);
+    return count;
+  }, [uiMessages, showProgressBar]);
   
   // Function to handle when all objectives are done
   const handleAllObjectivesDone = useCallback((allDone: boolean) => {
+    console.log('🎯 handleAllObjectivesDone called with:', allDone);
     if (allDone) {
-      console.log('All objectives are done - MODAL MODE');
+      console.log('✅ All objectives are done - MODAL MODE');
       setAreAllObjectivesDone(true);
       setIsReadyToFinish(true);
     }
@@ -448,8 +426,16 @@ export function ModalExternalChat({
   }, [isSending, uiMessages, chatResponseId, assistantTextColor]);
 
   // Memoize the progress bar to prevent unnecessary re-renders
+  // ALWAYS render the progress bar component to track objectives, even if UI is hidden
   const progressBarElement = useMemo(() => {
-    if (disableProgressBar || !showProgressBar) return null;
+    if (disableProgressBar) return null;
+    console.log('📊 Rendering LazyDirectProgressBar for objective tracking (UI hidden)');
+    console.log('📊 Messages being passed to DirectProgressBar:', uiMessages.map(m => ({
+      role: m.role,
+      hasObjectives: !!m.objectives,
+      objectives: m.objectives,
+      contentPreview: m.content.substring(0, 50)
+    })));
     return (
       <LazyDirectProgressBar 
         messages={uiMessages} 
@@ -457,7 +443,7 @@ export function ModalExternalChat({
         hideUI={true}  // Always hide the UI
       />
     );
-  }, [disableProgressBar, showProgressBar, uiMessages, handleAllObjectivesDone]);
+  }, [disableProgressBar, uiMessages, handleAllObjectivesDone]);
 
   // Detect mobile on mount and on resize
   useEffect(() => {
@@ -512,6 +498,13 @@ export function ModalExternalChat({
 
   // MODAL-SPECIFIC: Auto-complete when both conditions are met (NO REDIRECT)
   useEffect(() => {
+    console.log('Auto-complete effect check:', {
+      areAllObjectivesDone,
+      hasEndingMessage,
+      isFinished,
+      shouldTrigger: areAllObjectivesDone && hasEndingMessage && !isFinished
+    });
+    
     if (areAllObjectivesDone && hasEndingMessage && !isFinished) {
       console.log('Auto-complete conditions met in MODAL MODE - calling completion handler');
       

@@ -212,15 +212,25 @@ export async function POST(request: Request) {
     // Add better error handling for JSON parsing
     let requestData;
     try {
-      const text = await request.text();
-      if (!text || text.trim() === '') {
+      // First check if the request has a body
+      const contentLength = request.headers.get('content-length');
+      if (!contentLength || parseInt(contentLength) === 0) {
         return new Response(JSON.stringify({ error: "Empty request body" }), { 
           status: 400,
           headers: { "Content-Type": "application/json" }
         });
       }
       
-      requestData = JSON.parse(text);
+      // Then try to parse as JSON
+      requestData = await request.json();
+      
+      // Validate required fields
+      if (!requestData.messages || !Array.isArray(requestData.messages)) {
+        return new Response(JSON.stringify({ error: "Missing or invalid messages array" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
     } catch (parseError) {
       logger.error(`JSON parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
       return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), { 
@@ -394,8 +404,6 @@ export async function POST(request: Request) {
     });
 
     // After processing the messages, add this logging code
-
-    // Log the processed messages for debugging
     console.log('Messages after processing:');
     processedMessages.forEach((message: any, index: number) => {
       if (message.role === 'assistant') {
@@ -447,7 +455,7 @@ export async function POST(request: Request) {
     }
 
     let result = await callModel();
-
+    let rawJsonResponse = result.text;
     let retried = false;
 
     // Small helper to decide if we have a good response
@@ -477,14 +485,24 @@ export async function POST(request: Request) {
       } as any);
 
       result = await callModel();
+      
+      // If still invalid after retry, wrap the raw text in our JSON structure
+      if (!isValidAssistantJson(result.text)) {
+        rawJsonResponse = JSON.stringify({
+          response: result.text,
+          currentObjectives: {}
+        });
+      } else {
+        rawJsonResponse = result.text;
+      }
     }
 
     // Extract the relevant part of the response
-    let parsedContent: any = { response: result.text }; // Default to ensure .response exists for fallback, and for objectives
-    let displayText: string = result.text; // Default displayText to the full raw text initially
+    let parsedContent: any = { response: result.text }; // Default to ensure .response exists
+    let displayText: string = result.text; // Default displayText to the full raw text
 
-    let stringToParse = result.text;
-    const extractedJsonBlock = extractJsonFromString(result.text);
+    let stringToParse = rawJsonResponse; // Use our potentially-wrapped JSON
+    const extractedJsonBlock = extractJsonFromString(rawJsonResponse);
     if (extractedJsonBlock !== null) { 
         stringToParse = extractedJsonBlock;
     }
@@ -502,8 +520,6 @@ export async function POST(request: Request) {
           parsedContentType: typeof parsedContent,
           stringToParsePreview: stringToParse.substring(0, 100)
         });
-        // displayText is already result.text, so no change needed here for that.
-        // parsedContent is already robustlyParsed, so it could be a string or other non-object type.
       }
       
       logger.debug('Successfully parsed JSON response using robust parser', { 
@@ -512,34 +528,30 @@ export async function POST(request: Request) {
       });
 
     } catch (error) {
-      // logJsonParseError is available from json-parser, but using existing logger for consistency here
       logger.error('Failed to parse JSON response with robust parser:', {
         errorMessage: error instanceof Error ? error.message : String(error),
-        // Log a snippet of what was attempted to be parsed for easier debugging
         contentAttemptedToParse: stringToParse.substring(0, 500) 
       });
-      // Fallbacks are already set: parsedContent = { response: result.text }, displayText = result.text
-      // (These were the initial defaults for these variables)
     }
 
     // Create a complete message for database storage
     const completeResponseMessage = {
       id: generateUUID(),
       role: 'assistant',
-      content: result.text, // Store the full JSON response
+      content: rawJsonResponse, // Store the JSON-wrapped response
       createdAt: new Date()
     };
 
     // Create a simulated streaming response with just the user-facing content
     const simulatedResponseMessage = {
-      id: completeResponseMessage.id, // Use the same ID for consistency
+      id: completeResponseMessage.id,
       role: 'assistant',
-      content: displayText, // Just the extracted "response" field
+      content: displayText,
       createdAt: new Date()
     };
 
     logger.debug('AI response generated and parsed:', {
-      fullResponseLength: result.text.length,
+      fullResponseLength: rawJsonResponse.length,
       displayTextLength: displayText.length,
       displayTextSnippet: displayText.substring(0, 100) + (displayText.length > 100 ? '...' : '')
     });
@@ -638,10 +650,8 @@ export async function POST(request: Request) {
         id: simulatedResponseMessage.id,
         role: 'assistant',
         content: displayText,
-        // Include the objectives data explicitly for the progress bar
         objectives: parsedContent.currentObjectives || null,
-        // Include the full raw response for preservation in message history
-        fullResponse: result.text,
+        fullResponse: rawJsonResponse, // Send the JSON-wrapped response
         createdAt: simulatedResponseMessage.createdAt
       }),
       {

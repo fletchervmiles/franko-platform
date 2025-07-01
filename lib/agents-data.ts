@@ -17,7 +17,6 @@ export type Agent = {
   Icon: LucideIcon
   initialQuestion: string
   whyFoundersCare: string
-  cachedFirstResponse: string
 }
 
 export const agentsData: Agent[] = [
@@ -30,7 +29,7 @@ export const agentsData: Agent[] = [
     Icon: Star,
     initialQuestion: "What's the main thing you love about using {organisation_name}?",
     whyFoundersCare: "Clarify your product's strongest selling points to amplify value and messaging.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, what's the single thing you love most about {organisation_name}?",
+
   },
   {
     id: "AGENT05",
@@ -41,7 +40,7 @@ export const agentsData: Agent[] = [
     Icon: Wrench,
     initialQuestion: "If you could improve one thing about {organisation_name}, what would it be?",
     whyFoundersCare: "Pinpoint exactly what's driving customer frustration to reduce support tickets and churn.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, what's the one thing we could do to improve {organisation_name} for you?",
+
   },
   {
     id: "AGENT03",
@@ -52,7 +51,6 @@ export const agentsData: Agent[] = [
     Icon: CreditCard,
     initialQuestion: "What's your main consideration when thinking about upgrading to a paid plan?",
     whyFoundersCare: "Discover exactly what drives upgrades and prevents churn, so you can optimize conversions.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! Thinking about actually paying for {organisation_name}, did anything give you pause—or maybe push you to say 'yes' right away?",
   },
   {
     id: "AGENT02", 
@@ -63,7 +61,6 @@ export const agentsData: Agent[] = [
     Icon: User,
     initialQuestion: "Could you tell us a bit about your role and the main challenge you're trying to solve?",
     whyFoundersCare: "Identify your ideal customers and the core problems you're successfully addressing.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, could you tell me yourself and what you hoped {organisation_name} would help you achieve?",
   },
   {
     id: "AGENT01",
@@ -74,7 +71,6 @@ export const agentsData: Agent[] = [
     Icon: Search,
     initialQuestion: "How did you first discover {organisation_name}?",
     whyFoundersCare: "Understand exactly where to invest your marketing budget for maximum impact.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! To start, how did you first hear about {organisation_name}?",
   },
   {
     id: "AGENT06",
@@ -85,6 +81,5 @@ export const agentsData: Agent[] = [
     Icon: Lightbulb,
     initialQuestion: "What new feature would be most valuable to you right now?",
     whyFoundersCare: "Reveal which feature your users truly want next to prioritize development effectively.",
-    cachedFirstResponse: "Thanks for joining! We'll keep this short and sharp! So, which feature would you love us to build next for {organisation_name}?",
   },
 ];
