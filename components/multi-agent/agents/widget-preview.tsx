@@ -410,9 +410,17 @@ export function WidgetPreview({
         <button
           onClick={onClose}
           aria-label="Close chat"
-          className="absolute top-3 right-3 z-10 h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/5 focus:outline-none"
+          className="absolute top-3 right-3 z-10 h-8 w-8 flex items-center justify-center rounded-full focus:outline-none transition-colors"
           style={{
             top: "calc(env(safe-area-inset-top) + 12px)",
+            color: pickTextColor(effectiveChatHeaderColor),
+            backgroundColor: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = currentTheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
           <X className="h-5 w-5" />
@@ -620,7 +628,12 @@ export function WidgetPreview({
   const cardMaxWidth = "max-w-[800px] max-lg:max-w-[640px] max-md:max-w-none"
 
   return (
-    <Card className={cn("w-full mx-auto shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}>
+    <Card 
+      className={cn("w-full mx-auto shadow-lg border overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}
+      style={{
+        borderColor: themeDefaults[currentTheme].borderColor,
+      }}
+    >
       <div className="flex flex-col flex-1 min-h-0">
         {coreDemo.view === 'agent-selection' && renderAgentSelectionView()}
         {coreDemo.view === 'loading' && renderLoadingView()}
