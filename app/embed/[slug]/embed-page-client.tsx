@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react" // 
 import dynamic from "next/dynamic"
 import { PreChatForm } from "@/components/embed/pre-chat-form"
 import type { AppSettings } from "@/lib/settings-context"
