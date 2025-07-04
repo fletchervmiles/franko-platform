@@ -27,11 +27,11 @@ export function EmbedPageClient({
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Check if we should show the form
-    if (modal.askNameEmailOnDirectLink) {
+    // Show form only for standalone display mode and if modal requires it
+    if (displayMode === "standalone" && modal.askNameEmailOnDirectLink) {
       setShowForm(true)
     }
-  }, [modal.askNameEmailOnDirectLink])
+  }, [modal.askNameEmailOnDirectLink, displayMode])
 
   const handleFormSubmit = (data: { name: string; email: string }) => {
     setIsLoading(true)
