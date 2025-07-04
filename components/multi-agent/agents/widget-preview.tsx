@@ -254,7 +254,7 @@ export function WidgetPreview({
   const currentTheme = settings.interface.theme;
   const themeDefaults = {
     light: { headerColor: "#ffffff", userMessageColor: "#3B82F6", chatIconColor: "#000000", borderColor: "rgba(0,0,0,0.06)" },
-    dark: { headerColor: "#18181b", userMessageColor: "#3B82F6", chatIconColor: "#ffffff", borderColor: "rgba(255,255,255,0.1)" }
+    dark: { headerColor: "#18181b", userMessageColor: "#3B82F6", chatIconColor: "#ffffff", borderColor: "rgba(255,255,255,0.02)" }
   }
   
   const effectiveUserMessageColor = advancedColors
@@ -629,9 +629,9 @@ export function WidgetPreview({
 
   return (
     <Card 
-      className={cn("w-full mx-auto shadow-lg border overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}
+      className={cn("w-full mx-auto shadow-lg overflow-hidden flex flex-col relative", cardHeightClasses, cardMaxWidth)}
       style={{
-        borderColor: themeDefaults[currentTheme].borderColor,
+        border: `1px solid ${themeDefaults[currentTheme].borderColor}`,
       }}
     >
       <div className="flex flex-col flex-1 min-h-0">
