@@ -660,7 +660,7 @@ export function WidgetPreview({
   // Overlay PreChatForm when required
   const preChatOverlay = showPreChatForm ? (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <PreChatForm onSubmit={handlePreChatSubmit} displayName={displayHeaderName} />
+      <PreChatForm onSubmit={handlePreChatSubmit} theme={currentTheme} />
     </div>
   ) : null
 

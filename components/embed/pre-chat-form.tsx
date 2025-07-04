@@ -4,16 +4,15 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MessageCircle } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface PreChatFormProps {
   onSubmit: (data: { name: string; email: string }) => void
-  displayName?: string
+  theme?: "light" | "dark"
   isLoading?: boolean
 }
 
-export function PreChatForm({ onSubmit, displayName = "Chat", isLoading = false }: PreChatFormProps) {
+export function PreChatForm({ onSubmit, theme = "light", isLoading = false }: PreChatFormProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
@@ -45,29 +44,24 @@ export function PreChatForm({ onSubmit, displayName = "Chat", isLoading = false 
     }
   }
 
+  const cardBg = theme === "dark" ? "bg-gray-800" : "bg-white"
+  const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900"
+  const inputBg = theme === "dark" ? "bg-gray-700 placeholder-gray-400 border-gray-600" : "bg-white"
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 w-12 h-12 bg-[#F5FF78] rounded-full flex items-center justify-center">
-            <MessageCircle className="h-6 w-6 text-[#1C1617]" />
-          </div>
-          <CardTitle className="text-xl font-semibold">Start a conversation</CardTitle>
-          <CardDescription>
-            Tell us who you are to get started with {displayName}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex items-center justify-center p-4 inset-0 absolute">
+      <Card className={`w-full max-w-[400px] ${cardBg}`}>        
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className={textColor}>Name</Label>
               <Input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className={errors.name ? "border-red-500" : ""}
+                className={`${errors.name ? "border-red-500" : ""} ${inputBg}`}
                 disabled={isLoading}
               />
               {errors.name && (
@@ -76,14 +70,14 @@ export function PreChatForm({ onSubmit, displayName = "Chat", isLoading = false 
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className={textColor}>Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className={errors.email ? "border-red-500" : ""}
+                className={`${errors.email ? "border-red-500" : ""} ${inputBg}`}
                 disabled={isLoading}
               />
               {errors.email && (
