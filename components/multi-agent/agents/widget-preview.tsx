@@ -631,7 +631,7 @@ export function WidgetPreview({
         gradient={headerBackground}
         borderColor={themeDefaults[currentTheme].borderColor}
       />
-      {displayMode === "modal" && alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && (
+      {displayMode === "modal" && alignChatBubble !== "custom" && coreDemo.view === "agent-selection" && !isEmbedMode && (
         <FloatingChatIcon
           text={chatIconText || "Feedback"}
           backgroundColor={effectiveChatIconColor}

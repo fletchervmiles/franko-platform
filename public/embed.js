@@ -63,22 +63,28 @@
 
   // Utility to get bubble position styles
   function bubblePositionStyles(pos) {
+    // Get brand color from data attribute, fallback to black
+    var brandColor = loader.getAttribute('data-bubble-color') || '#000';
+    
     var style = {
       position: 'fixed',
-      height: '40px',
-      padding: '0 16px',
+      padding: '8px 12px',
       borderRadius: '9999px',
-      background: '#000',
+      background: brandColor,
       color: '#fff',
       border: 'none',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '14px',
-      lineHeight: '1',
+      fontSize: '12px',
+      fontWeight: '500',
+      lineHeight: '16px',
       cursor: 'pointer',
       zIndex: '2147483646',
       whiteSpace: 'nowrap',
+      transition: 'transform 0.2s ease, opacity 0.2s ease',
+      opacity: '0.95',
     };
     var pad = '24px';
     if (pos === 'bottom-left') {
@@ -101,10 +107,20 @@
     
     // Text for bubble – default "Feedback" or custom via attribute
     var bubbleText = loader.getAttribute('data-bubble-text') || 'Feedback';
-    // Icon (paper airplane) SVG
-    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    bubbleBtn.innerHTML = iconSvg + '<span style="font-size:12px;font-weight:500;">' + bubbleText + '</span>';
+    // Send icon SVG (filled airplane like Lucide Send)
+    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>';
+    bubbleBtn.innerHTML = iconSvg + '<span>' + bubbleText + '</span>';
     bubbleBtn.setAttribute('aria-label', 'Open chat');
+    
+    // Add hover effects
+    bubbleBtn.onmouseenter = function() {
+      this.style.transform = 'scale(1.05)';
+      this.style.opacity = '1';
+    };
+    bubbleBtn.onmouseleave = function() {
+      this.style.transform = 'scale(1)';
+      this.style.opacity = '0.95';
+    };
     bubbleBtn.onclick = openModal;
     
     // Ensure button is added after DOM is ready
