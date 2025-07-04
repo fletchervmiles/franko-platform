@@ -40,7 +40,7 @@ export interface Modal {
   updatedAt: string
 }
 
-interface SettingsContextType {
+export interface SettingsContextType {
   // Settings
   settings: AppSettings
   updateInterfaceSettings: (settings: Partial<InterfaceSettings>) => void

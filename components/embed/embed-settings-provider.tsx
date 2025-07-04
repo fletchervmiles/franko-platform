@@ -1,29 +1,9 @@
 "use client"
 
 import React, { createContext, useContext } from "react"
-import type { AppSettings } from "@/lib/settings-context"
+import type { AppSettings, SettingsContextType } from "@/lib/settings-context"
 import { SettingsContext } from "@/lib/settings-context"
 import type { SelectProfile } from "@/db/schema/profiles-schema"
-
-// Import the context type from the original settings context
-interface SettingsContextType {
-  settings: AppSettings
-  updateInterfaceSettings: (settings: any) => void
-  updateAgentSettings: (settings: any) => void
-  profile: SelectProfile | null
-  isLoadingProfile: boolean
-  currentModal: any
-  modals: any[]
-  createModal: (name: string) => Promise<any>
-  loadModal: (modalId: string) => Promise<void>
-  saveModal: () => Promise<void>
-  deleteModal: (modalId: string) => Promise<void>
-  loadUserModals: () => Promise<void>
-  isLoading: boolean
-  isSaving: boolean
-  error: string | null
-  clearError: () => void
-}
 
 interface EmbedSettingsProviderProps {
   children: React.ReactNode
@@ -50,6 +30,7 @@ export function EmbedSettingsProvider({ children, brandSettings, modal, profile 
     },
     loadModal: async () => {},
     saveModal: async () => {},
+    updateModal: async (updates: Partial<Pick<any, 'askNameEmailOnDirectLink'>>) => {}, // No-op in embed context
     deleteModal: async () => {},
     loadUserModals: async () => {},
     isLoading: false,
