@@ -317,6 +317,13 @@ export function WidgetPreview({
   const [showPreChatForm, setShowPreChatForm] = useState(false)
 
   const handleAgentSelect = async (agent: Agent) => {
+    // Intercept: require form first
+    if (requirePreChatForm && !(window as any).FrankoUser?.user_metadata?.email) {
+      setQueuedAgent(agent)
+      setShowPreChatForm(true)
+      return
+    }
+
     if (onAgentSelect) {
       onAgentSelect(agent);
       return;
@@ -381,13 +388,6 @@ export function WidgetPreview({
       setPopoverAgentId(agent.id)
       if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current)
       popoverTimerRef.current = setTimeout(() => setPopoverAgentId(null), 3000)
-    }
-
-    // If form required and not yet provided, queue agent and show form
-    if (requirePreChatForm && !(window as any).FrankoUser?.user_metadata?.email) {
-      setQueuedAgent(agent)
-      setShowPreChatForm(true)
-      return
     }
   }
 
