@@ -102,6 +102,18 @@ export default function ConnectTab() {
 </script>
 <button onclick="FrankoModal.open()">Get Help</button>`
 
+  // Snippet users add *before* the embed script when using identity verification
+  const identitySnippet = `<script>
+window.FrankoUser = {
+  user_id: "USER_ID",
+  user_hash: "GENERATED_HASH",
+  user_metadata: {
+    name: "John Doe",
+    email: "john@example.com"
+  }
+}
+</script>`
+
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-[#FAFAFA] dark:bg-gray-800">
       {/* Header */}
@@ -292,7 +304,33 @@ export default function ConnectTab() {
                 </Button>
               </div>
 
-              <p className="text-xs text-gray-500">Use this secret to generate an HMAC of your user_id on your server. Include <code>user_id</code>, <code>user_hash</code>, and optional <code>user_metadata</code> in <code>window.FrankoUser</code> before the embed script.</p>
+              <div className="space-y-3">
+                <p className="text-xs text-gray-700">
+                  Use this secret to generate an HMAC of your <code>user_id</code> on your server, then add the snippet below <strong>before</strong> the embed script.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Identity snippet:</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(identitySnippet, 'identity-snippet')}
+                  >
+                    {copiedItem === 'identity-snippet' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                <Textarea
+                  value={identitySnippet}
+                  readOnly
+                  className="font-mono text-xs resize-none bg-gray-50"
+                  rows={7}
+                />
+
+                <p className="text-xs text-gray-500">
+                  Need more detail? <a href="/docs/identity-verification" target="_blank" className="text-blue-600 underline">Read the full guide</a>.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
