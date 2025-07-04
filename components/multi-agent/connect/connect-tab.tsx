@@ -135,14 +135,14 @@ window.FrankoUser = {
       </div>
 
       {/* Connection Options */}
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 w-full">
         
         {/* Direct Link */}
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
                          <CardTitle className="text-lg font-semibold flex items-center">
-               <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
-                 <Link className="h-4 w-4 text-blue-600" />
+               <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+                 <Link className="h-3 w-3 text-[#1C1617]" />
                </div>
                Direct Link
              </CardTitle>
@@ -188,8 +188,8 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center">
-              <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
-                <MessageCircle className="h-4 w-4 text-blue-600" />
+              <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+                <MessageCircle className="h-3 w-3 text-[#1C1617]" />
               </div>
               Floating Chat Bubble
               <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">Recommended</Badge>
@@ -237,8 +237,8 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center">
-              <div className="h-8 w-8 bg-blue-50 rounded-full flex items-center justify-center mr-3">
-                <Code className="h-4 w-4 text-blue-600" />
+              <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+                <Code className="h-3 w-3 text-[#1C1617]" />
               </div>
               Custom Trigger
             </CardTitle>
