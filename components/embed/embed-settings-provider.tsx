@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext } from "react"
-import type { AppSettings, SettingsContextType } from "@/lib/settings-context"
+import type { AppSettings, SettingsContextType, Modal } from "@/lib/settings-context"
 import { SettingsContext } from "@/lib/settings-context"
 import type { SelectProfile } from "@/db/schema/profiles-schema"
 
@@ -17,13 +17,25 @@ interface EmbedSettingsProviderProps {
 }
 
 export function EmbedSettingsProvider({ children, brandSettings, modal, profile }: EmbedSettingsProviderProps) {
+  // Create a full Modal object from the minimal modal prop
+  const fullModal: Modal | null = modal ? {
+    id: modal.id,
+    name: modal.name,
+    embedSlug: modal.embedSlug,
+    brandSettings,
+    askNameEmailOnDirectLink: false, // Default value for embed context
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } : null
+
   const contextValue: SettingsContextType = {
     settings: brandSettings,
     updateInterfaceSettings: () => {}, // No-op in embed context
     updateAgentSettings: () => {}, // No-op in embed context
     profile: profile || null,
     isLoadingProfile: false,
-    currentModal: modal || null,
+    currentModal: fullModal,
     modals: [],
     createModal: async () => {
       throw new Error("createModal not available in embed context")
