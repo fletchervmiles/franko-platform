@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { PreChatForm } from "@/components/embed/pre-chat-form"
 import type { AppSettings } from "@/lib/settings-context"
 import type { SelectModal } from "@/db/schema/modals-schema"
 
@@ -23,52 +21,14 @@ export function EmbedPageClient({
   organizationName, 
   displayMode 
 }: EmbedPageClientProps) {
-  const [showForm, setShowForm] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    // Show form only for standalone display mode and if modal requires it
-    if (displayMode === "standalone" && modal.askNameEmailOnDirectLink) {
-      setShowForm(true)
-    }
-  }, [modal.askNameEmailOnDirectLink, displayMode])
-
-  const handleFormSubmit = (data: { name: string; email: string }) => {
-    setIsLoading(true)
-    
-    // Set window.FrankoUser with form data
-    if (typeof window !== 'undefined') {
-      (window as any).FrankoUser = {
-        user_id: null, // No external user ID from form
-        user_hash: null, // No hash verification
-        user_metadata: {
-          name: data.name,
-          email: data.email,
-          source: "direct_link_form"
-        }
-      }
-    }
-    
-    // Hide form and show chat
-    setShowForm(false)
-    setIsLoading(false)
-  }
-
-  // If form should be shown and hasn't been submitted yet
-  if (showForm) {
-    return (
-      <PreChatForm
-        onSubmit={handleFormSubmit}
-        displayName={brandSettings.interface.displayName}
-        isLoading={isLoading}
-      />
-    )
-  }
+  // Determine if we need the pre-chat form (standalone link + toggle on)
+  const requirePreChatForm = displayMode === "standalone" && modal.askNameEmailOnDirectLink === true;
 
   // Show the chat modal
   return (
     <EmbeddedChatModal 
       agentIds={agentIds}
+      requirePreChatForm={requirePreChatForm}
       displayName={brandSettings.interface.displayName}
       instructions={brandSettings.interface.instructions}
       themeOverride={brandSettings.interface.theme}

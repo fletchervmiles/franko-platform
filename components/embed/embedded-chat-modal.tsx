@@ -11,6 +11,7 @@ export type DisplayMode = "modal" | "standalone"
 
 interface EmbeddedChatModalProps extends WidgetPreviewProps {
   displayMode: DisplayMode
+  requirePreChatForm?: boolean
 }
 
 /**
@@ -19,7 +20,7 @@ interface EmbeddedChatModalProps extends WidgetPreviewProps {
  * WidgetPreview component, wrapped in the SharedModalCore so that we can
  * migrate business logic gradually without breaking existing behaviour.
  */
-export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalProps) {
+export function EmbeddedChatModal({ displayMode, requirePreChatForm = false, ...rest }: EmbeddedChatModalProps) {
   const [isVisible, setIsVisible] = useState(true)
 
   // Close handler – hides iframe by calling parent script
@@ -73,6 +74,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
         <div className="flex-1 flex flex-col min-h-0 md:hidden">
           <WidgetPreview 
             {...rest}
+            requirePreChatForm={requirePreChatForm}
             isEmbedMode
             displayMode={displayMode}
             onClose={handleClose}
@@ -89,6 +91,7 @@ export function EmbeddedChatModal({ displayMode, ...rest }: EmbeddedChatModalPro
           >
             <WidgetPreview 
               {...rest}
+              requirePreChatForm={requirePreChatForm}
               isEmbedMode
               displayMode={displayMode}
               onClose={handleClose}

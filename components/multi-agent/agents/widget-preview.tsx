@@ -15,6 +15,7 @@ import { useSettings } from "@/lib/settings-context"
 import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
 import { getAgentsByIds } from "@/lib/agents-data-client"
 import { useSharedModalCore } from "@/components/chat/use-shared-modal-core"
+import { PreChatForm } from "@/components/embed/pre-chat-form"
 
 type Message = {
   id: string
@@ -56,6 +57,8 @@ export type WidgetPreviewProps = {
    * Optional close handler – shown as ❌ on the agent-selection screen when displayMode="modal".
    */
   onClose?: () => void
+  /** When true, require the visitor to fill pre-chat form after selecting an agent */
+  requirePreChatForm?: boolean
 }
 
 // Per-agent colour support removed per design guidelines. We now use the Franko lime palette consistently.
@@ -170,6 +173,7 @@ export function WidgetPreview({
   organizationName,
   displayMode = "standalone",
   onClose,
+  requirePreChatForm = false,
 }: WidgetPreviewProps) {
   // Instantiate shared modal core once at the top so it is available to subsequent destructuring
   const coreDemo = useSharedModalCore()
@@ -308,6 +312,10 @@ export function WidgetPreview({
     coreDemo.handleReturnToSelection();
   }, [coreDemo]);
 
+  // Pre-chat form state (post agent selection)
+  const [queuedAgent, setQueuedAgent] = useState<Agent | null>(null)
+  const [showPreChatForm, setShowPreChatForm] = useState(false)
+
   const handleAgentSelect = async (agent: Agent) => {
     if (onAgentSelect) {
       onAgentSelect(agent);
@@ -374,6 +382,13 @@ export function WidgetPreview({
       if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current)
       popoverTimerRef.current = setTimeout(() => setPopoverAgentId(null), 3000)
     }
+
+    // If form required and not yet provided, queue agent and show form
+    if (requirePreChatForm && !(window as any).FrankoUser?.user_metadata?.email) {
+      setQueuedAgent(agent)
+      setShowPreChatForm(true)
+      return
+    }
   }
 
   const handleSendMessage = () => {
@@ -403,6 +418,26 @@ export function WidgetPreview({
     },
     [initialActiveAgents, agentIds]
   )
+
+  const handlePreChatSubmit = (data: { name: string; email: string }) => {
+    // Save in window.FrankoUser
+    if (typeof window !== 'undefined') {
+      (window as any).FrankoUser = {
+        user_id: null,
+        user_hash: null,
+        user_metadata: {
+          name: data.name,
+          email: data.email,
+          source: "agent_selection_form"
+        }
+      }
+    }
+    setShowPreChatForm(false)
+    if (queuedAgent) {
+      handleAgentSelect(queuedAgent)
+      setQueuedAgent(null)
+    }
+  }
 
   const renderAgentSelectionView = () => (
     <>
@@ -622,6 +657,13 @@ export function WidgetPreview({
     <CompletionAnimation agent={selectedAgent} onAnimationComplete={handleAnimationComplete} />
   )
 
+  // Overlay PreChatForm when required
+  const preChatOverlay = showPreChatForm ? (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <PreChatForm onSubmit={handlePreChatSubmit} displayName={displayHeaderName} />
+    </div>
+  ) : null
+
   // Fixed dimensions for consistent modal sizing
   // Use responsive classes that work within containers
   const cardHeightClasses = "h-[600px] max-md:h-full"
@@ -658,6 +700,7 @@ export function WidgetPreview({
           position={alignChatBubble as "left" | "right"}
         />
       )}
+      {preChatOverlay}
     </Card>
   )
 }
