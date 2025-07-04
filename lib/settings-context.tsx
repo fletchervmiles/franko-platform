@@ -34,6 +34,7 @@ export interface Modal {
   name: string
   embedSlug: string
   brandSettings: AppSettings
+  askNameEmailOnDirectLink?: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -55,6 +56,7 @@ interface SettingsContextType {
   createModal: (name: string) => Promise<Modal>
   loadModal: (modalId: string) => Promise<void>
   saveModal: () => Promise<void>
+  updateModal: (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink'>>) => Promise<void>
   deleteModal: (modalId: string) => Promise<void>
   loadUserModals: () => Promise<void>
   
@@ -376,6 +378,40 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }))
   }, [])
 
+  const updateModal = useCallback(async (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink'>>) => {
+    if (!user || !currentModal) return
+    
+    setIsSaving(true)
+    setError(null)
+    
+    try {
+      const response = await fetch(`/api/modals/${currentModal.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...updates,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      const updatedModal = data.modal
+      
+      setCurrentModal(updatedModal)
+      setModals(prev => prev.map(m => m.id === updatedModal.id ? updatedModal : m))
+    } catch (error) {
+      handleApiError(error, 'update modal')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [user, currentModal, handleApiError])
+
   return (
     <SettingsContext.Provider
       value={{
@@ -391,6 +427,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         saveModal,
         deleteModal,
         loadUserModals,
+        updateModal,
         isLoading,
         isSaving,
         error,

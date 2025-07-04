@@ -78,7 +78,7 @@ export async function PATCH(
     const body = await request.json();
     console.log("[modals/[id]] PATCH body received:", JSON.stringify(body, null, 2));
 
-    const { name, brandSettings, isActive } = body;
+    const { name, brandSettings, isActive, askNameEmailOnDirectLink } = body;
 
     // Build update object with only provided fields
     const updates: any = {};
@@ -96,6 +96,12 @@ export async function PATCH(
         return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
       }
       updates.isActive = isActive;
+    }
+    if (askNameEmailOnDirectLink !== undefined) {
+      if (typeof askNameEmailOnDirectLink !== "boolean") {
+        return NextResponse.json({ error: "askNameEmailOnDirectLink must be a boolean" }, { status: 400 });
+      }
+      updates.askNameEmailOnDirectLink = askNameEmailOnDirectLink;
     }
 
     if (Object.keys(updates).length === 0) {
