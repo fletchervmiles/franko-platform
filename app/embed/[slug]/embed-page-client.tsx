@@ -29,6 +29,7 @@ export function EmbedPageClient({
     <EmbeddedChatModal 
       agentIds={agentIds}
       requirePreChatForm={requirePreChatForm}
+      isPlayground={true}
       displayName={brandSettings.interface.displayName}
       instructions={brandSettings.interface.instructions}
       themeOverride={brandSettings.interface.theme}
@@ -40,7 +41,6 @@ export function EmbedPageClient({
       chatIconText={brandSettings.interface.chatIconText}
       chatIconColor={brandSettings.interface.chatIconColor}
       alignChatBubble={brandSettings.interface.alignChatBubble}
-      isPlayground={true}
       modalId={modal.id}
       isEmbedMode={true}
       organizationName={organizationName}

@@ -675,12 +675,12 @@ export function WidgetPreview({
         "w-full mx-auto shadow-lg overflow-hidden flex flex-col relative", 
         cardHeightClasses, 
         cardMaxWidth,
-        // Only show border when not in embed mode
-        !isEmbedMode && "border"
+        // Remove default Card border in embed mode, otherwise keep a border
+        isEmbedMode ? "border-0" : "border"
       )}
       style={{
-        // Only apply border color when not in embed mode
-        ...(!isEmbedMode && { borderColor: themeDefaults[currentTheme].borderColor }),
+        // Apply border color in non-embed mode; ensure no border in embed mode
+        ...(isEmbedMode ? { border: "none" } : { borderColor: themeDefaults[currentTheme].borderColor }),
       }}
     >
       <div className="flex flex-col flex-1 min-h-0">
