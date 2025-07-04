@@ -14,7 +14,8 @@ import {
   Link, 
   MessageCircle, 
   Code, 
-  Check
+  Check,
+  ShieldCheck
 } from "lucide-react"
 
 export default function ConnectTab() {
@@ -141,7 +142,7 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
                          <CardTitle className="text-lg font-semibold flex items-center">
-               <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+               <div className="w-6 h-6 bg-[#F5FF78] rounded-full flex items-center justify-center mr-3">
                  <Link className="h-3 w-3 text-[#1C1617]" />
                </div>
                Direct Link
@@ -188,7 +189,7 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center">
-              <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+              <div className="w-6 h-6 bg-[#F5FF78] rounded-full flex items-center justify-center mr-3">
                 <MessageCircle className="h-3 w-3 text-[#1C1617]" />
               </div>
               Floating Chat Bubble
@@ -237,7 +238,7 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center">
-              <div className="w-6 h-6 bg-[#F4F2F0] rounded-full flex items-center justify-center mr-3">
+              <div className="w-6 h-6 bg-[#F5FF78] rounded-full flex items-center justify-center mr-3">
                 <Code className="h-3 w-3 text-[#1C1617]" />
               </div>
               Custom Trigger
@@ -285,6 +286,9 @@ window.FrankoUser = {
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center">
+              <div className="w-6 h-6 bg-[#F5FF78] rounded-full flex items-center justify-center mr-3">
+                <ShieldCheck className="h-3 w-3 text-[#1C1617]" />
+              </div>
               Identity verification (optional)
             </CardTitle>
             <CardDescription>
