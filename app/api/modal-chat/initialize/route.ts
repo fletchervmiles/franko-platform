@@ -111,15 +111,19 @@ export async function POST(request: Request) {
       const profile = await getProfileByUserId(chatInstance.userId);
       const organizationName = profile?.organisationName || '';
 
+      // Extract name and email from userMetadata if available, with fallback to individual fields
+      const userName = verifiedUserMetadata?.name || intervieweeFirstName;
+      const userEmail = verifiedUserMetadata?.email || intervieweeEmail;
+
       await tx.insert(chatResponsesTable).values({
         id: chatResponseId,
         userId: chatInstance.userId, // Use the modal owner's user ID
         chatInstanceId: chatInstance.id,
         agentType: agentType, // Store for analytics
         status: "active",
-        intervieweeFirstName: intervieweeFirstName || null,
+        intervieweeFirstName: userName || null,
         intervieweeSecondName: intervieweeSecondName || null,
-        intervieweeEmail: intervieweeEmail || null,
+        intervieweeEmail: userEmail || null,
         intervieweeUserId: verifiedUserId,
         userMetadata: verifiedUserMetadata,
         interviewStartTime: new Date(),

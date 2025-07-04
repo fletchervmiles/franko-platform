@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
 import { getModalBySlug } from "@/db/queries/modals-queries";
 import { getEnabledModalChatInstances } from "@/db/queries/modal-chat-instances-queries";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
 import { EmbedSettingsProvider } from "@/components/embed/embed-settings-provider";
+import { EmbedPageClient } from "./embed-page-client";
 import type { AppSettings } from "@/lib/settings-context";
-
-const EmbeddedChatModal = dynamic(() => import("@/components/embed/embedded-chat-modal"), { ssr: false });
 
 interface EmbedPageProps {
   params: { slug: string };
@@ -42,25 +40,13 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
         }}
         profile={profile}
       >
-      <EmbeddedChatModal 
-        agentIds={agentIds}
-        displayName={brandSettings.interface.displayName}
-        instructions={brandSettings.interface.instructions}
-        themeOverride={brandSettings.interface.theme}
-        primaryBrandColor={brandSettings.interface.primaryBrandColor}
-        advancedColors={brandSettings.interface.advancedColors}
-        profilePictureUrl={brandSettings.interface.profilePictureUrl}
-        userMessageColor={brandSettings.interface.userMessageColor}
-        chatHeaderColor={brandSettings.interface.chatHeaderColor}
-        chatIconText={brandSettings.interface.chatIconText}
-        chatIconColor={brandSettings.interface.chatIconColor}
-        alignChatBubble={brandSettings.interface.alignChatBubble}
-        isPlayground={true}
-        modalId={modal.id}
-        isEmbedMode={true}
-        organizationName={organizationName}
-        displayMode={displayMode}
-      />
+        <EmbedPageClient 
+          modal={modal}
+          agentIds={agentIds}
+          brandSettings={brandSettings}
+          organizationName={organizationName}
+          displayMode={displayMode}
+        />
       </EmbedSettingsProvider>
     </div>
   );

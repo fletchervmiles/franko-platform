@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { 
   Copy, 
   ExternalLink, 
@@ -19,7 +20,7 @@ import {
 } from "lucide-react"
 
 export default function ConnectTab() {
-  const { currentModal, isSaving } = useSettings()
+  const { currentModal, isSaving, updateModal } = useSettings()
   const [copiedItem, setCopiedItem] = useState<string | null>(null)
 
   // Identity verification state
@@ -180,6 +181,17 @@ window.FrankoUser = {
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div>
+                  <Label className="text-sm font-medium">Ask for name & email</Label>
+                  <p className="text-xs text-gray-500">Visitors will fill out a brief form before starting the conversation</p>
+                </div>
+                <Switch 
+                  checked={currentModal.askNameEmailOnDirectLink || false}
+                  onCheckedChange={(checked) => updateModal({ askNameEmailOnDirectLink: checked })}
+                />
               </div>
             </div>
           </CardContent>

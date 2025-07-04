@@ -9,6 +9,7 @@ export const modalsTable = pgTable("modals", {
   name: text("name").notNull(), // Internal label for the modal
   embedSlug: text("embed_slug").notNull(), // Unique slug for /embed/{slug}
   brandSettings: jsonb("brand_settings"), // Stores Interface tab configuration
+  askNameEmailOnDirectLink: boolean("ask_name_email_on_direct_link").notNull().default(false), // Whether to show name/email form on direct link
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
