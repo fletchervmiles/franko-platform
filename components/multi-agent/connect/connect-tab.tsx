@@ -71,6 +71,18 @@ export default function ConnectTab() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'
   const embedUrl = `${baseUrl}/embed/${currentModal.embedSlug}`
 
+  // Calculate effective colors using the same logic as widget-preview
+  const brandSettings = currentModal.brandSettings?.interface || {}
+  const currentTheme = brandSettings.theme || 'light'
+  const themeDefaults = {
+    light: { chatIconColor: "#000000" },
+    dark: { chatIconColor: "#ffffff" }
+  }
+  
+  const effectiveChatIconColor = brandSettings.advancedColors
+    ? (brandSettings.chatIconColor || themeDefaults[currentTheme].chatIconColor)
+    : (brandSettings.primaryBrandColor || themeDefaults[currentTheme].chatIconColor)
+
   const copyToClipboard = async (text: string, itemId: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -82,7 +94,7 @@ export default function ConnectTab() {
   }
 
   const bubbleScript = `<script>
-(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","${currentModal.brandSettings?.interface?.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","${currentModal.brandSettings?.interface?.chatIconColor || '#000'}");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","${brandSettings.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","${effectiveChatIconColor}");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
 </script>`
 
   const customScript = `<script>

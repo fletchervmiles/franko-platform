@@ -455,6 +455,7 @@ export function InterfaceTab() {
             userMessageColor={settings.interface.userMessageColor}
             chatHeaderColor={settings.interface.chatHeaderColor}
             alignChatBubble={settings.interface.alignChatBubble}
+            displayMode="modal"
           />
         </div>
       </div>

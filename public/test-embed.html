@@ -56,34 +56,62 @@
         button:hover {
             background-color: #2563eb;
         }
+        
+        #embed-code:focus {
+            outline: 2px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .test-section h2 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .test-section {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 16px;
+        }
+        
+        .test-section:nth-child(2) { border-left-color: #3b82f6; }
+        .test-section:nth-child(3) { border-left-color: #10b981; }
+        .test-section:nth-child(4) { border-left-color: #f59e0b; }
+        .test-section:nth-child(5) { border-left-color: #ef4444; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Franko Embed Test Page</h1>
-        <p>This page tests the Franko chat widget embedding functionality.</p>
+        <p>This page tests the Franko chat widget embedding functionality. Paste your actual embed code from the Connect tab below.</p>
         
         <div class="test-section">
-            <h2>Test 1: Floating Chat Bubble</h2>
-            <p>The floating chat bubble should appear in the bottom-right corner of this page.</p>
-            <p>If you don't see it, check the browser console for errors.</p>
+            <h2>Step 1: Paste Your Embed Code</h2>
+            <p>Go to your Franko dashboard → Connect tab → copy the "Floating Chat Bubble" code and paste it below:</p>
+            <textarea id="embed-code" placeholder="Paste your embed code here..." rows="6" style="width: 100%; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin: 10px 0;"></textarea>
+            <button onclick="loadEmbedCode()" style="margin-bottom: 20px;">Load Embed Code</button>
+            <div id="embed-status" style="padding: 10px; margin: 10px 0; border-radius: 4px; display: none;"></div>
         </div>
 
         <div class="test-section">
-            <h2>Test 2: Custom Trigger</h2>
-            <p>Click the button below to open the chat modal manually:</p>
+            <h2>Step 2: Test Floating Bubble</h2>
+            <p>After loading the embed code, the floating chat bubble should appear in the bottom-right corner.</p>
+            <p>Click it to open the modal. If you don't see it, check the browser console for errors.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 3: Test Custom Trigger</h2>
+            <p>Click the button below to manually open the chat modal (works after embed code is loaded):</p>
             <button onclick="if(window.FrankoModal) { FrankoModal.open(); } else { alert('FrankoModal not loaded yet!'); }">
                 Open Chat Modal
             </button>
         </div>
 
         <div class="test-section">
-            <h2>Console Output</h2>
+            <h2>Step 4: Check Console Output</h2>
             <p>Open your browser's developer console to see any error messages or debug information.</p>
         </div>
 
         <div class="test-section">
-            <h2>Script Information</h2>
+            <h2>Debug Information</h2>
             <div class="code-block">
                 <div>Script URL: <span id="script-url">Loading...</span></div>
                 <div>Modal Slug: <span id="modal-slug">Loading...</span></div>
@@ -93,8 +121,8 @@
         </div>
     </div>
 
-    <!-- Optional: Pass user identity for personalized feedback -->
     <script>
+        // Optional: Pass user identity for personalized feedback
         window.FrankoUser = {
             user_id: "test-user-123",
             user_hash: "test-hash-123", 
@@ -106,37 +134,68 @@
         };
     </script>
 
-    <!-- Franko Embed Script -->
-    <!-- Replace YOUR_MODAL_SLUG with your actual modal slug -->
     <script>
-        (function() {
-            // Update this with your local development URL or production URL
-            var baseUrl = window.location.origin; // This will use the current domain
-            var modalSlug = 'cursor-1751560712649'; // Replace with your actual modal slug
+        function loadEmbedCode() {
+            const embedCode = document.getElementById('embed-code').value.trim();
+            const statusDiv = document.getElementById('embed-status');
             
-            var s = document.createElement('script');
-            s.src = baseUrl + '/embed.js';
-            s.setAttribute('data-modal-slug', modalSlug);
-            s.setAttribute('data-mode', 'bubble');
-            s.setAttribute('data-position', 'bottom-right');
+            if (!embedCode) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.backgroundColor = '#fee';
+                statusDiv.style.color = '#c00';
+                statusDiv.innerHTML = '❌ Please paste your embed code first';
+                return;
+            }
             
-            // Debug info
-            s.onload = function() {
-                document.getElementById('script-url').textContent = s.src;
-                document.getElementById('modal-slug').textContent = modalSlug;
-                document.getElementById('mode').textContent = 'bubble';
-                document.getElementById('franko-available').textContent = window.FrankoModal ? 'Yes' : 'No';
-                console.log('[Test] Franko embed script loaded successfully');
-                console.log('[Test] FrankoModal available:', !!window.FrankoModal);
-            };
+            // Clear any existing embed scripts
+            const existingScripts = document.querySelectorAll('script[data-embed-test]');
+            existingScripts.forEach(script => script.remove());
             
-            s.onerror = function(e) {
-                console.error('[Test] Failed to load Franko embed script:', e);
-                document.getElementById('franko-available').textContent = 'Error loading script';
-            };
-            
-            document.head.appendChild(s);
-        })();
+            try {
+                // Create a new script element and execute the embed code
+                const scriptEl = document.createElement('script');
+                scriptEl.setAttribute('data-embed-test', 'true');
+                scriptEl.innerHTML = embedCode.replace(/<\/?script[^>]*>/gi, ''); // Remove script tags if present
+                document.head.appendChild(scriptEl);
+                
+                statusDiv.style.display = 'block';
+                statusDiv.style.backgroundColor = '#efe';
+                statusDiv.style.color = '#060';
+                statusDiv.innerHTML = '✅ Embed code loaded successfully! Look for the floating bubble.';
+                
+                // Set up debug info after a short delay
+                setTimeout(() => {
+                    document.getElementById('franko-available').textContent = window.FrankoModal ? 'Yes' : 'No';
+                    console.log('[Test] Embed code executed');
+                    console.log('[Test] FrankoModal available:', !!window.FrankoModal);
+                }, 1000);
+                
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.backgroundColor = '#fee';
+                statusDiv.style.color = '#c00';
+                statusDiv.innerHTML = '❌ Error loading embed code: ' + error.message;
+                console.error('[Test] Error executing embed code:', error);
+            }
+        }
+        
+        // Allow pasting and pressing Enter to load
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('embed-code');
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    loadEmbedCode();
+                }
+            });
+        });
+    </script>
+    
+    <script>
+        // Example embed code for demonstration (commented out)
+        // You can uncomment this to test without pasting:
+        /*
+        (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="http://localhost:3000/embed.js";s.setAttribute("data-modal-slug","your-modal-slug-here");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","Feedback");s.setAttribute("data-bubble-color","#000000");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+        */
     </script>
 </body>
 </html> 
