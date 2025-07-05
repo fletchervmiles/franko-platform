@@ -1,0 +1,60 @@
+# Link Feedback to Logged-in Users (Identity Verification)
+
+With identity verification you can see *who* said what in your Franko dashboard. It does **not** change the visitor's experience – the modal looks identical whether the user is verified or anonymous.
+
+---
+
+## How it works
+
+Add this snippet **before** your Franko embed script:
+
+```html
+<script>
+window.FrankoUser = {
+  user_id: "unique-user-123",
+  user_metadata: {
+    name: "Jane Doe",
+    email: "jane@acme.com",
+    plan: "Pro"
+  }
+}
+</script>
+```
+
+That's it! Franko will now associate feedback with this user.
+
+---
+
+## What data is stored?
+
+- `user_id` - Your unique identifier for the user
+- `user_metadata` - Any additional context (all fields are optional)
+
+---
+
+## Common patterns
+
+| Use case | Implementation |
+|----------|----------------|
+| Show user info only when logged in | Wrap the snippet in your auth check |
+| Different user data per page | Update `window.FrankoUser` dynamically |
+| Track user segments | Add custom fields to `user_metadata` |
+
+---
+
+## What if the snippet is missing?
+
+No problem – conversations still work. The **User** column shows "Anonymous" instead of the user details.
+
+---
+
+## FAQ
+
+| Question | Answer |
+|----------|--------|
+| Is this required? | No – skip it if anonymous feedback is fine |
+| Does it work with Direct Links? | No – direct links open in new tabs without access to your session |
+| Can I update user data dynamically? | Yes – set `window.FrankoUser` before calling `FrankoModal.open()` |
+| Is HTTPS required? | Yes – always use HTTPS for security |
+
+Need help? Email **support@franko.ai** 

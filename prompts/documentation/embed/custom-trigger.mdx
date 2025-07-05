@@ -1,0 +1,108 @@
+# Embed with a Custom Trigger
+
+The **Custom Trigger** option lets you open a Franko modal from *any* element – button, link, navbar item, or even a JavaScript function.
+
+---
+
+## 1 · Copy your script
+
+1. In **Connect → Custom Trigger** click **Copy**.
+2. The snippet contains your modal slug and loads Franko in **manual** mode.
+
+```html
+<script>
+  … generated code …
+</script>
+```
+
+---
+
+## 2 · Paste before `</body>`
+
+Add the snippet to every page where the trigger lives – preferably just before the closing `</body>` tag.
+
+---
+
+## 3 · Add your trigger
+
+Any element can open the modal:
+
+```html
+<button onclick="FrankoModal.open()">Give Feedback</button>
+```
+
+**Want to identify users?** Add the identity snippet before your trigger script. [Learn more →](../identity-verification)
+
+---
+
+## Multiple modals
+
+You can have different modals for different purposes (e.g., feedback, bug reports, feature requests).
+
+**Option 1: Install multiple snippets**
+```html
+<!-- First modal -->
+<script data-modal-slug="feedback-12345">...</script>
+
+<!-- Second modal -->
+<script data-modal-slug="bugs-67890">...</script>
+```
+
+**Option 2: Open specific modals programmatically**
+```js
+// Opens the default modal from the first script
+FrankoModal.open();
+
+// Opens a specific modal by slug
+FrankoModal.open("feedback-12345");
+FrankoModal.open("bugs-67890");
+```
+
+---
+
+## Example patterns
+
+| Use case | Implementation |
+|----------|----------------|
+| **Navbar feedback link** | `<a href="#" onclick="FrankoModal.open(); return false;">Feedback</a>` |
+| **After form submission** | `onSubmit={() => { submitForm(); FrankoModal.open(); }}` |
+| **Scroll-triggered** | See code example below |
+| **Error boundary** | `catch(e) { FrankoModal.open("bug-report-12345"); }` |
+
+**Scroll trigger example:**
+```js
+window.addEventListener('scroll', () => {
+  if (window.scrollY > document.body.scrollHeight * 0.5) {
+    FrankoModal.open();
+  }
+});
+```
+
+---
+
+## Conditional loading
+
+You can control when the script loads:
+
+```js
+// Only load for logged-in users
+if (user.isAuthenticated) {
+  const script = document.createElement('script');
+  script.src = 'your-franko-snippet-url';
+  document.body.appendChild(script);
+}
+```
+
+This is just standard JavaScript – wrap the script in whatever logic makes sense for your use case.
+
+---
+
+## FAQ
+
+**Will unused scripts hurt performance?** No – each script is less than 5kb and loads async.
+
+**Does the script inject a bubble?** No. Manual mode stays invisible until you call `FrankoModal.open()`.
+
+**Can I trigger it from my React/Vue app?** Yes – `FrankoModal.open()` works anywhere once the script loads.
+
+Need help? Email **fletcher@franko.ai** 

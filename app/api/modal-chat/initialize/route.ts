@@ -77,34 +77,9 @@ export async function POST(request: Request) {
       let verifiedUserMetadata: any = null;
 
       if (externalUserId) {
-        try {
-          // Fetch verification secret for workspace owner (profile)
-          const profile = await getProfileByUserId(chatInstance.userId);
-          const secret = profile?.verificationSecret;
-
-          if (secret) {
-            if (externalUserHash) {
-              const expectedHash = crypto
-                .createHmac('sha256', secret)
-                .update(externalUserId)
-                .digest('hex');
-              if (expectedHash === externalUserHash) {
-                verifiedUserId = externalUserId;
-                verifiedUserMetadata = externalUserMetadata ?? null;
-              } else {
-                logger.warn('User hash verification failed', { externalUserId, chatInstanceId: chatInstance.id });
-              }
-            } else {
-              logger.warn('Verification secret set but user_hash missing', { chatInstanceId: chatInstance.id });
-            }
-          } else {
-            // No secret -> accept data without verification
-            verifiedUserId = externalUserId;
-            verifiedUserMetadata = externalUserMetadata ?? null;
-          }
-        } catch (err) {
-          logger.error('Error verifying user hash', err);
-        }
+        // Trust the provided externalUserId and any accompanying metadata without HMAC verification.
+        verifiedUserId = externalUserId;
+        verifiedUserMetadata = externalUserMetadata ?? null;
       }
 
       // Get profile for organization name (needed for variable substitution)

@@ -26,44 +26,7 @@ export default function ConnectTab() {
   const [copiedItem, setCopiedItem] = useState<string | null>(null)
   const [selectedOption, setSelectedOption] = useState<ConnectionOption>('floating-bubble')
 
-  // Identity verification state
-  const [verificationSecret, setVerificationSecret] = useState<string | null>(null)
-  const [isSecretLoading, setIsSecretLoading] = useState(false)
-
-  // Fetch secret on mount
-  useEffect(() => {
-    async function fetchSecret() {
-      setIsSecretLoading(true)
-      try {
-        const res = await fetch('/api/verification-secret')
-        const data = await res.json()
-        if (res.ok) {
-          setVerificationSecret(data.verificationSecret)
-        }
-      } catch (err) {
-        console.error('Failed to fetch verification secret', err)
-      } finally {
-        setIsSecretLoading(false)
-      }
-    }
-    fetchSecret()
-  }, [])
-
-  const regenerateSecret = async () => {
-    setIsSecretLoading(true)
-    try {
-      const res = await fetch('/api/verification-secret', { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        setVerificationSecret(data.verificationSecret)
-        copyToClipboard(data.verificationSecret, 'verification-secret')
-      }
-    } catch (err) {
-      console.error('Failed to regenerate secret', err)
-    } finally {
-      setIsSecretLoading(false)
-    }
-  }
+  // Identity verification no longer requires a secret / HMAC.
 
   if (!currentModal) {
     return (
@@ -110,7 +73,6 @@ export default function ConnectTab() {
   const identitySnippet = `<script>
 window.FrankoUser = {
   user_id: "USER_ID",
-  user_hash: "GENERATED_HASH",
   user_metadata: {
     name: "John Doe",
     email: "john@example.com"
@@ -218,7 +180,7 @@ window.FrankoUser = {
       </div>
 
       <p className="text-xs text-gray-500">
-        <a href="https://franko.mintlify.app/chat-bubble" target="_blank" className="underline">See docs.&nbsp;↗</a>
+        <a href="https://franko.mintlify.app/chat-bubble" target="_blank" className="underline">See docs</a>
       </p>
     </div>
   )
@@ -227,7 +189,7 @@ window.FrankoUser = {
     <div className="space-y-4">
       <Label className="text-sm font-medium">Instructions:</Label>
       <p className="text-sm text-gray-700">
-        Paste this script just before the closing <code>&lt;/body&gt;</code> tag. To trigger the modal from your own buttons or links (like custom feedback buttons or nav items), call <code>FrankoModal.open()</code> from the element. You can trigger different modals by passing a slug, e.g., <code>FrankoModal.open('${currentModal.embedSlug}')</code>.
+        Paste this script just before the closing <code>&lt;/body&gt;</code> tag. To trigger the modal from your own buttons or links (like custom feedback buttons or nav items), call <code>FrankoModal.open('${currentModal.embedSlug}')</code> from the element.
       </p>
 
       <div className="space-y-3">
@@ -254,7 +216,7 @@ window.FrankoUser = {
       </div>
 
       <p className="text-xs text-gray-500">
-        <a href="https://franko.mintlify.app/custom-trigger" target="_blank" className="underline">See docs.&nbsp;↗</a>
+        <a href="https://franko.mintlify.app/custom-trigger" target="_blank" className="underline">See docs</a>
       </p>
     </div>
   )
@@ -266,27 +228,12 @@ window.FrankoUser = {
         <Label className="text-sm font-medium">Identity verification (optional)</Label>
       </div>
       <p className="text-xs text-gray-600">
-        Link feedback to signed-in users in your dashboard. If the snippet is missing or the HMAC fails, the modal still works – the user will simply appear as "Anonymous".
+        Link feedback to signed-in users in your dashboard. Add the optional snippet before your embed code to see who's giving feedback. If the snippet is missing, users appear as "Anonymous".
       </p>
       
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Secret key (server-side)</Label>
-        <div className="flex gap-2">
-          <Input value={verificationSecret || ''} readOnly placeholder={isSecretLoading ? 'Loading…' : ''} className="font-mono text-sm bg-gray-50" />
-          <Button variant="outline" size="sm" disabled={!verificationSecret} onClick={() => verificationSecret && copyToClipboard(verificationSecret, 'verification-secret')}>
-            {copiedItem === 'verification-secret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </Button>
-          <Button variant="outline" size="sm" disabled={isSecretLoading} onClick={regenerateSecret}>
-            Regenerate
-          </Button>
-        </div>
-
-        <p className="text-[11px] text-gray-500 max-w-md">
-          This secret is shared across all modals in your workspace. If you regenerate it, be sure to update your server-side code wherever you create the HMAC.
-        </p>
-
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Identity snippet:</Label>
+          <Label className="text-sm font-medium">Identity snippet (optional):</Label>
           <Button
             variant="outline"
             size="sm"
@@ -317,24 +264,6 @@ window.FrankoUser = {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-semibold mb-2 text-gray-900">Connect Your Modal</h2>
-            {/* Modal slug row */}
-            <div className="space-y-1">
-              <Label className="text-sm font-medium">Modal slug</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={currentModal.embedSlug}
-                  readOnly
-                  className="font-mono text-sm bg-gray-50 w-[240px]"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(currentModal.embedSlug, 'modal-slug')}
-                >
-                  {copiedItem === 'modal-slug' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
           </div>
           {isSaving && (
             <div className="flex items-center gap-2 text-[#1C1617] text-sm font-medium">
