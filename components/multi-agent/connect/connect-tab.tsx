@@ -128,15 +128,15 @@ window.FrankoUser = {
     },
     {
       id: 'floating-bubble' as ConnectionOption,
-      title: 'Floating Chat Bubble',
-      description: 'Best for websites where you want visitors to easily discover conversations',
+      title: 'Embed a Chat Bubble',
+      description: 'Embed modal as a floating chat bubble on your website. Similar to a customer support chat icon but for feedback.',
       icon: MessageCircle,
       recommended: true,
     },
     {
       id: 'custom-trigger' as ConnectionOption,
       title: 'Custom Trigger',
-      description: 'Full control over the trigger element and user experience',
+      description: 'Create your own button (i.e. Feedback) that opens the modal.',
       icon: Code,
     },
   ]
@@ -144,7 +144,7 @@ window.FrankoUser = {
   const renderDirectLinkContent = () => (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Shareable URL:</Label>
+        <Label className="text-sm font-medium">Shareable Link:</Label>
         <div className="flex gap-2">
           <Input 
             value={embedUrl} 
@@ -175,11 +175,14 @@ window.FrankoUser = {
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
           <Label className="text-sm font-medium">Ask for name & email</Label>
-          <p className="text-xs text-gray-500">Visitors will fill out a brief form before starting the conversation</p>
+          <p className="text-xs text-gray-500">Users will be asked to give name and email prior to commencing a chat.
+
+          </p>
         </div>
         <Switch 
           checked={currentModal.askNameEmailOnDirectLink || false}
           onCheckedChange={(checked) => updateModal({ askNameEmailOnDirectLink: checked })}
+          className="data-[state=checked]:bg-[#E4F222] scale-75"
         />
       </div>
     </div>
@@ -310,13 +313,10 @@ window.FrankoUser = {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-semibold mb-2 text-gray-900">Connect Your Chat Modal</h2>
-            <p className="text-sm text-slate-600">
-              Choose how visitors will access your chat modal and get the embed code for your website.
-            </p>
+            <h2 className="font-semibold mb-2 text-gray-900">Connect Your Modal</h2>
           </div>
           {isSaving && (
-            <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
+            <div className="flex items-center gap-2 text-[#1C1617] text-sm font-medium">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#E4F222] border-t-transparent"></div>
               Saving...
             </div>
@@ -334,7 +334,7 @@ window.FrankoUser = {
               key={option.id}
               className={`cursor-pointer transition-all ${
                 isSelected
-                  ? 'ring-2 ring-[#E4F222] border-[#E4F222] bg-[#FAFFD9]'
+                  ? 'ring-1 ring-[#E4F222] border-[#E4F222] bg-[#FAFFD9]'
                   : 'hover:border-gray-300 hover:shadow-sm'
               }`}
               onClick={() => setSelectedOption(option.id)}

@@ -13,7 +13,6 @@ import { buildApiMessages } from '@/lib/utils/api-messages'
 import { Message as ChatMessage } from "@/components/message"
 import { ChatInput } from "@/components/input"
 import { LazyDirectProgressBar } from "@/components/lazy-components"
-import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user"
 import { WelcomeBanner } from "@/components/welcome-banner"
 import { FinishConversationButton } from "@/components/finish-conversation-button"
 import { hasEndingPhrases } from "@/lib/utils/conversation-helper"
@@ -111,9 +110,6 @@ export function ModalExternalChat({
     agentsData.find(a => a.id === agentType),
     [agentType]
   );
-
-  // Use optimized hook for fetching user data
-  const { data: userData, isLoading: isLoadingUserData } = useChatResponseUser(chatResponseId);
 
   // Auto-scroll to latest message
   useEffect(() => {

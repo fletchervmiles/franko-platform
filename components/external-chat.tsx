@@ -16,7 +16,6 @@ import { Message as ChatMessage } from "@/components/message";
 import { ChatInput } from "@/components/input";
 // Import the lazy version of DirectProgressBar instead of ExternalChatProgress
 import { LazyDirectProgressBar } from "@/components/lazy-components";
-import { useChatResponseUser } from "@/lib/hooks/use-chat-response-user";
 import { WelcomeBanner } from "@/components/welcome-banner";
 // Import our custom hook instead of useChat
 import { useExternalChat } from "@/lib/hooks/use-external-chat";
@@ -91,10 +90,6 @@ export function ExternalChat({
   const [isSafari, setIsSafari] = useState(false);
   // Add new state for the expiration message
   const [showExpirationMessage, setShowExpirationMessage] = useState(false);
-
-  // Use optimized hook for fetching user data
-  // IMPORTANT: All hooks must be called in the same order on every render
-  const { data: userData, isLoading: isLoadingUserData } = useChatResponseUser(chatResponseId);
 
   // Use our custom hook instead of useChat
   const {
