@@ -8,11 +8,12 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface PreChatFormProps {
   onSubmit: (data: { name: string; email: string }) => void
+  onCancel?: () => void
   theme?: "light" | "dark"
   isLoading?: boolean
 }
 
-export function PreChatForm({ onSubmit, theme = "light", isLoading = false }: PreChatFormProps) {
+export function PreChatForm({ onSubmit, onCancel, theme = "light", isLoading = false }: PreChatFormProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
@@ -46,11 +47,16 @@ export function PreChatForm({ onSubmit, theme = "light", isLoading = false }: Pr
 
   const cardBg = theme === "dark" ? "bg-gray-800" : "bg-white"
   const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900"
-  const inputBg = theme === "dark" ? "bg-gray-700 placeholder-gray-400 border-gray-600" : "bg-white"
+  const inputBg = theme === "dark" ? "bg-gray-700 placeholder-gray-400 border-gray-600 text-gray-100" : "bg-white"
 
   return (
     <div className="flex items-center justify-center p-4 inset-0 absolute">
-      <Card className={`w-full max-w-[400px] ${cardBg}`}>        
+      <Card className={`w-full max-w-[400px] ${cardBg} relative`}>        
+        {onCancel && (
+          <button onClick={onCancel} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+            ✕
+          </button>
+        )}
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
