@@ -71,11 +71,12 @@ export default function ConnectTab() {
 
   // Snippet users add *before* the embed script when using identity verification
   const identitySnippet = `<script>
+// Replace the placeholder values with data from your auth/session
 window.FrankoUser = {
-  user_id: "USER_ID",
+  user_id: CURRENT_USER_ID, // e.g. user.id
   user_metadata: {
-    name: "John Doe",
-    email: "john@example.com"
+    name: CURRENT_USER_NAME,   // e.g. user.name (optional)
+    email: CURRENT_USER_EMAIL  // e.g. user.email (optional)
   }
 }
 </script>`
@@ -251,7 +252,7 @@ window.FrankoUser = {
         />
 
         <p className="text-xs text-gray-500">
-          Need more detail? <a href="https://franko.mintlify.app/identity-verification" target="_blank" className="underline">Identity Verification guide&nbsp;↗</a>
+          <a href="https://franko.mintlify.app/identity-verification" target="_blank" className="underline">See docs</a>
         </p>
       </div>
     </div>

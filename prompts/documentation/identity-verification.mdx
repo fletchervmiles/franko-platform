@@ -10,12 +10,12 @@ Add this snippet **before** your Franko embed script:
 
 ```html
 <script>
+// Replace the placeholder values with your own user data
 window.FrankoUser = {
-  user_id: "unique-user-123",
+  user_id: CURRENT_USER_ID, // e.g. user.id, usually coming from your auth provider
   user_metadata: {
-    name: "Jane Doe",
-    email: "jane@acme.com",
-    plan: "Pro"
+    name: CURRENT_USER_NAME,   // optional
+    email: CURRENT_USER_EMAIL  // optional
   }
 }
 </script>
@@ -28,7 +28,7 @@ That's it! Franko will now associate feedback with this user.
 ## What data is stored?
 
 - `user_id` - Your unique identifier for the user
-- `user_metadata` - Any additional context (all fields are optional)
+- `user_metadata` - Only `name` and `email` (both optional)
 
 ---
 
@@ -38,7 +38,6 @@ That's it! Franko will now associate feedback with this user.
 |----------|----------------|
 | Show user info only when logged in | Wrap the snippet in your auth check |
 | Different user data per page | Update `window.FrankoUser` dynamically |
-| Track user segments | Add custom fields to `user_metadata` |
 
 ---
 
