@@ -1,35 +1,33 @@
-# Franko Identity Verification (Optional)
+# Link Feedback to Logged-in Users (Identity Verification)
 
-Give Franko the power to greet users by name and link conversations to real accounts.
+With identity verification you can see *who* said what in your Franko dashboard. It does **not** change the visitor's experience – the modal looks identical whether the user is verified or anonymous.
 
-## Why verify?
+---
 
-* Personalised greetings and smarter responses
-* View conversations grouped by user in your dashboard
-* Link feedback to customer records for analysis
+## 1 · Generate your workspace secret
 
-## How it works
+In **Connect → Identity Verification** click **Generate** (or **Regenerate**).
 
-1. Generate a **verification secret** in the **Connect → Identity verification** card.
-2. On your server, compute a SHA-256 HMAC of the `user_id` using the secret.
-3. Expose the values to the browser with the `window.FrankoUser` snippet **before** the embed script.
+> One secret per workspace. If you rotate it you must update your server-side code everywhere you sign the hash.
 
-Franko recreates the HMAC server-side. If it matches, the user is verified. If not, Franko discards the `user_id` but continues the conversation anonymously.
+---
 
-## Server-side example (Node.js)
+## 2 · Hash the `user_id` on your server
 
 ```js
 import crypto from "crypto";
 
-const SECRET = process.env.FRANKO_VERIFICATION_SECRET; // keep this safe!
-const userId = currentUser.id;                         // any unique string/UUID
+const SECRET = process.env.FRANKO_VERIFICATION_SECRET;  // keep this safe!
+const userId = currentUser.id;                          // any unique string/UUID
 
 const userHash = crypto.createHmac("sha256", SECRET)
                        .update(userId)
                        .digest("hex");
 ```
 
-## Client snippet
+---
+
+## 3 · Expose the values in the browser **before** the embed script
 
 ```html
 <script>
@@ -39,32 +37,30 @@ window.FrankoUser = {
   user_metadata: {
     name: "Jane Doe",
     email: "jane@acme.com",
-    company: "Acme Inc"
+    plan: "Pro"
   }
 }
 </script>
 ```
 
-Add this **before** the main embed snippet.
+*Only `user_id` and `user_metadata` are stored.* `user_hash` is discarded after verification.
 
-## Stored data & display logic
+---
 
-| Field | Stored? | Shown in dashboard | Notes |
-|-------|---------|--------------------|-------|
-| `user_id` | ✔️ | ✔️ (if hash valid) | Primary identifier |
-| `user_hash` | ❌ | ❌ | Used only for verification |
-| `user_metadata` | ✔️ | ✔️ | JSON blob for extra context |
-| `name`, `email` (extracted) | ✔️ | ✔️ | Convenience columns |
+## What happens if the hash is missing or invalid?
+
+Franko falls back to anonymous mode. Conversations are stored, but the **User** column shows "Anonymous".
+
+---
 
 ## FAQ
 
-**Do I have to verify users?**  
-No. Skip the snippet if anonymity is fine.
+| Question | Answer |
+|----------|--------|
+| Do I have to verify users? | No – skip the snippet if anonymity is fine. |
+| Does it work with the Direct-Link URL? | Direct links open a new tab and cannot access your session, so identity verification is ignored there. |
+| Can I regenerate the secret? | Yes. Click **Regenerate** and update your HMAC code. |
+| Is HTTPS required? | Yes. Never expose the secret over insecure HTTP. |
+| What data is stored? | `user_id` + all fields inside `user_metadata`. `user_hash` is thrown away. |
 
-**Can I regenerate the secret?**  
-Yes – click **Regenerate** in the Connect tab. Update your server-side code accordingly.
-
-**Is HTTPS required?**  
-Yes. Never expose the secret over insecure HTTP.
-
-Need more detail? Email **support@franko.ai**. 
+Need more? Email **support@franko.ai**. 

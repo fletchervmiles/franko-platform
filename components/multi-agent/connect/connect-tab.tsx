@@ -123,13 +123,13 @@ window.FrankoUser = {
     {
       id: 'direct-link' as ConnectionOption,
       title: 'Direct Link',
-      description: 'Perfect for email signatures or direct sharing',
+      description: 'Perfect for email signatures and email sequences or direct sharing.',
       icon: Link,
     },
     {
       id: 'floating-bubble' as ConnectionOption,
       title: 'Embed a Chat Bubble',
-      description: 'Embed modal as a floating chat bubble on your website. Similar to a customer support chat icon but for feedback.',
+      description: 'Embed modal as a floating chat bubble on your website.',
       icon: MessageCircle,
       recommended: true,
     },
@@ -190,6 +190,10 @@ window.FrankoUser = {
 
   const renderFloatingBubbleContent = () => (
     <div className="space-y-4">
+      <p className="text-sm text-gray-700">
+        Paste this script right before the closing <code>&lt;/body&gt;</code> tag on each page where you want the chat bubble to appear. The bubble docks in the bottom-right corner and opens the modal when clicked.
+      </p>
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Embed Code:</Label>
@@ -213,17 +217,18 @@ window.FrankoUser = {
         />
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Instructions:</h4>
-        <p className="text-sm text-gray-700">
-          Paste this code before the closing &lt;/body&gt; tag on your website. The floating chat icon will appear automatically and visitors can click it to start conversations.
-        </p>
-      </div>
+      <p className="text-xs text-gray-500">
+        Need more help? <a href="https://franko.mintlify.app/embed/bubble" target="_blank" className="underline">Read the full guide&nbsp;↗</a>
+      </p>
     </div>
   )
 
   const renderCustomTriggerContent = () => (
     <div className="space-y-4">
+      <p className="text-sm text-gray-700">
+        Include this script just before <code>&lt;/body&gt;</code>. Call <code>FrankoModal.open()</code> from any element to open the modal – great for existing buttons, nav items, or programmatic flows. Multiple triggers can call different modals by passing a slug: <code>FrankoModal.open('my-other-modal')</code>.
+      </p>
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Integration Code:</Label>
@@ -247,23 +252,20 @@ window.FrankoUser = {
         />
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Instructions:</h4>
-        <p className="text-sm text-gray-700">
-          Add the script to your page, then call FrankoModal.open() from any element. Perfect for existing buttons, navigation items, or programmatic control.
-        </p>
-      </div>
+      <p className="text-xs text-gray-500">
+        The example button in the snippet is just for reference – swap it with your own element. Full guide → <a href="https://franko.mintlify.app/embed/custom-trigger" target="_blank" className="underline">Custom Trigger&nbsp;↗</a>
+      </p>
     </div>
   )
 
   const renderIdentityVerification = () => (
-    <div className="space-y-4 pt-6 border-t border-gray-200">
+    <div className="space-y-4">
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-gray-600" />
         <Label className="text-sm font-medium">Identity verification (optional)</Label>
       </div>
       <p className="text-xs text-gray-600">
-        Pass your signed-in user's ID to Franko for personalised feedback.
+        Link feedback to signed-in users in your dashboard. If the snippet is missing or the HMAC fails, the modal still works – the user will simply appear as "Anonymous".
       </p>
       
       <div className="space-y-3">
@@ -278,8 +280,8 @@ window.FrankoUser = {
           </Button>
         </div>
 
-        <p className="text-xs text-gray-700">
-          Use this secret to generate an HMAC of your <code>user_id</code> on your server, then add the snippet below <strong>before</strong> the embed script.
+        <p className="text-[11px] text-gray-500 max-w-md">
+          This secret is shared across all modals in your workspace. If you regenerate it, be sure to update your server-side code wherever you create the HMAC.
         </p>
 
         <div className="flex items-center justify-between">
@@ -301,7 +303,7 @@ window.FrankoUser = {
         />
 
         <p className="text-xs text-gray-500">
-          Need more detail? <a href="/docs/identity-verification" target="_blank" className="text-blue-600 underline">Read the full guide</a>.
+          Need more detail? <a href="https://franko.mintlify.app/identity-verification" target="_blank" className="underline">Identity Verification guide&nbsp;↗</a>
         </p>
       </div>
     </div>
@@ -332,10 +334,10 @@ window.FrankoUser = {
           return (
             <Card
               key={option.id}
-              className={`cursor-pointer transition-all ${
+              className={`cursor-pointer transition-all border ${
                 isSelected
-                  ? 'ring-1 ring-[#E4F222] border-[#E4F222] bg-[#FAFFD9]'
-                  : 'hover:border-gray-300 hover:shadow-sm'
+                  ? 'border-[#E4F222] bg-[#FAFFD9]'
+                  : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
               }`}
               onClick={() => setSelectedOption(option.id)}
             >
@@ -368,11 +370,17 @@ window.FrankoUser = {
           {selectedOption === 'direct-link' && renderDirectLinkContent()}
           {selectedOption === 'floating-bubble' && renderFloatingBubbleContent()}
           {selectedOption === 'custom-trigger' && renderCustomTriggerContent()}
-          
-          {/* Identity Verification - only for floating-bubble and custom-trigger */}
-          {(selectedOption === 'floating-bubble' || selectedOption === 'custom-trigger') && renderIdentityVerification()}
         </CardContent>
       </Card>
+
+      {/* Identity Verification (separate card) */}
+      {(selectedOption === 'floating-bubble' || selectedOption === 'custom-trigger') && (
+        <Card className="border shadow-sm mt-6">
+          <CardContent className="p-6">
+            {renderIdentityVerification()}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 } 
