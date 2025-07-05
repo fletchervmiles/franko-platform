@@ -99,13 +99,12 @@ export default function ConnectTab() {
   }
 
   const bubbleScript = `<script>
-(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","${brandSettings.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","${effectiveChatIconColor}");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+(function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","${brandSettings.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","#BFBFBF");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
 </script>`
 
   const customScript = `<script>
 (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
-</script>
-<button onclick="FrankoModal.open()">Get Help</button>`
+</script>`
 
   // Snippet users add *before* the embed script when using identity verification
   const identitySnippet = `<script>
@@ -143,6 +142,7 @@ window.FrankoUser = {
 
   const renderDirectLinkContent = () => (
     <div className="space-y-4">
+      <Label className="text-sm font-medium">Instructions:</Label>
       <div className="space-y-2">
         <Label className="text-sm font-medium">Shareable Link:</Label>
         <div className="flex gap-2">
@@ -175,8 +175,7 @@ window.FrankoUser = {
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
         <div>
           <Label className="text-sm font-medium">Ask for name & email</Label>
-          <p className="text-xs text-gray-500">Users will be asked to give name and email prior to commencing a chat.
-
+          <p className="text-xs text-gray-500">Require users to provide their details before starting a chat. Helpful for identifying and contacting users who give feedback.
           </p>
         </div>
         <Switch 
@@ -190,8 +189,9 @@ window.FrankoUser = {
 
   const renderFloatingBubbleContent = () => (
     <div className="space-y-4">
+      <Label className="text-sm font-medium">Instructions:</Label>
       <p className="text-sm text-gray-700">
-        Paste this script right before the closing <code>&lt;/body&gt;</code> tag on each page where you want the chat bubble to appear. The bubble docks in the bottom-right corner and opens the modal when clicked.
+        Paste this script immediately before the closing <code>&lt;/body&gt;</code> tag on pages where you want the chat bubble. It docks to the bottom-left or bottom-right (configured under the Interface tab). Modal opens when clicked.
       </p>
 
       <div className="space-y-3">
@@ -218,15 +218,16 @@ window.FrankoUser = {
       </div>
 
       <p className="text-xs text-gray-500">
-        Need more help? <a href="https://franko.mintlify.app/embed/bubble" target="_blank" className="underline">Read the full guide&nbsp;↗</a>
+        <a href="https://franko.mintlify.app/chat-bubble" target="_blank" className="underline">See docs.&nbsp;↗</a>
       </p>
     </div>
   )
 
   const renderCustomTriggerContent = () => (
     <div className="space-y-4">
+      <Label className="text-sm font-medium">Instructions:</Label>
       <p className="text-sm text-gray-700">
-        Include this script just before <code>&lt;/body&gt;</code>. Call <code>FrankoModal.open()</code> from any element to open the modal – great for existing buttons, nav items, or programmatic flows. Multiple triggers can call different modals by passing a slug: <code>FrankoModal.open('my-other-modal')</code>.
+        Paste this script just before the closing <code>&lt;/body&gt;</code> tag. To trigger the modal from your own buttons or links (like custom feedback buttons or nav items), call <code>FrankoModal.open()</code> from the element. You can trigger different modals by passing a slug, e.g., <code>FrankoModal.open('${currentModal.embedSlug}')</code>.
       </p>
 
       <div className="space-y-3">
@@ -253,7 +254,7 @@ window.FrankoUser = {
       </div>
 
       <p className="text-xs text-gray-500">
-        The example button in the snippet is just for reference – swap it with your own element. Full guide → <a href="https://franko.mintlify.app/embed/custom-trigger" target="_blank" className="underline">Custom Trigger&nbsp;↗</a>
+        <a href="https://franko.mintlify.app/custom-trigger" target="_blank" className="underline">See docs.&nbsp;↗</a>
       </p>
     </div>
   )
@@ -316,6 +317,24 @@ window.FrankoUser = {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-semibold mb-2 text-gray-900">Connect Your Modal</h2>
+            {/* Modal slug row */}
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Modal slug</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={currentModal.embedSlug}
+                  readOnly
+                  className="font-mono text-sm bg-gray-50 w-[240px]"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(currentModal.embedSlug, 'modal-slug')}
+                >
+                  {copiedItem === 'modal-slug' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
           </div>
           {isSaving && (
             <div className="flex items-center gap-2 text-[#1C1617] text-sm font-medium">
@@ -327,7 +346,7 @@ window.FrankoUser = {
       </div>
 
       {/* Option Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {options.map((option) => {
           const IconComponent = option.icon
           const isSelected = selectedOption === option.id
