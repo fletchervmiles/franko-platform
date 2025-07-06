@@ -18,12 +18,16 @@ import type {
 
 interface ResponsesPageClientProps {
   initialData?: AggregatedResponsesApiResponse
+  initialFilters?: ResponseFilters
+  initialPage?: number
   userId: string
   agentTypes: Array<{ id: string; name: string }>
 }
 
 export function ResponsesPageClient({ 
   initialData, 
+  initialFilters,
+  initialPage,
   userId, 
   agentTypes 
 }: ResponsesPageClientProps) {
@@ -37,18 +41,25 @@ export function ResponsesPageClient({
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
-  // Parse current filters from URL
+  // Parse current filters from URL or use initial filters
   const currentFilters = useMemo((): ResponseFilters => ({
-    agentType: searchParams?.get('agentType') || undefined,
-    modalName: searchParams?.get('modalName') || undefined,
-    startDate: searchParams?.get('startDate') || undefined,
-    endDate: searchParams?.get('endDate') || undefined,
-  }), [searchParams])
+    agentType: searchParams?.get('agentType') || initialFilters?.agentType || undefined,
+    modalName: searchParams?.get('modalName') || initialFilters?.modalName || undefined,
+    startDate: searchParams?.get('startDate') || initialFilters?.startDate || undefined,
+    endDate: searchParams?.get('endDate') || initialFilters?.endDate || undefined,
+  }), [searchParams, initialFilters])
 
   const currentPage = useMemo(() => {
     const page = searchParams?.get('page')
-    return page ? parseInt(page) : 1
-  }, [searchParams])
+    return page ? parseInt(page) : (initialPage || 1)
+  }, [searchParams, initialPage])
+
+  // Fetch initial data if not provided
+  useEffect(() => {
+    if (!initialData && !isLoading) {
+      fetchData(currentFilters, currentPage)
+    }
+  }, []) // Only run on mount
 
   // Fetch data function
   const fetchData = useCallback(async (filters: ResponseFilters, page: number) => {

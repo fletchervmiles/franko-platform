@@ -59,6 +59,8 @@ export interface DownloadFormat {
 // For the frontend components
 export interface ResponsesPageProps {
   initialData?: AggregatedResponsesApiResponse;
+  initialFilters?: ResponseFilters;
+  initialPage?: number;
   userId: string;
 }
 

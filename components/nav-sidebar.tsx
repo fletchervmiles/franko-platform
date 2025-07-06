@@ -291,6 +291,7 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
     if (pathname === null) return "Workspace"
     
     if (pathname === "/create") return "Create"
+    if (pathname === "/responses") return "Responses"
     for (const section of navMainData) {
       const matchingItem = section.items.find((item) => {
         if (pathname === "/" && item.url === "/") return true
