@@ -30,7 +30,7 @@ export interface AggregatedResponse {
   user_words: string | null;
   updatedAt: Date;
   agentType: string | null;
-  chatInstanceId: string;
+  chatInstanceId: string | null;
   modalName: string | null;
   modalEmbedSlug: string | null;
 }
