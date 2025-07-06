@@ -46,7 +46,7 @@ export const agentsData: Agent[] = [
     id: "AGENT03",
     name: "Activation Hurdles", 
     benefit: "Activation Hurdles",
-    prompt: "When you think about the paid plan, what (if anything) has given you pause?",
+    prompt: "What was the main reason you decided not to subscribe?",
     description: "Discover what's preventing paid upgrades, so you can fix your conversion funnel.",
     Icon: CreditCard,
     initialQuestion: "What's your main consideration when thinking about upgrading to a paid plan?",
