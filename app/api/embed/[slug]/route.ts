@@ -38,13 +38,19 @@ export async function GET(
     // Get enabled chat instances for this modal
     const chatInstances = await getEnabledModalChatInstances(modal.id);
     
-    if (chatInstances.length === 0) {
+    // Filter by brandSettings.agents.enabledAgents
+    const enabledAgents = brandSettings?.agents?.enabledAgents || {};
+    const filteredChatInstances = chatInstances.filter(instance => 
+      instance.agentType && enabledAgents[instance.agentType] === true
+    );
+    
+    if (filteredChatInstances.length === 0) {
       console.log("[embed/[slug]] No enabled agents found for modal:", params.slug);
       return NextResponse.json({ error: "No agents available" }, { status: 404 });
     }
 
     // Map chat instances to agent information for the widget
-    const agents = chatInstances.map(instance => {
+    const agents = filteredChatInstances.map(instance => {
       const agentData = agentsData.find(a => a.id === instance.agentType);
       if (!agentData) {
         return {
