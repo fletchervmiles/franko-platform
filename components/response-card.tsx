@@ -69,29 +69,36 @@ const CardHeader = React.memo(function CardHeader({
 }) {
   return (
     <div
-      className={`flex items-center p-6 hover:bg-gray-100 cursor-pointer ${isOpen ? "bg-gray-100" : ""}`}
+      className={`grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center p-6 hover:bg-gray-100 cursor-pointer ${isOpen ? "bg-gray-100" : ""}`}
       onClick={toggleOpen}
     >
-      <div className="flex items-center justify-between flex-1 gap-4">
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-          <User className="h-5 w-5 text-blue-600 hidden sm:inline-block" />
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold truncate">{name}</h3>
-            {agentName && (
-              <p className="text-xs text-gray-500 truncate">{agentName}</p>
-            )}
-          </div>
-        </div>
-        <div className="flex-shrink-0 text-center">
-          <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm">
-            +{customerWords.toLocaleString()} Words
-          </span>
-        </div>
-        <div className="flex-shrink-0">
-          <span className="text-sm text-gray-900">{formattedDate}</span>
+      {/* Name Column */}
+      <div className="flex items-center space-x-2 min-w-0">
+        <User className="h-5 w-5 text-[#314842] hidden sm:inline-block flex-shrink-0" />
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold truncate">{name}</h3>
         </div>
       </div>
-      <Button variant="ghost" size="sm" className="p-0 text-blue-600 ml-4">
+
+      {/* Agent Type Column */}
+      <div className="text-sm text-gray-600 truncate">
+        {agentName || "—"}
+      </div>
+
+      {/* Words Column */}
+      <div className="text-center">
+        <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm whitespace-nowrap">
+          +{customerWords.toLocaleString()} Words
+        </span>
+      </div>
+
+      {/* Date Column */}
+      <div className="text-sm text-gray-900 text-right">
+        {formattedDate}
+      </div>
+
+      {/* Expand Button */}
+      <Button variant="ghost" size="sm" className="p-0 text-blue-600">
         {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </Button>
     </div>
@@ -153,7 +160,6 @@ export const ResponseCard = React.memo(function ResponseCard({
 }: ResponseCardProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFullSummary, setIsFullSummary] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
 
   const formattedDate = useMemo(() => 
     format(new Date(completionDate), "MMM d, yyyy"),
@@ -174,9 +180,7 @@ export const ResponseCard = React.memo(function ResponseCard({
     setIsFullSummary(!isFullSummary);
   }, [isFullSummary]);
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  }, []);
+
 
   const transcriptBlocks = useMemo(() => 
     transcript.split("\n\n"),
@@ -258,22 +262,15 @@ export const ResponseCard = React.memo(function ResponseCard({
                 <DialogTitle>Conversation Transcript</DialogTitle>
                 <DialogDescription>Full transcript of the conversation with {name}</DialogDescription>
               </DialogHeader>
-              <Input
-                type="search"
-                placeholder="Search transcript..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="my-4"
-              />
-              <div className="space-y-4">
-                {transcriptBlocks.map((block, index) => (
-                  <TranscriptBlock 
-                    key={index} 
-                    block={block} 
-                    index={index} 
-                    searchTerm={searchTerm} 
-                  />
-                ))}
+              <div className="space-y-4 mt-4">
+                                  {transcriptBlocks.map((block, index) => (
+                    <TranscriptBlock 
+                      key={index} 
+                      block={block} 
+                      index={index} 
+                      searchTerm="" 
+                    />
+                  ))}
               </div>
             </DialogContent>
           </Dialog>

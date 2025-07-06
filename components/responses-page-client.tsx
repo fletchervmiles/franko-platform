@@ -8,6 +8,7 @@ import { ResponseCardList } from "@/components/response-card-list"
 import { ResponsesFilters } from "@/components/responses-filters"
 import { ResponsesPagination } from "@/components/responses-pagination"
 import { ResponsesDownload } from "@/components/responses-download"
+import { ResponsesSummaryCards } from "@/components/responses-summary-cards"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { 
@@ -151,9 +152,9 @@ export function ResponsesPageClient({
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: ResponseFilters) => {
-    updateUrl(newFilters, 1) // Reset to page 1 when filters change
+    // Only fetch data, don't update URL to prevent page jumps
     debouncedFetchData(newFilters, 1)
-  }, [updateUrl, debouncedFetchData])
+  }, [debouncedFetchData])
 
   // Handle page changes
   const handlePageChange = useCallback((newPage: number) => {
@@ -164,9 +165,9 @@ export function ResponsesPageClient({
   // Handle clear filters
   const handleClearFilters = useCallback(() => {
     const emptyFilters: ResponseFilters = {}
-    updateUrl(emptyFilters, 1)
-    fetchData(emptyFilters, 1)
-  }, [updateUrl, fetchData])
+    // Only fetch data, don't update URL to prevent page jumps
+    debouncedFetchData(emptyFilters, 1)
+  }, [debouncedFetchData])
 
   // Handle downloads
   const handleDownload = useCallback(async (format: 'csv' | 'llm') => {
@@ -211,6 +212,23 @@ export function ResponsesPageClient({
       setIsDownloading(false)
     }
   }, [currentFilters, toast])
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    if (!data) return { totalResponses: 0, totalWords: 0, completionRate: 0 }
+    
+    const totalResponses = data.responses.length
+    const totalWords = data.responses.reduce((sum, response) => sum + response.customerWords, 0)
+    const avgCompletionRate = totalResponses > 0 
+      ? data.responses.reduce((sum, response) => sum + response.completionRate, 0) / totalResponses 
+      : 0
+    
+    return {
+      totalResponses,
+      totalWords,
+      completionRate: avgCompletionRate
+    }
+  }, [data])
 
   // Show error state
   if (error && !data) {
@@ -263,15 +281,12 @@ export function ResponsesPageClient({
     <div className="space-y-6">
       {/* Filters */}
       <Card>
-        <CardHeader className="relative">
-          <CardTitle>Filters</CardTitle>
+        <CardContent className="relative">
           {isFilterLoading && (
             <div className="absolute right-4 top-4">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
             </div>
           )}
-        </CardHeader>
-        <CardContent>
           <ResponsesFilters
             filters={currentFilters}
             onFiltersChange={handleFiltersChange}
@@ -284,6 +299,13 @@ export function ResponsesPageClient({
           />
         </CardContent>
       </Card>
+
+      {/* Summary Cards */}
+      <ResponsesSummaryCards
+        totalResponses={summaryStats.totalResponses}
+        totalWords={summaryStats.totalWords}
+        completionRate={summaryStats.completionRate}
+      />
 
       {/* Loading overlay for subsequent loads */}
       {isLoading && (

@@ -49,7 +49,7 @@ export function ResponseCardList({ responses }: ResponseCardListProps) {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-semibold">Interview Responses ({responses.length})</h3>
+      <h3 className="text-xl font-semibold">Responses</h3>
       <div className="rounded-[6px] border bg-white shadow-sm overflow-hidden">
         {responses.map((response, index) => (
           <Suspense 
