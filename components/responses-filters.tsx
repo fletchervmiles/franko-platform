@@ -154,7 +154,7 @@ export function ResponsesFilters({
                 selected={startDate}
                 onSelect={handleStartDateChange}
                 disabled={(date) =>
-                  date > new Date() || (endDate && date > endDate)
+                  date > new Date() || (endDate ? date > endDate : false)
                 }
                 initialFocus
               />
@@ -184,7 +184,7 @@ export function ResponsesFilters({
                 selected={endDate}
                 onSelect={handleEndDateChange}
                 disabled={(date) =>
-                  date > new Date() || (startDate && date < startDate)
+                  date > new Date() || (startDate ? date < startDate : false)
                 }
                 initialFocus
               />
