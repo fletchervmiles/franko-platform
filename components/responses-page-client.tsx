@@ -53,6 +53,9 @@ export function ResponsesPageClient({
     endDate: searchParams?.get('endDate') || initialFilters?.endDate || undefined,
   }), [searchParams, initialFilters])
 
+  // Initialize active filters with current filters from URL
+  const [activeFilters, setActiveFilters] = useState<ResponseFilters>(currentFilters)
+
   const currentPage = useMemo(() => {
     const page = searchParams?.get('page')
     return page ? parseInt(page) : (initialPage || 1)
@@ -152,6 +155,8 @@ export function ResponsesPageClient({
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: ResponseFilters) => {
+    // Update active filters state immediately for UI
+    setActiveFilters(newFilters)
     // Only fetch data, don't update URL to prevent page jumps
     debouncedFetchData(newFilters, 1)
   }, [debouncedFetchData])
@@ -165,6 +170,8 @@ export function ResponsesPageClient({
   // Handle clear filters
   const handleClearFilters = useCallback(() => {
     const emptyFilters: ResponseFilters = {}
+    // Update active filters state immediately for UI
+    setActiveFilters(emptyFilters)
     // Only fetch data, don't update URL to prevent page jumps
     debouncedFetchData(emptyFilters, 1)
   }, [debouncedFetchData])
@@ -252,43 +259,22 @@ export function ResponsesPageClient({
     )
   }
 
-  // Show empty state
-  if (!data || data.responses.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">No responses found</h3>
-          <p className="text-gray-600 mb-4">
-            {Object.keys(currentFilters).length > 0 
-              ? "No responses match your current filters. Try adjusting your search criteria."
-              : "You haven't received any interview responses yet."
-            }
-          </p>
-          {Object.keys(currentFilters).length > 0 && (
-            <button
-              onClick={handleClearFilters}
-              className="text-blue-600 hover:text-blue-800 underline"
-            >
-              Clear all filters
-            </button>
-          )}
-        </CardContent>
-      </Card>
-    )
-  }
+  // Check if we have empty results but should still show UI
+  const showEmptyState = !data || data.responses.length === 0
+  const hasActiveFiltersCheck = Object.values(activeFilters).some(value => value !== undefined)
 
   return (
     <div className="space-y-6">
       {/* Filters */}
       <Card>
-        <CardContent className="relative">
+        <CardContent className="relative pt-6">
           {isFilterLoading && (
             <div className="absolute right-4 top-4">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <Loader2 className="h-4 w-4 animate-spin text-[#E4F222]" />
             </div>
           )}
           <ResponsesFilters
-            filters={currentFilters}
+            filters={activeFilters}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
             agentTypes={agentTypes}
@@ -316,11 +302,33 @@ export function ResponsesPageClient({
         </div>
       )}
 
-      {/* Response Cards */}
-      <ResponseCardList responses={data.responses} />
+      {/* Response Cards or Empty State */}
+      {showEmptyState ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <h3 className="text-lg font-semibold mb-2">No responses found</h3>
+            <p className="text-gray-600 mb-4">
+              {hasActiveFiltersCheck 
+                ? "No responses match your current filters. Try adjusting your search criteria."
+                : "You haven't received any interview responses yet."
+              }
+            </p>
+            {hasActiveFiltersCheck && (
+              <button
+                onClick={handleClearFilters}
+                className="text-[#E4F222] hover:text-[#F5FF78] underline"
+              >
+                Clear all filters
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <ResponseCardList responses={data.responses} />
+      )}
 
       {/* Pagination */}
-      {data.pagination.totalPages > 1 && (
+      {data && data.pagination.totalPages > 1 && !showEmptyState && (
         <ResponsesPagination
           pagination={data.pagination}
           onPageChange={handlePageChange}

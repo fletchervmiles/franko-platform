@@ -69,10 +69,8 @@ export function ResponsesFilters({
     }
     onFiltersChange(newFilters)
     
-    // Only close if we have a complete range (from and to) or a single date selection
-    if (range?.from && (range?.to || range?.from)) {
-      setDateRangeOpen(false)
-    }
+    // Don't auto-close the picker - let users manually close it after selecting their desired range
+    // This prevents the picker from closing on the first click and allows proper range selection
   }, [filters, onFiltersChange])
 
   // Check if any filters are active

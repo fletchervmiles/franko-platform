@@ -87,7 +87,7 @@ const CardHeader = React.memo(function CardHeader({
 
       {/* Words Column */}
       <div className="text-center">
-        <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm whitespace-nowrap">
+        <span className="bg-[#F5FF78] px-1.5 py-0.5 rounded text-gray-800 text-sm whitespace-nowrap">
           +{customerWords.toLocaleString()} Words
         </span>
       </div>
@@ -98,7 +98,7 @@ const CardHeader = React.memo(function CardHeader({
       </div>
 
       {/* Expand Button */}
-      <Button variant="ghost" size="sm" className="p-0 text-blue-600">
+      <Button variant="ghost" size="sm" className="p-0 text-[#E4F222]">
         {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </Button>
     </div>
@@ -140,7 +140,7 @@ const TranscriptBlock = React.memo(function TranscriptBlock({
 
   return (
     <div className={`p-3 rounded ${index % 2 === 0 ? "bg-gray-100" : "bg-white"}`}>
-      <strong className="text-blue-600">{speaker}:</strong>
+      <strong className="text-[#E4F222]">{speaker}:</strong>
       <p>{highlightedContent}</p>
     </div>
   );
@@ -232,7 +232,7 @@ export const ResponseCard = React.memo(function ResponseCard({
 
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center text-gray-900">
-              <FileText className="w-4 h-4 mr-1 text-blue-600" />
+              <FileText className="w-4 h-4 mr-1 text-[#E4F222]" />
               <span>Summary</span>
             </h4>
             <div className="text-sm bg-white border border-gray-200 p-4 rounded prose max-w-none">
@@ -242,7 +242,7 @@ export const ResponseCard = React.memo(function ResponseCard({
                 <Button
                   variant="link"
                   onClick={toggleFullSummary}
-                  className="mt-2 p-0 h-auto font-normal text-blue-600"
+                  className="mt-2 p-0 h-auto font-normal text-[#E4F222]"
                 >
                   {isFullSummary ? "Read less" : "Read more"}
                 </Button>
@@ -253,7 +253,7 @@ export const ResponseCard = React.memo(function ResponseCard({
           <Dialog>
             <DialogTrigger>
               <Button variant="outline" className="w-full">
-                <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                <FileText className="w-4 h-4 mr-2 text-[#E4F222]" />
                 <span>View Transcript</span>
               </Button>
             </DialogTrigger>
