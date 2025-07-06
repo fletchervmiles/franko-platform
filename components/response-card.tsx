@@ -25,6 +25,8 @@ interface ResponseCardProps {
   completionDate: string
   customerWords: number // This now comes from user_words in DB, not calculated
   completionRate: number
+  agentName?: string // Added for global responses view
+  modalName?: string | null // Added for global responses view
 }
 
 // Memoized ReactMarkdown component with custom styling
@@ -139,6 +141,8 @@ export const ResponseCard = React.memo(function ResponseCard({
   completionDate,
   customerWords,
   completionRate,
+  agentName,
+  modalName,
 }: ResponseCardProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFullSummary, setIsFullSummary] = useState(false)
@@ -188,11 +192,23 @@ export const ResponseCard = React.memo(function ResponseCard({
             <h3 className="text-lg font-semibold">{name}</h3>
           </div>
           <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
-            <div className="space-y-2 sm:space-y-0">
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-700">{email}</span>
               </div>
+              {agentName && (
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700">Agent: {agentName}</span>
+                </div>
+              )}
+              {modalName && (
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700">Modal: {modalName}</span>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <BarChart className="h-4 w-4 text-gray-500" />
