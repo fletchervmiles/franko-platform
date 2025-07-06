@@ -23,6 +23,17 @@ import { useProfile } from "@/components/contexts/profile-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import ProcessingSteps from "@/components/onboarding/processing-steps"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 // import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 
 const contextSetupSchema = z.object({
@@ -288,10 +299,7 @@ function ContextSetupInnerPage() {
 
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
-    // Simple confirm – could be replaced with nicer dialog
-    if (!window.confirm("This will rebuild all existing agent scripts and may take up to a minute. Continue?")) {
-      return
-    }
+    // Triggered after AlertDialog confirmation
     mutate({
       userId: user.id,
       organisationUrl: data.url,
@@ -434,25 +442,44 @@ function ContextSetupInnerPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {!isCardEditing && profile?.organisationDescription && (
-                           <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => onSubmit(form.getValues())}
-                              disabled={isPending || isSavingCardEdits}
-                              className="h-8 text-xs px-4 flex items-center gap-1 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
-                            >
-                              {isPending ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Regenerating...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="h-3 w-3" />
-                                  Regenerate Context
-                                </>
-                              )}
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={isPending || isSavingCardEdits}
+                                className="h-8 text-xs px-4 flex items-center gap-1 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
+                              >
+                                {isPending ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span>Regenerating...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="h-3 w-3" />
+                                    Regenerate Context
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Regenerate context &amp; agent plans?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  We'll re-crawl your website to update the company description and rebuild all existing agent scripts. No data is lost and share links keep working. This may take up to a minute.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onSubmit(form.getValues())}
+                                >
+                                  Continue
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                         {!isCardEditing && (
                           <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
