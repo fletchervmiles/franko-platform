@@ -20,8 +20,14 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
   // Get modal owner's profile to get organization name
   const profile = await getProfileByUserId(modal.userId);
   const chatInstances = await getEnabledModalChatInstances(modal.id);
-  const agentIds = chatInstances.map((ci) => ci.agentType).filter((id): id is string => Boolean(id));
   const brandSettings = modal.brandSettings as AppSettings;
+  
+  // Filter by brandSettings.agents.enabledAgents
+  const enabledAgents = brandSettings?.agents?.enabledAgents || {};
+  const filteredChatInstances = chatInstances.filter(instance => 
+    instance.agentType && enabledAgents[instance.agentType] === true
+  );
+  const agentIds = filteredChatInstances.map((ci) => ci.agentType).filter((id): id is string => Boolean(id));
   const organizationName = profile?.organisationName || brandSettings?.interface?.displayName || "your product";
 
   const displayMode = searchParams?.mode === "modal" ? "modal" : "standalone"
