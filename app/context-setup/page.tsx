@@ -20,27 +20,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/queryKeys"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProfile } from "@/components/contexts/profile-context"
-import dynamic from "next/dynamic"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import ProcessingSteps from "@/components/onboarding/processing-steps"
 // import { useSetupChecklist } from "@/contexts/setup-checklist-context";
-
-// Dynamically import BrandingContext only on the client side
-const BrandingContext = dynamic(
-  () => import("@/components/branding-context").then(mod => mod.BrandingContext),
-  {
-    ssr: false,
-    loading: () => (
-      <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center h-24">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-)
 
 const contextSetupSchema = z.object({
   url: z.string()
@@ -129,6 +112,7 @@ function ContextSetupInnerPage() {
   const { profile, isLoading: isLoadingProfile, setHighlightWorkspaceNavItem, isCompanyComplete, setIsCompanyComplete, isBrandingComplete, setIsBrandingComplete } = useProfile()
   const [activeTab, setActiveTab] = useState("organization")
   const [loadingProgress, setLoadingProgress] = useState(0)
+  const [isPlanRegenerating, setIsPlanRegenerating] = useState(false)
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   const form = useForm<ContextSetupValues>({
@@ -190,6 +174,9 @@ function ContextSetupInnerPage() {
 
       setLoadingProgress(0)
       // refetchSetupStatus(); // Moved into the .then() chain
+
+      // Step 2: regenerate all existing plans
+      regenerateAllPlans()
     },
     onError: (error) => {
       toast({
@@ -301,6 +288,10 @@ function ContextSetupInnerPage() {
 
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
+    // Simple confirm – could be replaced with nicer dialog
+    if (!window.confirm("This will rebuild all existing agent scripts and may take up to a minute. Continue?")) {
+      return
+    }
     mutate({
       userId: user.id,
       organisationUrl: data.url,
@@ -380,9 +371,33 @@ function ContextSetupInnerPage() {
     )}></span>
   );
 
+  const regenerateAllPlans = async () => {
+    try {
+      setIsPlanRegenerating(true)
+      const resp = await fetch('/api/context/regenerate-plans', { method: 'POST' })
+      const result = await resp.json()
+      if (!resp.ok) {
+        throw new Error(result.error || 'Failed to regenerate plans')
+      }
+      toast({ title: 'Plans refreshed', description: `${result.regenerated} updated, ${result.failed?.length || 0} failed.` })
+      // Invalidate chat instances cache if you have one
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
+    } finally {
+      setIsPlanRegenerating(false)
+    }
+  }
+
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
+        {isPlanRegenerating && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+            <ProcessingSteps
+              steps={[{ name: 'Regenerating agent plans', status: 'processing' }]}
+            />
+          </div>
+        )}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             Context
@@ -398,15 +413,6 @@ function ContextSetupInnerPage() {
                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
                  Company
                  {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
-               </span>
-             </TabsTrigger>
-             <TabsTrigger
-               value="branding"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                  Branding
-                  {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
                </span>
              </TabsTrigger>
           </TabsList>
@@ -673,19 +679,6 @@ function ContextSetupInnerPage() {
                 </div>
               )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="branding">
-             {!isLoadingProfile && profile && user?.id ? (
-                <BrandingContext
-                  userId={user.id}
-                  initialLogoUrl={profile.logoUrl}
-                  initialButtonColor={profile.buttonColor}
-                  initialTitleColor={profile.titleColor}
-                />
-              ) : (
-                <LoadingPlaceholder />
-              )}
           </TabsContent>
         </Tabs>
       </div>

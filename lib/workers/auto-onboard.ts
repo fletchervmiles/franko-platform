@@ -10,6 +10,7 @@ import { createModalChatInstances } from "@/db/queries/modal-chat-instances-quer
 import { fetchBrandDetails } from "@/lib/brandfetch";
 import { processOrganisationFromEmail } from "@/utils/email-utils";
 import { agentsData } from "@/lib/agents-data";
+import { isDarkColor } from "@/lib/color-utils";
 
 export interface OnboardingConfig {
   xaAiEnabled: boolean;
@@ -269,24 +270,35 @@ async function createAutoModal(
       enabledAgents[agentType] = true;
     });
 
-    // Create brand settings in the expected format
+    // Create brand settings using theme default and logo; colour overrides are left blank
+    const themeDefault = brandDetails.buttonColor && isDarkColor(brandDetails.buttonColor)
+      ? "dark"
+      : "light";
+
     const brandSettings = {
       interface: {
         displayName: `${companyName} Research`,
         instructions: `Help us improve ${companyName} by sharing your feedback`,
-        theme: "light" as const,
-        primaryBrandColor: brandDetails.primaryColor || "",
+        theme: themeDefault as "light" | "dark",
+        primaryBrandColor: "",        // use theme default colour
         advancedColors: false,
         chatIconText: "Give Feedback",
-        chatIconColor: brandDetails.primaryColor || "",
-        userMessageColor: brandDetails.primaryColor || "",
+        chatIconColor: "",            // theme default
+        userMessageColor: "",         // theme default
+        chatHeaderColor: null,         // theme default
         alignChatBubble: "custom" as const,
         profilePictureUrl: brandDetails.logoUrl || null,
-        chatHeaderColor: brandDetails.secondaryColor || null,
       },
       agents: {
-        enabledAgents
-      }
+        enabledAgents: {
+          AGENT01: true,
+          AGENT02: true,
+          AGENT03: true,
+          AGENT04: true,
+          AGENT05: true,
+          AGENT06: true,
+        },
+      },
     };
 
     // Create modal with proper brand settings structure

@@ -10,6 +10,8 @@ import {
   getUserAgentChatInstance
 } from "@/db/queries/modal-chat-instances-queries";
 import { agentsData } from "@/lib/agents-data";
+import { getProfileByUserId } from "@/db/queries/profiles-queries";
+import { isDarkColor } from "@/lib/color-utils";
 
 export const maxDuration = 120;
 export const dynamic = 'force-dynamic';
@@ -116,12 +118,58 @@ export async function POST(request: Request) {
 
     console.log("[modals] Creating modal with data:", { name, embedSlug, enabledAgents });
 
-    // Create the modal
+    // ------------------------------------------------------------------
+    // Apply logo + theme defaults based on the user profile
+    // ------------------------------------------------------------------
+    const profile = await getProfileByUserId(userId);
+
+    // Clone the incoming brandSettings (or initialise) so we never mutate
+    // the caller's object reference.
+    const finalBrandSettings: any = brandSettings ? { ...brandSettings } : {};
+
+    // Ensure interface object exists
+    finalBrandSettings.interface = finalBrandSettings.interface || {};
+    const iface: any = finalBrandSettings.interface;
+
+    // 1. Default logo
+    if (!iface.profilePictureUrl && profile?.logoUrl) {
+      iface.profilePictureUrl = profile.logoUrl;
+    }
+
+    // 2. Default theme (light/dark) – pick based on profile.buttonColor luminance
+    if (!iface.theme) {
+      const chosenTheme = profile?.buttonColor && isDarkColor(profile.buttonColor)
+        ? "dark"
+        : "light";
+      iface.theme = chosenTheme;
+    }
+
+    // 3. Clear colour overrides unless caller explicitly provided them
+    const colourFields = [
+      "primaryBrandColor",
+      "chatIconColor",
+      "userMessageColor",
+      "chatHeaderColor",
+    ];
+
+    for (const field of colourFields) {
+      if (iface[field] === undefined) {
+        // chatHeaderColor expects null; others expect ""
+        iface[field] = field === "chatHeaderColor" ? null : "";
+      }
+    }
+
+    // 4. Ensure advancedColors flag is false by default
+    if (iface.advancedColors === undefined) {
+      iface.advancedColors = false;
+    }
+
+    // Create the modal (pass our enriched brand settings)
     const modal = await createModal({
       userId,
       name,
       embedSlug,
-      brandSettings: brandSettings || null,
+      brandSettings: finalBrandSettings,
       isActive: true,
     });
 
