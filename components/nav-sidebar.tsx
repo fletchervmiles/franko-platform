@@ -51,6 +51,11 @@ const navMainData = [
         url: "/response-qa",
         icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
       },
+      {
+        title: "Responses",
+        url: "/responses",
+        icon: <FileText className="mr-0.5 h-4 w-4" />,
+      },
     ],
   },
   {
