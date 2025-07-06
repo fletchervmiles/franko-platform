@@ -54,12 +54,14 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { con
 // Memoized card header component
 const CardHeader = React.memo(function CardHeader({
   name,
+  agentName,
   customerWords,
   formattedDate,
   isOpen,
   toggleOpen
 }: {
   name: string;
+  agentName?: string;
   customerWords: number;
   formattedDate: string;
   isOpen: boolean;
@@ -71,9 +73,14 @@ const CardHeader = React.memo(function CardHeader({
       onClick={toggleOpen}
     >
       <div className="flex items-center justify-between flex-1 gap-4">
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
           <User className="h-5 w-5 text-blue-600 hidden sm:inline-block" />
-          <h3 className="text-sm font-semibold truncate">{name}</h3>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold truncate">{name}</h3>
+            {agentName && (
+              <p className="text-xs text-gray-500 truncate">{agentName}</p>
+            )}
+          </div>
         </div>
         <div className="flex-shrink-0 text-center">
           <span className="bg-green-50 px-1.5 py-0.5 rounded text-green-600 text-sm">
@@ -180,6 +187,7 @@ export const ResponseCard = React.memo(function ResponseCard({
     <div className={`${!isLast ? "border-b" : ""}`}>
       <CardHeader 
         name={name}
+        agentName={agentName}
         customerWords={customerWords}
         formattedDate={formattedDate}
         isOpen={isOpen}

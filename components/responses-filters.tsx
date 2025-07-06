@@ -20,7 +20,16 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import { ResponsesDownload } from "@/components/responses-download"
 import type { ResponseFilters, ResponsesFiltersProps } from "@/types/responses"
+import type { DateRange } from "react-day-picker"
+
+// Add download props to the interface
+interface ResponsesFiltersExtendedProps extends ResponsesFiltersProps {
+  onDownload?: (format: 'csv' | 'llm') => void
+  isDownloading?: boolean
+  totalCount?: number
+}
 
 export function ResponsesFilters({
   filters,
@@ -28,9 +37,11 @@ export function ResponsesFilters({
   onClearFilters,
   agentTypes,
   modalNames,
-}: ResponsesFiltersProps) {
-  const [startDateOpen, setStartDateOpen] = useState(false)
-  const [endDateOpen, setEndDateOpen] = useState(false)
+  onDownload,
+  isDownloading,
+  totalCount,
+}: ResponsesFiltersExtendedProps) {
+  const [dateRangeOpen, setDateRangeOpen] = useState(false)
 
   // Handle individual filter changes
   const handleAgentTypeChange = useCallback((value: string) => {
@@ -49,35 +60,40 @@ export function ResponsesFilters({
     onFiltersChange(newFilters)
   }, [filters, onFiltersChange])
 
-  const handleStartDateChange = useCallback((date: Date | undefined) => {
+  const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     const newFilters = {
       ...filters,
-      startDate: date ? format(date, "yyyy-MM-dd") : undefined,
+      startDate: range?.from ? format(range.from, "yyyy-MM-dd") : undefined,
+      endDate: range?.to ? format(range.to, "yyyy-MM-dd") : undefined,
     }
     onFiltersChange(newFilters)
-    setStartDateOpen(false)
-  }, [filters, onFiltersChange])
-
-  const handleEndDateChange = useCallback((date: Date | undefined) => {
-    const newFilters = {
-      ...filters,
-      endDate: date ? format(date, "yyyy-MM-dd") : undefined,
-    }
-    onFiltersChange(newFilters)
-    setEndDateOpen(false)
+    setDateRangeOpen(false)
   }, [filters, onFiltersChange])
 
   // Check if any filters are active
   const hasActiveFilters = Object.values(filters).some(value => value !== undefined)
 
-  // Parse dates for calendar components
-  const startDate = filters.startDate ? new Date(filters.startDate) : undefined
-  const endDate = filters.endDate ? new Date(filters.endDate) : undefined
+  // Parse dates for calendar component
+  const dateRange: DateRange | undefined = {
+    from: filters.startDate ? new Date(filters.startDate) : undefined,
+    to: filters.endDate ? new Date(filters.endDate) : undefined,
+  }
+
+  // Format date range display text
+  const getDateRangeText = () => {
+    if (dateRange?.from) {
+      if (dateRange.to) {
+        return `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`
+      }
+      return format(dateRange.from, "MMM d, yyyy")
+    }
+    return "Select date range"
+  }
 
   return (
     <div className="space-y-4">
       {/* Filter Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         {/* Agent Type Filter */}
         <div className="space-y-2">
           <Label htmlFor="agent-type">Agent Type</Label>
@@ -102,95 +118,66 @@ export function ResponsesFilters({
         {/* Modal Name Filter */}
         <div className="space-y-2">
           <Label htmlFor="modal-name">Modal Name</Label>
-          <Input
-            id="modal-name"
-            placeholder="Search modal name..."
-            value={filters.modalName || ""}
-            onChange={(e) => handleModalNameChange(e.target.value)}
-            className="w-full"
-          />
-          {modalNames.length > 0 && filters.modalName && (
-            <div className="mt-1">
-              <div className="text-xs text-gray-500 mb-1">Suggestions:</div>
-              <div className="flex flex-wrap gap-1">
-                {modalNames
-                  .filter(name => 
-                    name.toLowerCase().includes((filters.modalName || "").toLowerCase())
-                  )
-                  .slice(0, 3)
-                  .map((name) => (
-                    <button
-                      key={name}
-                      onClick={() => handleModalNameChange(name)}
-                      className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded border"
-                    >
-                      {name}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )}
+          <Select
+            value={filters.modalName || "all"}
+            onValueChange={(value) => handleModalNameChange(value === "all" ? "" : value)}
+          >
+            <SelectTrigger id="modal-name">
+              <SelectValue placeholder="All modals" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modals</SelectItem>
+              {modalNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Start Date Filter */}
+        {/* Date Range Filter */}
         <div className="space-y-2">
-          <Label>Start Date</Label>
-          <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+          <Label>Date Range</Label>
+          <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
-                  !startDate && "text-muted-foreground"
+                  !dateRange?.from && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "MMM d, yyyy") : "Select start date"}
+                {getDateRangeText()}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={handleStartDateChange}
-                disabled={(date) =>
-                  date > new Date() || (endDate ? date > endDate : false)
-                }
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={handleDateRangeChange}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
                 initialFocus
               />
             </PopoverContent>
           </Popover>
         </div>
 
-        {/* End Date Filter */}
-        <div className="space-y-2">
-          <Label>End Date</Label>
-          <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "MMM d, yyyy") : "Select end date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={handleEndDateChange}
-                disabled={(date) =>
-                  date > new Date() || (startDate ? date < startDate : false)
-                }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* Download Button */}
+        {onDownload && (
+          <div className="space-y-2">
+            <Label className="invisible">Download</Label> {/* Invisible label for alignment */}
+            <ResponsesDownload
+              filters={filters}
+              totalCount={totalCount || 0}
+              onDownload={onDownload}
+              isDownloading={isDownloading || false}
+            />
+          </div>
+        )}
       </div>
 
       {/* Active Filters Display & Clear Button */}
@@ -219,23 +206,19 @@ export function ResponsesFilters({
                 </button>
               </div>
             )}
-            {filters.startDate && (
+            {(filters.startDate || filters.endDate) && (
               <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm">
-                <span>From: {format(new Date(filters.startDate), "MMM d, yyyy")}</span>
+                <span>
+                  {filters.startDate && filters.endDate
+                    ? `${format(new Date(filters.startDate), "MMM d")} - ${format(new Date(filters.endDate), "MMM d")}`
+                    : filters.startDate
+                    ? `From: ${format(new Date(filters.startDate), "MMM d")}`
+                    : `To: ${format(new Date(filters.endDate!), "MMM d")}`
+                  }
+                </span>
                 <button
-                  onClick={() => handleStartDateChange(undefined)}
+                  onClick={() => handleDateRangeChange(undefined)}
                   className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-            {filters.endDate && (
-              <div className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 rounded-md text-sm">
-                <span>To: {format(new Date(filters.endDate), "MMM d, yyyy")}</span>
-                <button
-                  onClick={() => handleEndDateChange(undefined)}
-                  className="ml-1 hover:bg-orange-200 rounded-full p-0.5"
                 >
                   <X className="h-3 w-3" />
                 </button>

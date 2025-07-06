@@ -80,7 +80,7 @@ export function ResponseCardSkeleton() {
 export function LoadingSpinner({ message = "Loading..." }: { message?: string }) {
   return (
     <div className="flex items-center justify-center py-12">
-      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E4F222] border-t-transparent"></div>
       <span className="ml-2 text-gray-600">{message}</span>
     </div>
   )
@@ -90,7 +90,7 @@ export function LoadingOverlay({ message = "Loading..." }: { message?: string })
   return (
     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
       <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-lg border">
-        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+        <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#E4F222] border-t-transparent"></div>
         <span className="text-gray-700">{message}</span>
       </div>
     </div>

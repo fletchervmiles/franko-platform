@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
@@ -38,8 +38,11 @@ export function ResponsesPageClient({
   // State management
   const [data, setData] = useState<AggregatedResponsesApiResponse | null>(initialData || null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFilterLoading, setIsFilterLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [modalNames, setModalNames] = useState<string[]>([])
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Parse current filters from URL or use initial filters
   const currentFilters = useMemo((): ResponseFilters => ({
@@ -61,9 +64,30 @@ export function ResponsesPageClient({
     }
   }, []) // Only run on mount
 
+  // Fetch modal names for dropdown
+  useEffect(() => {
+    const fetchModalNames = async () => {
+      try {
+        const response = await fetch('/api/modals/names')
+        if (response.ok) {
+          const names = await response.json()
+          setModalNames(names)
+        }
+      } catch (error) {
+        console.error('Error fetching modal names:', error)
+      }
+    }
+
+    fetchModalNames()
+  }, []) // Only run on mount
+
   // Fetch data function
-  const fetchData = useCallback(async (filters: ResponseFilters, page: number) => {
-    setIsLoading(true)
+  const fetchData = useCallback(async (filters: ResponseFilters, page: number, showMainLoading = true) => {
+    if (showMainLoading) {
+      setIsLoading(true)
+    } else {
+      setIsFilterLoading(true)
+    }
     setError(null)
 
     try {
@@ -93,8 +117,22 @@ export function ResponsesPageClient({
       })
     } finally {
       setIsLoading(false)
+      setIsFilterLoading(false)
     }
   }, [toast])
+
+  // Debounced fetch function for filter changes
+  const debouncedFetchData = useCallback((filters: ResponseFilters, page: number) => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+
+    // Set new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchData(filters, page, false)
+    }, 300) // 300ms debounce delay
+  }, [fetchData])
 
   // Update URL with new parameters
   const updateUrl = useCallback((filters: ResponseFilters, page: number = 1) => {
@@ -114,8 +152,8 @@ export function ResponsesPageClient({
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: ResponseFilters) => {
     updateUrl(newFilters, 1) // Reset to page 1 when filters change
-    fetchData(newFilters, 1)
-  }, [updateUrl, fetchData])
+    debouncedFetchData(newFilters, 1)
+  }, [updateUrl, debouncedFetchData])
 
   // Handle page changes
   const handlePageChange = useCallback((newPage: number) => {
@@ -174,17 +212,6 @@ export function ResponsesPageClient({
     }
   }, [currentFilters, toast])
 
-  // Get unique modal names for filter dropdown
-  const modalNames = useMemo(() => {
-    if (!data?.responses) return []
-    const names = new Set(
-      data.responses
-        .map(r => r.modalName)
-        .filter((name): name is string => name !== null && name !== undefined)
-    )
-    return Array.from(names).sort()
-  }, [data?.responses])
-
   // Show error state
   if (error && !data) {
     return (
@@ -201,7 +228,7 @@ export function ResponsesPageClient({
   if (isLoading && !data) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E4F222] border-t-transparent"></div>
         <span className="ml-2">Loading responses...</span>
       </div>
     )
@@ -236,8 +263,13 @@ export function ResponsesPageClient({
     <div className="space-y-6">
       {/* Filters */}
       <Card>
-        <CardHeader>
+        <CardHeader className="relative">
           <CardTitle>Filters</CardTitle>
+          {isFilterLoading && (
+            <div className="absolute right-4 top-4">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <ResponsesFilters
@@ -246,27 +278,10 @@ export function ResponsesPageClient({
             onClearFilters={handleClearFilters}
             agentTypes={agentTypes}
             modalNames={modalNames}
+            onDownload={handleDownload}
+            isDownloading={isDownloading}
+            totalCount={data?.pagination.totalCount}
           />
-        </CardContent>
-      </Card>
-
-      {/* Summary and Download */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Showing {data.responses.length} of {data.pagination.totalCount} responses
-              {data.pagination.totalPages > 1 && (
-                <span> (Page {data.pagination.currentPage} of {data.pagination.totalPages})</span>
-              )}
-            </div>
-            <ResponsesDownload
-              filters={currentFilters}
-              totalCount={data.pagination.totalCount}
-              onDownload={handleDownload}
-              isDownloading={isDownloading}
-            />
-          </div>
         </CardContent>
       </Card>
 
@@ -274,7 +289,7 @@ export function ResponsesPageClient({
       {isLoading && (
         <div className="relative">
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#E4F222] border-t-transparent"></div>
           </div>
         </div>
       )}

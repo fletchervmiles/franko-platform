@@ -42,22 +42,13 @@ export default async function ResponsesPage({
 
   return (
     <NavSidebar>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">All Responses</h1>
-            <p className="text-gray-600">
-              View and manage all interview responses across your conversations.
-            </p>
-          </div>
-          
-          <ResponsesPageClient
-            initialFilters={initialFilters}
-            initialPage={initialPage}
-            userId={userId}
-            agentTypes={agentTypes}
-          />
-        </div>
+      <div className="w-full p-4 md:p-8 lg:p-12 space-y-8">
+        <ResponsesPageClient
+          initialFilters={initialFilters}
+          initialPage={initialPage}
+          userId={userId}
+          agentTypes={agentTypes}
+        />
       </div>
     </NavSidebar>
   );
