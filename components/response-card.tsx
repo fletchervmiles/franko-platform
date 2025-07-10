@@ -1,11 +1,10 @@
 "use client"
 
 import React, { useState, useCallback, useMemo } from "react"
-import { ChevronDown, ChevronUp, User, FileText, Mail, BarChart, AlertCircle, CheckCircle, XCircle, TrendingUp } from "lucide-react"
+import { ChevronDown, ChevronUp, User, FileText, Mail, BarChart } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -50,6 +49,28 @@ interface JsonSummary {
   }
 }
 
+// Function to convert JSON summary to markdown
+function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
+  let markdown = `### Snapshot\n${summary.execSummary}\n\n---\n\n`;
+  
+  // Add story arc items
+  summary.storyArc.forEach(item => {
+    markdown += `**${item.label}**\n${item.insight}\n*"${item.quote}"*\n\n`;
+  });
+  
+  // Add sentiment
+  const sentimentValue = summary.sentiment.value ? 
+    summary.sentiment.value.charAt(0).toUpperCase() + summary.sentiment.value.slice(1) : 
+    'Unknown';
+  markdown += `**Sentiment**\n${sentimentValue}\n\n`;
+  
+  // Add evaluation
+  const strengthValue = summary.evaluation.strength.charAt(0).toUpperCase() + summary.evaluation.strength.slice(1);
+  markdown += `**Evaluation**\n${strengthValue} strength - ${summary.evaluation.comment}`;
+  
+  return markdown;
+}
+
 // Memoized ReactMarkdown component with custom styling
 const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { content: string }) {
   return (
@@ -69,128 +90,6 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { con
     >
       {content}
     </ReactMarkdown>
-  );
-});
-
-// Memoized JSON summary renderer component
-const JsonSummaryRenderer = React.memo(function JsonSummaryRenderer({ 
-  summary, 
-  isExpanded, 
-  onToggleExpanded 
-}: { 
-  summary: JsonSummary; 
-  isExpanded: boolean; 
-  onToggleExpanded: () => void;
-}) {
-  const getSentimentIcon = (sentiment: string | null) => {
-    switch (sentiment) {
-      case "positive":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "negative":
-        return <XCircle className="h-4 w-4 text-red-500" />
-      case "neutral":
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-400" />
-    }
-  }
-
-  const getSignalBadge = (signal: "high" | "medium" | "low") => {
-    const colors = {
-      high: "bg-green-100 text-green-800 border-green-300",
-      medium: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      low: "bg-gray-100 text-gray-800 border-gray-300"
-    }
-    return (
-      <Badge variant="outline" className={`${colors[signal]} text-xs`}>
-        {signal}
-      </Badge>
-    )
-  }
-
-  const getStrengthBadge = (strength: "high" | "medium" | "low") => {
-    const colors = {
-      high: "bg-green-100 text-green-800",
-      medium: "bg-yellow-100 text-yellow-800", 
-      low: "bg-red-100 text-red-800"
-    }
-    return (
-      <Badge className={`${colors[strength]} text-xs`}>
-        {strength} strength
-      </Badge>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Executive Summary */}
-      <div>
-        <h4 className="text-sm font-semibold mb-2 flex items-center text-gray-900">
-          <TrendingUp className="w-4 h-4 mr-1 text-[#E4F222]" />
-          Executive Summary
-        </h4>
-        <p className="text-sm text-gray-900 font-medium bg-gray-50 p-3 rounded border-l-4 border-[#E4F222]">
-          {summary.execSummary}
-        </p>
-      </div>
-
-      {/* Sentiment & Evaluation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
-          {getSentimentIcon(summary.sentiment.value)}
-          <span className="text-sm font-medium capitalize">
-            {summary.sentiment.value || "Unknown"} Sentiment
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          {getStrengthBadge(summary.evaluation.strength)}
-          <span className="text-sm text-gray-600">{summary.evaluation.comment}</span>
-        </div>
-      </div>
-
-      {/* Story Arc Preview (first 2 items) */}
-      <div>
-        <h4 className="text-sm font-semibold mb-2 text-gray-900">Key Insights</h4>
-        <div className="space-y-2">
-          {summary.storyArc.slice(0, isExpanded ? summary.storyArc.length : 2).map((item, index) => (
-            <div key={index} className="border rounded p-3 bg-gray-50">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-sm font-medium text-[#E4F222]">{item.label}</span>
-                {getSignalBadge(item.signal)}
-              </div>
-              <p className="text-sm text-gray-900 mb-2">{item.insight}</p>
-              <blockquote className="text-xs text-gray-600 italic border-l-2 border-gray-300 pl-2">
-                "{item.quote}"
-              </blockquote>
-            </div>
-          ))}
-        </div>
-        
-        {summary.storyArc.length > 2 && (
-          <Button
-            variant="link"
-            onClick={onToggleExpanded}
-            className="mt-2 p-0 h-auto font-normal text-[#E4F222]"
-          >
-            {isExpanded ? `Show less` : `Show ${summary.storyArc.length - 2} more insights`}
-          </Button>
-        )}
-      </div>
-
-      {/* Feature Signals */}
-      {summary.featureSignals && summary.featureSignals.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold mb-2 text-gray-900">Feature Signals</h4>
-          <div className="flex flex-wrap gap-2">
-            {summary.featureSignals.map((feature, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {feature}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
   );
 });
 
@@ -309,7 +208,7 @@ export const ResponseCard = React.memo(function ResponseCard({
     [completionDate]
   );
 
-  // Detect if summary is JSON or markdown
+  // Detect if summary is JSON or markdown and convert to displayable format
   const summaryData = useMemo(() => {
     if (!summary) return null;
     
@@ -317,7 +216,8 @@ export const ResponseCard = React.memo(function ResponseCard({
       const parsed = JSON.parse(summary) as JsonSummary;
       // Basic validation that it's our expected JSON structure
       if (parsed.execSummary && parsed.storyArc && parsed.evaluation) {
-        return { type: 'json', data: parsed };
+        const markdownContent = convertJsonSummaryToMarkdown(parsed);
+        return { type: 'json-converted', data: markdownContent };
       }
     } catch (e) {
       // Not JSON, treat as markdown
@@ -329,6 +229,11 @@ export const ResponseCard = React.memo(function ResponseCard({
   const summaryPreview = useMemo(() => {
     if (summaryData?.type === 'markdown') {
       return (summaryData.data as string).split("\n").slice(0, 3).join("\n");
+    } else if (summaryData?.type === 'json-converted') {
+      // For JSON-converted, show just the snapshot part for preview
+      const lines = (summaryData.data as string).split("\n");
+      const dashIndex = lines.findIndex(line => line.trim() === '---');
+      return lines.slice(0, dashIndex > 0 ? dashIndex : 3).join("\n");
     }
     return null;
   }, [summaryData]);
@@ -396,13 +301,7 @@ export const ResponseCard = React.memo(function ResponseCard({
               <span>Summary</span>
             </h4>
             <div className="text-sm bg-white border border-gray-200 p-4 rounded prose max-w-none">
-              {summaryData?.type === 'json' ? (
-                <JsonSummaryRenderer 
-                  summary={summaryData.data as JsonSummary} 
-                  isExpanded={isFullSummary}
-                  onToggleExpanded={() => setIsFullSummary(!isFullSummary)}
-                />
-              ) : summaryData?.type === 'markdown' ? (
+              {summaryData?.data ? (
                 <>
                   <MarkdownRenderer content={isFullSummary ? summaryData.data as string : summaryPreview || ''} />
                   
