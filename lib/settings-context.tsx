@@ -35,6 +35,7 @@ export interface Modal {
   embedSlug: string
   brandSettings: AppSettings
   askNameEmailOnDirectLink?: boolean
+  responseEmailNotifications?: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -56,7 +57,7 @@ export interface SettingsContextType {
   createModal: (name: string) => Promise<Modal>
   loadModal: (modalId: string) => Promise<void>
   saveModal: () => Promise<void>
-  updateModal: (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink'>>) => Promise<void>
+  updateModal: (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink' | 'responseEmailNotifications'>>) => Promise<void>
   deleteModal: (modalId: string) => Promise<void>
   loadUserModals: () => Promise<void>
   
@@ -378,7 +379,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }))
   }, [])
 
-  const updateModal = useCallback(async (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink'>>) => {
+  const updateModal = useCallback(async (updates: Partial<Pick<Modal, 'askNameEmailOnDirectLink' | 'responseEmailNotifications'>>) => {
     if (!user || !currentModal) return
     
     setIsSaving(true)
