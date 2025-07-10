@@ -65,7 +65,7 @@ export function ResponseCardList({ responses }: ResponseCardListProps) {
             <ResponseCard 
               key={`${response.name}-${response.completionDate}-${index}`}
               {...response} 
-              isLast={index === responses.length - 1}
+              isLast={index === responses.length - 1} 
               // Pass the new fields for global view
               agentName={response.agentName}
               modalName={response.modalName}

@@ -6,6 +6,7 @@ import { AgentsTab } from "./agents/agents-tab"
 import { InterfaceTab } from "./interface/interface-tab"
 import ConnectTab from "./connect/connect-tab"
 import { PlaygroundTab } from "./playground/playground-tab"
+import { NotificationsTab } from "./notifications/notifications-tab"
 import { useSearchParams, useRouter } from "next/navigation"
 
 export default function SimpleTabs() {
@@ -13,7 +14,7 @@ export default function SimpleTabs() {
   const router = useRouter()
 
   const initialTabParam = searchParams?.get("tab") || null
-  const validValues = ["agents", "interface", "connect", "playground", "integrations"] as const
+  const validValues = ["agents", "interface", "connect", "playground", "notifications"] as const
   const defaultTab = validValues.includes(initialTabParam as any) ? (initialTabParam as string) : "agents"
 
   const [activeTab, setActiveTab] = useState(defaultTab)
@@ -36,7 +37,7 @@ export default function SimpleTabs() {
     { label: "Interface", value: "interface" },
     { label: "Connect", value: "connect" },
     { label: "Playground", value: "playground" },
-    { label: "Integrations", value: "integrations" },
+    { label: "Notifications", value: "notifications" },
   ]
 
   return (
@@ -73,10 +74,8 @@ export default function SimpleTabs() {
           <PlaygroundTab />
         </TabsContent>
 
-        <TabsContent value="integrations" className="mt-0">
-          <div className="p-6 rounded-lg bg-white dark:bg-gray-850 border dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-300">Integrations content goes here.</p>
-          </div>
+        <TabsContent value="notifications" className="mt-0">
+          <NotificationsTab />
         </TabsContent>
       </div>
     </Tabs>

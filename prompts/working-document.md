@@ -1,27 +1,4 @@
-Requirements
-
-- when the component does not collect name and email, i.e., I want to show and 
-
-"Your feedback will be anonymous"
-
-- make the name and email component have icons and placeholder text
-  - little person icon - light gray text - Enter your first name
-  - email icon - light gray text - Enter your email address
-
-Update Settings to modify this:
-- Ready to Chat?
-
-Update the button to
-- Start Chatting
-
-- Make the backgorund of the page the lighter color to match the chat background
-
-Update the message component so it has a little warning unneither
-- This agent can make mistakes. Thank you for understanding.
-
-
-Create another request
-
-
-
-
+{
+  "email_summary": "*   The AI makes **unexpected changes** to recently updated code, forcing rework.\n*   The impact is significant: **\"it's mostly extra time spent and rework.\"**\n*   The user wants the AI to have a **\"memory of all my recent changes\"** to prevent this.",
+  "ui_summary": "### Friction: AI Lacks Memory of Recent Changes\n*   A pro user is frustrated by Cursor making unexpected changes to code they just edited, causing **\"extra time spent and rework.\"**\n*   They want the AI to **\"remember... all my recent changes so it knows not to change stuff I've recently updated.\"**\n*   They see this as a **\"good experience upgrade\"** and also mentioned that faster turn-by-turn generation would be valuable."
+}

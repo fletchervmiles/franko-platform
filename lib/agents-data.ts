@@ -56,7 +56,7 @@ export const agentsData: Agent[] = [
     id: "AGENT02", 
     name: "Persona + Problem",
     benefit: "Persona + Problem",
-    prompt: "Tell us about you.",
+    prompt: "Tell us about you and the problem you're solving with {organisation_name}.",
     description: "Identify your ideal customers, their roles, and the core problems your product solves.",
     Icon: User,
     initialQuestion: "Could you tell us a bit about your role and the main challenge you're trying to solve?",

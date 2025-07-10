@@ -43,7 +43,7 @@ export async function initializeModels() {
 
   // Add the new Gemini 2.5 Pro Preview model
   gemini25ProPreviewModel = wrapLanguageModel({
-    model: google("gemini-2.5-pro-preview-03-25"),
+    model: google("gemini-2.5-pro"),
     middleware: customMiddleware,
   });
 

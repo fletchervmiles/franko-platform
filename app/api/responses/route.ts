@@ -46,10 +46,14 @@ export async function GET(request: Request) {
 
     // Add date range filters
     if (startDate) {
-      whereConditions.push(gte(chatResponsesTable.interviewEndTime, new Date(startDate)));
+      // Create start of day in UTC for the given date
+      const startOfDay = new Date(startDate + 'T00:00:00.000Z');
+      whereConditions.push(gte(chatResponsesTable.interviewEndTime, startOfDay));
     }
     if (endDate) {
-      whereConditions.push(lte(chatResponsesTable.interviewEndTime, new Date(endDate)));
+      // Create end of day in UTC for the given date
+      const endOfDay = new Date(endDate + 'T23:59:59.999Z');
+      whereConditions.push(lte(chatResponsesTable.interviewEndTime, endOfDay));
     }
 
     // Base query with joins
