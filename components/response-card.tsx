@@ -53,10 +53,16 @@ interface JsonSummary {
 function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
   let markdown = `### Snapshot\n${summary.execSummary}\n\n`;
   
-  // Add story arc items
-  summary.storyArc.forEach(item => {
+  // Add story arc items with separators
+  summary.storyArc.forEach((item, index) => {
+    if (index > 0) {
+      markdown += `---\n\n`;
+    }
     markdown += `**${item.label}:**\n${item.insight}\n\n> "${item.quote}"\n\n`;
   });
+  
+  // Add separator before sentiment/evaluation section
+  markdown += `---\n\n`;
   
   // Add sentiment
   const sentimentValue = summary.sentiment.value ? 
@@ -86,6 +92,7 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { con
         li: ({ node, ...props }) => <li className="mb-1" {...props} />,
         strong: ({ node, ...props }) => <strong className="font-bold text-black">{props.children}</strong>,
         em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
+        hr: ({ node, ...props }) => <hr className="border-gray-200 my-3" {...props} />,
       }}
     >
       {content}
