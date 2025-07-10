@@ -214,8 +214,16 @@ export const ResponseCard = React.memo(function ResponseCard({
     
     console.log('Raw summary:', summary);
     
+    // Strip markdown code fences if present
+    let cleanedSummary = summary.trim();
+    if (cleanedSummary.startsWith('```json\n') && cleanedSummary.endsWith('\n```')) {
+      cleanedSummary = cleanedSummary.slice(8, -4); // Remove ```json\n and \n```
+    } else if (cleanedSummary.startsWith('```\n') && cleanedSummary.endsWith('\n```')) {
+      cleanedSummary = cleanedSummary.slice(4, -4); // Remove ```\n and \n```
+    }
+    
     try {
-      const parsed = JSON.parse(summary) as JsonSummary;
+      const parsed = JSON.parse(cleanedSummary) as JsonSummary;
       console.log('Parsed JSON:', parsed);
       
       // Basic validation that it's our expected JSON structure
