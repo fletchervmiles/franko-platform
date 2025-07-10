@@ -22,11 +22,12 @@ import { countUserWords } from "./word-counter";
 import { updateUsageCount } from "./usage-tracker";
 import { generateSummary } from "./summary-generator";
 import { logger } from "@/lib/logger";
-import { sendResponseNotification, sendEnhancedResponseNotification } from "@/lib/email-service";
+import { sendEnhancedResponseNotification } from "@/lib/email-service";
 import { getLatestObjectives } from "./conversation-helper";
 import crypto from 'crypto';
 import { getActiveWebhooksForEvent } from '@/db/queries/webhooks-queries';
 import { Webhook } from '@/db/schema/webhooks';
+import { getModalById } from '@/db/queries/modals-queries';
 
 /**
  * Finalizes a conversation by updating various metrics, generating a summary, and sending notification
@@ -121,7 +122,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     }
     
     // Update the chat response with all the new values
-    await db.transaction(async (tx) => {
+    await db.transaction(async (_tx) => {
       await updateChatResponse(
         chatResponseId,
         {
@@ -172,7 +173,6 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
     let modalNotificationsEnabled = false;
     try {
       // Get the modal associated with this chat instance to check notification settings
-      const { getModalById } = require('@/db/queries/modals-queries');
       if (chatInstance.modalId) {
         const modal = await getModalById(chatInstance.modalId, chatResponse.userId);
         modalNotificationsEnabled = modal?.responseEmailNotifications !== false;
