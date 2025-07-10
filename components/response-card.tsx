@@ -212,17 +212,27 @@ export const ResponseCard = React.memo(function ResponseCard({
   const summaryData = useMemo(() => {
     if (!summary) return null;
     
+    console.log('Raw summary:', summary);
+    
     try {
       const parsed = JSON.parse(summary) as JsonSummary;
+      console.log('Parsed JSON:', parsed);
+      
       // Basic validation that it's our expected JSON structure
       if (parsed.execSummary && parsed.storyArc && parsed.evaluation) {
+        console.log('Valid JSON summary detected, converting to markdown');
         const markdownContent = convertJsonSummaryToMarkdown(parsed);
+        console.log('Converted markdown:', markdownContent);
         return { type: 'json-converted', data: markdownContent };
+      } else {
+        console.log('JSON structure validation failed - missing required fields');
       }
     } catch (e) {
+      console.log('JSON parse failed, treating as markdown:', e);
       // Not JSON, treat as markdown
     }
     
+    console.log('Treating as markdown summary');
     return { type: 'markdown', data: summary };
   }, [summary]);
 
