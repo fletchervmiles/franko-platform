@@ -51,22 +51,22 @@ interface JsonSummary {
 
 // Function to convert JSON summary to markdown
 function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
-  let markdown = `### Snapshot\n${summary.execSummary}\n\n---\n\n`;
+  let markdown = `### Snapshot\n${summary.execSummary}\n\n`;
   
   // Add story arc items
   summary.storyArc.forEach(item => {
-    markdown += `**${item.label}**\n${item.insight}\n*"${item.quote}"*\n\n`;
+    markdown += `**${item.label}:**\n${item.insight}\n\n> "${item.quote}"\n\n`;
   });
   
   // Add sentiment
   const sentimentValue = summary.sentiment.value ? 
     summary.sentiment.value.charAt(0).toUpperCase() + summary.sentiment.value.slice(1) : 
     'Unknown';
-  markdown += `**Sentiment**\n${sentimentValue}\n\n`;
+  markdown += `**Sentiment:**\n${sentimentValue}\n\n`;
   
   // Add evaluation
   const strengthValue = summary.evaluation.strength.charAt(0).toUpperCase() + summary.evaluation.strength.slice(1);
-  markdown += `**Evaluation**\n${strengthValue} strength - ${summary.evaluation.comment}`;
+  markdown += `**Evaluation:**\n${strengthValue} strength - ${summary.evaluation.comment}`;
   
   return markdown;
 }
