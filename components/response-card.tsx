@@ -51,7 +51,7 @@ interface JsonSummary {
 
 // Function to convert JSON summary to markdown
 function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
-  let markdown = `### Snapshot\n${summary.execSummary}\n\n`;
+  let markdown = `### Snapshot:\n${summary.execSummary}\n\n`;
   
   // Add story arc items with separators
   summary.storyArc.forEach((item, index) => {
@@ -219,8 +219,6 @@ export const ResponseCard = React.memo(function ResponseCard({
   const summaryData = useMemo(() => {
     if (!summary) return null;
     
-    console.log('Raw summary:', summary);
-    
     // Strip markdown code fences if present
     let cleanedSummary = summary.trim();
     if (cleanedSummary.startsWith('```json\n') && cleanedSummary.endsWith('\n```')) {
@@ -231,23 +229,16 @@ export const ResponseCard = React.memo(function ResponseCard({
     
     try {
       const parsed = JSON.parse(cleanedSummary) as JsonSummary;
-      console.log('Parsed JSON:', parsed);
       
       // Basic validation that it's our expected JSON structure
       if (parsed.execSummary && parsed.storyArc && parsed.evaluation) {
-        console.log('Valid JSON summary detected, converting to markdown');
         const markdownContent = convertJsonSummaryToMarkdown(parsed);
-        console.log('Converted markdown:', markdownContent);
         return { type: 'json-converted', data: markdownContent };
-      } else {
-        console.log('JSON structure validation failed - missing required fields');
       }
     } catch (e) {
-      console.log('JSON parse failed, treating as markdown:', e);
       // Not JSON, treat as markdown
     }
     
-    console.log('Treating as markdown summary');
     return { type: 'markdown', data: summary };
   }, [summary]);
 
