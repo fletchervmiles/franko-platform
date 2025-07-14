@@ -123,19 +123,12 @@ export function ImageCropModal({
 
     try {
       // convertToPixelCrop returns coordinates relative to the **original** bitmap,
-      // so we compensate for the zoom applied in the UI
-      const rawPixelCrop = convertToPixelCrop(
+      // so no additional zoom compensation is needed
+      const pixelCrop = convertToPixelCrop(
         completedCrop,
         imgRef.current.naturalWidth,
         imgRef.current.naturalHeight,
       )
-      const pixelCrop = {
-        ...rawPixelCrop,
-        x: rawPixelCrop.x / zoom,
-        y: rawPixelCrop.y / zoom,
-        width: rawPixelCrop.width / zoom,
-        height: rawPixelCrop.height / zoom,
-      }
 
       const croppedImageUrl = await createCroppedImage(imageSrc, pixelCrop, rotation)
       onCropComplete(croppedImageUrl)

@@ -17,7 +17,7 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-6 w-6" />
+            <Menu className={`h-6 w-6 ${scrolled ? "text-gray-900" : "text-white"}`} />
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
@@ -54,9 +54,7 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
                   setOpen(false)
                   setShowModal(true)
                 }}
-                className={`text-lg transition-colors flex items-center self-start ${
-                  scrolled ? "border border-gray-300 px-4 py-2" : ""
-                }`}
+                className="text-lg transition-colors flex items-center self-start px-4 py-2 border border-gray-300 rounded-[5px] hover:bg-[#F5FF78]"
               >
                 Login <ArrowUpRight className="ml-1 h-4 w-4" />
               </button>
@@ -64,7 +62,8 @@ export default function MobileNavbar({ scrolled }: { scrolled: boolean }) {
                 href="https://cal.com/fletcher-miles/franko.ai-demo-call"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-black text-white hover:bg-black px-4 py-2 flex items-center justify-center text-sm w-full mt-4"
+                className="text-black hover:bg-[#F5FF78] px-4 py-2 flex items-center justify-center text-sm w-full mt-4 transition-colors rounded-[5px]"
+                style={{ backgroundColor: '#E4F222' }}
                 onClick={() => setOpen(false)}
               >
                 Book a demo »

@@ -17,12 +17,16 @@ import { agentsData } from "@/lib/agents-data"
 import { SketchPicker, ColorResult } from 'react-color'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { compressImage, getCompressionOptions, shouldCompress } from "@/lib/utils/image-compression"
+import { toast } from "sonner"
 
 export function InterfaceTab() {
   const { settings, updateInterfaceSettings, isSaving } = useSettings()
   const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false)
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   // Helper function to validate and format hex colors
   const validateHexColor = (color: string): string => {
@@ -115,6 +119,24 @@ export function InterfaceTab() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      // Client-side validation
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+      const maxSize = 10 * 1024 * 1024 // 10MB limit for initial upload (will be compressed)
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please select a JPEG, PNG, WebP, or GIF image.')
+        event.target.value = '' // Clear the input
+        return
+      }
+
+      if (file.size > maxSize) {
+        toast.error('File too large. Please select an image smaller than 10MB.')
+        event.target.value = '' // Clear the input
+        return
+      }
+
+      // Store the file and create preview URL for cropping
+      setSelectedImageFile(file)
       const reader = new FileReader()
       reader.onload = (e) => {
         const imageSrc = e.target?.result as string
@@ -125,14 +147,68 @@ export function InterfaceTab() {
     }
   }
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    handleInputChange("profilePictureUrl", croppedImageUrl)
-    setIsImageCropModalOpen(false)
-    setSelectedImageSrc(null)
+  const handleCropComplete = async (croppedImageDataUrl: string) => {
+    if (!selectedImageFile) {
+      toast.error("No image file selected")
+      return
+    }
+
+    setIsUploadingImage(true)
+    
+    try {
+      // Convert cropped data URL back to File for upload
+      const response = await fetch(croppedImageDataUrl)
+      const blob = await response.blob()
+      const croppedFile = new File([blob], `cropped_${selectedImageFile.name}`, {
+        type: 'image/png',
+        lastModified: Date.now()
+      })
+
+      // Compress the cropped image if needed
+      let finalFile = croppedFile
+      if (shouldCompress(croppedFile)) {
+        const compressionOptions = getCompressionOptions(croppedFile)
+        finalFile = await compressImage(croppedFile, compressionOptions)
+      }
+
+      // Upload to server
+      const formData = new FormData()
+      formData.append('file', finalFile)
+
+      const uploadResponse = await fetch('/api/profile-picture/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.error || 'Upload failed')
+      }
+
+      const uploadData = await uploadResponse.json()
+      
+      // Update the profile picture URL in settings
+      handleInputChange("profilePictureUrl", uploadData.url)
+      
+      // Close modal and clean up
+      setIsImageCropModalOpen(false)
+      setSelectedImageSrc(null)
+      setSelectedImageFile(null)
+      
+      toast.success("Profile picture updated successfully")
+
+    } catch (error: any) {
+      console.error('Image upload error:', error)
+      toast.error(error.message || "Failed to upload image")
+    } finally {
+      setIsUploadingImage(false)
+    }
   }
 
   const handleRemoveImage = () => {
     handleInputChange("profilePictureUrl", null)
+    setSelectedImageSrc(null)
+    setSelectedImageFile(null)
   }
 
   const enabledAgents = settings.agents.enabledAgents
@@ -169,22 +245,30 @@ export function InterfaceTab() {
               <div className="space-y-4">
                 <Label htmlFor="profile-picture">Profile Picture (Optional)</Label>
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={settings.interface.profilePictureUrl || undefined} alt="Profile Picture" />
-                    <AvatarFallback>
-                      <UserIcon className="h-8 w-8" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={settings.interface.profilePictureUrl || undefined} alt="Profile Picture" />
+                      <AvatarFallback>
+                        <UserIcon className="h-8 w-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    {isUploadingImage && (
+                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => document.getElementById("profile-picture-input")?.click()}
+                      disabled={isUploadingImage}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload
+                      {isUploadingImage ? "Uploading..." : "Upload"}
                     </Button>
-                    {settings.interface.profilePictureUrl && (
+                    {settings.interface.profilePictureUrl && !isUploadingImage && (
                       <Button variant="outline" size="sm" onClick={handleRemoveImage}>
                         Remove
                       </Button>
@@ -196,8 +280,19 @@ export function InterfaceTab() {
                     accept="image/*"
                     onChange={handleImageUpload}
                     className="hidden"
+                    disabled={isUploadingImage}
                   />
                 </div>
+                {isUploadingImage && (
+                  <p className="text-xs text-gray-500">
+                    Compressing and uploading image...
+                  </p>
+                )}
+                {!isUploadingImage && (
+                  <p className="text-xs text-gray-500">
+                    Supports JPEG, PNG, WebP, and GIF. Max 10MB. Images will be compressed and cropped to fit.
+                  </p>
+                )}
               </div>
               {/* Theme */}
               <div className="space-y-4">
@@ -466,12 +561,14 @@ export function InterfaceTab() {
         onClose={() => {
           setIsImageCropModalOpen(false)
           setSelectedImageSrc(null)
+          setSelectedImageFile(null)
         }}
         imageSrc={selectedImageSrc}
         onCropComplete={handleCropComplete}
         onImageChangeRequest={() => {
           setIsImageCropModalOpen(false)
           setSelectedImageSrc(null)
+          setSelectedImageFile(null)
           document.getElementById("profile-picture-input")?.click()
         }}
       />
