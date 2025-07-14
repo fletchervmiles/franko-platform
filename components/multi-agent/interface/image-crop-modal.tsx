@@ -122,15 +122,44 @@ export function ImageCropModal({
     if (!completedCrop || !imgRef.current || !imageSrc) return
 
     try {
-      // convertToPixelCrop returns coordinates relative to the **original** bitmap,
-      // so no additional zoom compensation is needed
+      const image = imgRef.current
+      
+      // Calculate the actual displayed size of the image after objectFit: contain
+      const containerRect = image.getBoundingClientRect()
+      const naturalAspectRatio = image.naturalWidth / image.naturalHeight
+      const containerAspectRatio = containerRect.width / containerRect.height
+      
+      let displayedWidth, displayedHeight
+      
+      if (naturalAspectRatio > containerAspectRatio) {
+        // Image is wider than container, so it's constrained by width
+        displayedWidth = containerRect.width / zoom
+        displayedHeight = (containerRect.width / naturalAspectRatio) / zoom
+      } else {
+        // Image is taller than container, so it's constrained by height
+        displayedWidth = (containerRect.height * naturalAspectRatio) / zoom
+        displayedHeight = containerRect.height / zoom
+      }
+
+      // Convert percentage crop to pixel crop using displayed dimensions
       const pixelCrop = convertToPixelCrop(
         completedCrop,
-        imgRef.current.naturalWidth,
-        imgRef.current.naturalHeight,
+        displayedWidth,
+        displayedHeight,
       )
 
-      const croppedImageUrl = await createCroppedImage(imageSrc, pixelCrop, rotation)
+      // Scale the crop coordinates to match the natural image size
+      const scaleX = image.naturalWidth / displayedWidth
+      const scaleY = image.naturalHeight / displayedHeight
+      
+      const naturalPixelCrop = {
+        x: pixelCrop.x * scaleX,
+        y: pixelCrop.y * scaleY,
+        width: pixelCrop.width * scaleX,
+        height: pixelCrop.height * scaleY,
+      }
+
+      const croppedImageUrl = await createCroppedImage(imageSrc, naturalPixelCrop, rotation)
       onCropComplete(croppedImageUrl)
       onClose()
     } catch (err) {
