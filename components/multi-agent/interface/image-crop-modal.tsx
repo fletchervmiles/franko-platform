@@ -102,7 +102,7 @@ export function ImageCropModal({
       makeAspectCrop(
         {
           unit: "%",
-          width: 80,
+          width: 90,
         },
         aspect,
         width,
