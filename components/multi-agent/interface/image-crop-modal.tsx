@@ -152,7 +152,8 @@ export function ImageCropModal({
       const scaleX = image.naturalWidth / displayedWidth
       const scaleY = image.naturalHeight / displayedHeight
       
-      const naturalPixelCrop = {
+      const naturalPixelCrop: Crop = {
+        unit: 'px',
         x: pixelCrop.x * scaleX,
         y: pixelCrop.y * scaleY,
         width: pixelCrop.width * scaleX,
