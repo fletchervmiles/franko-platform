@@ -51,6 +51,8 @@ export default function ConnectTab() {
     ? (brandSettings.chatIconColor || themeDefaults[currentTheme].chatIconColor)
     : (brandSettings.primaryBrandColor || themeDefaults[currentTheme].chatIconColor)
 
+  const effectivePosition = brandSettings.alignChatBubble === 'left' ? 'bottom-left' : 'bottom-right'
+
   const copyToClipboard = async (text: string, itemId: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -62,7 +64,7 @@ export default function ConnectTab() {
   }
 
   const bubbleScript = `<script>
- (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","bottom-right");s.setAttribute("data-bubble-text","${brandSettings.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","${effectiveChatIconColor}");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+ (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="${baseUrl}/embed.js";s.setAttribute("data-modal-slug","${currentModal.embedSlug}");s.setAttribute("data-mode","bubble");s.setAttribute("data-position","${effectivePosition}");s.setAttribute("data-bubble-text","${brandSettings.chatIconText || 'Feedback'}");s.setAttribute("data-bubble-color","${effectiveChatIconColor}");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
  </script>`
 
   const customScript = `<script>
