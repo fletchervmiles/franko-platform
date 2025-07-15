@@ -7,9 +7,8 @@ import HowItWorksSection from "@/components/lp-redesign/how-it-works-section";
 import TryItYourselfSection from "@/components/lp-redesign/try-it-yourself-section";
 import BenefitsSection from "@/components/lp-redesign/benefits-section";
 import { MainPageFAQs } from "@/components/lp-redesign/main-page-faqs";
-import Container from '@/components/lp-components/container';
 import Footer from '@/components/lp-components/footer';
-import DemoChat from '@/components/lp-components/demo-chat';
+import LandingPricing from "@/components/lp-redesign/landing-pricing";
 
 export default function HomePage() {
   return (
@@ -25,7 +24,7 @@ export default function HomePage() {
       {/* Benefits Section */}
       <BenefitsSection />
 
-      <DemoChat />
+      <LandingPricing />
 
       {/* Main Page FAQs */}
       <MainPageFAQs />
