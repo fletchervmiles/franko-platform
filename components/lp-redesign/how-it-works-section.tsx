@@ -29,8 +29,8 @@ export default function HowItWorksSection() {
           </p>
           
           {/* Main heading */}
-          <h2 className="text-4xl md:text-5xl font-semibold mb-6" style={{ color: '#0c0a08' }}>
-            Here's How It Works
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-normal mb-6 leading-tight" style={{ color: '#0c0a08' }}>
+            How It Works
           </h2>
           
           {/* Description */}

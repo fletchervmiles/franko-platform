@@ -44,14 +44,14 @@ export const agentsData: Agent[] = [
   },
   {
     id: "AGENT03",
-    name: "Activation Hurdles", 
-    benefit: "Activation Hurdles",
-    prompt: "What was the main reason you decided not to subscribe?",
+    name: "Upgrade Objections", 
+    benefit: "Upgrade Objections",
+    prompt: "What's holding you back from upgrading with {organisation_name}?",
     description: "Discover what's preventing paid upgrades, so you can fix your conversion funnel.",
     Icon: CreditCard,
     initialQuestion: "What's your main consideration when thinking about upgrading to a paid plan?",
     whyFoundersCare: "Discover exactly what drives upgrades and prevents churn, so you can optimize conversions.",
-  },
+  },  
   {
     id: "AGENT02", 
     name: "Persona + Problem",
