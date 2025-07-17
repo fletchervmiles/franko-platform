@@ -55,18 +55,18 @@ function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
   
   // Add story arc items in compact format
   summary.storyArc.forEach((item) => {
-    markdown += `**${item.label}:**\n${item.insight} — *\"${item.quote}\"*\n\n`;
+    markdown += `#### ${item.label}\n${item.insight} — *"${item.quote}"*\n\n`;
   });
   
   // Add sentiment
   const sentimentValue = summary.sentiment.value ? 
     summary.sentiment.value.charAt(0).toUpperCase() + summary.sentiment.value.slice(1) : 
     'Unknown';
-  markdown += `**Sentiment:**\n${sentimentValue}\n\n`;
+  markdown += `#### Sentiment\n${sentimentValue}\n\n`;
   
   // Add evaluation
   const strengthValue = summary.evaluation.strength.charAt(0).toUpperCase() + summary.evaluation.strength.slice(1);
-  markdown += `**Evaluation:**\n${strengthValue} strength - ${summary.evaluation.comment}\n\n`;
+  markdown += `#### Evaluation\n${strengthValue} strength - ${summary.evaluation.comment}\n\n`;
   
   return markdown;
 }
@@ -79,6 +79,7 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: { con
         h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-2 text-black" {...props} />,
         h2: ({ node, ...props }) => <h2 className="text-lg font-semibold mb-2 text-black" {...props} />,
         h3: ({ node, ...props }) => <h3 className="text-sm font-extrabold mb-1 text-black" {...props} />,
+        h4: ({ node, ...props }) => <h4 className="text-sm font-bold mb-1 text-black" {...props} />,
         p: ({ node, ...props }) => <p className="mb-2 text-gray-900" {...props} />,
         ul: ({ node, ...props }) => (
           <ul className="list-disc pl-4 mb-2 marker:text-black text-gray-800" {...props} />
