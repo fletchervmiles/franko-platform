@@ -55,18 +55,18 @@ function convertJsonSummaryToMarkdown(summary: JsonSummary): string {
   
   // Add story arc items in compact format
   summary.storyArc.forEach((item) => {
-    markdown += `**${item.label}:** ${item.insight} — *"${item.quote}"*\n\n`;
+    markdown += `**${item.label}:**\n${item.insight} — *"${item.quote}"*\n\n`;
   });
   
   // Add sentiment
   const sentimentValue = summary.sentiment.value ? 
     summary.sentiment.value.charAt(0).toUpperCase() + summary.sentiment.value.slice(1) : 
     'Unknown';
-  markdown += `**Sentiment:** ${sentimentValue}\n\n`;
+  markdown += `**Sentiment:**\n${sentimentValue}\n\n`;
   
   // Add evaluation
   const strengthValue = summary.evaluation.strength.charAt(0).toUpperCase() + summary.evaluation.strength.slice(1);
-  markdown += `**Evaluation:** ${strengthValue} strength - ${summary.evaluation.comment}`;
+  markdown += `**Evaluation:**\n${strengthValue} strength - ${summary.evaluation.comment}\n\n`;
   
   return markdown;
 }
