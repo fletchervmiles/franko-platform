@@ -67,7 +67,7 @@ export function MainPageFAQs() {
   }
 
   return (
-    <div className="py-20 bg-white">
+    <div className="py-20 bg-white" data-section="faq">
       <Container>
         <div className="text-center mb-16">
           {/* Main heading */}

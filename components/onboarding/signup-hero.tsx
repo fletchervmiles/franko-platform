@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSignUp } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -10,6 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import { Loader2, Chrome } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 48 48" {...props} fill="none">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.519-3.317-11.297-7.962l-6.571,4.819C9.656,39.663,16.318,44,24,44z" />
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.986,36.046,44,30.606,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+    </svg>
+  )
+}
 
 const BLOCKED_DOMAINS = [
   'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
@@ -30,6 +42,25 @@ export default function SignupHero() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (!searchParams) return
+    
+    const prefilledEmail = searchParams.get('email')
+    const prefilledStep = searchParams.get('step')
+
+    if (prefilledEmail && prefilledStep === 'details') {
+      if (validateBusinessEmail(prefilledEmail)) {
+        setEmail(prefilledEmail)
+        setStep('details')
+      } else {
+        setError('Invalid business email provided')
+        setStep('email')
+      }
+    }
+  }, [searchParams])
 
   const validateBusinessEmail = (email: string): boolean => {
     const domain = email.split('@')[1]?.toLowerCase()
@@ -155,13 +186,13 @@ export default function SignupHero() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-8 sm:p-12 lg:p-16">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Left Column */}
           <div className="flex flex-col justify-center py-8 lg:py-12">
             <div className="mb-8">
-              <Image src="/placeholder.svg?width=90&height=30" alt="Company Logo Placeholder" width={90} height={30} />
+              <Image src="/favicon/icon1.png" alt="Franko Logo" width={30} height={30} />
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-gray-900">
@@ -169,7 +200,7 @@ export default function SignupHero() {
             </h1>
             
             <p className="text-lg text-gray-600 mb-8">
-              Cards, expenses, bills, and accounting – beautifully reimagined by experts to save you time and money.
+              Sign up and we'll automatically set you up with a working modal and interview agents.
             </p>
 
             {/* Error Message */}
@@ -215,7 +246,7 @@ export default function SignupHero() {
                   {isGoogleLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Chrome className="mr-2 h-4 w-4" />
+                    <GoogleIcon className="mr-2 h-4 w-4" />
                   )}
                   Continue with Google
                 </Button>
@@ -312,35 +343,23 @@ export default function SignupHero() {
 
           {/* Right Column */}
           <div className="flex justify-center lg:justify-end">
-            <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden w-full max-w-sm">
-              <Image
-                src="/placeholder.svg?width=400&height=320"
-                alt="Testimonial Portrait Placeholder"
-                width={400}
-                height={320}
-                className="w-full h-auto object-cover"
-              />
-              <div className="p-6 text-white">
-                <div className="mb-3">
-                  <Image
-                    src="/placeholder.svg?width=90&height=20"
-                    alt="Webflow Logo Placeholder"
-                    width={90}
-                    height={20}
-                  />
-                </div>
-                <blockquote className="text-base sm:text-lg mb-4 leading-relaxed">
-                  &ldquo;This is a placeholder quote. Growing companies need scalable products. This platform helps us
-                  evolve.&rdquo;
+            <div className="bg-gradient-to-b from-[#E0F2FE] to-[#FFFFFF] rounded-xl shadow-2xl overflow-hidden w-full max-w-sm py-10">
+              <div className="bg-[#F4F2F0] rounded-full mx-auto mt-6 mb-4 w-[200px] h-[200px] flex items-center justify-center">
+                <Image
+                  src="/assets/ben-agemate.png"
+                  alt="Ben Goodman Portrait"
+                  width={200}
+                  height={200}
+                  className="rounded-full object-cover"
+                />
+              </div>
+              <div className="p-6 text-[#0C0A08]">
+                <blockquote className="text-base sm:text-md mb-4 leading-relaxed text-[#0C0A08]">
+                  “We dropped our NPS surveys and other Typeforms. Having a hundred or so Franko customer chats come in each week gives us nuance and details well beyond surveys.”
                 </blockquote>
-                <div className="text-gray-400 text-sm">
-                  <p className="font-semibold">Placeholder Name</p>
-                  <p>VP of Placeholder, Placeholder Inc.</p>
-                </div>
-                <div className="flex justify-center space-x-1.5 mt-6">
-                  <span className="block w-2 h-2 bg-white rounded-full"></span>
-                  <span className="block w-2 h-2 bg-gray-600 rounded-full"></span>
-                  <span className="block w-2 h-2 bg-gray-600 rounded-full"></span>
+                <div className="text-[#0C0A08]/80 text-sm">
+                  <p className="font-semibold">Ben Goodman</p>
+                  <p>CEO / Founder agemate.com</p>
                 </div>
               </div>
             </div>

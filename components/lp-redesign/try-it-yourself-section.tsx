@@ -23,7 +23,7 @@ export default function TryItYourselfSection() {
       line2: "Send via email link to users who haven't upgraded.",
       company: "Perplexity",
       icon: "send",
-      agents: ["Update Objections Agent", "Feature Wishlist", ""]
+      agents: ["Update Objections Agent", "Feature Wishlist Agent", ""]
     },
     {
       id: "zapier",
@@ -56,7 +56,7 @@ export default function TryItYourselfSection() {
   }
 
   return (
-    <div className="py-24 bg-[#1A1919]">
+    <div className="py-24 bg-[#1A1919]" data-section="try-it-yourself">
       <Container>
         <div className="text-center mb-10">
           {/* Main heading */}

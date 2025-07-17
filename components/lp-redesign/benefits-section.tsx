@@ -48,14 +48,6 @@ export default function BenefitsSection() {
     <section className="py-24 bg-white">
       <Container>
         <div className="max-w-4xl mx-auto text-center mb-16">
-          {/* "End-To-End" bubble */}
-          <div className="inline-flex items-center justify-center px-6 py-2 mb-8 bg-white border border-gray-200 shadow-sm">
-            <span className="text-black font-medium text-sm flex items-center">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-              End-To-End
-            </span>
-          </div>
-
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-normal mb-6 leading-tight text-black">
           Always-on customer discovery
           </h1>

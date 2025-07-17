@@ -5,12 +5,13 @@ import Container from "@/components/lp-redesign/container"
 import { ArrowRight, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import EarlyAccessModal from "./early-access-modal"
+import { SignupForm } from "./sign-up-button"
 
 export default function HeroSection() {
   const [showModal, setShowModal] = useState(false)
 
   return (
-    <div className="pt-20 pb-16 md:pt-32 md:pb-24 bg-[linear-gradient(180deg,_#040d21_0%,_#061a3a_25%,_#092256_40%,_#1a4a8a_55%,_#2d6bc7_70%,_#4a8bff_80%,_#7ba8ff_87%,_#b8d4ff_93%,_#ffffff_100%)]">
+    <div className="pt-24 pb-20 md:pt-40 md:pb-28 bg-[linear-gradient(180deg,_#040d21_0%,_#061a3a_25%,_#092256_40%,_#1a4a8a_55%,_#2d6bc7_70%,_#4a8bff_80%,_#7ba8ff_87%,_#b8d4ff_93%,_#ffffff_100%)]" data-section="hero">
       <Container>
         <div className="text-center">
           {/* Main heading */}
@@ -29,23 +30,16 @@ export default function HeroSection() {
             </h2>
           </div>
 
-          {/* Single CTA button */}
-          <div className="mb-16">
-            <button
-              onClick={() => setShowModal(true)}
-              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-black transition-colors rounded-[5px]"
-              style={{ 
-                backgroundColor: '#E4F222',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#F5FF78'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#E4F222'
-              }}
-            >
-              Build your agents in 1 click <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
+          {/* Sign up form */}
+          <div className="mb-4 flex justify-center">
+            <SignupForm />
+          </div>
+
+          {/* Descriptive text */}
+          <div className="mb-20 md:mb-32">
+            <p className="text-sm" style={{ color: '#FFFFFF99' }}>
+              Build your agents in 1 click | No CC required
+            </p>
           </div>
 
           {/* Comparison section */}
