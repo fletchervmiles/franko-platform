@@ -42,7 +42,8 @@ export default async function EmbedPage({ params, searchParams }: EmbedPageProps
         modal={{
           id: modal.id,
           name: modal.name,
-          embedSlug: modal.embedSlug
+          embedSlug: modal.embedSlug,
+          userId: modal.userId
         }}
         profile={profile}
       >

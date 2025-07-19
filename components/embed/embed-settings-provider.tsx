@@ -12,6 +12,7 @@ interface EmbedSettingsProviderProps {
     id: string
     name: string
     embedSlug: string
+    userId: string
   }
   profile?: SelectProfile | null
 }
@@ -22,6 +23,7 @@ export function EmbedSettingsProvider({ children, brandSettings, modal, profile 
     id: modal.id,
     name: modal.name,
     embedSlug: modal.embedSlug,
+    userId: modal.userId,
     brandSettings,
     askNameEmailOnDirectLink: false, // Default value for embed context
     isActive: true,
