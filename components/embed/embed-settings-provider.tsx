@@ -4,6 +4,7 @@ import React, { createContext, useContext } from "react"
 import type { AppSettings, SettingsContextType, Modal } from "@/lib/settings-context"
 import { SettingsContext } from "@/lib/settings-context"
 import type { SelectProfile } from "@/db/schema/profiles-schema"
+import { UsageProvider } from "@/contexts/usage-context"
 
 interface EmbedSettingsProviderProps {
   children: React.ReactNode
@@ -55,16 +56,9 @@ export function EmbedSettingsProvider({ children, brandSettings, modal, profile 
 
   return (
     <SettingsContext.Provider value={contextValue}>
-      {children}
+      <UsageProvider modalOwnerId={modal.userId}>
+        {children}
+      </UsageProvider>
     </SettingsContext.Provider>
   )
-}
-
-// Keep the old function for backward compatibility, but it's no longer needed
-export function useEmbedSettings() {
-  const context = useContext(SettingsContext)
-  if (context === undefined) {
-    throw new Error("useEmbedSettings must be used within an EmbedSettingsProvider")
-  }
-  return context
 } 
