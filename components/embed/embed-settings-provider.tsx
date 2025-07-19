@@ -61,4 +61,13 @@ export function EmbedSettingsProvider({ children, brandSettings, modal, profile 
       </UsageProvider>
     </SettingsContext.Provider>
   )
+}
+
+// Export useSettings for embed context compatibility
+export function useSettings() {
+  const context = useContext(SettingsContext)
+  if (context === undefined) {
+    throw new Error("useSettings must be used within an EmbedSettingsProvider")
+  }
+  return context
 } 
