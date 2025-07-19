@@ -130,7 +130,7 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
       "Researching your company",
       "Creating a context report for your agents", 
       "Retrieving some brand basics",
-      "Training agents on your context",
+      "Training your interview agents",
     ]
     
     // Determine current step index based on progress

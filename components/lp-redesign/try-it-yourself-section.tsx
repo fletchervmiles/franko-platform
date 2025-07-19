@@ -2,8 +2,30 @@ import Container from "@/components/lp-redesign/container"
 import Image from "next/image"
 import { Code, Send, Link as LinkIcon, MousePointerClick, Slack, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useEffect } from "react"
+
+// TypeScript declaration for FrankoModal
+declare global {
+  interface Window {
+    FrankoModal: any;
+  }
+}
 
 export default function TryItYourselfSection() {
+  // Pre-load FrankoModal script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.innerHTML = `
+      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko-platform-git-preview-fletchervmiles-projects.vercel.app/embed.js";s.setAttribute("data-modal-slug","slack-1752900202370");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+    `;
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup script on unmount
+      document.head.removeChild(script);
+    };
+  }, []);
+
   const demoCards = [
     {
       id: "slack",
@@ -38,8 +60,27 @@ export default function TryItYourselfSection() {
   ]
 
   const handleCardClick = (cardId: string) => {
-    // Placeholder for demo launch functionality
-    console.log(`Launching demo for: ${cardId}`)
+    if (cardId === "slack") {
+      // Trigger FrankoModal for Slack card
+      if (window.FrankoModal) {
+        window.FrankoModal('open');
+      }
+    } else {
+      // Placeholder for other demo launch functionality
+      console.log(`Launching demo for: ${cardId}`)
+    }
+  }
+
+  const handleLaunchModal = (cardId: string) => {
+    if (cardId === "slack") {
+      // Trigger FrankoModal for Slack card
+      if (window.FrankoModal) {
+        window.FrankoModal('open');
+      }
+    } else {
+      // Placeholder for other modal launch functionality
+      console.log(`Launching modal for: ${cardId}`)
+    }
   }
 
   const getIcon = (iconType: string) => {
@@ -104,7 +145,12 @@ export default function TryItYourselfSection() {
                         </div>
                       ))}
                     </div>
-                    <Button variant="secondary" size="sm" className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center"
+                      onClick={() => handleLaunchModal(card.id)}
+                    >
                       <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
                     </Button>
                   </div>
