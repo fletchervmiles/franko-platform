@@ -16,6 +16,8 @@ import { FloatingChatIcon } from "@/components/multi-agent/floating-chat-icon"
 import { getAgentsByIds } from "@/lib/agents-data-client"
 import { useSharedModalCore } from "@/components/chat/use-shared-modal-core"
 import { PreChatForm } from "@/components/embed/pre-chat-form"
+import { useUsage } from "@/contexts/usage-context"
+import { UsageExceededOverlay } from "@/components/multi-agent/usage-exceeded-overlay"
 
 type Message = {
   id: string
@@ -198,6 +200,9 @@ export function WidgetPreview({
   const [resolvedOrgName, setResolvedOrgName] = useState<string | null>(null)
   const [popoverAgentId, setPopoverAgentId] = useState<string | null>(null)
   const popoverTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Usage checking - only show overlay when confirmed exceeded
+  const { isUsageExceeded } = useUsage()
 
   // Always call useSettings hook (no conditional calling)
   const contextData = useSettings();
@@ -701,6 +706,9 @@ export function WidgetPreview({
         />
       )}
       {preChatOverlay}
+      {isUsageExceeded && coreDemo.view === 'agent-selection' && (
+        <UsageExceededOverlay currentTheme={currentTheme} />
+      )}
     </Card>
   )
 }

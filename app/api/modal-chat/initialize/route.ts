@@ -84,6 +84,21 @@ export async function POST(request: Request) {
 
       // Get profile for organization name (needed for variable substitution)
       const profile = await getProfileByUserId(chatInstance.userId);
+      if (!profile) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if the user has reached their total responses quota
+      if ((profile.totalResponsesUsed || 0) >= (profile.totalResponsesQuota || 0)) {
+        return NextResponse.json(
+          { error: "This conversation is temporarily unavailable due to account limits. Please check back soon or contact support if this continues." },
+          { status: 403 }
+        );
+      }
+
       const organizationName = profile?.organisationName || '';
 
       // Extract name and email from userMetadata if available, with fallback to individual fields

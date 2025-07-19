@@ -7,38 +7,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // Check if this is an external chat request
-    const referer = request.headers.get('referer') || '';
-    const isExternalRequest = referer.includes('/chat/external/');
-    
-    // For external chat requests, return minimal usage data with correct structure
-    if (isExternalRequest) {
-      // Create a mock usage data object that matches the expected UiUsageData structure
-      const mockUsageData: UiUsageData = {
-        responses: {
-          used: 0,
-          total: 100,
-          percentage: 0
-        },
-        conversationPlans: {
-          used: 0,
-          total: 10,
-          percentage: 0
-        },
-        qaMessages: {
-          used: 0,
-          total: 100,
-          percentage: 0
-        }
-      };
-      
-      return NextResponse.json({ 
-        data: mockUsageData,
-        lastUpdated: new Date().toISOString()
-      });
-    }
-    
-    // For authenticated requests, continue with normal flow
     // Get the current user ID from auth
     const { userId } = await auth();
     

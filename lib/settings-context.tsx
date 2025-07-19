@@ -33,6 +33,7 @@ export interface Modal {
   id: string
   name: string
   embedSlug: string
+  userId: string
   brandSettings: AppSettings
   askNameEmailOnDirectLink?: boolean
   responseEmailNotifications?: boolean

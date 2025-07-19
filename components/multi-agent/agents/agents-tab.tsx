@@ -4,10 +4,12 @@ import { AgentCard } from "./agent-card"
 import { WidgetPreview } from "./widget-preview"
 import { useSettings } from "@/lib/settings-context"
 import { useState, useEffect } from "react"
-import { Check } from "lucide-react"
+import { Check, AlertTriangle } from "lucide-react"
+import { useUsage } from "@/contexts/usage-context"
 
 export function AgentsTab() {
   const { settings, updateAgentSettings, isSaving, profile } = useSettings()
+  const { isUsageExceeded } = useUsage()
   const enabledAgents = settings.agents.enabledAgents
 
   const handleToggle = (agentId: string) => {
@@ -31,6 +33,16 @@ export function AgentsTab() {
 
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-[#FAFAFA] dark:bg-gray-800">
+      {/* Usage exceeded warning */}
+      {isUsageExceeded && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+          <p className="text-sm text-amber-800">
+            <span className="font-medium">Usage limits reached.</span> New conversations may not be available until limits reset.
+          </p>
+        </div>
+      )}
+      
       {/* Full-width Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">

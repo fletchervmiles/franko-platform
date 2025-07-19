@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { useSearchParams, useRouter } from "next/navigation"
+import { UsageProvider } from "@/contexts/usage-context"
 
 // Inline Name Editor Component
 function InlineNameEditor({ 
@@ -431,7 +432,9 @@ export default function ModalManager() {
         )}
 
         {/* Tabs Interface */}
-        <SimpleTabs />
+        <UsageProvider modalOwnerId={currentModal.userId}>
+          <SimpleTabs />
+        </UsageProvider>
 
         {/* Delete Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
