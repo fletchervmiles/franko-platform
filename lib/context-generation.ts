@@ -9,7 +9,7 @@ import { fetchBrandDetails } from "@/lib/brandfetch";
 import { createAutomatedModal } from "@/ai_folder/create-plans";
 import fs from 'fs';
 import path from 'path';
-import { google } from "@ai-sdk/google";
+// import { google } from "@ai-sdk/google"; // No longer needed since we use wrapped model
 
 // EXACT same schemas from /api/context/route.ts
 const inputSignalSchema = z.object({
@@ -334,7 +334,7 @@ export async function generateContextForUser(
         logger.info(`Context Setter attempt ${attempt}/${maxContextSetterRetries}`);
         const { text } = await generateText({
           prompt: filledContextSetterPrompt,
-          model: google('gemini-2.5-flash-preview-04-17'), 
+          model: gemini25FlashPreviewModel, 
           providerOptions: { 
             google: { 
               thinkingConfig: { thinkingBudget: 200 } 

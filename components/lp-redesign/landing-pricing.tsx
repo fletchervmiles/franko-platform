@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Check, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Input } from "@/components/ui/input"
+
 import { useRouter } from "next/navigation"
 
 const pricingTiers = [
@@ -33,31 +33,10 @@ const pricingTiers = [
 export default function LandingPricing() {
   const [tierIndex, setTierIndex] = useState(0)
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState('')
-
   const currentTier = pricingTiers[tierIndex]
 
-  const BLOCKED_DOMAINS = [ 'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'tutanota.com', 'mail.com', 'yandex.com', 'zoho.com', 'live.com', 'msn.com' ]
-
-  const validateBusinessEmail = (email: string): boolean => {
-    const domain = email.split('@')[1]?.toLowerCase()
-    if (!domain) return false
-    return !BLOCKED_DOMAINS.includes(domain)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!email) {
-      setError('Please enter your email address')
-      return
-    }
-    if (!validateBusinessEmail(email)) {
-      setError('Business email required')
-      return
-    }
-    router.push(`/sign-up?email=${encodeURIComponent(email)}&step=details`)
+  const handleSignUp = () => {
+    router.push('/sign-up')
   }
 
   return (
@@ -103,17 +82,11 @@ export default function LandingPricing() {
                     min={0}
                     max={pricingTiers.length - 1}
                     step={1}
-                    className="w-full [&_[role=slider]]:bg-[#E4F222] [&_[role=slider]]:border-[#E4F222] [&_.relative]:bg-white [&_.bg-primary]:bg-[#E4F222]"
+                    className="w-full [&_.relative]:bg-white"
+                    rangeClassName="bg-[#F5FF78]"
+                    thumbClassName="bg-[#F5FF78] border-[#F5FF78]"
                     aria-label="Pricing tier slider"
                   />
-                  <style jsx>{`
-                    .slider-track {
-                      background: white;
-                    }
-                    .slider-range {
-                      background: #E4F222;
-                    }
-                  `}</style>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 px-1">
                   {pricingTiers.map((tier) => (
@@ -173,22 +146,12 @@ export default function LandingPricing() {
               </ul>
 
               <div className="space-y-3">
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-                  <Input
-                    type="email"
-                    placeholder="What's your work email?"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full py-3 px-4 rounded-lg bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-                  />
-                  <Button 
-                    type="submit"
-                    className="w-full bg-[#E4F222] hover:bg-[#F5FF78] text-[#0C0A08] py-3 rounded-lg text-base font-medium"
-                  >
+                <Button 
+                  onClick={handleSignUp}
+                  className="w-full bg-[#E4F222] hover:bg-[#F5FF78] text-[#0C0A08] py-3 rounded-lg text-base font-medium"
+                >
                   Get started for free
                 </Button>
-                </form>
                 <p className="text-center text-xs text-gray-500">No CC required</p>
               </div>
             </div>
