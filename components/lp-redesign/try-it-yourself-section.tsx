@@ -108,7 +108,10 @@ export default function TryItYourselfSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {demoCards.map((card) => (
             <div key={card.id} className="flex flex-col items-center group">
-              <div className="w-full max-w-sm rounded-2xl p-6 bg-[rgba(244,242,240,1)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] border border-transparent hover:border-[#E4F222] cursor-pointer min-h-[280px] flex flex-col">
+              <div
+                className="w-full max-w-sm rounded-2xl p-6 bg-[rgba(244,242,240,1)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] border border-transparent hover:border-[#E4F222] cursor-pointer min-h-[280px] flex flex-col"
+                onClick={() => handleLaunchModal(card.id)}
+              >
                 <p className="uppercase tracking-wide text-[10px] font-semibold text-center mb-2 text-[#0C0A08]/60">Modal configuration</p>
                 <h4 className="text-lg font-semibold text-center mb-4 text-[#0C0A08]">{card.title}</h4>
                                   <div className="w-full rounded-xl bg-white p-4 shadow-md flex-1 flex flex-col">
@@ -142,7 +145,10 @@ export default function TryItYourselfSection() {
                       variant="secondary" 
                       size="sm" 
                       className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center"
-                      onClick={() => handleLaunchModal(card.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLaunchModal(card.id);
+                      }}
                     >
                       <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
                     </Button>
