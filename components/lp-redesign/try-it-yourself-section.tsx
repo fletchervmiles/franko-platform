@@ -4,13 +4,6 @@ import { Code, Send, Link as LinkIcon, MousePointerClick, Slack, Check } from "l
 import { Button } from "@/components/ui/button"
 import { useEffect } from "react"
 
-// TypeScript declaration for FrankoModal
-declare global {
-  interface Window {
-    FrankoModal: any;
-  }
-}
-
 export default function TryItYourselfSection() {
   // Pre-load FrankoModal script
   useEffect(() => {
@@ -62,8 +55,8 @@ export default function TryItYourselfSection() {
   const handleCardClick = (cardId: string) => {
     if (cardId === "slack") {
       // Trigger FrankoModal for Slack card
-      if (window.FrankoModal) {
-        window.FrankoModal('open');
+      if (typeof window !== "undefined" && window.FrankoModal?.open) {
+        window.FrankoModal.open();
       }
     } else {
       // Placeholder for other demo launch functionality
@@ -74,8 +67,8 @@ export default function TryItYourselfSection() {
   const handleLaunchModal = (cardId: string) => {
     if (cardId === "slack") {
       // Trigger FrankoModal for Slack card
-      if (window.FrankoModal) {
-        window.FrankoModal('open');
+      if (typeof window !== "undefined" && window.FrankoModal?.open) {
+        window.FrankoModal.open();
       }
     } else {
       // Placeholder for other modal launch functionality
