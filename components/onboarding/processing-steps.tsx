@@ -50,6 +50,25 @@ import { motion, AnimatePresence } from "framer-motion"
  *   }
  * }
  *
+ * .loading-dots {
+ *   animation: loading-dots 1.5s infinite;
+ * }
+ *
+ * @keyframes loading-dots {
+ *   0%, 20% {
+ *     content: '';
+ *   }
+ *   40% {
+ *     content: '.';
+ *   }
+ *   60% {
+ *     content: '..';
+ *   }
+ *   80%, 100% {
+ *     content: '...';
+ *   }
+ * }
+ *
  * CUSTOMIZATION:
  * - Update the `allSteps` array to change the step names
  * - Modify timing in useEffect (2000ms for processing, 500ms for transitions, 3000ms for reset)
@@ -82,13 +101,26 @@ interface ProcessingStepsProps {
 export default function ProcessingSteps({ steps, currentStep, progress }: ProcessingStepsProps) {
   const [activeStep, setActiveStep] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [dots, setDots] = useState("")
 
   const defaultSteps = [
     "Researching your company",
-    "Writing a context-rich report for your agents",
-    "Retrieving your brand assets for your modal",
-    "Creating your feedback modal with 6 agents",
+    "Creating a context report for your agents",
+    "Retrieving some brand basics",
+    "Training agents on your context",
   ]
+
+  // Animate loading dots
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === "...") return ""
+        return prev + "."
+      })
+    }, 500)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // If we have real-time progress data, create steps based on that
   const createStepsFromProgress = (): Step[] => {
@@ -96,16 +128,16 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
     
     const allSteps = [
       "Researching your company",
-      "Writing a context-rich report for your agents", 
-      "Retrieving your brand assets",
-      "Creating your feedback modal with 6 agents",
+      "Creating a context report for your agents", 
+      "Retrieving some brand basics",
+      "Training agents on your context",
     ]
     
     // Determine current step index based on progress
     let currentStepIndex = 0
-    if (progress >= 85) currentStepIndex = 3      // Creating modal
-    else if (progress >= 60) currentStepIndex = 2 // Retrieving brand assets
-    else if (progress >= 30) currentStepIndex = 1 // Writing context report
+    if (progress >= 85) currentStepIndex = 3      // Training agents
+    else if (progress >= 60) currentStepIndex = 2 // Retrieving brand basics
+    else if (progress >= 30) currentStepIndex = 1 // Creating context report
     else currentStepIndex = 0                     // Researching company
     
     return allSteps.map((stepName, index) => ({
@@ -156,10 +188,12 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
 
   return (
     <div className="w-full max-w-lg mx-auto bg-[#1A1919] rounded-lg shadow-xl p-6 sm:p-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">Creating Your Agents...</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+        Creating your account
+        <span className="inline-block w-6 text-left">{dots}</span>
+      </h1>
       <p className="text-sm sm:text-base text-center text-white/60 mb-6 sm:mb-8">
-        We&apos;re currently getting your agents set up just for you. Here&apos;s what&apos;s happening behind the
-        scenes:
+        We&apos;re doing this prep so you don&apos;t have to. Here&apos;s what&apos;s happening:
       </p>
       <div className="space-y-2">
         <AnimatePresence initial={false}>
@@ -196,7 +230,7 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
         </AnimatePresence>
       </div>
       <p className="text-xs sm:text-sm text-center text-white/60 mt-6 sm:mt-8">
-        Sit tight, you&apos;re moments away from meeting your interview agents.
+        You&apos;re moments away from meeting your ready-to-go interview agents.
       </p>
     </div>
   )
