@@ -75,7 +75,7 @@ export default function LandingPricing() {
                   </p>
                   <div className="flex items-baseline gap-2">
                     {currentTier.price === 0 ? (
-                      <span className="text-5xl font-bold">Free</span>
+                      <span className="text-5xl font-bold">$0 / mo</span>
                     ) : (
                       <>
                         <span className="text-5xl font-bold">
@@ -162,7 +162,7 @@ export default function LandingPricing() {
                   onClick={handleSignUp}
                   className="w-full bg-[#E4F222] hover:bg-[#F5FF78] text-[#0C0A08] py-3 rounded-lg text-base font-medium"
                 >
-                  {currentTier.price === 0 ? "Get started for free" : `Choose ${currentTier.name}`}
+                  Get started for free
                 </Button>
                 <p className="text-center text-xs text-gray-500">
                   {currentTier.price === 0 ? "No CC required" : "Start with free plan, upgrade anytime"}
