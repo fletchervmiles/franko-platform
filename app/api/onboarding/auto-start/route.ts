@@ -6,7 +6,7 @@ import { generateContextForUser } from "@/lib/context-generation";
 import { getOnboardingStatus, startAutomatedOnboarding, failAutomatedOnboarding } from "@/db/queries/user-onboarding-status-queries";
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes for context generation
+export const maxDuration = 300; // 5 minutes for synchronous context generation
 
 // Blocked personal email domains
 const BLOCKED_DOMAINS = [
@@ -130,23 +130,27 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Start auto-onboarding in background
-    processAutoOnboarding(userId, companyInfo.domain, companyInfo.companyName)
-      .catch(error => {
-        logger.error(`Background auto-onboarding failed for user ${userId}:`, error);
-        // Mark automation as failed
-        failAutomatedOnboarding(userId, error.message || 'Unknown error')
-          .catch(failError => {
-            logger.error(`Failed to mark automation as failed for user ${userId}:`, failError);
-          });
-      });
+    // Run auto-onboarding synchronously (was background, but serverless kills it)
+    try {
+      logger.info(`Starting synchronous auto-onboarding for user ${userId}`);
+      await processAutoOnboarding(userId, companyInfo.domain, companyInfo.companyName);
+      logger.info(`✅ Auto-onboarding completed for user ${userId}`);
+    } catch (error) {
+      logger.error(`Auto-onboarding failed for user ${userId}:`, error);
+      // Mark automation as failed
+      await failAutomatedOnboarding(userId, error instanceof Error ? error.message : 'Unknown error');
+      return NextResponse.json({ 
+        error: "Auto-onboarding failed",
+        shouldFallback: true 
+      }, { status: 500 });
+    }
 
     const duration = Date.now() - startTime;
-    logger.info(`Auto-onboarding started for user ${userId}. Duration: ${duration}ms`);
+    logger.info(`Auto-onboarding completed for user ${userId}. Duration: ${duration}ms`);
 
     return NextResponse.json({ 
       success: true,
-      message: "Auto-onboarding started",
+      message: "Auto-onboarding completed",
       companyName: companyInfo.companyName
     });
 
