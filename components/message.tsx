@@ -26,6 +26,7 @@ interface MessageProps {
   messageIndex?: number
   allMessages?: Array<AIMessage>
   isFirstInTurn?: boolean
+  textColor?: string // optional override for assistant text colour
 }
 
 // Helper function to check if two strings are similar
@@ -65,7 +66,8 @@ export const Message = React.memo(function Message({
   isLoading = false,
   messageIndex = -1,
   allMessages = [],
-  isFirstInTurn = true
+  isFirstInTurn = true,
+  textColor,
 }: MessageProps) {
   // Define hooks unconditionally at the top level
   const getDisplayContent = useCallback((content: string) => {
@@ -251,7 +253,7 @@ export const Message = React.memo(function Message({
           isUser 
             ? "bg-white text-gray-900 rounded-3xl rounded-br-lg border border-gray-200 px-4 py-2.5" // Increased roundness while maintaining speech bubble effect
             : "bg-transparent text-gray-900 rounded-lg px-4 py-2.5"
-        )}>
+        )} style={!isUser && textColor ? { color: textColor } : undefined}>
           {!isUser && showLoading && (
             <div className="flex items-center h-7">
               <div className="flex space-x-2 items-end bg-gray-100 px-4 py-2.5 rounded-xl">

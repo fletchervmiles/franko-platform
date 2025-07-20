@@ -1,0 +1,73 @@
+"use client"
+
+import React, { createContext, useContext } from "react"
+import type { AppSettings, SettingsContextType, Modal } from "@/lib/settings-context"
+import { SettingsContext } from "@/lib/settings-context"
+import type { SelectProfile } from "@/db/schema/profiles-schema"
+import { UsageProvider } from "@/contexts/usage-context"
+
+interface EmbedSettingsProviderProps {
+  children: React.ReactNode
+  brandSettings: AppSettings
+  modal: {
+    id: string
+    name: string
+    embedSlug: string
+    userId: string
+  }
+  profile?: SelectProfile | null
+}
+
+export function EmbedSettingsProvider({ children, brandSettings, modal, profile }: EmbedSettingsProviderProps) {
+  // Create a full Modal object from the minimal modal prop
+  const fullModal: Modal | null = modal ? {
+    id: modal.id,
+    name: modal.name,
+    embedSlug: modal.embedSlug,
+    userId: modal.userId,
+    brandSettings,
+    askNameEmailOnDirectLink: false, // Default value for embed context
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } : null
+
+  const contextValue: SettingsContextType = {
+    settings: brandSettings,
+    updateInterfaceSettings: () => {}, // No-op in embed context
+    updateAgentSettings: () => {}, // No-op in embed context
+    profile: profile || null,
+    isLoadingProfile: false,
+    currentModal: fullModal,
+    modals: [],
+    createModal: async () => {
+      throw new Error("createModal not available in embed context")
+    },
+    loadModal: async () => {},
+    saveModal: async () => {},
+    updateModal: async (updates: Partial<Pick<any, 'askNameEmailOnDirectLink'>>) => {}, // No-op in embed context
+    deleteModal: async () => {},
+    loadUserModals: async () => {},
+    isLoading: false,
+    isSaving: false,
+    error: null,
+    clearError: () => {},
+  }
+
+  return (
+    <SettingsContext.Provider value={contextValue}>
+      <UsageProvider modalOwnerId={modal.userId}>
+        {children}
+      </UsageProvider>
+    </SettingsContext.Provider>
+  )
+}
+
+// Export useSettings for embed context compatibility
+export function useSettings() {
+  const context = useContext(SettingsContext)
+  if (context === undefined) {
+    throw new Error("useSettings must be used within an EmbedSettingsProvider")
+  }
+  return context
+} 

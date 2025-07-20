@@ -28,12 +28,20 @@ interface Workspace {
   customerWords: number
 }
 
+interface Modal {
+  id: string
+  name: string
+  lastEdited: string
+  embedSlug: string
+  isActive: boolean
+}
+
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
       <div className="mb-6">
         <Image
-          src="/assets/user_avatar.svg"
+          src="/favicon/agent_icon.svg"
           alt="Franko logo"
           width={64}
           height={64}
@@ -231,7 +239,7 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
     return (
       <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E4F222] border-t-transparent mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading workspaces...</p>
         </div>
       </div>
@@ -291,7 +299,7 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
             </div>
             <div className="flex items-center gap-3 order-6">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Rectangle%201-zNq3ZeSKpAcDWZtxAfVWG0VVquUKB2.svg"
+                src="/favicon/agent_icon.svg"
                 className="h-6 w-6 rounded-full"
                 alt="User avatar"
               />
@@ -351,3 +359,132 @@ export const WorkspaceList = React.memo(function WorkspaceList() {
     </div>
   )
 });
+
+export const ModalWorkspaceList = React.memo(function ModalWorkspaceList() {
+  const [isMounted, setIsMounted] = useState(false)
+  const [modals, setModals] = useState<Modal[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const fetchModals = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/modals')
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch modals. Please try again later.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
+      const data = await response.json()
+      setModals(data)
+    } catch (error) {
+      console.error('Error fetching modals:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load modals. Please try again later.'
+      setError(errorMessage)
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [toast])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsMounted(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchModals()
+    }
+  }, [isMounted, fetchModals])
+
+  if (!isMounted) {
+    return <div className="animate-pulse">Loading modals...</div>
+  }
+
+  if (isLoading) {
+    return <div>Loading modals...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={fetchModals}>Retry</Button>
+      </div>
+    )
+  }
+
+  if (modals.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-4 text-center">
+        <div className="mb-6">
+          <Image
+            src="/favicon/agent_icon.svg"
+            alt="Franko logo"
+            width={64}
+            height={64}
+          />
+        </div>
+        <h1 className="text-2xl font-semibold mb-3">No Modals Found</h1>
+        <p className="text-sm text-gray-600 mb-6 max-w-md">
+          You don't have any feedback modals yet. Complete the onboarding process to create your first modal.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Your Feedback Modals</h2>
+      </div>
+      
+      <div className="grid gap-4">
+        {modals.map((modal) => (
+          <Link
+            key={modal.id}
+            href={`/workspace?modalId=${modal.id}`}
+            className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="font-medium text-lg mb-1">{modal.name}</h3>
+                <p className="text-sm text-gray-500 mb-2">
+                  Embed: {modal.embedSlug}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <span>Last edited: {new Date(modal.lastEdited).toLocaleDateString()}</span>
+                  <span className={`px-2 py-1 rounded-full ${modal.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    {modal.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+})

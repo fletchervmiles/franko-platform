@@ -9,8 +9,8 @@ import { profilesTable } from "@/db/schema/profiles-schema";
 import { eq } from "drizzle-orm";
 
 // Add type safety for the plan parameter
-type UIPlan = "starter" | "pro" | "business";
-type InternalPlan = "starter_2024" | "pro_2024" | "business_2024";
+type UIPlan = "starter" | "growth" | "business";
+type InternalPlan = "starter_2024" | "growth_2024" | "business_2024";
 
 // Use the new App Router configuration syntax
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export const runtime = 'nodejs';
  */
 async function resetMonthlyCounts(
   userId: string,
-  plan: "starter_2024" | "pro_2024" | "business_2024" | "free"
+  plan: "starter_2024" | "growth_2024" | "business_2024" | "free"
 ) {
   console.log(`[Monthly Reset] Resetting usage for user ${userId} on plan ${plan}`);
   
@@ -55,7 +55,7 @@ async function resetMonthlyCounts(
  */
 async function updateUserCredits(
   userId: string, 
-  plan: "starter_2024" | "pro_2024" | "business_2024" | "free", 
+  plan: "starter_2024" | "growth_2024" | "business_2024" | "free", 
   stripeCustomerId?: string,
   stripeSubscriptionId?: string
 ) {
@@ -326,12 +326,12 @@ export async function POST(req: Request) {
             const currentPriceId = subscription.items.data[0].price.id;
             
             // Determine which plan this price ID corresponds to
-            let newPlan: "starter_2024" | "pro_2024" | "business_2024" | "free" = "free";
+            let newPlan: "starter_2024" | "growth_2024" | "business_2024" | "free" = "free";
             
             if (currentPriceId === process.env.STARTER_PRICE_ID) {
               newPlan = "starter_2024";
-            } else if (currentPriceId === process.env.PRO_PRICE_ID) {
-              newPlan = "pro_2024";
+            } else if (currentPriceId === process.env.GROWTH_PRICE_ID) {
+              newPlan = "growth_2024";
             } else if (currentPriceId === process.env.BUSINESS_PRICE_ID) {
               newPlan = "business_2024";
             }
@@ -417,15 +417,15 @@ export async function POST(req: Request) {
             }
             
             // Get current plan for this subscription
-            let currentPlan: "starter_2024" | "pro_2024" | "business_2024" | "free" = "free";
+            let currentPlan: "starter_2024" | "growth_2024" | "business_2024" | "free" = "free";
             
             if (subscription.items.data.length > 0) {
               const currentPriceId = subscription.items.data[0]?.price.id;
               
               if (currentPriceId === process.env.STARTER_PRICE_ID) {
                 currentPlan = "starter_2024";
-              } else if (currentPriceId === process.env.PRO_PRICE_ID) {
-                currentPlan = "pro_2024";
+              } else if (currentPriceId === process.env.GROWTH_PRICE_ID) {
+                currentPlan = "growth_2024";
               } else if (currentPriceId === process.env.BUSINESS_PRICE_ID) {
                 currentPlan = "business_2024";
               }

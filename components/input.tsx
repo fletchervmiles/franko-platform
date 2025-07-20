@@ -6,6 +6,7 @@ import { useRef, useEffect, forwardRef, type ForwardedRef, useCallback, useState
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import React from "react"
+import { pickTextColor } from "@/lib/color-utils"
 
 interface ChatInputProps {
   value: string
@@ -16,6 +17,8 @@ interface ChatInputProps {
   progressBar?: React.ReactNode
   stop?: () => void
   messageContainerRef?: React.RefObject<HTMLDivElement>
+  wrapperBackground?: string
+  containerBackground?: string
 }
 
 function ChatInputComponent({ 
@@ -26,7 +29,9 @@ function ChatInputComponent({
   showProgressBar = false,
   progressBar,
   stop,
-  messageContainerRef
+  messageContainerRef,
+  wrapperBackground = "#F9F8F6",
+  containerBackground = "white",
 }: ChatInputProps,
 ref: ForwardedRef<HTMLTextAreaElement>) {
   const localRef = useRef<HTMLTextAreaElement>(null)
@@ -157,11 +162,12 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
   }, [onSubmit, value, disabled, scrollToBottom]);
 
   const hasContent = value.trim().length > 0
+  const inputTextColor = pickTextColor(containerBackground)
 
   return (
-    <div className="w-full bg-[#F9F8F6] pt-1 md:pt-2" style={{ backgroundColor: "#F9F8F6", opacity: 1 }}>
-      <div className="mx-auto max-w-4xl px-2 md:px-4 lg:px-8 pb-2 md:pb-4">
-        <div className="relative flex flex-col rounded-lg md:rounded-xl border bg-white shadow-sm md:shadow-[0_0_15px_rgba(0,0,0,0.1)]" style={{ backgroundColor: "white", opacity: 1 }}>
+    <div className="w-full" style={{ backgroundColor: wrapperBackground, opacity: 1 }}>
+      <div className="mx-auto max-w-4xl px-4 md:px-8 lg:px-14 py-2">
+        <div className="relative flex flex-col rounded-lg md:rounded-xl border shadow-sm md:shadow-[0_0_15px_rgba(0,0,0,0.1)]" style={{ backgroundColor: containerBackground, opacity: 1 }}>
           <form onSubmit={handleFormSubmit} className="flex items-start gap-2 p-1.5 md:p-2 px-3 md:px-8">
             <Textarea
               ref={textareaRef}
@@ -173,12 +179,13 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               placeholder="Send a message..."
               className={cn(
                 "w-full resize-none px-2.5 md:px-3 py-2 md:py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-sm md:text-base leading-relaxed",
-                disabled && "bg-gray-50 cursor-not-allowed",
+                disabled && "cursor-not-allowed",
               )}
               style={{
                 minHeight: "56px",
                 maxHeight: "160px",
-                overflowY: value.split('\n').length > 3 ? "auto" : "hidden"
+                overflowY: value.split('\n').length > 3 ? "auto" : "hidden",
+                color: inputTextColor
               }}
               disabled={disabled}
             />
@@ -223,6 +230,10 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
                 {progressBar}
               </div>
             </div>
+          )}
+          {/* Ensure progress logic always runs even when UI is hidden */}
+          {!showProgressBar && progressBar && (
+            <div style={{ display: "none" }}>{progressBar}</div>
           )}
         </div>
       </div>

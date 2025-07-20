@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SketchPicker, ColorResult } from 'react-color';
 import { cn } from "@/lib/utils";
-import { useSetupChecklist } from "@/contexts/setup-checklist-context";
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 import { useProfile } from "@/components/contexts/profile-context";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -71,7 +71,7 @@ export function BrandingContext({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  // const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
   const { setIsBrandingComplete } = useProfile();
 
   // State for color picker visibility
@@ -121,7 +121,7 @@ export function BrandingContext({
         title: "Success!",
         description: "Branding updated successfully.",
       })
-      refetchSetupStatus();
+      // refetchSetupStatus();
       setLogoFile(null); // Clear pending file selection
       setIsEditing(false); // Exit edit mode on successful save
       setIsBrandingComplete(true); // Explicitly mark as complete on success
@@ -245,7 +245,10 @@ export function BrandingContext({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold flex items-center gap-2">
-                <Palette className="h-4 w-4 text-blue-500" /> Chat Widget Branding
+                <div className="w-6 h-6 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                  <Palette className="h-4 w-4 text-[#1C1617]" />
+                </div>
+                Chat Widget Branding
               </h2>
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
@@ -273,7 +276,7 @@ export function BrandingContext({
                   <Button
                     onClick={handleSaveChanges}
                     size="sm"
-                    className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                    className="h-8 text-xs px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
                     disabled={mutation.isPending || !hasChanges}
                   >
                     {mutation.isPending ? (
@@ -306,7 +309,10 @@ export function BrandingContext({
           {/* Logo Section */}
           <div className={cn("space-y-4 bg-white rounded-lg border p-4 transition-opacity", !isEditing && "opacity-70")}>
             <Label className="text-sm font-semibold flex items-center gap-2">
-               <ImageIcon className="h-4 w-4 text-blue-500" /> Logo
+               <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                 <ImageIcon className="h-3 w-3 text-[#1C1617]" />
+               </div>
+               Logo
             </Label>
             <p className="text-sm text-gray-500">Upload your company logo (PNG, JPG, GIF, SVG recommended, max 5MB).</p>
             <div className="flex items-center gap-4">
@@ -341,7 +347,10 @@ export function BrandingContext({
           {/* Color Section */}
           <div className={cn("space-y-4 bg-white rounded-lg border p-4 transition-opacity", !isEditing && "opacity-70")}>
              <Label className="text-sm font-semibold flex items-center gap-2">
-                <Palette className="h-4 w-4 text-blue-500" /> Brand Colors
+                <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                  <Palette className="h-3 w-3 text-[#1C1617]" />
+                </div>
+                Brand Colors
              </Label>
              <p className="text-sm text-gray-500">Choose colors for the chat widget elements.</p>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

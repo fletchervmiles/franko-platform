@@ -44,9 +44,9 @@ const growthFeatures = [
 ];
 
 const growthLimits = [
-  'Up to 200 Interview Responses/mo',
+  'Up to 300 Interview Responses/mo',
   'Generate Up to 50 AI Conversation Plans', 
-  'Up to 200 Questions on your customer data'
+  'Up to 50 Questions on your customer data'
 ];
 
 export default function Pricing() {

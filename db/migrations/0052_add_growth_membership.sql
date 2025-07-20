@@ -1,0 +1,1 @@
+ALTER TYPE "membership" ADD VALUE 'growth'; 

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getChatResponseById } from "@/db/queries/chat-responses-queries";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler for fetching chat history
  * Retrieves saved messages for a given chat response ID

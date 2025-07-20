@@ -1,0 +1,1 @@
+ALTER TABLE "modals" ADD COLUMN "response_email_notifications" boolean DEFAULT true NOT NULL; 

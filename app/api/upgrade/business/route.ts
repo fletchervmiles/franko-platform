@@ -3,6 +3,8 @@ import { createCheckoutSession } from "@/actions/stripe-actions";
 import { auth } from "@clerk/nextjs/server";
 import { getProfileByUserId } from "@/db/queries/profiles-queries";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { getChatInstanceById } from "@/db/queries/chat-instances-queries";
 import { logger } from "@/lib/logger";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     // Authenticate user

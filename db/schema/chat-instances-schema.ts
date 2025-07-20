@@ -1,5 +1,6 @@
-import { pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, jsonb, boolean, varchar } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles-schema";
+import { modalsTable } from "./modals-schema";
 
 // Update ObjectiveProgress interface to make comments optional
 export interface ObjectiveProgress {
@@ -40,6 +41,11 @@ export const chatInstancesTable = pgTable("chat_instances", {
   published: boolean("published").default(false),
   responseEmailNotifications: boolean("response_email_notifications").default(true),
   redirect_url: text("redirect_url"), // Add the new redirect_url field here
+  // Modal-related fields
+  modalId: uuid("modal_id").references(() => modalsTable.id, { onDelete: "cascade" }),
+  agentType: varchar("agent_type", { length: 50 }), // Maps to id in agents-data.ts
+  isEnabled: boolean("is_enabled").default(true), // Allows disabling an agent inside a modal
+  isModalAgent: boolean("is_modal_agent").default(false), // Distinguishes from legacy links
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

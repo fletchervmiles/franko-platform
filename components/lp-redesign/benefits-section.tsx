@@ -5,69 +5,71 @@ import { MessageSquare, BarChart2, Users, Search, Layers, LinkIcon } from "lucid
 
 const benefits = [
   {
-    title: "AI INTERVIEW AGENTS",
+    title: "AI USER INTERVIEWS",
     description:
-      "AI agents run configurable, exploratory, chat-based interviews asynchronously, capturing high-signal insights at scale with zero research-team overhead.",
-    icon: <MessageSquare className="h-6 w-6 text-blue-600" />,
+      "Agents trained on your data to conduct short chat-based user interviews.",
+    icon: <MessageSquare className="h-5 w-5 text-[#0C0A08]" />,
   },
   {
-    title: "TRACK PMF",
+    title: "MULTI-MODALS",
     description:
-      "Automatically track Product-Market Fit by measuring how many users would be disappointed without your product and most importantly, understand why! An essential growth indicator.",
-    icon: <BarChart2 className="h-6 w-6 text-blue-600" />,
+      "Configure modals to display relevant interview agents based on the customer journey stage.",
+    icon: <Layers className="h-5 w-5 text-[#0C0A08]" />,
   },
   {
-    title: "QUANTIFIED PERSONAS",
+    title: "ANALYSIS IN YOUR EMAIL",
     description:
-      "Automatically segment customer responses into quantified personas, revealing who they are, how they discovered you, why they love your product, improvement opportunities, and more.",
-    icon: <Users className="h-6 w-6 text-blue-600" />,
+      "Receive interview analysis directly in your inbox, helping to keep customers top-of-mind.",
+    icon: <BarChart2 className="h-5 w-5 text-[#0C0A08]" />,
   },
   {
-    title: "CHAT WITH YOUR RESPONSE DATA",
+    title: "CHAT OR DOWNLOAD DATA",
     description:
-      'Use your data to ask any question - "What customer type love us the most and why?" Get answers based on 1,000s of interview transcripts.',
-    icon: <Search className="h-6 w-6 text-blue-600" />,
+      "Chat directly with your customer response data or download an LLM-ready (or csv) file.",
+    icon: <Search className="h-5 w-5 text-[#0C0A08]" />,
   },
   {
-    title: "CONTINUOUS MULTI-AGENT INTERVIEWERS",
+    title: "CUSTOMER REPORTS",
     description:
-      "Deploy AI agents across channels with agents for pmf, acquisition + discovery, churn, pricing, feature preference and more, capturing semi-structured insights across the customer journey.",
-    icon: <Layers className="h-6 w-6 text-blue-600" />,
+      "Receive weekly in-depth customer research reports. Exactly what you'd expect from a dedicated research team.",
+    icon: <Users className="h-5 w-5 text-[#0C0A08]" />,
+    comingSoon: true,
   },
   {
-    title: "SHAREABLE LINKS & ALERTS",
+    title: "EMBED / SHAREABLE LINKS",
     description:
-      "Use agent links in emails, banners, or DMs, with response notifications, completion redirects, webhooks, and optional built-in incentives.",
-    icon: <LinkIcon className="h-6 w-6 text-blue-600" />,
+      "Embed modals in your UI or share standalone links, engaging customers when it's convenient for them.",
+    icon: <LinkIcon className="h-5 w-5 text-[#0C0A08]" />,
   },
 ]
 
 export default function BenefitsSection() {
   return (
-    <section className="py-24 grid-background03">
+    <section className="py-24 bg-white">
       <Container>
         <div className="max-w-4xl mx-auto text-center mb-16">
-          {/* "End-To-End" bubble */}
-          <div className="inline-flex items-center justify-center px-6 py-2 mb-8 bg-white border border-gray-200 shadow-sm">
-            <span className="text-black font-medium text-sm flex items-center">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-              End-To-End
-            </span>
-          </div>
-
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-normal mb-6 leading-tight text-black">
-            Your Always-On Product-Market Fit Engine
+          Always-on customer discovery
           </h1>
           <h2 className="text-lg md:text-xl text-gray-700 leading-relaxed">
-          Built for early-stage product founders finding and deepening product-market fit; a research-team-in-a-box.
-        </h2>
+            Built for early-stage product founders obsessed with understanding customers.
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-12">
           {benefits.map((benefit, index) => (
             <div key={index} className="bg-white p-8 border border-gray-100 flex flex-col">
-              <div className="mb-4">{benefit.icon}</div>
-              <h3 className="text-sm font-bold mb-3 tracking-wide">{benefit.title}</h3>
+              <div className="mb-4">
+                <div className="w-10 h-10 bg-[#E4EBF6] rounded-lg flex items-center justify-center">
+                  {benefit.icon}
+                </div>
+              </div>
+              <h3 className="text-sm font-bold mb-3 tracking-wide">
+                {benefit.title}
+                {benefit.comingSoon && (
+                  <span className="ml-2 text-xs text-gray-500 font-normal">(coming soon)</span>
+                )}
+              </h3>
               <p className="text-gray-600 text-sm leading-relaxed">{benefit.description}</p>
             </div>
           ))}

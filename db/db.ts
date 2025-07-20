@@ -10,6 +10,7 @@ import {
   responseArrayItemsTable,
   userPersonasTable,
   userOnboardingStatusTable,
+  modalsTable,
 } from "./schema";
 
 config({ path: ".env.local" });
@@ -23,12 +24,14 @@ const schema = {
   responseArrayItems: responseArrayItemsTable,
   userPersonas: userPersonasTable,
   userOnboardingStatus: userOnboardingStatusTable,
+  modals: modalsTable,
 };
 
 // Configure connection pooling options
 const connectionOptions = {
   max: process.env.NODE_ENV === 'production' ? 20 : 10, // Increased pool size for production
-  idle_timeout: 30,                                     // Idle connection timeout in seconds
+  // Close idle connections immediately in development to avoid stale sockets
+  idle_timeout: process.env.NODE_ENV === 'production' ? 30 : 0,
   max_lifetime: 60 * 60,                                // Connection lifetime in seconds (1 hour)
   connect_timeout: 30,                                  // Connection timeout in seconds
   ssl: process.env.NODE_ENV === 'production' 

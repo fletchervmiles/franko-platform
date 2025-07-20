@@ -29,6 +29,8 @@ import { NextResponse } from 'next/server';
 import { getChatResponseById } from '@/db/queries/chat-responses-queries';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Handles GET requests to fetch the current progress of an external chat
  * 

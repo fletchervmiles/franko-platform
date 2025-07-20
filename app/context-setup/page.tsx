@@ -20,29 +20,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/queryKeys"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useProfile } from "@/components/contexts/profile-context"
-import dynamic from "next/dynamic"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PersonaManager } from "@/components/persona-manager/persona-manager"
-import { PersonaProvider, usePersonas } from "@/contexts/persona-context"
 import { Progress } from "@/components/ui/progress"
-import { useSetupChecklist } from "@/contexts/setup-checklist-context";
-
-// Dynamically import BrandingContext only on the client side
-const BrandingContext = dynamic(
-  () => import("@/components/branding-context").then(mod => mod.BrandingContext),
-  {
-    ssr: false,
-    loading: () => (
-      <Card className="rounded-[6px] border bg-[#FAFAFA] shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center h-24">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-)
+import ProcessingSteps from "@/components/onboarding/processing-steps"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 
 const contextSetupSchema = z.object({
   url: z.string()
@@ -128,13 +120,11 @@ function ContextSetupInnerPage() {
   const { toast } = useToast()
   const [description, setDescription] = useState<string>("")
   const contextContainerRef = useRef<HTMLDivElement>(null)
-  const { profile, isLoading: isLoadingProfile, setHighlightWorkspaceNavItem, isCompanyComplete, setIsCompanyComplete, isBrandingComplete, setIsBrandingComplete, isPersonasComplete, setIsPersonasComplete } = useProfile()
-  const { personas, isLoadingPersonas, refetchPersonas } = usePersonas()
+  const { profile, isLoading: isLoadingProfile, setHighlightWorkspaceNavItem, isCompanyComplete, setIsCompanyComplete, isBrandingComplete, setIsBrandingComplete } = useProfile()
   const [activeTab, setActiveTab] = useState("organization")
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const personasTabTriggered = useRef(false);
-  const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
-  const firstPersonaTabVisit = useRef(true);
+  const [isPlanRegenerating, setIsPlanRegenerating] = useState(false)
+  // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -176,15 +166,11 @@ function ContextSetupInnerPage() {
       })
       setIsCardEditing(false)
 
-      // Invalidate profile first, then refetch personas, then setup status
+      // Invalidate profile first, then setup status
       queryClient.invalidateQueries({ queryKey: queryKeys.profile(user?.id), refetchType: 'active' })
         .then(() => {
-          console.log('Profile invalidated, now refetching personas...');
-          return refetchPersonas(); // Ensure this is awaited or handled if async
-        })
-        .then(() => {
-          console.log('Personas refetched, now refetching setup status...');
-          refetchSetupStatus();
+          console.log('Profile invalidated, now refetching setup status...');
+          // refetchSetupStatus();
         })
         .catch(error => {
           console.error('Error during sequential refetch operations:', error);
@@ -199,6 +185,9 @@ function ContextSetupInnerPage() {
 
       setLoadingProgress(0)
       // refetchSetupStatus(); // Moved into the .then() chain
+
+      // Step 2: regenerate all existing plans
+      regenerateAllPlans()
     },
     onError: (error) => {
       toast({
@@ -229,7 +218,7 @@ function ContextSetupInnerPage() {
         title: "Success!",
         description: "Fields updated successfully.",
       })
-      refetchSetupStatus();
+      // refetchSetupStatus();
     },
     onError: (error) => {
       toast({
@@ -265,12 +254,7 @@ function ContextSetupInnerPage() {
        setIsCompanyComplete(false);
        setIsBrandingComplete(false);
     }
-
-    if (!isLoadingPersonas) {
-      const personasDone = personas.length > 0;
-      setIsPersonasComplete(personasDone);
-    }
-  }, [profile, form, personas, isLoadingPersonas, setIsCompanyComplete, setIsBrandingComplete, setIsPersonasComplete])
+  }, [profile, form, setIsCompanyComplete, setIsBrandingComplete])
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -313,57 +297,9 @@ function ContextSetupInnerPage() {
     return () => clearInterval(interval)
   }, [isPending, submittedValues]) // Depend on isPending and submittedValues
 
-  useEffect(() => {
-    // Check if the personas tab is active and the step isn't complete yet
-    if (activeTab === 'personas' && !setupProgress.personasReviewed && !personasTabTriggered.current) {
-      personasTabTriggered.current = true; // Mark as triggered for this session/load
-      
-      const markPersonaStepViewed = async () => {
-        try {
-          const response = await fetch('/api/onboarding/viewed-step', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ step: 'step3PersonasReviewed' }),
-          });
-
-          if (response.ok) {
-            console.log('Successfully marked personas step as viewed.');
-            refetchSetupStatus(); // Refetch status to update UI
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Failed to mark personas step as viewed:', errorData.error || response.statusText);
-            // Optionally reset the trigger ref if you want it to retry on next tab switch
-            // personasTabTriggered.current = false; 
-          }
-        } catch (error) {
-          console.error('Error calling viewed-step API for personas:', error);
-          // Optionally reset the trigger ref
-          // personasTabTriggered.current = false; 
-        }
-      };
-
-      markPersonaStepViewed();
-    }
-    // Reset trigger if navigating away from the tab and it wasn't completed
-    else if (activeTab !== 'personas' && !setupProgress.personasReviewed) {
-        personasTabTriggered.current = false;
-    }
-
-  }, [activeTab, setupProgress, refetchSetupStatus]);
-
-  // When personas tab becomes active the first time, force refetch to ensure DB commit completed
-  useEffect(() => {
-    if (activeTab === 'personas' && firstPersonaTabVisit.current) {
-      firstPersonaTabVisit.current = false;
-      console.log('Persona tab activated – forcing personas refetch');
-      refetchPersonas();
-    }
-  }, [activeTab, refetchPersonas]);
-
   const onSubmit = async (data: ContextSetupValues) => {
     if (!user?.id) return
+    // Triggered after AlertDialog confirmation
     mutate({
       userId: user.id,
       organisationUrl: data.url,
@@ -433,7 +369,7 @@ function ContextSetupInnerPage() {
     }
     
     // Update checklist status last
-    refetchSetupStatus();
+    // refetchSetupStatus();
   }
 
   const renderStatusDot = (isComplete: boolean) => (
@@ -443,9 +379,33 @@ function ContextSetupInnerPage() {
     )}></span>
   );
 
+  const regenerateAllPlans = async () => {
+    try {
+      setIsPlanRegenerating(true)
+      const resp = await fetch('/api/context/regenerate-plans', { method: 'POST' })
+      const result = await resp.json()
+      if (!resp.ok) {
+        throw new Error(result.error || 'Failed to regenerate plans')
+      }
+      toast({ title: 'Plans refreshed', description: `${result.regenerated} updated, ${result.failed?.length || 0} failed.` })
+      // Invalidate chat instances cache if you have one
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
+    } finally {
+      setIsPlanRegenerating(false)
+    }
+  }
+
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
+        {isPlanRegenerating && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+            <ProcessingSteps
+              steps={[{ name: 'Regenerating agent plans', status: 'processing' }]}
+            />
+          </div>
+        )}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             Context
@@ -463,24 +423,6 @@ function ContextSetupInnerPage() {
                  {!isLoadingProfile && renderStatusDot(isCompanyComplete)}
                </span>
              </TabsTrigger>
-             <TabsTrigger
-               value="branding"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-                <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                  Branding
-                  {!isLoadingProfile && renderStatusDot(isBrandingComplete)}
-                </span>
-             </TabsTrigger>
-             <TabsTrigger
-               value="personas"
-               className="group relative rounded-none border-b-2 border-transparent px-4 h-12 data-[state=active]:border-black data-[state=active]:shadow-none transition-colors duration-200 ease-in-out"
-             >
-               <span className="relative z-10 p-2 rounded-lg group-hover:bg-gray-100 flex items-center">
-                 Personas
-                 {!isLoadingPersonas && renderStatusDot(isPersonasComplete)}
-               </span>
-             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="organization">
@@ -491,31 +433,53 @@ function ContextSetupInnerPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h2 className="text-base font-semibold flex items-center gap-2 mb-1">
-                          <Tag className="h-4 w-4 text-blue-500" /> Company Details
+                          <div className="w-6 h-6 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                            <Tag className="h-4 w-4 text-[#1C1617]" />
+                          </div>
+                          Company Details
                         </h2>
                         <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {!isCardEditing && profile?.organisationDescription && (
-                           <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => onSubmit(form.getValues())}
-                              disabled={isPending || isSavingCardEdits}
-                              className="h-8 text-xs px-4 flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-                            >
-                              {isPending ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Regenerating...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="h-3 w-3" />
-                                  Regenerate Context
-                                </>
-                              )}
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={isPending || isSavingCardEdits}
+                                className="h-8 text-xs px-4 flex items-center gap-1 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
+                              >
+                                {isPending ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span>Regenerating...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="h-3 w-3" />
+                                    Regenerate Context
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Regenerate context &amp; agent plans?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  We'll re-crawl your website to update the company description and rebuild all existing agent scripts. No data is lost and share links keep working. This may take up to a minute.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onSubmit(form.getValues())}
+                                >
+                                  Continue
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                         {!isCardEditing && (
                           <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
@@ -540,7 +504,7 @@ function ContextSetupInnerPage() {
                            Creating context for your agents...
                          </p>
                          <p className="text-sm text-gray-500 px-4">
-                           Fetching pages → extracting information → creating a structured document → generating your personas.
+                           Fetching pages → extracting information → creating a structured document.
                            <br />
                            This usually takes under a minute.
                          </p>
@@ -548,7 +512,7 @@ function ContextSetupInnerPage() {
                        <div className="w-full max-w-md px-4 pt-2">
                           <Progress
                              value={loadingProgress}
-                             className="h-3 bg-blue-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-indigo-600"
+                             className="h-3 bg-gray-100 [&>div]:bg-[#E4F222]"
                           />
                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
                            <span>Progress:</span>
@@ -571,7 +535,10 @@ function ContextSetupInnerPage() {
                             render={({ field }) => (
                               <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                                 <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Link className="h-4 w-4 text-blue-500" /> Website URL
+                                  <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                                    <Link className="h-3 w-3 text-[#1C1617]" />
+                                  </div>
+                                  Website URL
                                   <TooltipProvider delayDuration={0}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -614,7 +581,10 @@ function ContextSetupInnerPage() {
                             render={({ field }) => (
                               <FormItem className="bg-white rounded-lg border transition-all duration-200 hover:border-gray-300 p-4">
                                 <FormLabel className="text-sm font-semibold flex items-center gap-2">
-                                  <Building className="h-4 w-4 text-blue-500" /> Company or Product Name
+                                  <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center">
+                                    <Building className="h-3 w-3 text-[#1C1617]" />
+                                  </div>
+                                  Company or Product Name
                                   <TooltipProvider delayDuration={0}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -670,7 +640,7 @@ function ContextSetupInnerPage() {
                                   size="sm"
                                  onClick={handleSaveCardEdits}
                                  disabled={isSavingCardEdits}
-                                 className="h-8 text-xs px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                                 className="h-8 text-xs px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
                               >
                                    {isSavingCardEdits ? (
                                   <>
@@ -690,7 +660,7 @@ function ContextSetupInnerPage() {
                               size="sm"
                               disabled={isPending || isSavingCardEdits}
                               className={cn(
-                                "h-9 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white",
+                                "h-9 px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black",
                                 shouldPulse && "animate-pulse-edge",
                               )}
                             >
@@ -737,23 +707,6 @@ function ContextSetupInnerPage() {
               )}
             </div>
           </TabsContent>
-
-          <TabsContent value="branding">
-             {!isLoadingProfile && profile && user?.id ? (
-                <BrandingContext
-                  userId={user.id}
-                  initialLogoUrl={profile.logoUrl}
-                  initialButtonColor={profile.buttonColor}
-                  initialTitleColor={profile.titleColor}
-                />
-              ) : (
-                <LoadingPlaceholder />
-              )}
-          </TabsContent>
-
-          <TabsContent value="personas">
-            <PersonaManager />
-          </TabsContent>
         </Tabs>
       </div>
     </NavSidebar>
@@ -761,9 +714,5 @@ function ContextSetupInnerPage() {
 }
 
 export default function ContextSetupPage() {
-  return (
-    <PersonaProvider>
-      <ContextSetupInnerPage />
-    </PersonaProvider>
-  );
+  return <ContextSetupInnerPage />
 }

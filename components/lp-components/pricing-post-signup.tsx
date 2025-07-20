@@ -114,7 +114,7 @@ export default function Pricing() {
           <Card className="w-full p-6 bg-black text-white grid-background03-dark">
             <CardHeader className="space-y-4">
               <div className="flex items-center gap-2">
-                <Badge variant="default" className="bg-blue-400">Pro</Badge>
+                <Badge variant="default" className="bg-blue-400">Growth</Badge>
                 <Badge variant="destructive" className="bg-red-400">2024 Pricing Only</Badge>
               </div>
               

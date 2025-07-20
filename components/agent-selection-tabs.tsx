@@ -59,9 +59,6 @@ export default function AgentSelectionTabs({
       recommended: true,
       duration: "5-10 minutes",
       analysis: "PMF Dashboard, Persona Dashboard, Chat with Data",
-      iconColor: "text-blue-500",
-      durationIconColor: "text-amber-500",
-      analysisIconColor: "text-blue-500",
     },
     {
       id: "churn",
@@ -71,9 +68,6 @@ export default function AgentSelectionTabs({
       recommended: false,
       duration: ">5 minutes",
       analysis: "Churn Analysis",
-      iconColor: "text-blue-500",
-      durationIconColor: "text-amber-500",
-      analysisIconColor: "text-blue-500",
     },
     {
       id: "onboard",
@@ -83,9 +77,6 @@ export default function AgentSelectionTabs({
       recommended: false,
       duration: ">5 minutes",
       analysis: "Acquisition Insights",
-      iconColor: "text-blue-500",
-      durationIconColor: "text-amber-500",
-      analysisIconColor: "text-blue-500",
     },
     {
       id: "custom",
@@ -95,9 +86,6 @@ export default function AgentSelectionTabs({
       recommended: false,
       duration: "Custom",
       analysis: "Custom analysis",
-      iconColor: "text-blue-500",
-      durationIconColor: "text-amber-500",
-      analysisIconColor: "text-blue-500",
     },
   ]
 
@@ -123,13 +111,15 @@ export default function AgentSelectionTabs({
             )}
           >
             {selectedAgent === agent.id && (
-              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" />
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-4 h-4 rounded-full bg-[#E4F222] flex items-center justify-center">
+                <Check className="w-3 h-3 text-[#1C1617]" />
               </div>
             )}
 
             <div className="flex items-center">
-              <agent.icon className={`w-4 h-4 mr-1.5 ${agent.iconColor} flex-shrink-0`} />
+              <div className="w-5 h-5 rounded-full bg-[#F5FF78] flex items-center justify-center mr-1.5">
+                <agent.icon className="h-3 w-3 text-[#1C1617] flex-shrink-0" />
+              </div>
               <span className="font-medium text-sm truncate">{agent.title}</span>
             </div>
           </button>
@@ -348,7 +338,7 @@ export default function AgentSelectionTabs({
             <Button
               onClick={handleGenerateAgent}
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-5 py-2"
+              className="bg-[#E4F222] hover:bg-[#F5FF78] text-black px-5 py-2"
             >
               {isSubmitting ? "Generating Agent..." : "Generate Agent"}
             </Button>

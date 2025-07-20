@@ -1,59 +1,27 @@
-import dynamic from "next/dynamic"
-import { Suspense } from "react"
-import { auth } from "@clerk/nextjs/server"
-import { redirect } from "next/navigation"
-import { LoadingScreen } from "@/components/loading-screen"
+"use client";
 
-// Dynamically import the NavSidebar component
-const NavSidebar = dynamic(
-  () => import("@/components/nav-sidebar").then(mod => ({ default: mod.NavSidebar })),
-  {
-    loading: () => <LoadingScreen message="Loading navigation..." />,
-    ssr: true
+import { Suspense } from "react";
+import { NavSidebar } from "@/components/nav-sidebar";
+import { SettingsProvider } from "@/lib/settings-context";
+import dynamic from "next/dynamic";
+
+// Dynamically import ModalManager with no SSR to avoid the useSearchParams issue
+const ModalManager = dynamic(
+  () => import("@/components/multi-agent/modal-manager"),
+  { 
+    ssr: false,
+    loading: () => <div className="min-h-[400px]" />
   }
-)
+);
 
-// Dynamically import the WorkspaceList component
-const WorkspaceList = dynamic(
-  () => import("@/components/workspace-list").then(mod => ({ default: mod.WorkspaceList })),
-  {
-    loading: () => (
-      <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading workspace data...</p>
-        </div>
-      </div>
-    ),
-    ssr: false
-  }
-)
-
-export default async function WorkspacePage() {
-  const { userId } = await auth()
-
-  if (!userId) {
-    redirect("/sign-in")
-  }
-
+export default function WorkspacePage() {
   return (
-    <Suspense fallback={<LoadingScreen message="Loading workspace..." />}>
-      <NavSidebar>
-        <div className="h-full">
-          <Suspense 
-            fallback={
-              <div className="w-full p-4 md:p-8 lg:p-12 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading workspace data...</p>
-                </div>
-              </div>
-            }
-          >
-            <WorkspaceList />
-          </Suspense>
+    <NavSidebar>
+      <SettingsProvider>
+        <div className="w-full p-4 md:p-8 lg:p-12">
+          <ModalManager />
         </div>
-      </NavSidebar>
-    </Suspense>
-  )
+      </SettingsProvider>
+    </NavSidebar>
+  );
 }

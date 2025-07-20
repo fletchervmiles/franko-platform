@@ -1,14 +1,7 @@
 "use client";
 
-import { SignUp } from "@clerk/nextjs";
+import SignupHero from "@/components/onboarding/signup-hero"
 
-export default function Page() {
-  return (
-    <SignUp
-      signInUrl="/sign-in"
-      redirectUrl="/context-setup"
-      path="/sign-up"
-      routing="path"
-    />
-  );
+export default function SignUpPage() {
+  return <SignupHero />
 }

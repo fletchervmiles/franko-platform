@@ -8,8 +8,6 @@ import { ClerkProfileSync } from "@/components/utilities/clerk-profile-sync";
 import { geist, geistMono } from './fonts'
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { SetupChecklistProvider } from "@/contexts/setup-checklist-context";
-import { SetupChecklist } from "@/components/setup-checklist";
 import { ProfileProvider } from "@/components/contexts/profile-context";
 import { QueryProvider } from "@/components/utilities/query-provider";
 
@@ -58,22 +56,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           <QueryProvider>
             <ProfileProvider>
-              <SetupChecklistProvider>
-                <Providers
-                  attribute="class"
-                  defaultTheme="light"
-                  enableSystem={false}
-                  disableTransitionOnChange
-                  forcedTheme="light"
-                >
-                  <ClerkProfileSync />
-                  {children}
-                  <Toaster />
-                  <Analytics />
-                  <SpeedInsights />
-                  <SetupChecklist />
-                </Providers>
-              </SetupChecklistProvider>
+              <Providers
+                attribute="class"
+                defaultTheme="light"
+                enableSystem={false}
+                disableTransitionOnChange
+                forcedTheme="light"
+              >
+                <ClerkProfileSync />
+                {children}
+                <Toaster />
+                <Analytics />
+                <SpeedInsights />
+              </Providers>
             </ProfileProvider>
           </QueryProvider>
         </body>

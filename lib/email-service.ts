@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { EmailTemplate } from '@/components/emails/welcome-email'; // Adjusted path assuming components are at root/components
 import { AdminNotification } from '@/components/emails/admin-notification'; // Adjusted path
 import { ResponseNotification } from '@/components/emails/response-received'; // Adjusted path
+import { ResponseSummary } from '@/components/emails/response-summary'; // Enhanced notification template
 import { FeedbackEmail } from '@/components/emails/feedback-email'; // Adjusted path
 
 // Check if RESEND_API_KEY is set
@@ -101,6 +102,50 @@ export async function sendResponseNotification(
     return { success: true, data };
   } catch (error) {
     console.error('Exception sending response notification:', error);
+    return { success: false, error };
+  }
+}
+
+// Function to send enhanced response notification with summary and transcript
+export async function sendEnhancedResponseNotification(
+  to: string,
+  firstName: string,
+  conversationTitle?: string,
+  conversationId?: string,
+  transcript_summary?: string,
+  cleanTranscript?: string,
+  intervieweeFirstName?: string,
+  totalInterviewMinutes?: number,
+  agentType?: string
+) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Franko <notifications@franko.ai>',
+      to: [to],
+      subject: conversationTitle
+        ? `New Response for "${conversationTitle}"`
+        : 'New Response Received',
+      react: ResponseSummary({
+        firstName,
+        conversationTitle,
+        conversationId,
+        transcript_summary,
+        cleanTranscript,
+        intervieweeFirstName,
+        totalInterviewMinutes,
+        agentType,
+      }),
+    });
+
+    if (error) {
+      console.error('Error sending enhanced response notification:', error);
+      return { success: false, error };
+    }
+
+    console.log('Enhanced response notification sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Exception sending enhanced response notification:', error);
     return { success: false, error };
   }
 }

@@ -42,78 +42,78 @@ const sidebarStyles = {
   "--sidebar-width": "16rem",
 } as React.CSSProperties
 
-const navMainData = [
-  {
-    title: "Analysis",
-    items: [
-      {
-        title: "PMF",
-        url: "/pmf",
-        icon: <BarChart className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Personas",
-        url: "/persona-dashboard",
-        icon: <User className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Chat",
-        url: "/response-qa",
-        icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Agents",
-    items: [
-      {
-        title: "Workspace",
-        url: "/workspace  ",
-        icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Context",
-        url: "/context-setup",
-        icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Account",
-    items: [
-      {
-        title: "Upgrade Plan",
-        url: "/upgrade",
-        icon: <CreditCard className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Usage",
-        url: "/usage",
-        icon: <BarChart className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Support",
-        url: "/support",
-        icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Feedback",
-        url: "/feedback",
-        icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Account",
-        url: "/account",
-        icon: <User className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Sign Out",
-        url: "/signout",
-        icon: <LogOut className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-];
+// Function to get navigation data based on user's membership
+const getNavMainData = (membership: string | null) => {
+  const upgradeTitle = membership === "free" || !membership ? "Upgrade Plan" : "Plan";
+  
+  return [
+    {
+      title: "Analysis",
+      items: [
+        {
+          title: "Chat",
+          url: "/response-qa",
+          icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Responses",
+          url: "/responses",
+          icon: <FileText className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Agents",
+      items: [
+        {
+          title: "Workspace",
+          url: "/workspace",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Context",
+          url: "/context-setup",
+          icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Account",
+      items: [
+        {
+          title: upgradeTitle,
+          url: "/upgrade",
+          icon: <CreditCard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Usage",
+          url: "/usage",
+          icon: <BarChart className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Support",
+          url: "/support",
+          icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Feedback",
+          url: "/feedback",
+          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Account",
+          url: "/account",
+          icon: <User className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Sign Out",
+          url: "/signout",
+          icon: <LogOut className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+  ];
+};
 
 // Memoized sidebar menu item component
 const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({ 
@@ -181,8 +181,31 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     if (isWorkspaceItem && highlightWorkspaceNavItem) {
       setHighlightWorkspaceNavItem(false);
     }
-    // Allow default link navigation to proceed
+    // no modal clearing here; ModalManager handles state reset
   };
+
+  // Special handling for Workspace to ensure clean navigation
+  if (isWorkspaceItem) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Link 
+            href="/workspace"
+            className="flex items-center relative"
+            onClick={handleWorkspaceClick}
+          >
+            <span className="text-gray-800">
+              {item.icon}
+            </span>
+            <span className="ml-2 font-medium">{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
 
   // Regular menu items
   return (
@@ -202,14 +225,6 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
             {item.icon}
           </span>
           <span className="ml-2 font-medium">{item.title}</span>
-          
-          {/* Original pulsating dot for Context Setup */}
-          {item.title === "Context" && !isLoading && !contextCompleted && (
-            <span 
-              className="ml-auto h-2 w-2 rounded-full bg-yellow-400 animate-pulse" // Use ml-auto to push to the right
-              aria-hidden="true"
-            />
-          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -271,16 +286,21 @@ const SkeletonSection = React.memo(function SkeletonSectionComponent({
 export const NavSidebar = React.memo(function NavSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
+  const { profile } = useProfile()
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Get dynamic navigation data based on user's membership
+  const navMainData = getNavMainData(profile?.membership || null)
 
   const getPageTitle = useCallback(() => {
     // Early return if pathname is null
     if (pathname === null) return "Workspace"
     
     if (pathname === "/create") return "Create"
+    if (pathname === "/responses") return "Responses"
     for (const section of navMainData) {
       const matchingItem = section.items.find((item) => {
         if (pathname === "/" && item.url === "/") return true
@@ -292,12 +312,15 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
       }
     }
     return "Workspace"
-  }, [pathname])
+  }, [pathname, navMainData])
 
   // Memoize the page title calculation
   const pageTitle = useMemo(() => getPageTitle(), [getPageTitle])
 
   if (!isMounted) {
+    // Use default navigation structure for loading state
+    const defaultNavData = getNavMainData(null);
+    
     return (
       <div className="flex h-screen overflow-hidden">
         <div className="w-64 bg-[#FAFAFA] border-r border-gray-200">
@@ -305,7 +328,7 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
             <div className="h-6 w-6 bg-gray-200 rounded animate-pulse" />
           </div>
           <div className="p-3 space-y-4">
-            {navMainData.map((section, index) => (
+            {defaultNavData.map((section, index) => (
               <SkeletonSection key={section.title} section={section} index={index} />
             ))}
           </div>
@@ -345,7 +368,7 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
                   <SidebarMenuItem>
                     <div className="flex items-center px-3 py-2">
                       <img
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/favicon-96x96-EfO2cfAnyLgYAtFmWJqcJSvnpZlMgh.png"
+                        src="/favicon/icon1.png"
                         alt="Franko logo"
                         className="h-6 w-6"
                       />

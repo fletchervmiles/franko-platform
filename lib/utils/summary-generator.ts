@@ -1,7 +1,7 @@
 /**
  * Summary Generator Utility
  * 
- * Generates a summary of a conversation using the AI SDK with Gemini Pro or Gemini Flash model.
+ * Generates a structured JSON summary of a conversation using the AI SDK with Gemini Pro or Gemini Flash model.
  * Skips generation if the completion rate is 0%.
  */
 
@@ -15,19 +15,17 @@ import {
 } from "@/ai_folder";
 
 /**
- * Generates a summary of a conversation using the AI SDK
+ * Generates a structured JSON summary of a conversation using the AI SDK
  * 
  * @param cleanTranscript - The cleaned transcript of the conversation
  * @param conversationPlan - The conversation plan as a string or object
  * @param completionRate - The completion rate as a number or string
- * @param extractionJson - Optional extraction JSON as a record or null
- * @returns Promise resolving to the generated summary
+ * @returns Promise resolving to the generated JSON summary as a string
  */
 export async function generateSummary(
   cleanTranscript: string,
   conversationPlan: string | Record<string, unknown>,
-  completionRate: number | string,
-  extractionJson?: Record<string, unknown> | null
+  completionRate: number | string
 ): Promise<string> {
   try {
     // Parse the completion rate if it's a string
@@ -60,17 +58,13 @@ export async function generateSummary(
       ? JSON.stringify(conversationPlan, null, 2) 
       : conversationPlan;
     
-    // Convert extraction JSON to string
-    const extractionString = extractionJson ? JSON.stringify(extractionJson, null, 2) : 'None';
-    
     // Read the prompt template
     const promptTemplate = getPromptTemplate();
     
     // Replace placeholders with actual values
     const systemPrompt = promptTemplate
-      .replace('{clean_transcript}', cleanTranscript)
-      .replace('{conversation_plan}', planString)
-      .replace('{extraction_json}', extractionString);
+      .replace('{cleaned_transcript}', cleanTranscript)
+      .replace('{conversation_plan}', planString);
     
     // Add retry logic with primary and fallback models
     const maxRetries = 2;
@@ -159,51 +153,58 @@ export async function generateSummary(
 function getPromptTemplate(): string {
   try {
     // Try to load the prompt template from the file system
-    const promptPath = path.join(process.cwd(), 'agent_prompts', 'transcript_summary.md');
+    const promptPath = path.join(process.cwd(), 'agent_prompts', 'post_chat_json_summary.md');
     
     try {
       return readFileSync(promptPath, 'utf-8');
     } catch (fileError) {
       // If the file doesn't exist or can't be read, return a default prompt
-      logger.warn('Could not read transcript_summary.md, using default prompt', { error: fileError });
+      logger.warn('Could not read post_chat_json_summary.md, using default prompt', { error: fileError });
       
       return `
-# Conversation Transcript Summary
+# High-Signal Story-Arc Summary
 
-## Task
-You will create a concise, informative summary of a conversation transcript between an AI agent and a respondent. The summary should capture key insights and findings from the conversation.
+## ROLE
+You are a senior product-market-fit researcher.
+Return **only** a valid JSON object that conforms to the schema below.
+No explanations, markdown, or extra keys.
 
-## Instructions
-1. Analyze the entire conversation transcript provided
-2. Consider the conversation plan that guided the agent
-3. Identify the main topics, key points, and notable insights
-4. Create a clear, well-structured summary using bullet points
-5. Focus on what was actually discussed, not the planned objectives
-6. Highlight concrete feedback, opinions, and user experiences
-7. Keep the summary concise (maximum 10 bullet points)
-8. Do not include introductions, greetings, or conclusion remarks
-9. Use markdown formatting for better readability
-10. Organize points logically, not necessarily in the order they appeared
+## INPUTS
+1.  \`conversation_plan\` – reveals the interview intent
+2.  \`cleaned_transcript\` – full dialogue (ground truth)
 
-## Format 
-Use the following structure for your summary:
-- Use level 3 headings (###) for main topic areas
-- Use bullet points for specific details under each topic
-- Bold (**text**) important terms or concepts
-- Use italic (_text_) for emphasis when appropriate
-- Keep each bullet point focused on a single idea or finding
+## OUTPUT SCHEMA
+\`\`\`json
+{
+  "execSummary": string,
+  "storyArc": [
+    {
+      "label": string,
+      "insight": string,             // ≤ 25 words
+      "quote": string,
+      "signal": "high"|"medium"|"low"
+    }
+  ],
+  "sentiment": {
+    "value": "positive"|"neutral"|"negative"|null,
+    "snippet": string|null
+  },
+  "featureSignals": [string, ...] | null,
+  "evaluation": {
+    "strength": "high"|"medium"|"low",
+    "comment": string                      // ≤ 30 words
+  }
+}
+\`\`\`
 
-## Conversation Plan
+## conversation_plan
 {conversation_plan}
 
-## High-Signal Extraction JSON
-{extraction_json}
+## Interview Transcript
+{cleaned_transcript}
 
-## Transcript
-{clean_transcript}
-
-## Your Summary
-Write a concise and informative bullet-point summary of this conversation below:
+## YOUR OUTPUT
+Produce the JSON now.
 `;
     }
   } catch (error) {

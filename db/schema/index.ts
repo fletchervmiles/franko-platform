@@ -6,3 +6,4 @@ export * from './response-fields-schema';
 export * from './response-array-items-schema';
 export * from './user-personas-schema';
 export * from './user-onboarding-status-schema';
+export * from './modals-schema';

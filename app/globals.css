@@ -151,6 +151,15 @@ body {
   }
 }
 
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
 /* New diagonal grid pattern - Denser */
 .diagonal-grid-dark {
   background-color: #000000; /* Slightly darker base */
@@ -163,5 +172,30 @@ body {
   );
   /* Adjust size based on new spacing: 8px * sqrt(2) ~= 11.3px. Let's use 12px for cleaner rendering. */
   background-size: 12px 12px; 
+}
+
+/* Light theme variant of diagonal grid – matches light card backgrounds */
+.diagonal-grid-light {
+  background-color: #FAFAFA; /* Same as light card bg */
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.3) 0,
+    rgba(0, 0, 0, 0.3) 1px,
+    transparent 1px,
+    transparent 20px
+  );
+  background-size: 14px 14px;
+}
+
+/* Dark-mode override for the light variant so it still works in dark theme */
+.dark .diagonal-grid-light {
+  background-color: #1f1f22;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 20px
+  );
 }
 

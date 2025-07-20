@@ -27,6 +27,8 @@ import { eq } from "drizzle-orm";
 import { chatResponsesTable } from "@/db/schema/chat-responses-schema";
 import { logger } from "@/lib/logger";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler for retrieving chat responses by chat instance ID
  * 

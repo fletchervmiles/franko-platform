@@ -52,18 +52,32 @@ const isPublicApiRoute = createRouteMatcher([
   "/api/chat-instances/:id",
   "/api/chat/initialize",
   "/api/internal-chat",
-  "/api/webhooks/stripe/webhook"
+  "/api/webhooks/stripe/webhook",
+  "/api/modal-chat/initialize",
+  "/api/embed/:path*",
+  "/api/embed.js"
 ]);
 
 // Public routes don't require authentication
 const isPublicRoute = createRouteMatcher([
   "/external-chat/:path*",
-  "/interview-complete/:path*"
+  "/interview-complete/:path*",
+  "/embed/:path*"  // Add embed routes as public
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   // Explicit bypasses for specific routes
   const url = req.nextUrl.pathname;
+  
+  // Bypass auth for embed routes (will work in production)
+  if (url.startsWith('/embed/') || url === '/embed.js' || url === '/api/embed.js') {
+    // Apply CORS headers for embed routes
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    return response;
+  }
   
   // Bypass auth for external chat pages and their API endpoints
   if (url === '/api/external-chat/finalize') {
@@ -202,10 +216,9 @@ export const config = {
     '/(api|trpc)((?!/external-chat/finalize).*)',
     // Match root
     '/',
-    // Match other pages, excluding static files, _next, and specific explicit bypasses already handled in code if needed
-    // Note: The original complex regex might need adjustment based on what Clerk truly needs to see vs. what can be fully bypassed.
-    // Keeping the original bypasses AND this matcher exclusion is safest.
-     '/((?!.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage|api/external-chat/finalize).*)',
+    // Match other pages, excluding static files, _next, embed.js, and specific explicit bypasses already handled in code if needed
+    // IMPORTANT: Exclude embed.js explicitly
+     '/((?!^/embed\\.js$|.+\\.[\\w]+$|_next|chat/external|api/chat-instances/[^/]+$|api/usage|api/external-chat/finalize).*)',
   ]
 };
 

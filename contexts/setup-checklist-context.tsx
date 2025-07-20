@@ -16,7 +16,6 @@ export type ChecklistStep = {
 export type SetupProgress = {
   contextAdded: boolean
   brandingAdded: boolean
-  personasReviewed: boolean
   agentCreated: boolean
   shareLinkVisited: boolean
 }
@@ -38,15 +37,14 @@ type SetupChecklistContextType = {
 const defaultProgress: SetupProgress = {
   contextAdded: false,
   brandingAdded: false,
-  personasReviewed: false,
   agentCreated: false,
   shareLinkVisited: false,
 }
 
-const dbFieldToProgressKey: Record<keyof Omit<SelectUserOnboardingStatus, 'userId' | 'createdAt' | 'updatedAt'>, keyof SetupProgress> = {
+// Only map the manual onboarding fields to SetupProgress
+const dbFieldToProgressKey: Record<string, keyof SetupProgress> = {
     step1ContextComplete: 'contextAdded',
     step2BrandingComplete: 'brandingAdded',
-    step3PersonasReviewed: 'personasReviewed',
     step4AgentCreated: 'agentCreated',
     step5LinkShared: 'shareLinkVisited'
 };
@@ -74,18 +72,6 @@ const checklistSteps: ChecklistStep[] = [
       "**Steps**",
       "1. Within **Context**, open the **Branding** tab.",
       "2. Upload your logo (SVG or PNG) and choose primary and accent colours.",
-    ],
-  },
-  {
-    key: "personasReviewed",
-    label: "Review Generated Personas",
-    instructions: [
-      "**Why:** Personas descriptions are used to segment user interview response data, revealing differing needs and PMF scores.",
-      "",
-      "**Steps**",
-      "1. Within **Context**, open the **Persona** tab.",
-      "2. Examine the three to five auto‑generated personas.",
-      "3. Edit labels or merge duplicates as needed.",
     ],
   },
   {
@@ -172,7 +158,6 @@ export function SetupChecklistProvider({ children }: { children: ReactNode }) {
     return {
       contextAdded: dbStatus.step1ContextComplete,
       brandingAdded: dbStatus.step2BrandingComplete,
-      personasReviewed: dbStatus.step3PersonasReviewed,
       agentCreated: dbStatus.step4AgentCreated,
       shareLinkVisited: dbStatus.step5LinkShared,
     };

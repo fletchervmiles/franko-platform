@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, boolean, integer, uuid } from "drizzle-orm/pg-core";
 
-export const membershipEnum = pgEnum("membership", ["free", "starter", "pro", "business"]);
+export const membershipEnum = pgEnum("membership", ["free", "starter", "pro", "business", "growth"]);
 
 export const profilesTable = pgTable("profiles", {
   id: uuid("id").defaultRandom().notNull(),
@@ -29,6 +29,11 @@ export const profilesTable = pgTable("profiles", {
   logoUrl: text("logo_url"),
   buttonColor: text("button_color"),
   titleColor: text("title_color"),
+  /**
+   * Secret used by embedding sites to generate HMAC for user identity verification.
+   * Null until the workspace owner opts to use identity verification.
+   */
+  verificationSecret: text("verification_secret"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

@@ -9,7 +9,7 @@ import {
   o3Model, 
   gemini25FlashPreviewModel // Import the new model
 } from "@/ai_folder"; 
-import { google /*, GoogleGenerativeAIProviderOptions */ } from "@ai-sdk/google"; // Import google and the options type
+// import { google /*, GoogleGenerativeAIProviderOptions */ } from "@ai-sdk/google"; // (Disabled: replaced by wrapped model)
 import fs from 'fs';
 import path from 'path';
 import { 
@@ -428,7 +428,7 @@ async function handlePostRequest(request: Request) {
       // --- Generate Final Description using Context Setter --- 
       let description: string | undefined;
       const maxContextSetterRetries = 3;
-      logger.info('Making Context Setter request using inline google("gemini-2.5-flash-preview-04-17")');
+      logger.info('Making Context Setter request using gemini-2.5-flash');
       logger.info('[FLOW CHECK] Starting Context Setter with Exa data and Input Signal');
       try {
          const contextSetterPromptTemplate = loadContextSetterPrompt();
@@ -455,7 +455,7 @@ async function handlePostRequest(request: Request) {
           logger.info(`Context Setter attempt ${attempt}/${maxContextSetterRetries}`); // Log attempt 1
           const { text } = await generateText({
             prompt: filledContextSetterPrompt,
-            model: google('gemini-2.5-flash-preview-04-17'), 
+            model: gemini25FlashPreviewModel, 
             providerOptions: { 
               google: { 
                 thinkingConfig: { thinkingBudget: 200 } 

@@ -22,6 +22,8 @@ import { NextResponse } from "next/server";
 import { getChatResponseUserInfoById } from "@/db/queries/chat-responses-queries";
 import { safeAuth } from "@/lib/utils/safe-auth";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler for retrieving a chat response by ID
  * Returns only essential user information for improved performance

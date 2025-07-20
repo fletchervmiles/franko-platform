@@ -25,6 +25,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.brandfetch.io',
+        port: '',
+        pathname: '/**',
+      },
     ],
     // Add image optimization settings
     formats: ['image/avif', 'image/webp'],
@@ -95,6 +101,49 @@ const nextConfig = {
         source: '/ingest/:path*',
         // Ensure the destination includes the path
         destination: 'https://us.i.posthog.com/:path*',
+      },
+    ]
+  },
+  // Add headers for CORS on embed routes
+  async headers() {
+    return [
+      {
+        source: '/embed.js',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type',
+          },
+        ],
+      },
+      {
+        source: '/embed/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL',
+          },
+        ],
       },
     ]
   },

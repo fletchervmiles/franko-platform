@@ -31,7 +31,7 @@ import { useQuotaAvailability } from "@/hooks/use-quota-availability"
 import TextareaAutosize from 'react-textarea-autosize'
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { useSetupChecklist } from "@/contexts/setup-checklist-context"
+// import { useSetupChecklist } from "@/contexts/setup-checklist-context"
 import AgentSelectionTabs from "@/components/agent-selection-tabs"
 
 // Custom hook to fetch organisation name
@@ -144,7 +144,7 @@ export const CreateConversationForm = React.memo(function CreateConversationForm
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   
   // Conversation templates with icons
-  const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
+  // const { refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   const conversationTemplates = useMemo(() => [
     {
@@ -687,8 +687,6 @@ Agent guidance
         } catch (e) {
           console.error('Error storing plan data in localStorage:', e);
         }
-        
-        refetchSetupStatus();
         
         // Show success message
         toast.success(isRegenerating ? 'Conversation plan regenerated successfully!' : 'Conversation plan generated successfully!');

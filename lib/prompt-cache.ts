@@ -4,6 +4,8 @@
  * This module provides centralized caching for prompts used across the application.
  * It handles loading, populating, and invalidating the prompt cache to improve
  * performance and reduce latency for AI interactions.
+ * 
+ * Enhanced for multi-agent support with agent-specific prompts.
  */
 
 import { LRUCache } from 'lru-cache';
@@ -12,6 +14,16 @@ import path from 'path';
 import { logger } from './logger';
 import { getChatInstanceById } from '@/db/queries/chat-instances-queries';
 import { getProfile } from '@/db/queries/profiles-queries';
+
+// Agent to prompt file mapping
+const AGENT_PROMPT_MAP: Record<string, string> = {
+  'AGENT01': 'use-case-agents/01discovery_agent_prompt.md',
+  'AGENT02': 'use-case-agents/02persona_problem_agent_prompt.md', 
+  'AGENT03': 'use-case-agents/03upgrade_decision_agent_prompt.md',
+  'AGENT04': 'use-case-agents/04key_benefit_agent_prompt.md',
+  'AGENT05': 'use-case-agents/05improvement_agent_prompt.md',
+  'AGENT06': 'use-case-agents/06new_feature_agent_prompt.md'
+};
 
 // We need to use a more persistent cache that won't be recreated on module reloads
 // This uses the global object which persists across module reloads
@@ -50,7 +62,36 @@ function loadPrompt(filename: string): string {
 }
 
 /**
- * Populates and caches a prompt for a specific chat instance.
+ * Get the appropriate prompt file for an agent type
+ */
+function getPromptFileForAgent(agentType: string): string {
+  const promptFile = AGENT_PROMPT_MAP[agentType];
+  if (!promptFile) {
+    // Fallback to main agent for unknown agent types
+    logger.warn(`Unknown agent type: ${agentType}, falling back to main_agent.md`);
+    return 'main_agent.md';
+  }
+  return promptFile;
+}
+
+/**
+ * Create cache key for agent-specific prompts
+ */
+function createAgentCacheKey(chatInstanceId: string, agentType: string, organizationName: string): string {
+  const orgPrefix = organizationName.substring(0, 20);
+  return `${chatInstanceId}:${agentType}:${orgPrefix}`;
+}
+
+/**
+ * Create external cache key for agent-specific prompts
+ */
+function createExternalAgentCacheKey(agentType: string, organizationName: string): string {
+  const orgPrefix = organizationName.substring(0, 20);
+  return `external:${agentType}:${orgPrefix}`;
+}
+
+/**
+ * Populates and caches a prompt for a specific chat instance with agent-specific prompt support.
  * This is the main function that should be used to get prompts.
  */
 export async function populatePromptCache(chatInstanceId: string): Promise<string> {
@@ -74,28 +115,42 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     const organizationContext = profile.organisationDescription || '';
     const conversationPlan = chatInstance.conversationPlan || {};
     const organisationDescriptionDemoOnly = profile.organisationDescriptionDemoOnly || '';
+    // Determine whether to use agent-specific prompts or legacy main agent
+    const agentType = chatInstance.agentType; // Keep null for existing chat instances
+    const isModalAgent = chatInstance.isModalAgent === true;
+    const useAgentSpecificPrompt = typeof agentType === 'string' && isModalAgent;
+
+    // Create cache keys
+    const cacheKey = useAgentSpecificPrompt 
+      ? createAgentCacheKey(chatInstanceId, agentType, organizationName)
+      : `${chatInstanceId}:${organizationName.substring(0, 20)}`;
     
-    // We need a standardized way to create cache keys to ensure consistency
-    // Create two keys - one for the regular cache, one for the external request format
-    const cacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
-    const externalCacheKey = `external:${organizationName.substring(0, 20)}`;
+    const externalCacheKey = useAgentSpecificPrompt 
+      ? createExternalAgentCacheKey(agentType, organizationName)
+      : `external:${organizationName.substring(0, 20)}`;
     
-    console.log(`POPULATE: Using primary cache key: "${cacheKey}"`);
+    console.log(`POPULATE: Using cache key: "${cacheKey}"`);
     console.log(`POPULATE: Using external cache key: "${externalCacheKey}"`);
+    console.log(`POPULATE: Agent-specific mode: ${useAgentSpecificPrompt}, agentType: ${agentType}`);
     
     // Check both possible keys
     const cachedPrompt = promptCache.get(cacheKey) || promptCache.get(externalCacheKey);
     
     if (cachedPrompt) {
-      console.log(`POPULATE: Cache hit for key "${cacheKey}"`);
-      logger.debug('Using cached prompt for organization:', { organizationName });
+      console.log(`POPULATE: Cache hit with key "${cacheKey}"`);
+      logger.debug('Using cached prompt:', { agentType, organizationName, useAgentSpecificPrompt });
       return cachedPrompt;
     }
 
-    console.log(`POPULATE: Cache miss for key "${cacheKey}"`);
-    logger.debug('Cache miss, loading prompt for organization:', { organizationName });
+    console.log(`POPULATE: Cache miss with key "${cacheKey}"`);
+    logger.debug('Cache miss, loading prompt:', { agentType, organizationName, useAgentSpecificPrompt });
     
-    const promptTemplate = loadPrompt('main_agent.md');
+    // Load appropriate prompt file
+    const promptFile = useAgentSpecificPrompt && agentType 
+      ? getPromptFileForAgent(agentType)
+      : 'main_agent.md';
+    
+    const promptTemplate = loadPrompt(promptFile);
 
     // Simplify conversation plan formatting
     let formattedConversationPlan = "";
@@ -123,12 +178,54 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     // Store with both keys to ensure both lookup methods work
     promptCache.set(cacheKey, populatedPrompt);
     promptCache.set(externalCacheKey, populatedPrompt);
-    console.log(`POPULATE: Added prompt to cache with both keys, cache size: ${promptCache.size}`);
+    console.log(`POPULATE: Added prompt to cache with both keys (${useAgentSpecificPrompt ? 'agent-specific' : 'legacy'}), cache size: ${promptCache.size}`);
     
     return populatedPrompt;
   } catch (error) {
     logger.error('Error populating prompt:', error);
     throw error;
+  }
+}
+
+/**
+ * Background prompt pre-warming for agent-specific prompts
+ * This function is called asynchronously to prepare prompts for faster initialization
+ */
+export async function warmAgentPrompt(chatInstanceId: string, agentType: string): Promise<void> {
+  try {
+    console.log(`WARM: Starting background prompt warming for chat instance: ${chatInstanceId}, agent: ${agentType}`);
+    
+    // Get chat instance and organization details
+    const chatInstance = await getChatInstanceById(chatInstanceId);
+    if (!chatInstance) {
+      console.log(`WARM ERROR: Chat instance not found: ${chatInstanceId}`);
+      return;
+    }
+    
+    const profile = await getProfile(chatInstance.userId);
+    if (!profile) {
+      console.log(`WARM ERROR: Profile not found for user: ${chatInstance.userId}`);
+      return;
+    }
+    
+    const organizationName = profile.organisationName || '';
+    const cacheKey = createAgentCacheKey(chatInstanceId, agentType, organizationName);
+    
+    // Check if already cached
+    if (promptCache.has(cacheKey)) {
+      console.log(`WARM: Prompt already cached for agent ${agentType}, skipping`);
+      return;
+    }
+
+    // Pre-warm by calling the main populate function
+    await populatePromptCache(chatInstanceId);
+    
+    console.log(`WARM: Successfully pre-warmed prompt for agent ${agentType}`);
+    logger.info('Background prompt pre-warming completed:', { chatInstanceId, agentType });
+    
+  } catch (error) {
+    logger.error('Error during background prompt warming:', error);
+    // Don't throw - this is a background operation
   }
 }
 
@@ -199,32 +296,56 @@ export function invalidateAllPromptCaches() {
 }
 
 /**
- * Checks if a prompt is cached for the given chat instance ID
+ * Checks if a prompt is cached for the given chat instance ID (with agent support)
  */
-export function isPromptCached(chatInstanceId: string, organizationName: string): boolean {
-  const cacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
-  const externalCacheKey = `external:${organizationName.substring(0, 20)}`;
-  return promptCache.has(cacheKey) || promptCache.has(externalCacheKey);
+export function isPromptCached(chatInstanceId: string, organizationName: string, agentType: string = 'AGENT01'): boolean {
+  const cacheKey = createAgentCacheKey(chatInstanceId, agentType, organizationName);
+  const externalCacheKey = createExternalAgentCacheKey(agentType, organizationName);
+  
+  // Also check legacy keys for backward compatibility
+  const legacyCacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
+  const legacyExternalCacheKey = `external:${organizationName.substring(0, 20)}`;
+  
+  return promptCache.has(cacheKey) || 
+         promptCache.has(externalCacheKey) ||
+         promptCache.has(legacyCacheKey) ||
+         promptCache.has(legacyExternalCacheKey);
 }
 
 /**
- * Returns the cached prompt directly if available
+ * Returns the cached prompt directly if available (with agent support)
  */
-export function getCachedPrompt(chatInstanceId: string, organizationName: string): string | undefined {
-  // First check the direct combination key
-  const cacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
+export function getCachedPrompt(chatInstanceId: string, organizationName: string, agentType: string = 'AGENT01'): string | undefined {
+  // First check agent-specific keys
+  const cacheKey = createAgentCacheKey(chatInstanceId, agentType, organizationName);
   const directResult = promptCache.get(cacheKey);
   if (directResult) {
-    console.log(`CACHE HIT for key "${cacheKey}"`);
+    console.log(`CACHE HIT for agent-specific key "${cacheKey}"`);
     return directResult;
   }
   
-  // Check external format key
-  const externalCacheKey = `external:${organizationName.substring(0, 20)}`;
+  // Check external agent-specific key
+  const externalCacheKey = createExternalAgentCacheKey(agentType, organizationName);
   const externalResult = promptCache.get(externalCacheKey);
   if (externalResult) {
-    console.log(`CACHE HIT for key "${externalCacheKey}"`);
+    console.log(`CACHE HIT for external agent-specific key "${externalCacheKey}"`);
     return externalResult;
+  }
+  
+  // Fallback to legacy keys for backward compatibility
+  const legacyCacheKey = `${chatInstanceId}:${organizationName.substring(0, 20)}`;
+  const legacyDirectResult = promptCache.get(legacyCacheKey);
+  if (legacyDirectResult) {
+    console.log(`CACHE HIT for legacy key "${legacyCacheKey}"`);
+    return legacyDirectResult;
+  }
+  
+  // Check legacy external format key
+  const legacyExternalCacheKey = `external:${organizationName.substring(0, 20)}`;
+  const legacyExternalResult = promptCache.get(legacyExternalCacheKey);
+  if (legacyExternalResult) {
+    console.log(`CACHE HIT for legacy external key "${legacyExternalCacheKey}"`);
+    return legacyExternalResult;
   }
   
   // Special case - for external chat, try with "default" org name
@@ -253,6 +374,6 @@ export function getCachedPrompt(chatInstanceId: string, organizationName: string
     }
   }
   
-  console.log(`CACHE MISS: checked all possible keys for "${chatInstanceId}" and "${organizationName}"`);
+  console.log(`CACHE MISS: checked all possible keys for "${chatInstanceId}", "${organizationName}", and agent "${agentType}"`);
   return undefined;
 }
