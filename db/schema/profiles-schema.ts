@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, boolean, integer, uuid } from "drizzle-orm/pg-core";
 
-export const membershipEnum = pgEnum("membership", ["free", "starter", "pro", "business"]);
+export const membershipEnum = pgEnum("membership", ["free", "starter", "pro", "business", "growth"]);
 
 export const profilesTable = pgTable("profiles", {
   id: uuid("id").defaultRandom().notNull(),

@@ -11,6 +11,12 @@ import { useRouter } from "next/navigation"
 
 const pricingTiers = [
   {
+    level: 10,
+    price: 0,
+    conversations: "10 AI conversations/mo",
+    name: "Free",
+  },
+  {
     level: 100,
     price: 49,
     conversations: "100 AI conversations/mo",
@@ -68,10 +74,16 @@ export default function LandingPricing() {
                     Starts at...
                   </p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold">
-                      ${currentTier.price}
-                    </span>
-                    <span className="text-gray-400">/ mo</span>
+                    {currentTier.price === 0 ? (
+                      <span className="text-5xl font-bold">Free</span>
+                    ) : (
+                      <>
+                        <span className="text-5xl font-bold">
+                          ${currentTier.price}
+                        </span>
+                        <span className="text-gray-400">/ mo</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 {/* Slider */}
@@ -150,9 +162,11 @@ export default function LandingPricing() {
                   onClick={handleSignUp}
                   className="w-full bg-[#E4F222] hover:bg-[#F5FF78] text-[#0C0A08] py-3 rounded-lg text-base font-medium"
                 >
-                  Get started for free
+                  {currentTier.price === 0 ? "Get started for free" : `Choose ${currentTier.name}`}
                 </Button>
-                <p className="text-center text-xs text-gray-500">No CC required</p>
+                <p className="text-center text-xs text-gray-500">
+                  {currentTier.price === 0 ? "No CC required" : "Start with free plan, upgrade anytime"}
+                </p>
               </div>
             </div>
           </div>

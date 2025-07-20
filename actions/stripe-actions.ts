@@ -11,7 +11,7 @@ const customerCreationLocks = new Map<string, Promise<string>>();
 
 export async function createCheckoutSession(
   userId: string, 
-  plan: "starter" | "pro" | "business",
+  plan: "starter" | "growth" | "business",
   customerEmail: string
 ) {
   try {
@@ -123,8 +123,8 @@ export async function createCheckoutSession(
 
     // Get the correct price ID for current plans
     let priceId;
-    if (plan === "pro") {
-      priceId = process.env.PRO_PRICE_ID;
+    if (plan === "growth") {
+      priceId = process.env.GROWTH_PRICE_ID;
     } else if (plan === "business") {
       priceId = process.env.BUSINESS_PRICE_ID;
     } else {
@@ -139,9 +139,9 @@ export async function createCheckoutSession(
     }
 
     // Map the UI plan names to our internal plan types
-    let internalPlan: "starter_2024" | "pro_2024" | "business_2024";
-    if (plan === "pro") {
-      internalPlan = "pro_2024";
+    let internalPlan: "starter_2024" | "growth_2024" | "business_2024";
+    if (plan === "growth") {
+      internalPlan = "growth_2024";
     } else if (plan === "business") {
       internalPlan = "business_2024";
     } else {
@@ -199,12 +199,12 @@ export async function updateProfileWithSubscription(
   userId: string,
   subscriptionId: string,
   customerId: string,
-  plan: "starter" | "pro" | "business"
+  plan: "starter" | "growth" | "business"
 ) {
   try {
-    let internalPlan: "starter_2024" | "pro_2024" | "business_2024";
-    if (plan === "pro") {
-      internalPlan = "pro_2024";
+    let internalPlan: "starter_2024" | "growth_2024" | "business_2024";
+    if (plan === "growth") {
+      internalPlan = "growth_2024";
     } else if (plan === "business") {
       internalPlan = "business_2024";
     } else {

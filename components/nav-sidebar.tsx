@@ -42,73 +42,78 @@ const sidebarStyles = {
   "--sidebar-width": "16rem",
 } as React.CSSProperties
 
-const navMainData = [
-  {
-    title: "Analysis",
-    items: [
-      {
-        title: "Chat",
-        url: "/response-qa",
-        icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Responses",
-        url: "/responses",
-        icon: <FileText className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Agents",
-    items: [
-      {
-        title: "Workspace",
-        url: "/workspace",
-        icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Context",
-        url: "/context-setup",
-        icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Account",
-    items: [
-      {
-        title: "Upgrade Plan",
-        url: "/upgrade",
-        icon: <CreditCard className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Usage",
-        url: "/usage",
-        icon: <BarChart className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Support",
-        url: "/support",
-        icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Feedback",
-        url: "/feedback",
-        icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Account",
-        url: "/account",
-        icon: <User className="mr-0.5 h-4 w-4" />,
-      },
-      {
-        title: "Sign Out",
-        url: "/signout",
-        icon: <LogOut className="mr-0.5 h-4 w-4" />,
-      },
-    ],
-  },
-];
+// Function to get navigation data based on user's membership
+const getNavMainData = (membership: string | null) => {
+  const upgradeTitle = membership === "free" || !membership ? "Upgrade Plan" : "Plan";
+  
+  return [
+    {
+      title: "Analysis",
+      items: [
+        {
+          title: "Chat",
+          url: "/response-qa",
+          icon: <MessageSquare className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Responses",
+          url: "/responses",
+          icon: <FileText className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Agents",
+      items: [
+        {
+          title: "Workspace",
+          url: "/workspace",
+          icon: <LayoutDashboard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Context",
+          url: "/context-setup",
+          icon: <PlusCircle className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      title: "Account",
+      items: [
+        {
+          title: upgradeTitle,
+          url: "/upgrade",
+          icon: <CreditCard className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Usage",
+          url: "/usage",
+          icon: <BarChart className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Support",
+          url: "/support",
+          icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Feedback",
+          url: "/feedback",
+          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Account",
+          url: "/account",
+          icon: <User className="mr-0.5 h-4 w-4" />,
+        },
+        {
+          title: "Sign Out",
+          url: "/signout",
+          icon: <LogOut className="mr-0.5 h-4 w-4" />,
+        },
+      ],
+    },
+  ];
+};
 
 // Memoized sidebar menu item component
 const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({ 
@@ -281,10 +286,14 @@ const SkeletonSection = React.memo(function SkeletonSectionComponent({
 export const NavSidebar = React.memo(function NavSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
+  const { profile } = useProfile()
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Get dynamic navigation data based on user's membership
+  const navMainData = getNavMainData(profile?.membership || null)
 
   const getPageTitle = useCallback(() => {
     // Early return if pathname is null
@@ -303,12 +312,15 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
       }
     }
     return "Workspace"
-  }, [pathname])
+  }, [pathname, navMainData])
 
   // Memoize the page title calculation
   const pageTitle = useMemo(() => getPageTitle(), [getPageTitle])
 
   if (!isMounted) {
+    // Use default navigation structure for loading state
+    const defaultNavData = getNavMainData(null);
+    
     return (
       <div className="flex h-screen overflow-hidden">
         <div className="w-64 bg-[#FAFAFA] border-r border-gray-200">
@@ -316,7 +328,7 @@ export const NavSidebar = React.memo(function NavSidebar({ children }: { childre
             <div className="h-6 w-6 bg-gray-200 rounded animate-pulse" />
           </div>
           <div className="p-3 space-y-4">
-            {navMainData.map((section, index) => (
+            {defaultNavData.map((section, index) => (
               <SkeletonSection key={section.title} section={section} index={index} />
             ))}
           </div>
