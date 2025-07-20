@@ -2,10 +2,13 @@ import { db } from "../db";
 import { userOnboardingStatusTable, SelectUserOnboardingStatus, InsertUserOnboardingStatus } from "../schema";
 import { eq, and, lt } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { getProfileByUserId, createProfile } from "./profiles-queries";
+import { PLAN_RESPONSES, PLAN_INTERNAL_CHAT_QUERIES, PLAN_CHAT_INSTANCE_GENERATIONS } from "@/lib/stripe";
 
 /**
  * Fetches the onboarding status for a user.
  * If no status exists, it creates a default entry (all steps false).
+ * Ensures a profile exists before creating onboarding status to prevent foreign key violations.
  * @param userId - The ID of the user.
  * @returns The user's onboarding status, or null if an error occurs during creation.
  */
@@ -18,6 +21,29 @@ export async function getOnboardingStatus(userId: string): Promise<SelectUserOnb
     if (!status) {
       logger.info(`No onboarding status found for user ${userId}. Creating default entry.`);
       try {
+        // First, ensure the user has a profile to satisfy foreign key constraint
+        let profile = await getProfileByUserId(userId);
+        if (!profile) {
+          logger.info(`No profile found for user ${userId}. Creating minimal profile.`);
+          try {
+            profile = await createProfile({
+              userId,
+              membership: "free",
+              totalResponsesQuota: PLAN_RESPONSES.free,
+              totalInternalChatQueriesQuota: PLAN_INTERNAL_CHAT_QUERIES.free,
+              totalChatInstanceGenerationsQuota: PLAN_CHAT_INSTANCE_GENERATIONS.free,
+              totalResponsesAvailable: PLAN_RESPONSES.free,
+              totalInternalChatQueriesAvailable: PLAN_INTERNAL_CHAT_QUERIES.free,
+              totalChatInstanceGenerationsAvailable: PLAN_CHAT_INSTANCE_GENERATIONS.free,
+            });
+            logger.info(`Minimal profile created successfully for user ${userId}.`);
+          } catch (profileError) {
+            logger.error(`Error creating profile for user ${userId}:`, profileError);
+            return null;
+          }
+        }
+
+        // Now create the onboarding status
         const defaultStatus: InsertUserOnboardingStatus = {
           userId,
           // Defaults are set in the schema, so we only need userId

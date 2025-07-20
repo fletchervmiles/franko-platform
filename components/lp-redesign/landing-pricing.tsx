@@ -75,7 +75,10 @@ export default function LandingPricing() {
                   </p>
                   <div className="flex items-baseline gap-2">
                     {currentTier.price === 0 ? (
-                      <span className="text-5xl font-bold">$0 / mo</span>
+                      <>
+                        <span className="text-5xl font-bold">$0</span>
+                        <span className="text-gray-400">/ mo</span>
+                      </>
                     ) : (
                       <>
                         <span className="text-5xl font-bold">
