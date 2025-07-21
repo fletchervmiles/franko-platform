@@ -253,7 +253,7 @@ export function WidgetPreview({
   const getProcessedPrompt = (prompt: string) => {
     // Use resolved organization name from initialization first, then fallback chain
     const orgName = resolvedOrgName || 
-      (isEmbedMode && organizationName ? organizationName : null) ||
+      organizationName ||
       contextData?.profile?.organisationName || 
       settings.interface.displayName || 
       "your product";
@@ -346,7 +346,27 @@ export function WidgetPreview({
 
       try {
         // Initialize chat in background
-        const identityData = isEmbedMode ? ((window as any).FrankoUser || {}) : {};
+        let identityData: any = {};
+        
+        if (isEmbedMode && window.parent !== window) {
+          // For external embeds, try to get identity data from parent window
+          try {
+            // First try direct access (works if same origin or CORS allows it)
+            const parentFrankoUser = (window.parent as any)?.FrankoUser;
+            if (parentFrankoUser) {
+              identityData = parentFrankoUser;
+            } else {
+              // If direct access fails, could implement postMessage request here
+              console.log('[Franko] No identity data found in parent window');
+            }
+          } catch (e) {
+            // Cross-origin access denied, identity data will remain empty
+            console.log('[Franko] Could not access parent window identity data (cross-origin)');
+          }
+        } else {
+          // For internal use (same domain) or standalone mode, get identity data directly
+          identityData = (window as any).FrankoUser || {};
+        }
         
         const response = await fetch('/api/modal-chat/initialize', {
           method: 'POST',
@@ -357,7 +377,7 @@ export function WidgetPreview({
             intervieweeFirstName: null,
             intervieweeSecondName: null,
             intervieweeEmail: null,
-            ...(isEmbedMode && identityData.user_id && {
+            ...(identityData.user_id && {
               user_id: identityData.user_id,
               user_hash: identityData.user_hash,
               user_metadata: identityData.user_metadata

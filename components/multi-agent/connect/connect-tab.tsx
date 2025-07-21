@@ -230,7 +230,7 @@ window.FrankoUser = {
         <ShieldCheck className="h-4 w-4 text-gray-600" />
         <Label className="text-sm font-medium">Identity verification (optional)</Label>
       </div>
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-gray-600">
         Link feedback to signed-in users in your dashboard. Add the optional snippet before your embed code to see who's giving feedback. If the snippet is missing, users appear as "Anonymous".
       </p>
       
