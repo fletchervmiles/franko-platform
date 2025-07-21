@@ -128,11 +128,27 @@ export async function sendEnhancedResponseNotification(
   try {
     // build unsubscribe URL
     const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
-    // Build props for new ResponseSummary design
-    let feedbackData: any = { execSummary: '', storyArc: [], evaluation: { strength: '', comment: '' } };
-    try {
-      if (transcript_summary) feedbackData = JSON.parse(transcript_summary);
-    } catch (_) {}
+    // --- Build props for new ResponseSummary design ---
+    const emptyFeedback = { execSummary: '', storyArc: [], evaluation: { strength: '', comment: '' } };
+
+    function cleanAndParseSummary(raw?: string): any {
+      if (!raw) return emptyFeedback;
+      let cleaned = raw.trim();
+      // strip ```json fences
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+      }
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        // fall back to plain execSummary only
+        return { ...emptyFeedback, execSummary: raw };
+      }
+    }
+
+    const feedbackData = cleanAndParseSummary(transcript_summary);
 
     const conversationDetails = {
       firstName,
