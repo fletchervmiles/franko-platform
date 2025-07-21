@@ -3,37 +3,45 @@ import Image from "next/image";
 import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 export default function TryItYourselfSection() {
   const [isModalReady, setIsModalReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Load ONE generic Franko script on mount.
-  // This script's only job is to create the FrankoModal API and the iframe container.
+  // 1. Load ONE generic Franko script on mount and poll for readiness.
   useEffect(() => {
-    // Prevent loading on server
-    if (typeof window === 'undefined') return;
+    // This effect should only run once.
+    if (typeof window === 'undefined' || (window as any).FrankoModal) {
+        setIsModalReady(true);
+        setIsLoading(false);
+        return;
+    }
 
-    // Check if the base script is already on the page
+    // Check if the script is already being loaded to avoid duplicates
     if (document.querySelector('script[data-franko-base]')) {
-      setIsModalReady(true);
-      return;
+        return;
     }
     
     const script = document.createElement('script');
     script.setAttribute('data-franko-base', 'true');
     script.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","slack-1753101441774");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","slack-1753101441774");s.setAttribute("data-mode","manual");document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
     `;
-    script.onload = () => {
-        // Poll until the API is ready
-        const pollForApi = setInterval(() => {
-            if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
-                clearInterval(pollForApi);
-                setIsModalReady(true);
-            }
-        }, 100);
-    };
     document.body.appendChild(script);
+
+    // Start polling immediately and reliably for the API.
+    const pollForApi = setInterval(() => {
+        if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+            clearInterval(pollForApi);
+            setIsModalReady(true);
+            setIsLoading(false);
+        }
+    }, 100);
+    
+    // Safety cleanup
+    return () => clearInterval(pollForApi);
 
   }, []);
 
@@ -75,28 +83,26 @@ export default function TryItYourselfSection() {
 
   const handleLaunchModal = useCallback(async (slug: string) => {
     if (!isModalReady || !(window as any).FrankoModal) {
-      console.warn("FrankoModal is not ready yet.");
+      console.warn("FrankoModal is not ready yet. Please wait a moment and try again.");
       return;
     }
 
     const frankoIframe = document.querySelector('iframe[src*="/embed/"]') as HTMLIFrameElement;
 
     if (!frankoIframe) {
-      console.error("Franko iframe not found on page.");
+      console.error("Franko iframe not found. The base script may have failed to load.");
       return;
     }
 
-    // 2. Change the iframe's src to the correct slug
     const newSrc = `https://franko.ai/embed/${slug}?mode=modal`;
     
-    // 3. Wait for the iframe to load the new content, then open.
     if (frankoIframe.src !== newSrc) {
         frankoIframe.src = newSrc;
+        // The onload event for the iframe is crucial to wait for the new content.
         frankoIframe.onload = () => {
             (window as any).FrankoModal.open();
         };
     } else {
-        // If it's already the correct src, just open it.
         (window as any).FrankoModal.open();
     }
   }, [isModalReady]);
@@ -134,8 +140,8 @@ export default function TryItYourselfSection() {
           {demoCards.map((card) => (
             <div key={card.id} className="flex flex-col items-center group">
               <div
-                className="w-full max-w-sm rounded-2xl p-6 bg-[rgba(244,242,240,1)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] border border-transparent hover:border-[#E4F222] cursor-pointer min-h-[280px] flex flex-col"
-                onClick={() => handleLaunchModal(card.slug)}
+                className="w-full max-w-sm rounded-2xl p-6 bg-[rgba(244,242,240,1)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] border border-transparent hover:border-[#E4F222] min-h-[280px] flex flex-col"
+                // The card itself is not clickable to prevent issues with disabled buttons
               >
                 <p className="uppercase tracking-wide text-[10px] font-semibold text-center mb-2 text-[#0C0A08]/60">Modal configuration</p>
                 <h4 className="text-lg font-semibold text-center mb-4 text-[#0C0A08]">{card.title}</h4>
@@ -169,18 +175,39 @@ export default function TryItYourselfSection() {
                     <Button 
                       variant="secondary" 
                       size="sm" 
-                      className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center"
+                      className={cn(
+                        "mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center",
+                        isLoading && "cursor-not-allowed opacity-50"
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleLaunchModal(card.slug);
+                        if (!isLoading) handleLaunchModal(card.slug);
                       }}
+                      disabled={isLoading}
                     >
-                      <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
+                      {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading Demo...
+                        </>
+                      ) : (
+                        <>
+                            <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
+                        </>
+                      )}
                     </Button>
                   </div>
               </div>
-              <button onClick={() => handleLaunchModal(card.slug)} className="mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
-                Explore live demo <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+              <button 
+                onClick={() => { if (!isLoading) handleLaunchModal(card.slug) }}
+                disabled={isLoading}
+                className={cn(
+                    "mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium",
+                    isLoading && "cursor-not-allowed opacity-50"
+                )}
+              >
+                {isLoading ? 'Loading...' : 'Explore live demo'} 
+                {!isLoading && <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>}
               </button>
             </div>
           ))}
