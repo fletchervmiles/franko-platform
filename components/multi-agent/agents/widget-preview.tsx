@@ -349,19 +349,30 @@ export function WidgetPreview({
         let identityData: any = {};
         
         if (isEmbedMode && window.parent !== window) {
-          // For external embeds, try to get identity data from parent window
+          // For external embeds, request identity data from parent via postMessage
           try {
-            // First try direct access (works if same origin or CORS allows it)
-            const parentFrankoUser = (window.parent as any)?.FrankoUser;
-            if (parentFrankoUser) {
-              identityData = parentFrankoUser;
-            } else {
-              // If direct access fails, could implement postMessage request here
-              console.log('[Franko] No identity data found in parent window');
-            }
+            identityData = await new Promise((resolve) => {
+              const timeout = setTimeout(() => {
+                console.log('[Franko] Identity data request timed out, proceeding without identity');
+                resolve({});
+              }, 1000); // 1 second timeout
+              
+              const handleMessage = (e: MessageEvent) => {
+                if (e.data && e.data.type === 'FRANKO_IDENTITY_RESPONSE') {
+                  clearTimeout(timeout);
+                  window.removeEventListener('message', handleMessage);
+                  resolve(e.data.identityData || {});
+                }
+              };
+              
+              window.addEventListener('message', handleMessage);
+              
+              // Request identity data from parent
+              window.parent.postMessage({ type: 'FRANKO_IDENTITY_REQUEST' }, '*');
+            });
           } catch (e) {
-            // Cross-origin access denied, identity data will remain empty
-            console.log('[Franko] Could not access parent window identity data (cross-origin)');
+            console.log('[Franko] Error requesting identity data:', e);
+            identityData = {};
           }
         } else {
           // For internal use (same domain) or standalone mode, get identity data directly

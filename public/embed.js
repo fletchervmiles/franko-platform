@@ -188,11 +188,19 @@
     }
   });
 
-  // Listen for close messages from iframe (cross-origin communication)
+  // Listen for messages from iframe (cross-origin communication)
   window.addEventListener('message', function (e) {
     // Accept messages from any origin for flexibility, but check the message type
     if (e.data && e.data.type === 'FRANKO_CLOSE') {
       closeModal();
+    } else if (e.data && e.data.type === 'FRANKO_IDENTITY_REQUEST') {
+      // Respond with identity data if available
+      var identityData = window.FrankoUser || {};
+      iframe.contentWindow.postMessage({
+        type: 'FRANKO_IDENTITY_RESPONSE',
+        identityData: identityData
+      }, '*');
+      console.log('[Franko] Sent identity data to iframe:', identityData);
     }
   });
 })(); 
