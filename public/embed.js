@@ -149,15 +149,37 @@
     if (bubbleBtn) bubbleBtn.style.display = 'flex';
   }
 
-  // Expose API for manual mode
-  window.FrankoModal = {
-    open: openModal,
-    close: closeModal,
-    getState: function () {
-      return iframe.style.display === 'block' ? 'open' : 'closed';
-    },
+  // Expose API for manual mode with backward compatibility
+  // Support both FrankoModal('open') and FrankoModal.open() calling patterns
+  function FrankoModalAPI(method) {
+    if (method === 'open') return openModal();
+    if (method === 'close') return closeModal();
+    if (method === 'getState') return iframe.style.display === 'block' ? 'open' : 'closed';
+  }
+  
+  // Add methods as properties for .open() syntax
+  FrankoModalAPI.open = openModal;
+  FrankoModalAPI.close = closeModal;
+  FrankoModalAPI.getState = function() {
+    return iframe.style.display === 'block' ? 'open' : 'closed';
   };
-  console.log('[Franko] FrankoModal API exposed on window object');
+  
+  // Preserve any existing queue from the proxy script
+  if (window.FrankoModal && window.FrankoModal.q) {
+    FrankoModalAPI.q = window.FrankoModal.q;
+    // Process any queued calls
+    if (FrankoModalAPI.q && FrankoModalAPI.q.length > 0) {
+      FrankoModalAPI.q.forEach(function(args) {
+        var method = args[0];
+        if (method === 'open') openModal();
+        else if (method === 'close') closeModal();
+      });
+      FrankoModalAPI.q = []; // Clear the queue
+    }
+  }
+  
+  window.FrankoModal = FrankoModalAPI;
+  console.log('[Franko] FrankoModal API exposed on window object with backward compatibility');
 
   // Listen for Escape key to close modal
   document.addEventListener('keydown', function (e) {
