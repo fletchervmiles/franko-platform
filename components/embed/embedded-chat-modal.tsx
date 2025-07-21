@@ -23,14 +23,15 @@ interface EmbeddedChatModalProps extends WidgetPreviewProps {
 export function EmbeddedChatModal({ displayMode, requirePreChatForm = false, ...rest }: EmbeddedChatModalProps) {
   const [isVisible, setIsVisible] = useState(true)
 
-  // Close handler – hides iframe by calling parent script
+  // Close handler – hides iframe by calling parent script via postMessage
   const handleClose = useCallback(() => {
     // Trigger fade-out animation first
     setIsVisible(false)
-    // After animation complete, call parent close (200ms)
+    // After animation complete, send close message to parent (200ms)
     setTimeout(() => {
-      if (typeof window !== "undefined" && (window.parent as any)?.FrankoModal?.close) {
-        (window.parent as any).FrankoModal.close()
+      if (typeof window !== "undefined" && window.parent !== window) {
+        // Use postMessage for cross-origin communication
+        window.parent.postMessage({ type: 'FRANKO_CLOSE' }, '*')
       }
     }, 200)
   }, [])
@@ -55,10 +56,18 @@ export function EmbeddedChatModal({ displayMode, requirePreChatForm = false, ...
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Handle clicks outside modal content (only for modal mode, not standalone)
+  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
+    if (displayMode === "modal" && e.target === e.currentTarget) {
+      handleClose()
+    }
+  }, [displayMode, handleClose])
+
   return (
     <SharedModalCore>
       <div
         className="fixed inset-0 flex flex-col"
+        onClick={handleBackgroundClick}
         style={{
           touchAction: "manipulation",
           overscrollBehavior: "contain",
@@ -82,9 +91,10 @@ export function EmbeddedChatModal({ displayMode, requirePreChatForm = false, ...
         </div>
 
         {/* Desktop: Fixed-size centered modal */}
-        <div className="hidden md:flex flex-1 items-center justify-center p-4">
+        <div className="hidden md:flex flex-1 items-center justify-center p-4" onClick={handleBackgroundClick}>
           <div 
             className="w-full max-w-[800px] h-[600px] flex flex-col"
+            onClick={(e) => e.stopPropagation()} // Prevent close when clicking inside modal
             style={{
               maxHeight: "calc(100vh - 2rem)", // Ensure it fits in viewport with padding
             }}

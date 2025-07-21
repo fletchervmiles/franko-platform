@@ -187,4 +187,12 @@
       closeModal();
     }
   });
+
+  // Listen for close messages from iframe (cross-origin communication)
+  window.addEventListener('message', function (e) {
+    // Accept messages from any origin for flexibility, but check the message type
+    if (e.data && e.data.type === 'FRANKO_CLOSE') {
+      closeModal();
+    }
+  });
 })(); 
