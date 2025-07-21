@@ -186,7 +186,9 @@ export const ResponseSummary: React.FC<Readonly<DesignProps>> = ({
         }}
       >
         <a
-          href={details.conversationId ? `https://franko.ai/responses` : "#"}
+          href="https://franko.ai/responses"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
             display: "inline-block",
             backgroundColor: "#E4F222",
