@@ -128,6 +128,21 @@ export async function sendEnhancedResponseNotification(
   try {
     // build unsubscribe URL
     const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
+    // Build props for new ResponseSummary design
+    let feedbackData: any = { execSummary: '', storyArc: [], evaluation: { strength: '', comment: '' } };
+    try {
+      if (transcript_summary) feedbackData = JSON.parse(transcript_summary);
+    } catch (_) {}
+
+    const conversationDetails = {
+      firstName,
+      conversationTitle: conversationTitle || 'Conversation',
+      conversationId,
+      intervieweeFirstName: intervieweeFirstName || '',
+      totalInterviewMinutes,
+      agentType,
+    };
+
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
       to: [to],
@@ -135,14 +150,8 @@ export async function sendEnhancedResponseNotification(
         ? `New Response for "${conversationTitle}"`
         : 'New Response Received',
       react: ResponseSummary({
-        firstName,
-        conversationTitle,
-        conversationId,
-        transcript_summary,
-        cleanTranscript,
-        intervieweeFirstName,
-        totalInterviewMinutes,
-        agentType,
+        data: feedbackData,
+        details: conversationDetails,
         unsubscribeUrl,
       }),
       headers: {

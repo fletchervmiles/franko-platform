@@ -86,7 +86,7 @@ export const ResponseSummary: React.FC<Readonly<DesignProps>> = ({
   data,
   details,
   unsubscribeUrl = "https://example.com/unsubscribe",
-}) => (
+}) => (update
   <div style={cardStyle}>
     {/* Header */}
     <div style={headerStyle}>
