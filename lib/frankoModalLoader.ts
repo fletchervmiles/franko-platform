@@ -18,46 +18,47 @@ export async function loadFrankoModal(slug: string): Promise<void> {
       // Remove previously injected demo snippets for this namespace
       document.querySelectorAll(`script[data-franko-demo="${slug}"]`).forEach((s) => s.remove());
 
-      // Inline snippet modified for namespacing
+      // Prepare a global ready callback so the snippet can notify us when fully initialised
+      (window as any)[`__frankoReady_${namespace}`] = () => {
+        resolve();
+      };
+
+      // Inline snippet modified for namespacing with ready callback
       const wrapper = document.createElement('script');
       wrapper.setAttribute('data-franko-demo', slug);
       wrapper.innerHTML = `
       (function(){
         const apiName = '${apiName}';
+        const readyCb = '__frankoReady_${namespace}';
         if(!window[apiName]){
-          window[apiName]=(...a)=>{
-            window[apiName].q=window[apiName].q||[];
-            window[apiName].q.push(a);
-          };
-          window[apiName]=new Proxy(window[apiName],{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)});
+          window[apiName]=(...a)=>{window[apiName].q=window[apiName].q||[];window[apiName].q.push(a)};
+          window[apiName]=new Proxy(window[apiName],{get:(t,p)=>p==='q'?t.q:(...a)=>t(p,...a)});
         }
         const l=()=>{
-          const s=document.createElement("script");
-          s.src="https://franko.ai/embed.js";
-          s.setAttribute("data-modal-slug","${slug}");
-          s.setAttribute("data-mode","manual");
+          const s=document.createElement('script');
+          s.src='https://franko.ai/embed.js';
+          s.setAttribute('data-modal-slug','${slug}');
+          s.setAttribute('data-mode','manual');
           s.onload=()=>{
-            if(window[apiName].q){
-              window[apiName].q.forEach(([m,...a])=>window[apiName][m]&&window[apiName][m](...a));
-              window[apiName].q=[];
-            }
+            if(window[apiName].q){window[apiName].q.forEach(([m,...a])=>window[apiName][m]&&window[apiName][m](...a));window[apiName].q=[];}
+            // Notify loader that we're ready
+            if(typeof window[readyCb]==='function') window[readyCb]();
           };
           document.head.appendChild(s);
         };
-        document.readyState==="complete"?l():addEventListener("load",l);
+        document.readyState==='complete'?l():addEventListener('load',l);
       })();
       `;
       document.body.appendChild(wrapper);
 
-      // Poll until namespaced API is ready
-      const checkReady = () => {
-        if (w[apiName] && typeof w[apiName].open === 'function') {
+      // start a fallback poll in case callback fails
+      const fallback = setInterval(() => {
+        if (w[apiName] && typeof w[apiName].open==='function') {
+          clearInterval(fallback);
           resolve();
-        } else {
-          setTimeout(checkReady, 30);
         }
-      };
-      checkReady();
+      }, 100);
+
     } catch (err) {
       reject(err);
     }
