@@ -13,6 +13,12 @@ export async function loadFrankoModal(slug: string): Promise<void> {
 
   const loadPromise: Promise<void> = new Promise((resolve, reject) => {
     try {
+      // Remove any in-memory FrankoModal API (safe on LP where nav-sidebar not present)
+      delete (window as any).FrankoModal;
+
+      // Remove any existing Franko overlay iframes added by previous modal
+      document.querySelectorAll('iframe[src*="/embed/"]').forEach((f) => f.remove());
+
       // Remove previously injected demo snippets (keeps <nav> snippet untouched)
       document.querySelectorAll('script[data-franko-demo]').forEach((s) => s.remove());
       
