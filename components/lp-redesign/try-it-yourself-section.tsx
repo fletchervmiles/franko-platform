@@ -2,7 +2,7 @@ import Container from "@/components/lp-redesign/container"
 import Image from "next/image"
 import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { loadFrankoModal } from "@/lib/frankoModalLoader"
+import { loadAndOpenFrankoModal } from "@/lib/frankoModalLoader"
 
 export default function TryItYourselfSection() {
   // No upfront Franko scripts – they'll be loaded on demand via loadFrankoModal
@@ -46,16 +46,9 @@ export default function TryItYourselfSection() {
     zapier: "zapier-1753102799092",
   };
 
-  const handleCardClick = async (cardId: string) => {
-    const slug = modalSlugs[cardId];
-    await loadFrankoModal(slug);
-    (window as any).FrankoModal.open(slug);
-  };
-
   const handleLaunchModal = async (cardId: string) => {
     const slug = modalSlugs[cardId];
-    await loadFrankoModal(slug);
-    (window as any).FrankoModal.open(slug);
+    await loadAndOpenFrankoModal(slug);
   };
 
   const getIcon = (iconType: string) => {
@@ -136,7 +129,7 @@ export default function TryItYourselfSection() {
                     </Button>
                   </div>
               </div>
-              <button onClick={() => handleCardClick(card.id)} className="mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
+              <button onClick={() => handleLaunchModal(card.id)} className="mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
                 Explore live demo <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
               </button>
             </div>
