@@ -24,30 +24,55 @@ export async function loadFrankoModal(slug: string): Promise<void> {
       // Remove previously injected demo snippets for this namespace
       document.querySelectorAll(`script[data-franko-demo="${slug}"]`).forEach((s) => s.remove());
 
-      // Inline snippet modified for namespacing
-      const wrapper = document.createElement('script');
-      wrapper.setAttribute('data-franko-demo', slug);
-      wrapper.innerHTML = `
-      (function(){
-        const apiName = '${apiName}';
-        if(!window[apiName]){
-          window[apiName]=(...a)=>{window[apiName].q=window[apiName].q||[];window[apiName].q.push(a)};
-          window[apiName]=new Proxy(window[apiName],{get:(t,p)=>p==='q'?t.q:(...a)=>t(p,...a)});
-        }
-        const l=()=>{
-          const s=document.createElement('script');
-          s.src='https://franko.ai/embed.js';
-          s.setAttribute('data-modal-slug','${slug}');
-          s.setAttribute('data-mode','manual');
-          s.onload=()=>{
-            if(window[apiName].q){window[apiName].q.forEach(([m,...a])=>window[apiName][m]&&window[apiName][m](...a));window[apiName].q=[];}
-          };
-          document.head.appendChild(s);
+      // Store reference to existing global FrankoModal (likely nav-sidebar) to restore later
+      const existingGlobalModal = w.FrankoModal;
+
+      // Temporarily clear global to avoid conflicts during loading
+      if (w.FrankoModal && slug !== 'franko-1753006030406') {
+        delete w.FrankoModal;
+      }
+
+      // Create namespaced proxy
+      if (!w[apiName]) {
+        w[apiName] = (...a) => {
+          w[apiName].q = w[apiName].q || [];
+          w[apiName].q.push(a);
         };
-        document.readyState==='complete'?l():addEventListener('load',l);
-      })();
-      `;
-      document.body.appendChild(wrapper);
+        w[apiName] = new Proxy(w[apiName], {
+          get: (t, p) => p === 'q' ? t.q : (...a) => t(p, ...a)
+        });
+      }
+
+      // Create and inject the embed script
+      const script = document.createElement('script');
+      script.src = 'https://franko.ai/embed.js';
+      script.setAttribute('data-modal-slug', slug);
+      script.setAttribute('data-mode', 'manual');
+      
+      script.onload = () => {
+        // Move the global FrankoModal that was just created to our namespace
+        if (w.FrankoModal && !w[apiName].open) {
+          w[apiName] = w.FrankoModal;
+          
+          // Only delete global if this isn't the nav-sidebar modal
+          if (slug !== 'franko-1753006030406') {
+            delete w.FrankoModal;
+            // Restore the original global modal (nav-sidebar)
+            if (existingGlobalModal && existingGlobalModal.open) {
+              w.FrankoModal = existingGlobalModal;
+            }
+          }
+        }
+
+        // Process any queued calls
+        if (w[apiName].q) {
+          w[apiName].q.forEach(([m, ...a]) => w[apiName][m] && w[apiName][m](...a));
+          w[apiName].q = [];
+        }
+      };
+
+      script.onerror = () => reject(new Error(`Failed to load embed.js for ${slug}`));
+      document.head.appendChild(script);
 
       // Wait for API to be ready with retry logic
       const checkReady = () => {
@@ -66,7 +91,7 @@ export async function loadFrankoModal(slug: string): Promise<void> {
       };
 
       // Start checking after a short delay to allow script to load
-      setTimeout(checkReady, 100);
+      setTimeout(checkReady, 200);
 
       // Safety timeout
       setTimeout(() => reject(new Error(`Modal ${slug} failed to load after 10s`)), 10000);
