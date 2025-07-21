@@ -210,7 +210,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
             userProfile.email,
             userProfile.firstName,
             conversationTitle,
-            chatInstance.id as string,
+            chatInstance.modalId ?? undefined,
             summary || undefined,
             transcript || undefined,
             chatResponse.intervieweeFirstName || undefined,

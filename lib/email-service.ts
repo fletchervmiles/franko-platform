@@ -77,11 +77,11 @@ export async function sendResponseNotification(
   to: string,
   firstName: string,
   conversationTitle?: string,
-  conversationId?: string
+  modalId?: string
 ) {
   try {
     // build unsubscribe URL if chat id provided
-    const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
+    const unsubscribeUrl = modalId ? `https://franko.ai/api/unsubscribe?modalId=${modalId}` : 'https://franko.ai/unsubscribe';
 
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
@@ -92,7 +92,7 @@ export async function sendResponseNotification(
       react: ResponseNotification({
         firstName,
         conversationTitle,
-        conversationId,
+        conversationId: undefined,
         unsubscribeUrl,
       }),
       headers: {
@@ -118,7 +118,7 @@ export async function sendEnhancedResponseNotification(
   to: string,
   firstName: string,
   conversationTitle?: string,
-  conversationId?: string,
+  modalId?: string,
   transcript_summary?: string,
   cleanTranscript?: string,
   intervieweeFirstName?: string,
@@ -127,7 +127,7 @@ export async function sendEnhancedResponseNotification(
 ) {
   try {
     // build unsubscribe URL
-    const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
+    const unsubscribeUrl = modalId ? `https://franko.ai/api/unsubscribe?modalId=${modalId}` : 'https://franko.ai/unsubscribe';
     // --- Build props for new ResponseSummary design ---
     const emptyFeedback = { execSummary: '', storyArc: [], evaluation: { strength: '', comment: '' } };
 
@@ -153,7 +153,7 @@ export async function sendEnhancedResponseNotification(
     const conversationDetails = {
       firstName,
       conversationTitle: conversationTitle || 'Conversation',
-      conversationId,
+      conversationId: undefined,
       intervieweeFirstName: intervieweeFirstName || '',
       totalInterviewMinutes,
       agentType,

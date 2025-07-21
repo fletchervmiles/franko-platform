@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
-import { chatInstancesTable } from "@/db/schema/chat-instances-schema";
+import { modalsTable } from "@/db/schema/modals-schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const chatId = url.searchParams.get("chatId");
-  if (!chatId) {
-    return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
+  const modalId = url.searchParams.get("modalId");
+  if (!modalId) {
+    return NextResponse.json({ error: "Missing modalId" }, { status: 400 });
   }
 
   try {
     await db
-      .update(chatInstancesTable)
+      .update(modalsTable)
       .set({ responseEmailNotifications: false })
-      .where(eq(chatInstancesTable.id, chatId));
+      .where(eq(modalsTable.id, modalId));
 
     return new NextResponse(
       `<!DOCTYPE html><html><body style="font-family:system-ui,Arial,sans-serif;padding:40px;text-align:center;">
