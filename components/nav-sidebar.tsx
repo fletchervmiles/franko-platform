@@ -123,9 +123,9 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
   item: { title: string; url: string; icon: React.ReactNode }; 
   section: { title: string } 
 }) {
-  const { signOut } = useAuth();
+  const { signOut, userId } = useAuth();
   const { openModal, setModalType } = useFeedbackModal();
-  const { hasContext, contextCompleted, isLoading, highlightWorkspaceNavItem, setHighlightWorkspaceNavItem } = useProfile();
+  const { hasContext, contextCompleted, isLoading, highlightWorkspaceNavItem, setHighlightWorkspaceNavItem, profile } = useProfile();
   
   // Special handling for Sign Out button
   if (item.title === "Sign Out") {
@@ -149,8 +149,8 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
     );
   }
 
-  // Handle Feedback and Support buttons
-  if (item.title === "Feedback" || item.title === "Support") {
+  // Handle Feedback button with Franko
+  if (item.title === "Feedback") {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
@@ -160,7 +160,49 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
           <button 
             className="flex items-center" 
             onClick={() => {
-              setModalType(item.title.toLowerCase() as 'feedback' | 'support');
+              // Set user identity for Franko
+              if (userId && profile) {
+                if (typeof window !== 'undefined') {
+                  window.FrankoUser = {
+                    user_id: userId,
+                    user_metadata: {
+                      name: profile.firstName && profile.secondName 
+                        ? `${profile.firstName} ${profile.secondName}`.trim()
+                        : profile.firstName || undefined,
+                      email: profile.email || undefined
+                    }
+                  };
+                }
+              }
+              
+              // Open Franko modal
+              if (typeof window !== 'undefined' && window.FrankoModal) {
+                window.FrankoModal.open();
+              }
+            }}
+          >
+            <span className="text-gray-500">
+              {item.icon}
+            </span>
+            <span className="ml-2 font-medium">{item.title}</span>
+          </button>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  // Handle Support button with existing modal
+  if (item.title === "Support") {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          className="w-full justify-start text-gray-800 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <button 
+            className="flex items-center" 
+            onClick={() => {
+              setModalType('support');
               openModal();
             }}
           >
