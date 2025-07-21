@@ -34,12 +34,12 @@ export async function loadFrankoModal(slug: string): Promise<void> {
 
       // Create namespaced proxy
       if (!w[apiName]) {
-        w[apiName] = (...a) => {
-          w[apiName].q = w[apiName].q || [];
-          w[apiName].q.push(a);
+        w[apiName] = (...args: any[]) => {
+          (window as any)[apiName].q = (window as any)[apiName].q || [];
+          (window as any)[apiName].q.push(args);
         };
         w[apiName] = new Proxy(w[apiName], {
-          get: (t, p) => p === 'q' ? t.q : (...a) => t(p, ...a)
+          get: (t: any, p: string) => (p === 'q' ? t.q : (...args: any[]) => t(p, ...args)),
         });
       }
 
@@ -65,9 +65,13 @@ export async function loadFrankoModal(slug: string): Promise<void> {
         }
 
         // Process any queued calls
-        if (w[apiName].q) {
-          w[apiName].q.forEach(([m, ...a]) => w[apiName][m] && w[apiName][m](...a));
-          w[apiName].q = [];
+        if ((window as any)[apiName].q) {
+          (window as any)[apiName].q.forEach(([m, ...params]: any[]) => {
+            if ((window as any)[apiName][m]) {
+              (window as any)[apiName][m](...params);
+            }
+          });
+          (window as any)[apiName].q = [];
         }
       };
 
