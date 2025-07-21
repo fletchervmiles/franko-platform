@@ -1,11 +1,13 @@
 /*
-  Dynamically loads a Franko manual-mode snippet for the given modal slug.
-  Ensures only one snippet is present at any time on the page and returns a
-  promise that resolves once FrankoModal is ready to open the requested slug.
+  Dynamically loads a namespaced Franko manual-mode snippet for the given modal slug.
+  Creates isolated FrankoModal_{namespace} objects to avoid global conflicts.
 */
 export async function loadFrankoModal(slug: string): Promise<void> {
-  // Cache of in-flight loads on the global object so multiple calls share one request
+  const namespace = slug.replace(/[^a-zA-Z0-9]/g, '_'); // Sanitize slug for variable name
+  const apiName = `FrankoModal_${namespace}`;
   const w = window as any;
+
+  // Cache of in-flight loads on the global object so multiple calls share one request
   w.__frankoLoading = w.__frankoLoading || new Map<string, Promise<void>>();
   if (w.__frankoLoading.has(slug)) {
     return w.__frankoLoading.get(slug)!;
@@ -13,36 +15,43 @@ export async function loadFrankoModal(slug: string): Promise<void> {
 
   const loadPromise: Promise<void> = new Promise((resolve, reject) => {
     try {
-      // Remove any in-memory FrankoModal API (safe on LP where nav-sidebar not present)
-      delete (window as any).FrankoModal;
+      // Remove previously injected demo snippets for this namespace
+      document.querySelectorAll(`script[data-franko-demo="${slug}"]`).forEach((s) => s.remove());
 
-      // Remove any existing Franko overlay iframes added by previous modal
-      document.querySelectorAll('iframe[src*="/embed/"]').forEach((f) => f.remove());
-
-      // Remove previously injected demo snippets (keeps <nav> snippet untouched)
-      document.querySelectorAll('script[data-franko-demo]').forEach((s) => s.remove());
-      
-      // CRITICAL: Also remove demo embed.js scripts (but preserve nav-sidebar's)
-      // The nav-sidebar uses slug "franko-1753006030406", so we exclude that
-      document.querySelectorAll('script[src*="embed.js"]').forEach((script) => {
-        const modalSlug = script.getAttribute('data-modal-slug');
-        // Keep the nav-sidebar's embed.js script
-        if (modalSlug && modalSlug !== 'franko-1753006030406') {
-          script.remove();
-        }
-      });
-
-      // Modified snippet that adds data-modal-slug to the embed.js for identification
+      // Inline snippet modified for namespacing
       const wrapper = document.createElement('script');
       wrapper.setAttribute('data-franko-demo', slug);
       wrapper.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","${slug}");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+      (function(){
+        const apiName = '${apiName}';
+        if(!window[apiName]){
+          window[apiName]=(...a)=>{
+            window[apiName].q=window[apiName].q||[];
+            window[apiName].q.push(a);
+          };
+          window[apiName]=new Proxy(window[apiName],{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)});
+        }
+        const l=()=>{
+          const s=document.createElement("script");
+          s.src="https://franko.ai/embed.js";
+          s.setAttribute("data-modal-slug","${slug}");
+          s.setAttribute("data-mode","manual");
+          s.onload=()=>{
+            if(window[apiName].q){
+              window[apiName].q.forEach(([m,...a])=>window[apiName][m]&&window[apiName][m](...a));
+              window[apiName].q=[];
+            }
+          };
+          document.head.appendChild(s);
+        };
+        document.readyState==="complete"?l():addEventListener("load",l);
+      })();
       `;
       document.body.appendChild(wrapper);
 
-      // Poll until FrankoModal.open exists (embed.js loaded)
+      // Poll until namespaced API is ready
       const checkReady = () => {
-        if (w.FrankoModal && typeof w.FrankoModal.open === 'function') {
+        if (w[apiName] && typeof w[apiName].open === 'function') {
           resolve();
         } else {
           setTimeout(checkReady, 30);
@@ -56,4 +65,15 @@ export async function loadFrankoModal(slug: string): Promise<void> {
 
   w.__frankoLoading.set(slug, loadPromise);
   return loadPromise;
+}
+
+export function openFrankoModal(slug: string): void {
+  const namespace = slug.replace(/[^a-zA-Z0-9]/g, '_');
+  const apiName = `FrankoModal_${namespace}`;
+  const w = window as any;
+  if (w[apiName] && typeof w[apiName].open === 'function') {
+    w[apiName].open();
+  } else {
+    console.error(`Namespaced FrankoModal not found for ${slug}`);
+  }
 } 
