@@ -1,7 +1,8 @@
 'use client'
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAuth } from "@clerk/nextjs"
@@ -132,7 +133,7 @@ export default function PricingUpgrade() {
           return (
             <Card key={plan.name} className={`relative flex flex-col h-full ${
               plan.popular 
-                ? 'border-2 border-[#E4F222] shadow-lg scale-105' 
+                ? 'border-2 border-[#E4F222]/70 shadow-md' 
                 : 'border border-gray-200 shadow-sm'
             }`}>
               {plan.popular && (
@@ -144,27 +145,45 @@ export default function PricingUpgrade() {
               )}
               
               <CardHeader className="text-center pb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
                   {plan.name}
-              </h3>
-                <div className="flex items-baseline justify-center gap-1 mb-6">
+                </h3>
+                <div className="flex items-baseline justify-center gap-1">
                   <span className="text-4xl font-bold text-gray-900">
                     ${plan.price}
                   </span>
                   <span className="text-gray-600">/month</span>
-            </div>
-
-                {/* Key metric - responses */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-gray-900">
-                    {plan.responses.toLocaleString()}
-              </div>
-                  <div className="text-sm text-gray-600">Interview Responses / mo</div>
-            </div>
-          </CardHeader>
+                </div>
+              </CardHeader>
 
               <CardContent className="flex-grow flex flex-col">
                 <ul className="space-y-3 mb-8 flex-grow">
+                  {/* Primary feature - Response count with tooltip */}
+                  <li className="flex items-start gap-3 pb-2 border-b border-gray-100">
+                    <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <TooltipProvider>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <span className="font-semibold text-gray-900 text-sm flex items-center gap-1 border-b border-dashed border-gray-400 cursor-help">
+                            Up to {plan.responses.toLocaleString()} Interview Responses / mo
+                            <Info className="w-3 h-3 text-gray-400" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          className="bg-[#10755B]/90 text-white border-none max-w-xs text-center p-3"
+                          side="top"
+                        >
+                          <p>
+                            An interview response is counted when a respondent
+                            meaningfully engages with the AI. Immediate abandonment
+                            won't count, but partially completed responses will.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </li>
+                  
+                  {/* Other features */}
                   {sharedFeatures.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -175,15 +194,13 @@ export default function PricingUpgrade() {
 
                 <div className="mt-auto">
                   {buttonState.href ? (
-                <Link 
+                    <Link 
                       href={buttonState.href}
                       className={`
-                        w-full rounded-lg px-6 py-3 text-center font-medium transition-all duration-200 
+                        w-full rounded-lg px-3 py-2 text-center font-medium transition-all duration-200 
                         inline-flex items-center justify-center gap-2
                         ${buttonState.style === 'upgrade' 
-                          ? plan.popular
-                            ? 'bg-[#E4F222] hover:bg-[#F5FF78] text-black shadow-lg'
-                            : 'bg-gray-900 hover:bg-black text-white'
+                          ? 'bg-gray-900 hover:bg-black text-white shadow-sm'
                           : buttonState.style === 'downgrade'
                             ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
                             : 'bg-gray-50 text-gray-400 cursor-not-allowed'
@@ -194,24 +211,36 @@ export default function PricingUpgrade() {
                       {!buttonState.disabled && buttonState.style === 'upgrade' && (
                         <ArrowRight className="h-4 w-4" />
                       )}
-                </Link>
+                    </Link>
                   ) : (
                     <div className={`
-                      w-full rounded-lg px-6 py-3 text-center font-medium
+                      w-full rounded-lg px-3 py-2 text-center font-medium
                       ${buttonState.style === 'current' 
                         ? 'bg-green-50 text-green-700 border border-green-200' 
                         : 'bg-gray-50 text-gray-400'
                       }
                     `}>
                       {buttonState.text}
-              </div>
+                    </div>
                   )}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardContent>
+            </Card>
           )
         })}
       </div>
+
+      {/* Cancel subscription link - only show for paid plans */}
+      {isSignedIn && !isLoading && currentPlan && currentPlan !== 'free' && (
+        <div className="text-center mt-8">
+          <Link 
+            href="/account"
+            className="text-sm text-gray-500 hover:text-gray-700 underline-offset-4 hover:underline transition-colors"
+          >
+            Cancel your subscription
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

@@ -181,12 +181,12 @@ async function updateProfileBranding(userId: string, brandDetails: any): Promise
 function selectBestAgents(count: number = 6): string[] {
   // Select the most valuable agents for new users
   const bestAgents = [
-    'AGENT01', // Key Benefit
-    'AGENT02', // Improvement/Friction  
-    'AGENT04', // Persona & Use Case
-    'AGENT05', // Pricing Check
-    'AGENT08', // Open Feedback
-    'AGENT09', // Disappointment Level (PMF)
+    'AGENT01', // Discovery Trigger
+    'AGENT02', // Persona + Problem  
+    'AGENT03', // Upgrade Objections
+    'AGENT04', // Key Benefit
+    'AGENT05', // Improvements & Friction
+    'AGENT06', // Feature Wishlist
   ];
 
   return bestAgents.slice(0, count);

@@ -102,9 +102,9 @@ export async function POST(request: Request) {
         )
       : [];
 
-    // If no agents enabled, enable the first 4 by default
+    // If no agents enabled, enable all 6 agents by default
     if (enabledAgents.length === 0) {
-      enabledAgents.push(...agentsData.slice(0, 4).map(agent => agent.id));
+      enabledAgents.push(...agentsData.map(agent => agent.id));
     }
 
     // Validate that all enabled agents exist in our agents data
