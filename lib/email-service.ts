@@ -80,6 +80,9 @@ export async function sendResponseNotification(
   conversationId?: string
 ) {
   try {
+    // build unsubscribe URL if chat id provided
+    const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
+
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
       to: [to],
@@ -90,7 +93,11 @@ export async function sendResponseNotification(
         firstName,
         conversationTitle,
         conversationId,
+        unsubscribeUrl,
       }),
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      },
     });
 
     if (error) {
@@ -119,6 +126,8 @@ export async function sendEnhancedResponseNotification(
   agentType?: string
 ) {
   try {
+    // build unsubscribe URL
+    const unsubscribeUrl = conversationId ? `https://franko.ai/api/unsubscribe?chatId=${conversationId}` : 'https://franko.ai/unsubscribe';
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
       to: [to],
@@ -134,7 +143,11 @@ export async function sendEnhancedResponseNotification(
         intervieweeFirstName,
         totalInterviewMinutes,
         agentType,
+        unsubscribeUrl,
       }),
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      },
     });
 
     if (error) {

@@ -1,161 +1,215 @@
-import * as React from 'react';
+// Re-implemented to match refined template
+import * as React from "react";
 
-interface ResponseSummaryProps {
+/* -------------------------------------------------------------------------- */
+/*                                TYPE DEFS                                   */
+/* -------------------------------------------------------------------------- */
+
+export interface StoryArcItem {
+  label: string;
+  insight: string;
+  quote: string;
+  signal: string;
+}
+
+export interface FeedbackData {
+  execSummary: string;
+  storyArc: StoryArcItem[];
+  sentiment?: {
+    value: string;
+    snippet: string;
+  };
+  featureSignals?: string[] | null;
+  evaluation: {
+    strength: string;
+    comment: string;
+  };
+}
+
+export interface ConversationDetails {
   firstName: string;
-  conversationTitle?: string;
+  conversationTitle: string;
   conversationId?: string;
-  transcript_summary?: string;
-  cleanTranscript?: string;
-  intervieweeFirstName?: string;
+  intervieweeFirstName: string;
   totalInterviewMinutes?: number;
   agentType?: string;
+}
+
+export interface DesignProps {
+  data: FeedbackData;
+  details: ConversationDetails;
   unsubscribeUrl?: string;
 }
 
-export const ResponseSummary: React.FC<Readonly<ResponseSummaryProps>> = ({
-  firstName,
-  conversationTitle,
-  conversationId,
-  transcript_summary,
-  cleanTranscript,
-  intervieweeFirstName,
-  totalInterviewMinutes,
-  agentType,
-  unsubscribeUrl = 'https://example.com/unsubscribe',
+/* -------------------------------------------------------------------------- */
+/*                              HELPER STYLES                                 */
+/* -------------------------------------------------------------------------- */
+
+const cardStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: 600,
+  margin: "0 auto",
+  border: "2px solid #e2e8f0",
+  borderRadius: 8,
+  overflow: "hidden",
+  backgroundColor: "#ffffff",
+  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+  fontFamily:
+    'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  color: "#0c0a08",
+  lineHeight: 1.5,
+  fontSize: 14,
+};
+
+const headerStyle: React.CSSProperties = {
+  backgroundColor: "#ffffff",
+  padding: 24,
+  borderBottom: "4px solid #E4F222",
+};
+
+const contentStyle: React.CSSProperties = { padding: 24 };
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  color: "#64748b",
+  margin: "0 0 8px 0",
+  letterSpacing: "0.05em",
+};
+
+/* -------------------------------------------------------------------------- */
+/*                               COMPONENT                                    */
+/* -------------------------------------------------------------------------- */
+
+export const ResponseSummary: React.FC<Readonly<DesignProps>> = ({
+  data,
+  details,
+  unsubscribeUrl = "https://example.com/unsubscribe",
 }) => (
-  <div style={{
-    fontFamily: 'sans-serif',
-    color: '#333',
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-    fontSize: '14px',
-    lineHeight: '21px',
-  }}>    
-    <div style={{
-      marginBottom: '20px',
-    }}>
-      <h1 style={{ 
-        fontSize: '24px',
-        fontWeight: 'bold',
-        marginTop: '0',
-        marginBottom: '16px',
-        color: '#111'
-      }}>
-        New Response Received
-      </h1>
-      
-      <p style={{ margin: '14px 0' }}>
-        Hey {firstName},
+  <div style={cardStyle}>
+    {/* Header */}
+    <div style={headerStyle}>
+      <h1 style={{ fontSize: 24, fontWeight: "bold", margin: 0 }}>{
+        details.conversationTitle
+      }</h1>
+      <p style={{ margin: "4px 0 0 0", color: "#475569" }}>
+        Summary of conversation with {details.intervieweeFirstName}
       </p>
-      
-      <p style={{ margin: '14px 0' }}>
-        Great news! You've received a new response {conversationTitle ? `for "${conversationTitle}"` : 'from your chat modal'}.
-        {intervieweeFirstName && ` ${intervieweeFirstName} just completed their conversation`}
-        {totalInterviewMinutes && ` in ${totalInterviewMinutes} minutes`}.
-      </p>
+    </div>
 
-      {/* Summary Section */}
-      {transcript_summary && (
-        <div style={{
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #e9ecef',
-          borderRadius: '6px',
-          padding: '16px',
-          margin: '20px 0',
-        }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            margin: '0 0 12px 0',
-            color: '#495057',
-          }}>
-            Conversation Summary
-          </h3>
-          <p style={{
-            margin: '0',
-            lineHeight: '1.5',
-            color: '#6c757d',
-          }}>
-            {transcript_summary}
-          </p>
-        </div>
+    {/* Content */}
+    <div style={contentStyle}>
+      {/* Executive Summary */}
+      <section
+        style={{
+          backgroundColor: "#f1f5f9",
+          padding: 16,
+          borderRadius: 6,
+          marginBottom: 24,
+        }}
+      >
+        <h3 style={sectionTitleStyle}>Executive Summary</h3>
+        <p style={{ margin: 0, color: "#1e293b" }}>{data.execSummary}</p>
+      </section>
+
+      {/* Story Arc */}
+      {data.storyArc && data.storyArc.length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <h3 style={{ ...sectionTitleStyle, marginBottom: 16 }}>Story Arc</h3>
+          {data.storyArc.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 16,
+                marginBottom: index === data.storyArc.length - 1 ? 0 : 16,
+              }}
+            >
+              {/* Arrow (simple HTML entity for email safety) */}
+              <span style={{ fontSize: 12, color: "#374151", marginTop: 2 }}>➜</span>
+
+              <div style={{ flex: 1 }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#1e293b",
+                  }}
+                >
+                  {item.label}
+                </h4>
+                <p style={{ margin: "4px 0 8px 0", color: "#475569" }}>{item.insight}</p>
+                {item.quote && (
+                  <blockquote
+                    style={{
+                      borderLeft: "2px solid #cbd5e1",
+                      margin: 0,
+                      paddingLeft: 12,
+                      fontStyle: "italic",
+                      color: "#64748b",
+                    }}
+                  >
+                    "{item.quote}"
+                  </blockquote>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
       )}
 
-      {/* Transcript Section */}
-      {cleanTranscript && (
-        <div style={{
-          backgroundColor: '#fff',
-          border: '1px solid #dee2e6',
-          borderRadius: '6px',
-          padding: '16px',
-          margin: '20px 0',
-          maxHeight: '300px',
-          overflow: 'auto',
-        }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            margin: '0 0 12px 0',
-            color: '#495057',
-          }}>
-            Full Conversation
-          </h3>
-          <div style={{
-            fontFamily: 'monospace',
-            fontSize: '13px',
-            lineHeight: '1.4',
-            color: '#6c757d',
-            whiteSpace: 'pre-wrap',
-            borderLeft: '3px solid #e9ecef',
-            paddingLeft: '12px',
-          }}>
-            {cleanTranscript}
-          </div>
-        </div>
-      )}
-      
-      <div style={{
-        marginTop: '32px',
-        textAlign: 'center',
-      }}>
-        <a 
-          href={conversationId 
-            ? `https://franko.ai/responses`
-            : 'https://franko.ai/responses'}
+      {/* Evaluation */}
+      <section style={{ borderTop: "1px solid #e2e8f0", paddingTop: 24, marginBottom: 24 }}>
+        <h3 style={sectionTitleStyle}>Evaluation</h3>
+        <p
           style={{
-            background: '#E4F222',
-            color: '#1C1617',
-            padding: '12px 24px',
-            borderRadius: '4px',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            display: 'inline-block',
-            transition: 'all 0.2s ease',
+            backgroundColor: "#f1f5f9",
+            padding: 12,
+            borderRadius: 6,
+            margin: 0,
+            color: "#475569",
+          }}
+        >
+          {data.evaluation.comment}
+        </p>
+      </section>
+
+      {/* Buttons */}
+      <div
+        style={{
+          borderTop: "1px solid #e2e8f0",
+          paddingTop: 24,
+          textAlign: "center",
+        }}
+      >
+        <a
+          href={details.conversationId ? `https://franko.ai/responses` : "#"}
+          style={{
+            display: "inline-block",
+            backgroundColor: "#E4F222",
+            color: "#0c0a08",
+            padding: "12px 24px",
+            borderRadius: 6,
+            textDecoration: "none",
+            fontWeight: 600,
+            fontSize: 14,
+            marginBottom: 12,
           }}
         >
           View All Responses
         </a>
+        <div>
+          <a
+            href={unsubscribeUrl}
+            style={{ color: "#64748b", fontSize: 14, textDecoration: "underline" }}
+          >
+            Unsubscribe from Responses
+          </a>
+        </div>
       </div>
-    </div>
-    
-    <div style={{
-      color: '#6b7280',
-      fontSize: '12px',
-      marginTop: '20px',
-      borderTop: '1px solid #eee',
-      paddingTop: '10px',
-    }}>
-      <p>
-        You're receiving this email because you've enabled response notifications for this chat modal.
-        You can update your preferences in the modal settings.
-      </p>
-      <p>© {new Date().getFullYear()} Franko AI. All rights reserved.</p>
-      <p>
-        <a href={unsubscribeUrl} style={{ color: '#6b7280', textDecoration: 'underline' }}>
-          Unsubscribe
-        </a>
-      </p>
     </div>
   </div>
 ); 
