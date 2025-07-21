@@ -1,47 +1,11 @@
 import Container from "@/components/lp-redesign/container"
 import Image from "next/image"
-import { Code, Send, Link as LinkIcon, MousePointerClick, Slack, Check } from "lucide-react"
+import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useEffect } from "react"
+import { loadFrankoModal } from "@/lib/frankoModalLoader"
 
 export default function TryItYourselfSection() {
-  // Pre-load all FrankoModal scripts (Option 1: Multiple snippets)
-  useEffect(() => {
-    const scripts: HTMLScriptElement[] = [];
-
-    // Slack modal script
-    const slackScript = document.createElement('script');
-    slackScript.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","slack-1753101441774");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
-    `;
-    document.head.appendChild(slackScript);
-    scripts.push(slackScript);
-
-    // Perplexity modal script  
-    const perplexityScript = document.createElement('script');
-    perplexityScript.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","perplexity-1753102485315");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
-    `;
-    document.head.appendChild(perplexityScript);
-    scripts.push(perplexityScript);
-
-    // Zapier modal script
-    const zapierScript = document.createElement('script');
-    zapierScript.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","zapier-1753102799092");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
-    `;
-    document.head.appendChild(zapierScript);
-    scripts.push(zapierScript);
-
-    return () => {
-      // Cleanup scripts on unmount
-      scripts.forEach(script => {
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      });
-    };
-  }, []);
+  // No upfront Franko scripts – they'll be loaded on demand via loadFrankoModal
 
   const demoCards = [
     {
@@ -76,31 +40,23 @@ export default function TryItYourselfSection() {
     }
   ]
 
-  const handleCardClick = (cardId: string) => {
-    // Use Option 2: Open specific modals programmatically
-    const modalSlugs: { [key: string]: string } = {
-      slack: 'slack-1753101441774',
-      perplexity: 'perplexity-1753102485315', 
-      zapier: 'zapier-1753102799092'
-    };
+  const modalSlugs: { [key: string]: string } = {
+    slack: "slack-1753101441774",
+    perplexity: "perplexity-1753102485315",
+    zapier: "zapier-1753102799092",
+  };
 
-    if (typeof window !== "undefined" && (window as any).FrankoModal?.open) {
-      (window as any).FrankoModal.open(modalSlugs[cardId]);
-    }
-  }
+  const handleCardClick = async (cardId: string) => {
+    const slug = modalSlugs[cardId];
+    await loadFrankoModal(slug);
+    (window as any).FrankoModal.open(slug);
+  };
 
-  const handleLaunchModal = (cardId: string) => {
-    // Use Option 2: Open specific modals programmatically
-    const modalSlugs: { [key: string]: string } = {
-      slack: 'slack-1753101441774',
-      perplexity: 'perplexity-1753102485315',
-      zapier: 'zapier-1753102799092'
-    };
-
-    if (typeof window !== "undefined" && (window as any).FrankoModal?.open) {
-      (window as any).FrankoModal.open(modalSlugs[cardId]);
-    }
-  }
+  const handleLaunchModal = async (cardId: string) => {
+    const slug = modalSlugs[cardId];
+    await loadFrankoModal(slug);
+    (window as any).FrankoModal.open(slug);
+  };
 
   const getIcon = (iconType: string) => {
     switch (iconType) {
