@@ -1,17 +1,48 @@
-import Container from "@/components/lp-redesign/container"
-import Image from "next/image"
-import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { loadAndOpenFrankoModal } from "@/lib/frankoModalLoader"
+import Container from "@/components/lp-redesign/container";
+import Image from "next/image";
+import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState, useCallback } from "react";
 
 export default function TryItYourselfSection() {
-  // No upfront Franko scripts – they'll be loaded on demand via loadFrankoModal
+  const [isModalReady, setIsModalReady] = useState(false);
+
+  // 1. Load ONE generic Franko script on mount.
+  // This script's only job is to create the FrankoModal API and the iframe container.
+  useEffect(() => {
+    // Prevent loading on server
+    if (typeof window === 'undefined') return;
+
+    // Check if the base script is already on the page
+    if (document.querySelector('script[data-franko-base]')) {
+      setIsModalReady(true);
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.setAttribute('data-franko-base', 'true');
+    script.innerHTML = `
+      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","slack-1753101441774");s.setAttribute("data-mode","manual");s.onload=()=>{if(window.FrankoModal.q){window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a));window.FrankoModal.q=[]}};document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+    `;
+    script.onload = () => {
+        // Poll until the API is ready
+        const pollForApi = setInterval(() => {
+            if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+                clearInterval(pollForApi);
+                setIsModalReady(true);
+            }
+        }, 100);
+    };
+    document.body.appendChild(script);
+
+  }, []);
 
   const demoCards = [
     {
       id: "slack",
       logo: "/assets/slack-icon.jpeg",
       title: "General Feedback",
+      slug: "slack-1753101441774",
       line1: "Collect ongoing product feedback. Includes agents for feature requests, key improvements, and benefits.",
       line2: "Use case: Embed as floating bubble or \"Give Feedback\" button.",
       company: "Slack",
@@ -20,8 +51,9 @@ export default function TryItYourselfSection() {
     },
     {
       id: "perplexity",
-      logo: "/assets/perplexity-icon.png", 
+      logo: "/assets/perplexity-icon.png",
       title: "Unconverted Signups",
+      slug: "perplexity-1753102485315",
       line1: "Discover why signed-up users haven't upgraded. Active agents focused on uncovering activation hurdles.",
       line2: "Send via email link to users who haven't upgraded.",
       company: "Perplexity",
@@ -31,38 +63,56 @@ export default function TryItYourselfSection() {
     {
       id: "zapier",
       logo: "/assets/zapier-icon.jpeg",
-      title: "Onboarding Flow", 
+      title: "Onboarding Flow",
+      slug: "zapier-1753102799092",
       line1: "Clarify your customers' persona, key needs, and how they found you. Active persona, discovery and goal-oriented agents.",
       line2: "Place in onboarding flow or email (\"Tell us about yourself\").",
       company: "Zapier",
       icon: "link",
       agents: ["Persona & Problem Agent", "Discovery Trigger Agent", ""]
     }
-  ]
+  ];
 
-  const modalSlugs: { [key: string]: string } = {
-    slack: "slack-1753101441774",
-    perplexity: "perplexity-1753102485315",
-    zapier: "zapier-1753102799092",
-  };
+  const handleLaunchModal = useCallback(async (slug: string) => {
+    if (!isModalReady || !(window as any).FrankoModal) {
+      console.warn("FrankoModal is not ready yet.");
+      return;
+    }
 
-  const handleLaunchModal = async (cardId: string) => {
-    const slug = modalSlugs[cardId];
-    await loadAndOpenFrankoModal(slug);
-  };
+    const frankoIframe = document.querySelector('iframe[src*="/embed/"]') as HTMLIFrameElement;
+
+    if (!frankoIframe) {
+      console.error("Franko iframe not found on page.");
+      return;
+    }
+
+    // 2. Change the iframe's src to the correct slug
+    const newSrc = `https://franko.ai/embed/${slug}?mode=modal`;
+    
+    // 3. Wait for the iframe to load the new content, then open.
+    if (frankoIframe.src !== newSrc) {
+        frankoIframe.src = newSrc;
+        frankoIframe.onload = () => {
+            (window as any).FrankoModal.open();
+        };
+    } else {
+        // If it's already the correct src, just open it.
+        (window as any).FrankoModal.open();
+    }
+  }, [isModalReady]);
 
   const getIcon = (iconType: string) => {
     switch (iconType) {
       case "embed":
-        return <Code className="w-4 h-4" />
+        return <Code className="w-4 h-4" />;
       case "send":
-        return <Send className="w-4 h-4" />
+        return <Send className="w-4 h-4" />;
       case "link":
-        return <LinkIcon className="w-4 h-4" />
+        return <LinkIcon className="w-4 h-4" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="py-24 bg-[#1A1919]" data-section="try-it-yourself">
@@ -85,7 +135,7 @@ export default function TryItYourselfSection() {
             <div key={card.id} className="flex flex-col items-center group">
               <div
                 className="w-full max-w-sm rounded-2xl p-6 bg-[rgba(244,242,240,1)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] border border-transparent hover:border-[#E4F222] cursor-pointer min-h-[280px] flex flex-col"
-                onClick={() => handleLaunchModal(card.id)}
+                onClick={() => handleLaunchModal(card.slug)}
               >
                 <p className="uppercase tracking-wide text-[10px] font-semibold text-center mb-2 text-[#0C0A08]/60">Modal configuration</p>
                 <h4 className="text-lg font-semibold text-center mb-4 text-[#0C0A08]">{card.title}</h4>
@@ -122,14 +172,14 @@ export default function TryItYourselfSection() {
                       className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleLaunchModal(card.id);
+                        handleLaunchModal(card.slug);
                       }}
                     >
                       <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
                     </Button>
                   </div>
               </div>
-              <button onClick={() => handleLaunchModal(card.id)} className="mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
+              <button onClick={() => handleLaunchModal(card.slug)} className="mt-6 text-white hover:text-[#E4F222] transition-colors duration-200 flex items-center gap-2 text-sm font-medium">
                 Explore live demo <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
               </button>
             </div>
@@ -144,5 +194,5 @@ export default function TryItYourselfSection() {
         </div>
       </Container>
     </div>
-  )
+  );
 } 
