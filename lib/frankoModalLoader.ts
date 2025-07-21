@@ -15,8 +15,18 @@ export async function loadFrankoModal(slug: string): Promise<void> {
     try {
       // Remove previously injected demo snippets (keeps <nav> snippet untouched)
       document.querySelectorAll('script[data-franko-demo]').forEach((s) => s.remove());
+      
+      // CRITICAL: Also remove demo embed.js scripts (but preserve nav-sidebar's)
+      // The nav-sidebar uses slug "franko-1753006030406", so we exclude that
+      document.querySelectorAll('script[src*="embed.js"]').forEach((script) => {
+        const modalSlug = script.getAttribute('data-modal-slug');
+        // Keep the nav-sidebar's embed.js script
+        if (modalSlug && modalSlug !== 'franko-1753006030406') {
+          script.remove();
+        }
+      });
 
-      // Inline snippet identical to the dashboard output, but parametric in slug
+      // Modified snippet that adds data-modal-slug to the embed.js for identification
       const wrapper = document.createElement('script');
       wrapper.setAttribute('data-franko-demo', slug);
       wrapper.innerHTML = `
