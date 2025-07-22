@@ -178,7 +178,7 @@ ref: ForwardedRef<HTMLTextAreaElement>) {
               rows={1}
               placeholder="Send a message..."
               className={cn(
-                "w-full resize-none px-2.5 md:px-3 py-2 md:py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-sm md:text-base leading-relaxed",
+                "w-full resize-none px-2.5 md:px-3 py-2 md:py-2.5 transition-all duration-200 outline-none ring-0 focus:ring-0 border-0 bg-transparent text-base leading-relaxed",
                 disabled && "cursor-not-allowed",
               )}
               style={{

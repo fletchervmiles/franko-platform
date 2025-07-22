@@ -67,7 +67,7 @@ export function PreChatForm({ onSubmit, onCancel, theme = "light", isLoading = f
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className={`${errors.name ? "border-red-500" : ""} ${inputBg}`}
+                className={`${errors.name ? "border-red-500" : ""} ${inputBg} text-base`}
                 disabled={isLoading}
               />
               {errors.name && (
@@ -83,7 +83,7 @@ export function PreChatForm({ onSubmit, onCancel, theme = "light", isLoading = f
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className={`${errors.email ? "border-red-500" : ""} ${inputBg}`}
+                className={`${errors.email ? "border-red-500" : ""} ${inputBg} text-base`}
                 disabled={isLoading}
               />
               {errors.email && (

@@ -257,6 +257,25 @@ const warn = (...args) => shouldLog && console.warn(...args);
     }
   });
 
+  // Body scroll lock helpers (mobile fix)
+  var _frankoScrollPos = 0;
+  function lockBodyScroll() {
+    _frankoScrollPos = window.scrollY || window.pageYOffset;
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + _frankoScrollPos + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+  function unlockBodyScroll() {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, _frankoScrollPos);
+  }
+
   // Modal control funcs
   function openModal() {
     if (iframe.style.display === 'none') {
@@ -266,11 +285,13 @@ const warn = (...args) => shouldLog && console.warn(...args);
     iframe.style.display = 'block';
     iframe.setAttribute('aria-hidden', 'false');
     if (bubbleBtn) bubbleBtn.style.display = 'none';
+    lockBodyScroll();
   }
   function closeModal() {
     iframe.style.display = 'none';
     iframe.setAttribute('aria-hidden', 'true');
     if (bubbleBtn) bubbleBtn.style.display = 'flex';
+    unlockBodyScroll();
   }
 
   // Expose API for manual mode with backward compatibility
