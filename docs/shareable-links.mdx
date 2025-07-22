@@ -1,0 +1,89 @@
+# Shareable Links
+
+Every Franko modal is automatically available as a standalone webpage that you can share anywhere. This is perfect for situations where you can't embed a script or want to send direct feedback links.
+
+---
+
+## How it works
+
+Simply use this URL structure with your modal slug:
+
+```
+https://franko.ai/embed/YOUR_MODAL_SLUG
+```
+
+The modal opens in a new browser tab as a standalone page, no embedding required.
+
+---
+
+## Common use cases
+
+| Scenario | Implementation |
+|----------|----------------|
+| **Email signatures** | `"Have feedback? [Click here](https://franko.ai/embed/feedback-12345)"` |
+| **Support tickets** | Send customers direct links to report bugs or issues |
+| **Social media** | Share feedback forms on Twitter, LinkedIn, or company posts |
+| **Documentation** | Link to feedback forms in GitHub READMEs, wikis, or help docs |
+| **Slack/Teams** | Share feedback links in team channels or DMs |
+| **QR codes** | Generate QR codes that link directly to feedback forms |
+| **Help desk** | Include in automated email responses or chat bot messages |
+
+---
+
+## Examples
+
+**Email marketing:**
+```html
+<p>We'd love your feedback on our new feature!</p>
+<a href="https://franko.ai/embed/feature-feedback-789" 
+   style="background: #007cba; color: white; padding: 10px 20px; text-decoration: none;">
+   Share Your Thoughts
+</a>
+```
+
+**Markdown (GitHub, docs):**
+```markdown
+## Feedback
+
+Found a bug or have suggestions? [Report it here](https://franko.ai/embed/bug-reports-456).
+```
+
+**Social media post:**
+```
+🚀 Just launched our new dashboard! 
+
+What do you think? Share feedback: https://franko.ai/embed/dashboard-feedback-123
+
+#feedback #product
+```
+
+---
+
+## Limitations
+
+**No identity verification**: Since shareable links open in a new tab without access to your website's session, the `window.FrankoUser` identity snippet cannot be used. All feedback will appear as "Anonymous" in your dashboard.
+
+**No customization**: The modal appears with its default styling and cannot be customized via CSS or JavaScript like embedded versions.
+
+---
+
+## When to use shareable links vs embedding
+
+| Use shareable links when: | Use embedding when: |
+|---------------------------|---------------------|
+| Sending via email, chat, or social media | Building feedback into your website |
+| You can't add JavaScript to the page | You want to identify users |
+| Creating QR codes or printed materials | You need custom styling or behavior |
+| External platforms (GitHub, Slack, etc.) | Contextual triggers (after form submission, etc.) |
+
+---
+
+## FAQ
+
+**Can I track who submitted feedback via shareable links?** Not automatically, but you can ask users to include their email in the feedback itself.
+
+**Do shareable links expire?** No, they remain active as long as your modal is active.
+
+**Can I customize the appearance of shareable link modals?** No, they use the default Franko styling. For customization, use [embedded modals](./custom-trigger) instead.
+
+Need help? Email **fletcher@franko.ai** 

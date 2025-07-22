@@ -524,7 +524,7 @@ export function InterfaceTab() {
                   <SelectContent>
                     <SelectItem value="left">Left Aligned</SelectItem>
                     <SelectItem value="right">Right Aligned</SelectItem>
-                    <SelectItem value="custom">No Button</SelectItem>
+                    <SelectItem value="custom">Hide Preview Button</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500">

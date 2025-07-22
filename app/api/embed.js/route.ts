@@ -22,13 +22,12 @@ export async function GET(request: NextRequest) {
   console.log('[Franko] Modal slug:', slug);
 
   var mode = loader.getAttribute('data-mode') || 'bubble'; // bubble | manual
-  var position = loader.getAttribute('data-position') || 'bottom-right';
-  console.log('[Franko] Mode:', mode, 'Position:', position);
+  console.log('[Franko] Mode:', mode);
 
   // Extract the origin from the script URL
   var scriptUrl = new URL(loader.src);
   var origin = scriptUrl.origin;
-  var iframeUrl = origin + '/embed/' + slug;
+  var iframeUrl = origin + '/embed/' + slug + '?mode=modal';
   console.log('[Franko] Origin:', origin);
   console.log('[Franko] Iframe URL:', iframeUrl);
 
@@ -67,25 +66,95 @@ export async function GET(request: NextRequest) {
     document.addEventListener('DOMContentLoaded', addIframe);
   }
 
-  // Utility to get bubble position styles
-  function bubblePositionStyles(pos) {
+  // Fetch modal configuration for dynamic bubble styling
+  function fetchModalConfig(callback) {
+    var configUrl = origin + '/api/embed/' + slug;
+    console.log('[Franko] Fetching config from:', configUrl);
+    
+    // Use fetch if available, otherwise fall back to XMLHttpRequest
+    if (typeof fetch === 'function') {
+      fetch(configUrl)
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Config fetch failed: ' + response.status);
+          }
+          return response.json();
+        })
+        .then(function(config) {
+          console.log('[Franko] Config loaded:', config);
+          callback(null, config);
+        })
+        .catch(function(error) {
+          console.error('[Franko] Config fetch error:', error);
+          callback(error, null);
+        });
+    } else {
+      // Fallback for older browsers
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', configUrl, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var config = JSON.parse(xhr.responseText);
+              console.log('[Franko] Config loaded via XHR:', config);
+              callback(null, config);
+            } catch (parseError) {
+              console.error('[Franko] Config parse error:', parseError);
+              callback(parseError, null);
+            }
+          } else {
+            var error = new Error('Config fetch failed: ' + xhr.status);
+            console.error('[Franko] Config fetch error:', error);
+            callback(error, null);
+          }
+        }
+      };
+      xhr.send();
+    }
+  }
+
+  // Utility to get bubble position styles using config
+  function bubblePositionStyles(config) {
+    var brandSettings = config.brandSettings || {};
+    var interfaceSettings = brandSettings.interface || {};
+    
+    // Determine effective colors using same logic as the UI
+    var theme = interfaceSettings.theme || 'light';
+    var themeDefaults = {
+      light: { chatIconColor: "#000000" },
+      dark: { chatIconColor: "#ffffff" }
+    };
+    
+    var bubbleColor = interfaceSettings.advancedColors
+      ? (interfaceSettings.chatIconColor || themeDefaults[theme].chatIconColor)
+      : (interfaceSettings.primaryBrandColor || themeDefaults[theme].chatIconColor);
+
     var style = {
       position: 'fixed',
-      width: '56px',
-      height: '56px',
+      padding: '8px 12px',
       borderRadius: '9999px',
-      background: '#000',
+      background: bubbleColor,
       color: '#fff',
       border: 'none',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
+      fontSize: '12px',
+      fontWeight: '500',
+      lineHeight: '16px',
       cursor: 'pointer',
       zIndex: '2147483646',
+      whiteSpace: 'nowrap',
+      transition: 'transform 0.2s ease, opacity 0.2s ease',
+      opacity: '0.95',
     };
+    
     var pad = '24px';
-    if (pos === 'bottom-left') {
+    var position = interfaceSettings.alignChatBubble === 'left' ? 'bottom-left' : 'bottom-right';
+    
+    if (position === 'bottom-left') {
       style.bottom = pad;
       style.left = pad;
     } else {
@@ -98,14 +167,31 @@ export async function GET(request: NextRequest) {
 
   // Create bubble if in bubble mode
   var bubbleBtn = null;
-  if (mode !== 'manual') {
+  function createBubble(config) {
+    if (mode === 'manual') return;
+    
+    var brandSettings = config.brandSettings || {};
+    var interfaceSettings = brandSettings.interface || {};
+    var bubbleText = interfaceSettings.chatIconText || 'Feedback';
+    
     bubbleBtn = document.createElement('button');
-    var styles = bubblePositionStyles(position);
+    var styles = bubblePositionStyles(config);
     Object.assign(bubbleBtn.style, styles);
     
-    // Use a more visible default icon
-    bubbleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>';
+    // Send icon SVG (filled airplane like Lucide Send)
+    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>';
+    bubbleBtn.innerHTML = iconSvg + '<span>' + bubbleText + '</span>';
     bubbleBtn.setAttribute('aria-label', 'Open chat');
+    
+    // Add hover effects
+    bubbleBtn.onmouseenter = function() {
+      this.style.transform = 'scale(1.05)';
+      this.style.opacity = '1';
+    };
+    bubbleBtn.onmouseleave = function() {
+      this.style.transform = 'scale(1)';
+      this.style.opacity = '0.95';
+    };
     bubbleBtn.onclick = openModal;
     
     // Ensure button is added after DOM is ready
@@ -118,8 +204,43 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Create bubble with fallback defaults
+  function createBubbleWithFallback(config) {
+    if (mode === 'manual') return;
+    
+    // Use defaults if config is null/undefined
+    var fallbackConfig = {
+      brandSettings: {
+        interface: {
+          chatIconText: 'Feedback',
+          primaryBrandColor: '#000000',
+          alignChatBubble: 'right',
+          theme: 'light',
+          advancedColors: false,
+          chatIconColor: '#000000'
+        }
+      }
+    };
+    
+    createBubble(config || fallbackConfig);
+  }
+
+  // Initialize bubble - try to fetch config first, fallback to defaults
+  fetchModalConfig(function(error, config) {
+    if (error) {
+      console.warn('[Franko] Using fallback bubble config due to error:', error);
+      createBubbleWithFallback(null);
+    } else {
+      createBubbleWithFallback(config);
+    }
+  });
+
   // Modal control funcs
   function openModal() {
+    if (iframe.style.display === 'none') {
+      // Tell iframe to reset internal visibility state
+      iframe.contentWindow.postMessage({ type: 'RESET_VISIBILITY' }, '*');
+    }
     iframe.style.display = 'block';
     iframe.setAttribute('aria-hidden', 'false');
     if (bubbleBtn) bubbleBtn.style.display = 'none';
@@ -130,20 +251,58 @@ export async function GET(request: NextRequest) {
     if (bubbleBtn) bubbleBtn.style.display = 'flex';
   }
 
-  // Expose API for manual mode
-  window.FrankoModal = {
-    open: openModal,
-    close: closeModal,
-    getState: function () {
-      return iframe.style.display === 'block' ? 'open' : 'closed';
-    },
+  // Expose API for manual mode with backward compatibility
+  // Support both FrankoModal('open') and FrankoModal.open() calling patterns
+  function FrankoModalAPI(method) {
+    if (method === 'open') return openModal();
+    if (method === 'close') return closeModal();
+    if (method === 'getState') return iframe.style.display === 'block' ? 'open' : 'closed';
+  }
+  
+  // Add methods as properties for .open() syntax
+  FrankoModalAPI.open = openModal;
+  FrankoModalAPI.close = closeModal;
+  FrankoModalAPI.getState = function() {
+    return iframe.style.display === 'block' ? 'open' : 'closed';
   };
-  console.log('[Franko] FrankoModal API exposed on window object');
+  
+  // Preserve any existing queue from the proxy script
+  if (window.FrankoModal && window.FrankoModal.q) {
+    FrankoModalAPI.q = window.FrankoModal.q;
+    // Process any queued calls
+    if (FrankoModalAPI.q && FrankoModalAPI.q.length > 0) {
+      FrankoModalAPI.q.forEach(function(args) {
+        var method = args[0];
+        if (method === 'open') openModal();
+        else if (method === 'close') closeModal();
+      });
+      FrankoModalAPI.q = []; // Clear the queue
+    }
+  }
+  
+  window.FrankoModal = FrankoModalAPI;
+  console.log('[Franko] FrankoModal API exposed on window object with backward compatibility');
 
   // Listen for Escape key to close modal
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && iframe.style.display === 'block') {
       closeModal();
+    }
+  });
+
+  // Listen for messages from iframe (cross-origin communication)
+  window.addEventListener('message', function (e) {
+    // Accept messages from any origin for flexibility, but check the message type
+    if (e.data && e.data.type === 'FRANKO_CLOSE') {
+      closeModal();
+    } else if (e.data && e.data.type === 'FRANKO_IDENTITY_REQUEST') {
+      // Respond with identity data if available
+      var identityData = window.FrankoUser || {};
+      iframe.contentWindow.postMessage({
+        type: 'FRANKO_IDENTITY_RESPONSE',
+        identityData: identityData
+      }, '*');
+      console.log('[Franko] Sent identity data to iframe:', identityData);
     }
   });
 })();`

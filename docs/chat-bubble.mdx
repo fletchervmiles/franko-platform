@@ -1,0 +1,69 @@
+# Embed a Chat Bubble
+
+A floating chat bubble is the fastest way to add Franko to any page. It docks to your page (bottom-right or bottom-left depending on your configuration) and opens your modal when clicked.
+
+---
+
+## 1 · Copy your snippet
+
+1. In the **Connect** tab choose **Embed a Chat Bubble**.
+2. Click **Copy**. The snippet already contains your modal slug and interface settings.
+
+```html
+<script>
+  … generated code …
+</script>
+```
+
+---
+
+## 2 · Add to your site
+
+Paste the snippet just before the closing `</body>` tag.
+
+**Installation options:**
+
+| Scenario | How to implement |
+|----------|------------------|
+| **Show on every page** | Add snippet to your main template/layout file |
+| **Show only on specific pages** | Add snippet only to those page templates |
+| **Show only to logged-in users** | Wrap the snippet in your auth check:<br/>`{% if USER_IS_AUTHENTICATED %}`<br/>&nbsp;&nbsp;`<!-- snippet here -->`<br/>`{% endif %}` |
+| **Show based on user role** | Use your template logic to conditionally render:<br/>`{% if user.role == 'premium' %}`<br/>&nbsp;&nbsp;`<!-- snippet here -->`<br/>`{% endif %}` |
+
+> The script loads asynchronously and is less than 5kb so it won't slow down your page.
+
+**Want to identify users?** Add the identity snippet before your chat bubble script. [Learn more about identity verification →](./identity-verification)
+
+---
+
+## 3 · Customize appearance
+
+To change your chat bubble design:
+
+1. Go to the **Interface** tab in your dashboard
+2. Update colors, position, or text
+3. Copy the updated snippet and replace it on your site
+
+> Interface changes require updating your embed code.
+
+---
+
+## 4 · Test your installation
+
+1. Reload the page & look for your chat bubble in the bottom corner
+2. Click it – the modal should open instantly
+
+If nothing appears, check the browser console for errors.
+
+---
+
+## Troubleshooting
+
+| Symptom | Possible Cause | Fix |
+|---------|----------------|-----|
+| Bubble not visible | Script blocked by CSP / ad-blocker | Allow `/embed.js` and `/embed/*` in your CSP |
+| Mixed-content warning | Site served over HTTP | Use HTTPS for both your site & Franko |
+| Modal opens but is blank | JavaScript conflict | Check console for errors; ensure no global `FrankoModal` conflicts |
+| Wrong modal opens, or all bubbles open same modal | Multiple Franko snippets loaded on same page | Use only one Franko snippet per page. For multiple modals, see [one-per-page patterns](./custom-trigger#multiple-modals) or [Shareable Links](./shareable-links) |
+
+Need help? Email **fletcher@franko.ai** 

@@ -1,0 +1,300 @@
+# Embed with a Custom Trigger
+
+The **Custom Trigger** option lets you open a Franko modal from *any* element – button, link, navbar item, or even a JavaScript function.
+
+---
+
+## 1 · Copy your script
+
+1. In **Connect → Custom Trigger** click **Copy**.
+2. The snippet contains your modal slug and loads Franko in **manual** mode.
+
+```html
+<script>
+  … generated code …
+</script>
+```
+
+---
+
+## 2 · Paste before `</body>`
+
+Add the snippet to every page where the trigger lives – preferably just before the closing `</body>` tag.
+
+---
+
+## 3 · Add your trigger
+
+Any element can open the modal:
+
+```html
+<button onclick="FrankoModal.open()">Give Feedback</button>
+```
+
+**Want to identify users?** Add the identity snippet before your trigger script. [Learn more about identity verification →](./identity-verification)
+
+---
+
+## Multiple modals
+
+The Franko script is designed to manage one active modal configuration per page. **Installing multiple Franko snippets on the same page will cause conflicts** – only the last-loaded modal will work correctly.
+
+**Recommended approach: One Modal Per Page**
+
+Place different modal snippets on different pages or sections of your site:
+
+```html
+<!-- Homepage: General feedback -->
+<script data-modal-slug="feedback-12345">...</script>
+
+<!-- Pricing page: Sales questions -->  
+<script data-modal-slug="sales-67890">...</script>
+
+<!-- Dashboard: Bug reports -->
+<script data-modal-slug="bugs-54321">...</script>
+```
+
+Since each script is on a separate page, they will never conflict.
+
+**For Single-Page Applications (SPAs)**: Consider using conditional loading patterns (see [Conditional loading](#conditional-loading) section below) to load different modal scripts based on route or component state.
+
+**Alternative**: For situations where you can't embed scripts, consider using [Shareable Links](./shareable-links) which work as standalone webpages.
+
+---
+
+## Example patterns
+
+| Use case | Implementation |
+|----------|----------------|
+| **Navbar feedback link** | `<a href="#" onclick="FrankoModal.open(); return false;">Feedback</a>` |
+| **After form submission** | `onSubmit={() => { submitForm().then(() => FrankoModal.open()); }}` |
+| **Scroll-triggered** | See enhanced code example below |
+| **Error boundary** | `catch(error) { console.error(error); FrankoModal.open("BUG_REPORT_MODAL_SLUG"); }` |
+| **Time-delayed** | `setTimeout(() => FrankoModal.open("SURVEY_MODAL_SLUG"), 30000);` |
+| **Exit intent** | `document.addEventListener('mouseleave', () => FrankoModal.open());` |
+| **React/SPA Component** | See React example below |
+
+**Scroll trigger example:**
+```js
+// Enhanced scroll trigger with debouncing and cleanup
+let scrollTimeout;
+let hasTriggered = false;
+
+function handleScroll() {
+  // Debounce to prevent excessive calls
+  clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    // Only trigger once when user scrolls past 50% of page
+    if (!hasTriggered && window.scrollY > document.body.scrollHeight * 0.5) {
+      hasTriggered = true;
+      FrankoModal.open();
+      
+      // Clean up listener after triggering
+      window.removeEventListener('scroll', handleScroll);
+    }
+  }, 100); // 100ms debounce
+}
+
+window.addEventListener('scroll', handleScroll);
+
+// Optional: Reset for single-page apps
+function resetScrollTrigger() {
+  hasTriggered = false;
+  window.addEventListener('scroll', handleScroll);
+}
+```
+
+**React/SPA Component example:**
+```jsx
+import { useEffect } from 'react';
+
+const FeedbackComponent = ({ modalSlug = "YOUR_MODAL_SLUG" }) => {
+  useEffect(() => {
+    // Check if script already exists to avoid duplicates
+    if (document.querySelector(`script[data-modal-slug="${modalSlug}"]`)) {
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.setAttribute('data-modal-slug', modalSlug);
+    script.async = true;
+    
+    // Add your full Franko snippet here
+    script.innerHTML = `
+      (function(){
+        if (!window.FrankoModal) {
+          window.FrankoModal = (...a) => { 
+            // ...your complete Franko loader code...
+          };
+        }
+        // ...rest of your snippet...
+      })();
+    `;
+    
+    document.body.appendChild(script);
+
+    // Cleanup on component unmount
+    return () => {
+      const existingScript = document.querySelector(`script[data-modal-slug="${modalSlug}"]`);
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, [modalSlug]); // Re-run if modalSlug changes
+
+  const handleOpenModal = () => {
+    if (window.FrankoModal) {
+      window.FrankoModal.open();
+    } else {
+      console.warn('Franko modal not loaded yet');
+    }
+  };
+
+  return (
+    <button onClick={handleOpenModal} className="feedback-button">
+      Give Feedback
+    </button>
+  );
+};
+
+export default FeedbackComponent;
+```
+
+This pattern ensures proper script loading, avoids duplicates, and handles cleanup for modern React applications.
+
+---
+
+## Conditional loading
+
+You can control when the script loads based on user state, page context, or application logic:
+
+**Basic conditional loading:**
+```js
+// Only load for authenticated users
+if (USER_IS_AUTHENTICATED) {
+  const script = document.createElement('script');
+  script.src = 'https://your-franko-embed-url.js';
+  document.body.appendChild(script);
+}
+```
+
+**React component example:**
+```jsx
+import { useEffect } from 'react';
+
+function FeedbackProvider({ user, children }) {
+  useEffect(() => {
+    // Only load Franko for premium users
+    if (user?.isPremium && !window.FrankoModal) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://your-franko-embed-url.js';
+      
+      script.onload = () => {
+        console.log('Franko loaded successfully');
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load Franko');
+      };
+      
+      document.body.appendChild(script);
+    }
+  }, [user]);
+
+  return children;
+}
+```
+
+**Vue component example:**
+```vue
+<script>
+export default {
+  mounted() {
+    // Load based on user role
+    if (this.$store.state.user.role === 'admin') {
+      this.loadFranko();
+    }
+  },
+  methods: {
+    loadFranko() {
+      if (window.FrankoModal) return; // Already loaded
+      
+      const script = document.createElement('script');
+      script.src = 'https://your-franko-embed-url.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }
+}
+</script>
+```
+
+**Advanced conditional patterns:**
+```js
+// Load based on page type and user status
+const shouldLoadFranko = 
+  window.location.pathname.includes('/dashboard') && 
+  localStorage.getItem('userType') === 'power-user';
+
+if (shouldLoadFranko) {
+  // Load Franko with error handling
+  import('https://your-franko-embed-url.js')
+    .then(() => console.log('Franko ready'))
+    .catch(err => console.warn('Franko failed to load:', err));
+}
+```
+
+---
+
+## Performance
+
+**Script size and loading**: Each Franko script is less than 5kb and loads asynchronously, so it won't block your page rendering or slow down initial load times.
+
+**Multiple unused scripts**: Having unused Franko scripts on different pages won't hurt performance since each page only loads its own script.
+
+**Caching benefits**: Franko scripts are cached by the browser, so repeat visits load even faster.
+
+**Best practices for optimal performance:**
+
+```js
+// ✅ Load after critical content
+document.addEventListener('DOMContentLoaded', () => {
+  // Your critical page code first
+  initializePage();
+  
+  // Then load Franko
+  loadFrankoScript();
+});
+
+// ✅ Use async loading
+const script = document.createElement('script');
+script.async = true; // Non-blocking
+script.src = 'your-franko-url';
+
+// ✅ Add error handling
+script.onerror = () => {
+  console.warn('Franko feedback unavailable');
+  // Graceful degradation - hide feedback buttons, etc.
+};
+```
+
+**Mobile considerations**: Franko modals are responsive and optimized for mobile devices. The script size and loading pattern are identical across all devices.
+
+---
+
+## FAQ
+
+**Will unused scripts hurt performance?** No – each script is less than 5kb and loads async.
+
+**Does the script inject a bubble?** No. Manual mode stays invisible until you call `FrankoModal.open()`.
+
+**Can I trigger it from my React/Vue app?** Yes – `FrankoModal.open()` works anywhere once the script loads.
+
+**Why do all my buttons open the same modal?** Multiple Franko snippets are conflicting. Only use one snippet per page. See the "Multiple modals" section above for the one-per-page approach, or consider [Shareable Links](./shareable-links) for situations where embedding isn't possible.
+
+**What's the difference between manual and bubble mode?** Manual mode is for custom triggers - the modal stays completely invisible until you call `FrankoModal.open()`. Bubble mode automatically injects a visible, floating chat bubble on your page.
+
+**Can I switch modals by removing the old script tag and adding a new one?** This is not recommended and can be unreliable. Franko's API (`window.FrankoModal`) is created only once per page. Even if you remove the script tag, the original modal's configuration may persist in memory. For SPAs, use the one-per-page approach described in the "Multiple modals" section or consider [Shareable Links](./shareable-links) for different use cases.
+
+Need help? Email **fletcher@franko.ai** 

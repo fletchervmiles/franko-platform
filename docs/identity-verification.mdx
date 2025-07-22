@@ -1,0 +1,85 @@
+# Link Feedback to Logged-in Users (Identity Verification)
+
+With identity verification you can see *who* said what in your Franko dashboard. It does **not** change the visitor's experience – the modal looks identical whether the user is verified or anonymous.
+
+---
+
+## How it works
+
+Add this snippet **before** your Franko embed script:
+
+```html
+<script>
+// Replace the placeholder values with your own user data
+window.FrankoUser = {
+  user_id: YOUR_CURRENT_USER_ID, // e.g. user.id, usually from your auth provider
+  user_metadata: {
+    name: YOUR_CURRENT_USER_NAME,   // optional
+    email: YOUR_CURRENT_USER_EMAIL  // optional
+  }
+}
+</script>
+```
+
+> **⚠️ IMPORTANT: Script Order Matters**
+> 
+> The `window.FrankoUser` identity snippet must be executed **before** the main Franko embed script loads, otherwise user data will be missed.
+> 
+> **Reliable Pattern**: Place the identity information in the same script tag as your Franko loader to guarantee correct order:
+> 
+> ```html
+> <script>
+> (function() {
+>   // 1. Set user identity first
+>   window.FrankoUser = {
+>     user_id: "user-123",
+>     user_metadata: { name: "Ada Lovelace", email: "ada@example.com" }
+>   };
+> 
+>   // 2. Then load Franko embed script
+>   if (!window.FrankoModal) {
+>     window.FrankoModal = (...a) => { /* ...Franko loader code... */ };
+>     // ...rest of your Franko embed code...
+>   }
+> })();
+> </script>
+> ```
+
+That's it! Franko will now associate feedback with this user.
+
+---
+
+## What data is stored?
+
+- `user_id` - Your unique identifier for the user
+- `user_metadata` - Only `name` and `email` (both optional)
+
+---
+
+## Common patterns
+
+| Use case | Implementation |
+|----------|----------------|
+| Show user info only when logged in | Wrap the snippet in your auth check |
+| Different user data per page | Update `window.FrankoUser` dynamically |
+
+**Compatible with all embedding methods**: This identity pattern works with both [Chat Bubbles](./chat-bubble) and [Custom Triggers](./custom-trigger).
+
+---
+
+## What if the snippet is missing?
+
+No problem – conversations still work. The **User** column shows "Anonymous" instead of the user details.
+
+---
+
+## FAQ
+
+| Question | Answer |
+|----------|--------|
+| Is this required? | No – skip it if anonymous feedback is fine |
+| Does it work with Direct Links? | No – direct links open in new tabs without access to your session |
+| Can I update user data dynamically? | Yes – set `window.FrankoUser` before calling `FrankoModal.open()` |
+| Is HTTPS required? | Yes – always use HTTPS for security |
+
+Need help? Email **fletcher@franko.ai** 

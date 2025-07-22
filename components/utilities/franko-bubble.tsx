@@ -38,9 +38,6 @@ export function FrankoBubble() {
                 s.src="https://franko.ai/embed.js";
                 s.setAttribute("data-modal-slug","franko-1753006030406");
                 s.setAttribute("data-mode","bubble");
-                s.setAttribute("data-position","bottom-right");
-                s.setAttribute("data-bubble-text","Feedback");
-                s.setAttribute("data-bubble-color","#0C0A08");
                 s.onload=()=>{ if(window.FrankoModal.q){ window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a)); window.FrankoModal.q=[]; } };
                 document.head.appendChild(s);
               };

@@ -16,8 +16,7 @@
   console.log('[Franko] Modal slug:', slug);
 
   var mode = loader.getAttribute('data-mode') || 'bubble'; // bubble | manual
-  var position = loader.getAttribute('data-position') || 'bottom-right';
-  console.log('[Franko] Mode:', mode, 'Position:', position);
+  console.log('[Franko] Mode:', mode);
 
   // Extract the origin from the script URL
   var scriptUrl = new URL(loader.src);
@@ -61,16 +60,75 @@
     document.addEventListener('DOMContentLoaded', addIframe);
   }
 
-  // Utility to get bubble position styles
-  function bubblePositionStyles(pos) {
-    // Get brand color from data attribute, fallback to black
-    var brandColor = loader.getAttribute('data-bubble-color') || '#000';
+  // Fetch modal configuration for dynamic bubble styling
+  function fetchModalConfig(callback) {
+    var configUrl = origin + '/api/embed/' + slug;
+    console.log('[Franko] Fetching config from:', configUrl);
     
+    // Use fetch if available, otherwise fall back to XMLHttpRequest
+    if (typeof fetch === 'function') {
+      fetch(configUrl)
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Config fetch failed: ' + response.status);
+          }
+          return response.json();
+        })
+        .then(function(config) {
+          console.log('[Franko] Config loaded:', config);
+          callback(null, config);
+        })
+        .catch(function(error) {
+          console.error('[Franko] Config fetch error:', error);
+          callback(error, null);
+        });
+    } else {
+      // Fallback for older browsers
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', configUrl, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var config = JSON.parse(xhr.responseText);
+              console.log('[Franko] Config loaded via XHR:', config);
+              callback(null, config);
+            } catch (parseError) {
+              console.error('[Franko] Config parse error:', parseError);
+              callback(parseError, null);
+            }
+          } else {
+            var error = new Error('Config fetch failed: ' + xhr.status);
+            console.error('[Franko] Config fetch error:', error);
+            callback(error, null);
+          }
+        }
+      };
+      xhr.send();
+    }
+  }
+
+  // Utility to get bubble position styles using config
+  function bubblePositionStyles(config) {
+    var brandSettings = config.brandSettings || {};
+    var interfaceSettings = brandSettings.interface || {};
+    
+    // Determine effective colors using same logic as the UI
+    var theme = interfaceSettings.theme || 'light';
+    var themeDefaults = {
+      light: { chatIconColor: "#000000" },
+      dark: { chatIconColor: "#ffffff" }
+    };
+    
+    var bubbleColor = interfaceSettings.advancedColors
+      ? (interfaceSettings.chatIconColor || themeDefaults[theme].chatIconColor)
+      : (interfaceSettings.primaryBrandColor || themeDefaults[theme].chatIconColor);
+
     var style = {
       position: 'fixed',
       padding: '8px 12px',
       borderRadius: '9999px',
-      background: brandColor,
+      background: bubbleColor,
       color: '#fff',
       border: 'none',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -86,8 +144,11 @@
       transition: 'transform 0.2s ease, opacity 0.2s ease',
       opacity: '0.95',
     };
+    
     var pad = '24px';
-    if (pos === 'bottom-left') {
+    var position = interfaceSettings.alignChatBubble === 'left' ? 'bottom-left' : 'bottom-right';
+    
+    if (position === 'bottom-left') {
       style.bottom = pad;
       style.left = pad;
     } else {
@@ -100,13 +161,17 @@
 
   // Create bubble if in bubble mode
   var bubbleBtn = null;
-  if (mode !== 'manual') {
+  function createBubble(config) {
+    if (mode === 'manual') return;
+    
+    var brandSettings = config.brandSettings || {};
+    var interfaceSettings = brandSettings.interface || {};
+    var bubbleText = interfaceSettings.chatIconText || 'Feedback';
+    
     bubbleBtn = document.createElement('button');
-    var styles = bubblePositionStyles(position);
+    var styles = bubblePositionStyles(config);
     Object.assign(bubbleBtn.style, styles);
     
-    // Text for bubble – default "Feedback" or custom via attribute
-    var bubbleText = loader.getAttribute('data-bubble-text') || 'Feedback';
     // Send icon SVG (filled airplane like Lucide Send)
     var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>';
     bubbleBtn.innerHTML = iconSvg + '<span>' + bubbleText + '</span>';
@@ -132,6 +197,37 @@
       });
     }
   }
+
+  // Create bubble with fallback defaults
+  function createBubbleWithFallback(config) {
+    if (mode === 'manual') return;
+    
+    // Use defaults if config is null/undefined
+    var fallbackConfig = {
+      brandSettings: {
+        interface: {
+          chatIconText: 'Feedback',
+          primaryBrandColor: '#000000',
+          alignChatBubble: 'right',
+          theme: 'light',
+          advancedColors: false,
+          chatIconColor: '#000000'
+        }
+      }
+    };
+    
+    createBubble(config || fallbackConfig);
+  }
+
+  // Initialize bubble - try to fetch config first, fallback to defaults
+  fetchModalConfig(function(error, config) {
+    if (error) {
+      console.warn('[Franko] Using fallback bubble config due to error:', error);
+      createBubbleWithFallback(null);
+    } else {
+      createBubbleWithFallback(config);
+    }
+  });
 
   // Modal control funcs
   function openModal() {
