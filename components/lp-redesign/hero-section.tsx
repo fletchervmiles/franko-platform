@@ -108,7 +108,7 @@ export default function HeroSection() {
 
               {/* Front layer - Feels like magic */}
               <div className="relative z-10 ml-20 mt-64">
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md bg-white rounded-lg p-2">
                   <img
                     src="/assets/feedback-cards-02.svg"
                     alt="Feedback cards feel like magic"

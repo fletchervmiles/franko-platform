@@ -81,8 +81,7 @@ export function SignupForm() {
         {isGoogleLoading ? 'Loading...' : (
           <>
             <GoogleIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign up with Google</span>
-            <span className="sm:hidden">Google</span>
+            <span>Sign up with Google</span>
           </>
         )}
       </Button>
