@@ -34,32 +34,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             }}
           />
 
-          {/* Floating bubble snippet */}
-          <Script
-            id="franko-bubble"
-            strategy="lazyOnload"
-            dangerouslySetInnerHTML={{
-              __html: `(
-  function(){
-    if(!window.FrankoModal){
-      window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};
-      window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})
-    }
-    const l=()=>{
-      const s=document.createElement("script");
-      s.src="https://franko.ai/embed.js";
-      s.setAttribute("data-modal-slug","franko-1753006030406");
-      s.setAttribute("data-mode","bubble");
-      s.setAttribute("data-position","bottom-right");
-      s.setAttribute("data-bubble-text","Feedback");
-      s.setAttribute("data-bubble-color","#0C0A08");
-      s.onload=()=>{ if(window.FrankoModal.q){ window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a)); window.FrankoModal.q=[]; } };
-      document.head.appendChild(s);
-    };
-    document.readyState==="complete"?l():addEventListener("load",l);
-  })();`,
-            }}
-          />
+          {/* Bubble script now injected globally in FrankoBubble component */}
         </>
       )}
     </>
