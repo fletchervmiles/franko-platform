@@ -19,17 +19,6 @@ export function FrankoBubble() {
 
   return (
     <>
-      {/* Identity snippet */}
-      <Script
-        id="franko-user-global"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `window.FrankoUser = { user_id: ${JSON.stringify(userId)}, user_metadata: { name: ${JSON.stringify(
-            name
-          )}, email: ${JSON.stringify(email)} } };`,
-        }}
-      />
-
       {/* Bubble snippet */}
       <Script
         id="franko-bubble-global"
@@ -41,6 +30,9 @@ export function FrankoBubble() {
                 window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};
                 window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})
               }
+              window.FrankoUser = { user_id: ${JSON.stringify(userId)}, user_metadata: { name: ${JSON.stringify(
+            name
+          )}, email: ${JSON.stringify(email)} } };
               const l=()=>{
                 const s=document.createElement("script");
                 s.src="https://franko.ai/embed.js";

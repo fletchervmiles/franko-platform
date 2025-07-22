@@ -230,7 +230,7 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
         </AnimatePresence>
       </div>
       <p className="text-xs sm:text-sm text-center text-white/60 mt-6 sm:mt-8">
-        You&apos;re moments away from meeting your ready-to-go interview agents.
+      This takes 1-2 minutes. Your interview agents will be trained and ready to go!
       </p>
     </div>
   )
