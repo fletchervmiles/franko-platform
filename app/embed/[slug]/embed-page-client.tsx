@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useMobileSafeguards } from "@/hooks/use-mobile-safeguards"
 import type { AppSettings } from "@/lib/settings-context"
 import type { SelectModal } from "@/db/schema/modals-schema"
 
@@ -21,6 +22,8 @@ export function EmbedPageClient({
   organizationName, 
   displayMode 
 }: EmbedPageClientProps) {
+  // Apply mobile zoom / overscroll safeguards inside the iframe context
+  useMobileSafeguards();
   // Determine if we need the pre-chat form (standalone link + toggle on)
   const requirePreChatForm = displayMode === "standalone" && modal.askNameEmailOnDirectLink === true;
 
