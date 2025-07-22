@@ -36,6 +36,7 @@ interface ModalExternalChatProps {
   disableProgressBar?: boolean;
   bodyBackground?: string;
   hideProgressBarUI?: boolean; // Add this prop definition
+  isEmbedMode?: boolean;
 }
 
 // Custom hook to prevent zooming on mobile
@@ -79,6 +80,7 @@ export function ModalExternalChat({
   disableProgressBar = false,
   bodyBackground,
   hideProgressBarUI = false,
+  isEmbedMode = false,
 }: ModalExternalChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -534,6 +536,8 @@ export function ModalExternalChat({
     transition: 'opacity 0.5s ease-in-out'
   };
 
+  const bottomPadding = isEmbedMode ? "pb-32" : (isMobile ? "pb-32" : "pb-40");
+
   return (
     <div 
       className="flex h-full w-full flex-col overflow-hidden" 
@@ -574,15 +578,11 @@ export function ModalExternalChat({
         </div>
       </div>
 
-      <div
-        className="border-t"
-        style={{
-          backgroundColor:
-            bodyBackground && bodyBackground.toLowerCase() === "#ffffff"
-              ? "#f9f9f9"
-              : bodyBackground || undefined,
-        }}
-      >
+      <div className={
+        isEmbedMode
+          ? "fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10"
+          : "fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10"
+      }>
         <ChatInput
           value={input}
           onChange={handleInputChange}

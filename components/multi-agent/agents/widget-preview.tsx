@@ -628,6 +628,7 @@ export function WidgetPreview({
               disableProgressBar={false}
               bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
               hideProgressBarUI={true}
+              isEmbedMode={isEmbedMode}
             />
           </div>
         </div>
