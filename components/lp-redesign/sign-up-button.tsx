@@ -56,7 +56,7 @@ export function SignupForm() {
   }
 
   return (
-    <div className="flex w-fit mx-auto sm:w-fit flex-col gap-1 sm:flex-row items-stretch rounded-lg bg-white p-2 shadow-md">
+    <div className="flex w-3/4 mx-auto sm:w-fit flex-col gap-1 sm:flex-row items-stretch rounded-lg bg-white p-2 shadow-md">
       {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
       <Button
         type="submit"
