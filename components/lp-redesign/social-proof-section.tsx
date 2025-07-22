@@ -30,8 +30,7 @@ export default function SocialProofSection() {
               {/* Right side - Quote */}
               <div className="flex-1">
                 <blockquote className="text-lg font-medium leading-relaxed" style={{ color: '#0C0A08' }}>
-                  "Each morning I skim new customer chats. It's just a different level of nuance and customer understanding. The whole team loves it. It helps us align and focus on what actually matters."
-                </blockquote>
+                "I was intrigued but doubtful until I saw our response data in one place. The issues we half knew about suddenly looked urgent and costly. I pinged our lead PM and we made three major updates that day. The gap between a 7/10 and a 9/10 customer experience is huge, and Franko is how we close it."                </blockquote>
                 <cite className="block mt-3 text-sm font-medium text-gray-500 not-italic">
                   Ben Goodman, Founder at agemate.com
                 </cite>

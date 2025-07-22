@@ -110,7 +110,7 @@ export default function HeroSection() {
               <div className="relative z-10 ml-20 mt-64">
                 <div className="w-full max-w-md">
                   <img
-                    src="/assets/feedback-cards-01.svg"
+                    src="/assets/feedback-cards-02.svg"
                     alt="Feedback cards feel like magic"
                     className="w-full h-auto"
                   />

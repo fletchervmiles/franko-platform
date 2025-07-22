@@ -158,6 +158,14 @@ export default function ResponsiveNavbar() {
               >
                 Book a demo
               </a>
+              <a
+                href="https://franko.mintlify.app/chat-bubble"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn("text-sm font-medium transition-colors", textColor, hoverTextColor)}
+              >
+                Docs
+              </a>
             </nav>
 
             {/* Auth Buttons - Desktop */}
@@ -288,6 +296,15 @@ export default function ResponsiveNavbar() {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Book a demo
+                      </a>
+                      <a
+                        href="https://franko.mintlify.app/chat-bubble"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-lg hover:text-gray-600 transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Docs
                       </a>
                       {isLoaded && !user && (
                         <Link

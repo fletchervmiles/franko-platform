@@ -31,34 +31,12 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 export function SignupForm() {
   const router = useRouter()
   const { isLoaded, signUp } = useSignUp()
-  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  const BLOCKED_DOMAINS = [
-    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
-    'icloud.com', 'aol.com', 'protonmail.com', 'tutanota.com',
-    'mail.com', 'yandex.com', 'zoho.com', 'live.com', 'msn.com'
-  ]
-
-  const validateBusinessEmail = (email: string): boolean => {
-    const domain = email.split('@')[1]?.toLowerCase()
-    if (!domain) return false
-    return !BLOCKED_DOMAINS.includes(domain)
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    if (!email) {
-      setError('Please enter your email address')
-      return
-    }
-    if (!validateBusinessEmail(email)) {
-      setError('Business email required')
-      return
-    }
-    router.push(`/sign-up?email=${encodeURIComponent(email)}&step=details`)
+    router.push('/sign-up')
   }
 
   const handleGoogleSignup = async () => {
@@ -80,13 +58,6 @@ export function SignupForm() {
   return (
     <div className="flex w-full sm:w-fit flex-col gap-1 sm:flex-row items-stretch rounded-lg bg-white p-2 shadow-md">
       {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-      <Input
-        className="flex-auto min-w-[180px] border-none bg-transparent px-3 py-1.5 text-sm text-[#0C0A08] placeholder-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-        type="email"
-        placeholder="What's your work email?"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
       <Button
         type="submit"
         onClick={handleSubmit}

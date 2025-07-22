@@ -46,6 +46,9 @@ export default function Footer() {
                 <a href="https://cal.com/fletcher-miles/franko.ai-demo-call" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white">
                   Book a demo
                 </a>
+                <a href="https://franko.mintlify.app/chat-bubble" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white">
+                  Docs
+                </a>
               </nav>
               
               <nav className="flex items-center gap-4">
