@@ -56,12 +56,12 @@ export function SignupForm() {
   }
 
   return (
-    <div className="flex w-full sm:w-fit flex-col gap-1 sm:flex-row items-stretch rounded-lg bg-white p-2 shadow-md">
+    <div className="flex w-fit mx-auto sm:w-fit flex-col gap-1 sm:flex-row items-stretch rounded-lg bg-white p-2 shadow-md">
       {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
       <Button
         type="submit"
         onClick={handleSubmit}
-        className="shrink-0 rounded-md px-4 py-1.5 text-sm font-medium transition-colors w-28"
+        className="shrink-0 rounded-md px-4 py-1.5 text-sm font-medium transition-colors w-full sm:w-28"
         style={{ 
           backgroundColor: '#E4F222',
           color: '#0C0A08'
@@ -74,7 +74,7 @@ export function SignupForm() {
       <div className="hidden self-stretch w-px bg-gray-200 sm:block" />
       <Button 
         variant="outline" 
-        className="shrink-0 rounded-md bg-transparent px-3 py-2 text-sm hover:bg-gray-100 w-28 flex items-center justify-center gap-1 text-[#0C0A08]"
+        className="shrink-0 rounded-md bg-transparent px-3 py-2 text-sm hover:bg-gray-100 w-full sm:w-28 flex items-center justify-center gap-1 text-[#0C0A08]"
         onClick={handleGoogleSignup}
         disabled={isGoogleLoading}
       >
