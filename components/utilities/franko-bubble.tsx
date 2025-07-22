@@ -12,7 +12,7 @@ export function FrankoBubble() {
   const { user } = useUser();
 
   if (!isSignedIn) return null;
-  if (EXCLUDED_PATHS.includes(pathname)) return null;
+  if (!pathname || EXCLUDED_PATHS.includes(pathname)) return null;
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
