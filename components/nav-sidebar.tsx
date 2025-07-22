@@ -95,11 +95,7 @@ const getNavMainData = (membership: string | null) => {
           url: "/support",
           icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
         },
-        {
-          title: "Feedback",
-          url: "/feedback",
-          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
-        },
+        // Feedback item removed – bubble handles feedback now
         {
           title: "Account",
           url: "/account",
