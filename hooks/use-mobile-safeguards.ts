@@ -37,8 +37,16 @@ export function useMobileSafeguards() {
       }
     };
     const preventPullToRefresh = (e: TouchEvent) => {
-      const touchY = e.touches[0]?.clientY;
-      if (touchY < 50 && e.type === "touchstart") {
+      // Only act on the first touch & when scrolled to the very top
+      if (window.scrollY !== 0) return;
+
+      const touchY = e.touches[0]?.clientY ?? 0;
+      // Ignore taps/clicks on interactive controls near the top (e.g. back button)
+      const isInteractive = (e.target as HTMLElement | null)?.closest('button, a, [role="button"], input, textarea');
+      if (isInteractive) return;
+
+      // Very first downward swipe within 10px from the top should be prevented
+      if (touchY < 10 && e.type === "touchstart") {
         e.preventDefault();
       }
     };

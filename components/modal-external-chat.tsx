@@ -574,7 +574,15 @@ export function ModalExternalChat({
         </div>
       </div>
 
-      <div className="border-t" style={{ backgroundColor: bodyBackground || undefined }}>
+      <div
+        className="border-t"
+        style={{
+          backgroundColor:
+            bodyBackground && bodyBackground.toLowerCase() === "#ffffff"
+              ? "#f9f9f9"
+              : bodyBackground || undefined,
+        }}
+      >
         <ChatInput
           value={input}
           onChange={handleInputChange}
