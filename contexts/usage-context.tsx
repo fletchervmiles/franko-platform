@@ -40,7 +40,11 @@ export function UsageProvider({ children, modalOwnerId }: UsageProviderProps) {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch('/api/usage', {
+      // When modalOwnerId is provided, send it as a query parameter
+      const url = new URL('/api/usage', window.location.origin)
+      url.searchParams.set('modalOwnerId', modalOwnerId)
+
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

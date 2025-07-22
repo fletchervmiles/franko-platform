@@ -1,35 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/utils/logger'
+
+// Helper function to determine if logging should be enabled (for embed script)
+const shouldLogInEmbed = () => {
+  // Local development
+  if (process.env.NODE_ENV === 'development') return true;
+  
+  // Vercel preview deployments (staging)
+  if (process.env.VERCEL_ENV === 'preview') return true;
+  
+  // Custom env var approach (alternative/backup)
+  if (process.env.ENVIRONMENT === 'staging' || process.env.ENVIRONMENT === 'preview') return true;
+  
+  // Production (main branch) - no logs
+  return false;
+}
 
 export async function GET(request: NextRequest) {
-  console.log('[API] embed.js route accessed')
+  logger.log('[API] embed.js route accessed')
   
   // Read the embed.js file content
-  const embedScript = `(function () {
-  console.log('[Franko] Embed script initializing...');
+  const embedScript = `
+const shouldLog = ${shouldLogInEmbed()};
+const log = (...args) => shouldLog && console.log(...args);
+const error = (...args) => shouldLog && console.error(...args);
+const warn = (...args) => shouldLog && console.warn(...args);
+
+(function () {
+  log('[Franko] Embed script initializing...');
   
   // Find the current <script> tag
   var loader = document.currentScript;
   if (!loader) {
-    console.error('[Franko] Loader script could not find currentScript');
+    error('[Franko] Loader script could not find currentScript');
     return;
   }
 
   var slug = loader.getAttribute('data-modal-slug');
   if (!slug) {
-    console.error('[Franko] data-modal-slug attribute missing');
+    error('[Franko] data-modal-slug attribute missing');
     return;
   }
-  console.log('[Franko] Modal slug:', slug);
+  log('[Franko] Modal slug:', slug);
 
   var mode = loader.getAttribute('data-mode') || 'bubble'; // bubble | manual
-  console.log('[Franko] Mode:', mode);
+  log('[Franko] Mode:', mode);
 
   // Extract the origin from the script URL
   var scriptUrl = new URL(loader.src);
   var origin = scriptUrl.origin;
   var iframeUrl = origin + '/embed/' + slug + '?mode=modal';
-  console.log('[Franko] Origin:', origin);
-  console.log('[Franko] Iframe URL:', iframeUrl);
+  log('[Franko] Origin:', origin);
+  log('[Franko] Iframe URL:', iframeUrl);
 
   // Create iframe
   var iframe = document.createElement('iframe');
@@ -47,17 +69,17 @@ export async function GET(request: NextRequest) {
   
   // Add load error handling for iframe
   iframe.onerror = function(e) {
-    console.error('[Franko] Failed to load iframe:', e);
+    error('[Franko] Failed to load iframe:', e);
   };
   
   iframe.onload = function() {
-    console.log('[Franko] Iframe loaded successfully');
+    log('[Franko] Iframe loaded successfully');
   };
 
   // Ensure iframe is added after DOM is ready
   function addIframe() {
     document.body.appendChild(iframe);
-    console.log('[Franko] Iframe added to DOM');
+    log('[Franko] Iframe added to DOM');
   }
   
   if (document.body) {
@@ -69,7 +91,7 @@ export async function GET(request: NextRequest) {
   // Fetch modal configuration for dynamic bubble styling
   function fetchModalConfig(callback) {
     var configUrl = origin + '/api/embed/' + slug;
-    console.log('[Franko] Fetching config from:', configUrl);
+    log('[Franko] Fetching config from:', configUrl);
     
     // Use fetch if available, otherwise fall back to XMLHttpRequest
     if (typeof fetch === 'function') {
@@ -81,11 +103,11 @@ export async function GET(request: NextRequest) {
           return response.json();
         })
         .then(function(config) {
-          console.log('[Franko] Config loaded:', config);
+          log('[Franko] Config loaded:', config);
           callback(null, config);
         })
         .catch(function(error) {
-          console.error('[Franko] Config fetch error:', error);
+          error('[Franko] Config fetch error:', error);
           callback(error, null);
         });
     } else {
@@ -97,15 +119,15 @@ export async function GET(request: NextRequest) {
           if (xhr.status === 200) {
             try {
               var config = JSON.parse(xhr.responseText);
-              console.log('[Franko] Config loaded via XHR:', config);
+              log('[Franko] Config loaded via XHR:', config);
               callback(null, config);
             } catch (parseError) {
-              console.error('[Franko] Config parse error:', parseError);
+              error('[Franko] Config parse error:', parseError);
               callback(parseError, null);
             }
           } else {
             var error = new Error('Config fetch failed: ' + xhr.status);
-            console.error('[Franko] Config fetch error:', error);
+            error('[Franko] Config fetch error:', error);
             callback(error, null);
           }
         }
@@ -228,7 +250,7 @@ export async function GET(request: NextRequest) {
   // Initialize bubble - try to fetch config first, fallback to defaults
   fetchModalConfig(function(error, config) {
     if (error) {
-      console.warn('[Franko] Using fallback bubble config due to error:', error);
+      warn('[Franko] Using fallback bubble config due to error:', error);
       createBubbleWithFallback(null);
     } else {
       createBubbleWithFallback(config);
@@ -281,7 +303,7 @@ export async function GET(request: NextRequest) {
   }
   
   window.FrankoModal = FrankoModalAPI;
-  console.log('[Franko] FrankoModal API exposed on window object with backward compatibility');
+  log('[Franko] FrankoModal API exposed on window object with backward compatibility');
 
   // Listen for Escape key to close modal
   document.addEventListener('keydown', function (e) {
@@ -302,7 +324,7 @@ export async function GET(request: NextRequest) {
         type: 'FRANKO_IDENTITY_RESPONSE',
         identityData: identityData
       }, '*');
-      console.log('[Franko] Sent identity data to iframe:', identityData);
+      log('[Franko] Sent identity data to iframe:', identityData);
     }
   });
 })();`
