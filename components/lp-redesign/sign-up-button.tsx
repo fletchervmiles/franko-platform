@@ -69,7 +69,7 @@ export function SignupForm() {
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F5FF78' }}
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#E4F222' }}
       >
-        Get Started
+        Get started for free
       </Button>
       <div className="hidden self-stretch w-px bg-gray-200 sm:block" />
       <Button 
@@ -81,8 +81,8 @@ export function SignupForm() {
         {isGoogleLoading ? 'Loading...' : (
           <>
             <GoogleIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign&nbsp;up</span>
-            <span className="sm:hidden">Sign</span>
+            <span className="hidden sm:inline">Sign up with Google</span>
+            <span className="sm:hidden">Google</span>
           </>
         )}
       </Button>
