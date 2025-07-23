@@ -626,7 +626,7 @@ export function WidgetPreview({
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
               disableProgressBar={false}
-              bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
+              bodyBackground={currentTheme === "dark" ? "#000000" : undefined}
               hideProgressBarUI={true}
               isEmbedMode={isEmbedMode}
             />
@@ -713,7 +713,8 @@ export function WidgetPreview({
         cardHeightClasses, 
         cardMaxWidth,
         // Remove default Card border in embed mode, otherwise keep a border
-        isEmbedMode ? "border-0" : "border"
+        isEmbedMode ? "border-0" : "border",
+        "rounded-none md:rounded-xl"
       )}
       style={{
         // Apply border color in non-embed mode; ensure no border in embed mode
