@@ -17,7 +17,11 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
   return (
     <>
-      <div className="flex h-screen items-center justify-center">{children}</div>
+      {/*
+        On mobile, full viewport centering prevents scrolling when the content is taller than the screen.
+        We switch to min-h-screen for mobile and only enforce full height centering on large screens.
+      */}
+      <div className="flex min-h-screen items-start justify-center lg:items-center lg:h-screen">{children}</div>
 
       {isSignedIn && (
         <>
