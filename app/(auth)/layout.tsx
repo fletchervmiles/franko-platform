@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         We switch to min-h-screen for mobile and only enforce full height centering on large screens.
       */}
       {/* Flex centering only on large screens; mobile behaves like a normal block container for natural scrolling */}
-      <div className="min-h-screen flex justify-center items-start lg:items-center lg:h-screen">{children}</div>
+      <div className="min-h-screen flex items-center justify-center p-4">{children}</div>
 
       {isSignedIn && (
         <>
