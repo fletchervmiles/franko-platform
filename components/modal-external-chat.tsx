@@ -539,7 +539,7 @@ export function ModalExternalChat({
   };
 
   // Only use fixed positioning for popup modals, not desktop dashboard preview
-  const useFixedInput = isEmbedMode && displayMode === "modal";
+  const useFixedInput = isEmbedMode && displayMode === "modal" && isMobile;
   const bottomPadding = useFixedInput ? "pb-32" : (isMobile ? "pb-32" : "pb-40");
 
   return (
