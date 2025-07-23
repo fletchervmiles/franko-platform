@@ -33,7 +33,7 @@
   iframe.style.top = '0';
   iframe.style.left = '0';
   iframe.style.width = '100vw';
-  iframe.style.height = '100vh';
+  iframe.style.height = '100dvh';
   iframe.style.border = 'none';
   iframe.style.zIndex = '2147483647';
   iframe.style.display = 'none'; // start hidden
