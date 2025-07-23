@@ -376,6 +376,10 @@ export function ExternalChat({
 
   // Send auto greeting once at initialization
   useEffect(() => {
+    // Guard: wait until we actually have a valid chatResponseId before attempting to send the greeting
+    if (!chatResponseId) {
+      return; // chatResponseId not set yet – exit early and let the next render handle it
+    }
     // Only execute if not already sent AND we're initializing
     if (isInitializing && chatResponseId && !initialGreetingSentRef.current) {
       console.log("Starting auto-greeting process");
