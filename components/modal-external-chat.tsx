@@ -584,9 +584,9 @@ export function ModalExternalChat({
 
       <div className={
         useFixedInput
-          ? "fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10"
+          ? "fixed bottom-0 left-0 right-0 border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10"
           : "border-t"
-      } style={{ backgroundColor: useFixedInput ? undefined : (bodyBackground || undefined) }}>
+      } style={{ backgroundColor: bodyBackground || undefined }}>
         <div className={useFixedInput ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl px-4 md:px-8 lg:px-12 py-1 md:py-2"}>
         <ChatInput
           value={input}
