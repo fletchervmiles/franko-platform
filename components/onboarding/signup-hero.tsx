@@ -186,8 +186,8 @@ export default function SignupHero() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center p-4 sm:p-8 lg:p-12 xl:p-16">
-      <div className="container mx-auto">
+    <div className="min-h-screen bg-white text-gray-900 flex justify-center p-4 sm:p-8 lg:p-12 xl:p-16">
+      <div className="container mx-auto flex items-center min-h-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Left Column */}
           <div className="flex flex-col justify-center py-4 sm:py-8 lg:py-12">

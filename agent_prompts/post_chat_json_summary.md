@@ -59,6 +59,8 @@ Use these templates as a starting point to tell a coherent story with the key in
 ```
 
 ## STYLE RULES
+*   **No Fabrication:** Never invent or assume information not present in the transcript. If there's insufficient information for meaningful analysis, state this clearly in the `execSummary` (e.g., "Insufficient information from abandoned chat session").
+*   **Insufficient Data:** When users abandon chats early, acknowledge the limitation rather than forcing insights from minimal data.
 *   **Insight Framing:** Frame insights as objective statements about the user's experience (e.g., "User states the ideal solution is..." or "User is blocked by...").
 *   **Sentiment Accuracy:** Your language should mirror the user's expressed emotion. Do not escalate a "like" to a "love" or a minor "frustration" to a major "blocker."
 *   **Quote Verbatim:** Quotes must be verbatim from the transcript.
