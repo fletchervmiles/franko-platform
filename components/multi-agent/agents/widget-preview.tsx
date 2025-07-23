@@ -626,9 +626,10 @@ export function WidgetPreview({
               onConversationComplete={handleConversationComplete}
               initialMessages={[]}
               disableProgressBar={false}
-              bodyBackground={currentTheme === "dark" ? "#000000" : undefined}
+              bodyBackground={currentTheme === "dark" ? "#000000" : "#ffffff"}
               hideProgressBarUI={true}
               isEmbedMode={isEmbedMode}
+              displayMode={displayMode}
             />
           </div>
         </div>

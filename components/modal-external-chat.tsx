@@ -37,6 +37,7 @@ interface ModalExternalChatProps {
   bodyBackground?: string;
   hideProgressBarUI?: boolean; // Add this prop definition
   isEmbedMode?: boolean;
+  displayMode?: "modal" | "standalone";
 }
 
 // Custom hook to prevent zooming on mobile
@@ -81,6 +82,7 @@ export function ModalExternalChat({
   bodyBackground,
   hideProgressBarUI = false,
   isEmbedMode = false,
+  displayMode = "standalone",
 }: ModalExternalChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -536,7 +538,9 @@ export function ModalExternalChat({
     transition: 'opacity 0.5s ease-in-out'
   };
 
-  const bottomPadding = isEmbedMode ? "pb-32" : (isMobile ? "pb-32" : "pb-40");
+  // Only use fixed positioning for popup modals, not desktop dashboard preview
+  const useFixedInput = isEmbedMode && displayMode === "modal";
+  const bottomPadding = useFixedInput ? "pb-32" : (isMobile ? "pb-32" : "pb-40");
 
   return (
     <div 
@@ -579,11 +583,11 @@ export function ModalExternalChat({
       </div>
 
       <div className={
-        isEmbedMode
+        useFixedInput
           ? "fixed bottom-0 left-0 right-0 bg-[#F9F8F6] border-t px-4 py-1 md:py-2 md:px-8 lg:px-12 z-10"
           : "border-t"
-      } style={{ backgroundColor: isEmbedMode ? undefined : (bodyBackground || undefined) }}>
-        <div className={isEmbedMode ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl px-4 md:px-8 lg:px-12 py-1 md:py-2"}>
+      } style={{ backgroundColor: useFixedInput ? undefined : (bodyBackground || undefined) }}>
+        <div className={useFixedInput ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl px-4 md:px-8 lg:px-12 py-1 md:py-2"}>
         <ChatInput
           value={input}
           onChange={handleInputChange}

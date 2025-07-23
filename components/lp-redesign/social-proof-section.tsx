@@ -18,7 +18,7 @@ export default function SocialProofSection() {
               <div className="flex-shrink-0 flex justify-center lg:justify-start">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F4F2F0] p-1">
                   <Image
-                    src="/assets/ben-agemate.png"
+                    src="/assets/ben02.png"
                     alt="Ben Goodman, Founder at Agemate"
                     width={96}
                     height={96}
