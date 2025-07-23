@@ -12,7 +12,7 @@ interface FAQItem {
 const faqItems: FAQItem[] = [
   {
     question: "How is this different from pop-up survey tools like Sprig or Hotjar?",
-    answer: "Humans communicate through conversations, not multiple choice.\n\nSurveys are good for testing a specific hypothesis, i.e. \"Do you prefer feature X or feature Y?\" But they don't tell you why, only what.\n\nThink about NPS. Yes, it gives you a sense of customer satisfaction. But it only tells you a number, not why the customer gave the specific answer. It's mostly a vanity metric.\n\nOur agents have short conversations. They react to what your customers say and then seek to understand the why behind their statements over multiple back and forths."
+    answer: "Surveys capture clicks, not context.\n\nTools like Sprig, Hotjar, or an NPS score tell you what users did—but not why.\n\nFranko’s agents have quick, conversational interviews that uncover the reasons behind customer answers in just a few back-and-forths."
   },
   {
     question: "How do I install Franko?",
