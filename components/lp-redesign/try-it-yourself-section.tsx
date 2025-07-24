@@ -76,21 +76,21 @@ export default function TryItYourselfSection() {
   ];
 
   const handleLaunchModal = () => {
-    console.log('handleLaunchModal called');
-    console.log('window.FrankoModal:', window.FrankoModal);
-    console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
-    console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
+    // console.log('handleLaunchModal called');
+    // console.log('window.FrankoModal:', window.FrankoModal);
+    // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
+    // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
     
     if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
-      console.log('Calling FrankoModal.open()');
+      // console.log('Calling FrankoModal.open()');
       (window as any).FrankoModal.open();
     } else {
       console.warn("FrankoModal is not ready yet. Please wait a moment and try again.");
-      console.log('Checking again in 2 seconds...');
+      // console.log('Checking again in 2 seconds...');
       setTimeout(() => {
-        console.log('Retry - window.FrankoModal:', window.FrankoModal);
+        // console.log('Retry - window.FrankoModal:', window.FrankoModal);
         if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
-          console.log('Retry successful, calling FrankoModal.open()');
+          // console.log('Retry successful, calling FrankoModal.open()');
           (window as any).FrankoModal.open();
         } else {
           console.error('FrankoModal still not ready after 2 seconds');
