@@ -11,6 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ProfileProvider } from "@/components/contexts/profile-context";
 import { QueryProvider } from "@/components/utilities/query-provider";
 import { FrankoBubble } from "@/components/utilities/franko-bubble";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: {
@@ -70,7 +71,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Analytics />
                 <SpeedInsights />
                 {/* Franko bubble controller */}
-                <FrankoBubble />
+                <Suspense fallback={null}>
+                  <FrankoBubble />
+                </Suspense>
 
               </Providers>
             </ProfileProvider>
