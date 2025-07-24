@@ -12,8 +12,8 @@ export function FrankoBubble() {
   const { isSignedIn, userId } = useAuth();
   const { user } = useUser();
 
-  if (!isSignedIn) return null;
-  if (!pathname || EXCLUDED_PATHS.includes(pathname)) return null;
+  // Determine if bubble should render on this page
+  const shouldRender = isSignedIn && pathname && !EXCLUDED_PATHS.includes(pathname);
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
@@ -37,6 +37,10 @@ export function FrankoBubble() {
       }
     };
   }, []);
+
+  if (!shouldRender) {
+    return null;
+  }
 
   return (
     <>
