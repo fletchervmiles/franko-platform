@@ -126,7 +126,7 @@
 
     var style = {
       position: 'fixed',
-      padding: '8px 12px',
+      padding: '6px 10px',
       borderRadius: '9999px',
       background: bubbleColor,
       color: '#fff',
@@ -135,9 +135,9 @@
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '12px',
+      fontSize: '11px',
       fontWeight: '500',
-      lineHeight: '16px',
+      lineHeight: '14px',
       cursor: 'pointer',
       zIndex: '2147483646',
       whiteSpace: 'nowrap',
@@ -173,7 +173,7 @@
     Object.assign(bubbleBtn.style, styles);
     
     // Send icon SVG (filled airplane like Lucide Send)
-    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>';
+    var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>';
     bubbleBtn.innerHTML = iconSvg + '<span>' + bubbleText + '</span>';
     bubbleBtn.setAttribute('aria-label', 'Open chat');
     

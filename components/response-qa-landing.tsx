@@ -9,8 +9,9 @@ import { AlertTriangle } from "lucide-react"
 import { PromptSuggestions } from "@/components/prompt-suggestions"
 
 interface Conversation {
-  id: string
-  title: string
+  id: string          // modal id
+  title: string       // modal name
+  chatInstanceIds: string[]
   responseCount: number
   wordCount: number
 }
@@ -44,7 +45,7 @@ export function ResponseQALanding({
   
   // State for conversation selection
   const [selectedConversations, setSelectedConversations] = useState<Conversation[]>(
-    existingConversation ? [existingConversation] : []
+    existingConversation ? [{ ...existingConversation, chatInstanceIds: (existingConversation as any).chatInstanceIds || [] }] : []
   )
   const [sessionId, setSessionId] = useState<string | null>(existingSessionId || null)
   const [firstMessageSent, setFirstMessageSent] = useState(!!existingSessionId)
@@ -164,7 +165,7 @@ export function ResponseQALanding({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            chatInstanceIds: selectedConversations.map(c => c.id),
+            chatInstanceIds: selectedConversations.flatMap(c => c.chatInstanceIds),
             title: selectedConversations.length === 1 
               ? selectedConversations[0].title 
               : `Analysis of ${selectedConversations.length} conversations`
@@ -184,7 +185,7 @@ export function ResponseQALanding({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId: createData.session.id,
-            chatInstanceIds: selectedConversations.map(c => c.id)
+            chatInstanceIds: selectedConversations.flatMap(c => c.chatInstanceIds)
           })
         });
         
