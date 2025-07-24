@@ -323,18 +323,19 @@ export function WidgetPreview({
   // Track whether the visitor has already completed the pre-chat form during this session
   const [preChatDone, setPreChatDone] = useState(false)
 
-  const handleAgentSelect = async (agent: Agent) => {
+  const handleAgentSelect = async (agent: Agent, bypassPreChatForm = false) => {
     console.log('handleAgentSelect called:', { 
       agentId: agent.id, 
       requirePreChatForm, 
       preChatDone, 
+      bypassPreChatForm,
       hasOnAgentSelect: !!onAgentSelect,
       isPlayground 
     });
     
     // Show the pre-chat form exactly once per session when required. After the visitor fills the
     // form we set `preChatDone` so the chat flow can proceed normally.
-    if (requirePreChatForm && !preChatDone) {
+    if (requirePreChatForm && !preChatDone && !bypassPreChatForm) {
       console.log('Showing pre-chat form');
       setQueuedAgent(agent)
       setShowPreChatForm(true)
@@ -470,6 +471,7 @@ export function WidgetPreview({
   )
 
   const handlePreChatSubmit = (data: { name: string; email: string }) => {
+    console.log('handlePreChatSubmit called, preChatDone before:', preChatDone);
     // Save in window.FrankoUser
     if (typeof window !== 'undefined') {
       (window as any).FrankoUser = {
@@ -485,7 +487,8 @@ export function WidgetPreview({
     setPreChatDone(true)
     setShowPreChatForm(false)
     if (queuedAgent) {
-      handleAgentSelect(queuedAgent)
+      // Pass bypass flag to skip the pre-chat form check since we just completed it
+      handleAgentSelect(queuedAgent, true)
       setQueuedAgent(null)
     }
   }
