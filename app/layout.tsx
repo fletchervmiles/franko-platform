@@ -10,7 +10,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ProfileProvider } from "@/components/contexts/profile-context";
 import { QueryProvider } from "@/components/utilities/query-provider";
-import { FrankoBubble } from "@/components/utilities/franko-bubble";
 
 export const metadata: Metadata = {
   title: {
@@ -69,8 +68,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Toaster />
                 <Analytics />
                 <SpeedInsights />
-                {/* Authenticated pages get a floating Franko bubble */}
-                <FrankoBubble />
 
               </Providers>
             </ProfileProvider>
