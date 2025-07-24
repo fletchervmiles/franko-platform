@@ -33,13 +33,13 @@ export function UsageCard({ title, used, total, percentage, infoTooltip }: Usage
         <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
           {title}
           {infoTooltip && (
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs text-xs">{infoTooltip}</p>
+                <TooltipContent className="px-4 py-3">
+                  <p className="max-w-xs text-sm leading-relaxed">{infoTooltip}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

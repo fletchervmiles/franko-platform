@@ -47,7 +47,7 @@ export default async function DashboardPage() {
             used={usageData.responses.used}
             total={usageData.responses.total}
             percentage={usageData.responses.percentage}
-            infoTooltip="A response is counted when a respondent meaningfully engages with the AI. Immediate abandonment won't count, but partially completed responses will."
+            infoTooltip="A response is counted when a respondent meaningfully engages with the AI. Immediate abandonment won't count, but partially completed responses will. Your response list may show more items than this count as incomplete responses still appear there."
           />
           <UsageCard
             title="Chat Messages"
