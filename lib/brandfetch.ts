@@ -1,11 +1,17 @@
 import { logger } from "@/lib/logger";
 import { put } from "@vercel/blob";
+import { isDarkColor } from "@/lib/color-utils";
 
 export interface BrandfetchResult {
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
   companyName?: string;
+  /**
+   * Simple theme hint based on primaryColor luminance. "dark" = use dark UI, "light" for light UI.
+   * Undefined when no primaryColor could be extracted (callers should fall back to their own defaults).
+   */
+  theme?: "light" | "dark";
 }
 
 const BRANDFETCH_API_URL = process.env.BRANDFETCH_API_URL || "https://api.brandfetch.io/v2";
@@ -46,19 +52,31 @@ export async function fetchBrandDetails(domain: string): Promise<BrandfetchResul
     
     // Extract relevant brand information
     const logoUrl = await extractAndUploadLogo(data);
+
+    // Determine primary/secondary colours
+    const primaryColor = extractPrimaryColor(data);
+    const secondaryColor = extractSecondaryColor(data);
+
+    // Decide light vs dark theme based on luminance of primary colour (fallback to light)
+    const theme: "light" | "dark" | undefined = primaryColor
+      ? isDarkColor(primaryColor) ? "dark" : "light"
+      : undefined;
+
     const result: BrandfetchResult = {
       logoUrl,
-      primaryColor: extractPrimaryColor(data),
-      secondaryColor: extractSecondaryColor(data),
+      primaryColor,
+      secondaryColor,
       companyName: data.name || undefined,
+      theme,
     };
 
     logger.info(`Successfully fetched brand details for ${cleanDomain}:`, {
       hasLogo: !!result.logoUrl,
       hasPrimaryColor: !!result.primaryColor,
       primaryColor: result.primaryColor,
+      theme: result.theme,
       companyName: result.companyName,
-      colorsFound: data.colors?.length || 0
+      colorsFound: data.colors?.length || 0,
     });
 
     return result;

@@ -1,75 +1,65 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import Script from "next/script";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useEffect } from "react";
-
-const EXCLUDED_PATHS = ["/", "/pricing", "/faqs", "/terms", "/privacy"];
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 export function FrankoBubble() {
   const pathname = usePathname();
   const { isSignedIn, userId } = useAuth();
   const { user } = useUser();
 
-  // Determine if bubble should render on this page
-  const shouldRender = isSignedIn && pathname && !EXCLUDED_PATHS.includes(pathname);
+  // Exact-match rule: bubble only on "/workspace"
+  const shouldRender = isSignedIn && pathname === "/workspace";
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
-  // Clean up bubble, iframe, and scripts on unmount so it doesn't persist after route changes
+  // Keep a ref to the dynamically injected <script> so we can remove it later
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+
   useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined") {
-        try {
-          // Remove bubble button
-          document.querySelector('[aria-label="Open chat"]')?.remove();
-          // Remove Franko iframe
-          document.querySelector('iframe[src*="/embed/"]')?.remove();
-          // Remove any embed.js script tags that were added
-          document.querySelectorAll('script[src*="/embed.js"]').forEach((el) => el.parentNode?.removeChild(el));
-          // Clear the global API to avoid stale references
-          if (window.FrankoModal) delete (window as any).FrankoModal;
-        } catch (e) {
-          console.warn("[Franko] Cleanup error:", e);
+    if (typeof window === "undefined") return; // SSR safeguard
+
+    const cleanup = () => {
+      try {
+        document.querySelector('[aria-label="Open chat"]')?.remove();
+        document.querySelector('iframe[src*="/embed/"]')?.remove();
+        if (scriptRef.current) {
+          scriptRef.current.parentNode?.removeChild(scriptRef.current);
+          scriptRef.current = null;
         }
+        if (window.FrankoModal) delete (window as any).FrankoModal;
+      } catch (err) {
+        console.warn("[Franko] Cleanup error:", err);
       }
     };
-  }, []);
 
-  if (!shouldRender) {
-    return null;
-  }
+    if (shouldRender) {
+      // Inject only if not already present
+      if (!scriptRef.current) {
+        window.FrankoUser = {
+          user_id: userId,
+          user_metadata: { name, email },
+        } as any;
 
-  return (
-    <>
-      {/* Bubble snippet */}
-      <Script
-        id="franko-bubble-global"
-        strategy="lazyOnload"
-        dangerouslySetInnerHTML={{
-          __html: `(
-            function(){
-              if(!window.FrankoModal){
-                window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};
-                window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})
-              }
-              window.FrankoUser = { user_id: ${JSON.stringify(userId)}, user_metadata: { name: ${JSON.stringify(
-            name
-          )}, email: ${JSON.stringify(email)} } };
-              const l=()=>{
-                const s=document.createElement("script");
-                s.src="https://franko.ai/embed.js";
-                s.setAttribute("data-modal-slug","franko-1753006030406");
-                s.setAttribute("data-mode","bubble");
-                s.onload=()=>{ if(window.FrankoModal.q){ window.FrankoModal.q.forEach(([m,...a])=>window.FrankoModal[m]&&window.FrankoModal[m](...a)); window.FrankoModal.q=[]; } };
-                document.head.appendChild(s);
-              };
-              document.readyState==="complete"?l():addEventListener("load",l);
-            })();`,
-        }}
-      />
-    </>
-  );
+        const s = document.createElement("script");
+        s.src = "https://franko.ai/embed.js";
+        s.setAttribute("data-modal-slug", "franko-1753006030406");
+        s.setAttribute("data-mode", "bubble");
+        s.async = true;
+        scriptRef.current = s;
+        document.head.appendChild(s);
+      }
+    } else {
+      cleanup();
+    }
+
+    // Cleanup on unmount
+    return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldRender, userId, name, email]);
+
+  // No visual JSX needed; side-effect only component.
+  return null;
 } 
