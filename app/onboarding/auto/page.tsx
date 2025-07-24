@@ -5,10 +5,13 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import ProcessingSteps from "@/components/onboarding/processing-steps"
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function AutoOnboardingPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [progress, setProgress] = useState(0)
   const [message, setMessage] = useState("Starting setup...")
   const [isInitializing, setIsInitializing] = useState(true)
@@ -63,6 +66,9 @@ export default function AutoOnboardingPage() {
 
         if (result.skipped) {
           console.log('Auto-start skipped:', result.reason)
+          if (user?.id) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id) })
+          }
           router.push(result.redirectTo || '/workspace')
           return
         }
@@ -110,6 +116,9 @@ export default function AutoOnboardingPage() {
                  if (data.isComplete && data.shouldRedirect) {
            if (pollInterval) clearInterval(pollInterval)
            setTimeout(() => {
+             if (user?.id) {
+               queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id) })
+             }
              router.push(data.shouldRedirect)
            }, 1500)
          }

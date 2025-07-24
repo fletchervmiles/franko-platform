@@ -11,8 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageSquare, FileText } from "lucide-react"
 
 interface Conversation {
-  id: string
-  title: string
+  id: string           // modal id
+  title: string        // modal name
+  chatInstanceIds: string[] // all chat instances under this modal
   responseCount: number
   wordCount: number
 }
@@ -87,8 +88,8 @@ export function ChatInput({
   const fetchConversations = async () => {
     setIsLoadingConversations(true)
     try {
-      console.log("Fetching conversations from API...")
-      const response = await fetch("/api/chat-instances/with-responses")
+      console.log("Fetching conversations (modals) from API...")
+      const response = await fetch("/api/modals/with-responses")
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -103,7 +104,7 @@ export function ChatInput({
         console.warn("No conversations array in response:", data)
       }
       
-      // Filter out conversations that have already been selected
+      // Filter out modals that have already been selected
       const filteredConversations = (data.conversations || []).filter(
         (conv: Conversation) => !selectedConversations.some(
           selected => selected.id === conv.id
@@ -135,7 +136,7 @@ export function ChatInput({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            chatInstanceIds: [conversation.id],
+            chatInstanceIds: conversation.chatInstanceIds,
             title: conversation.title,
           }),
         });
@@ -157,7 +158,7 @@ export function ChatInput({
         },
         body: JSON.stringify({
           sessionId: currentSessionId,
-          chatInstanceIds: [conversation.id],
+          chatInstanceIds: conversation.chatInstanceIds,
         }),
       });
       

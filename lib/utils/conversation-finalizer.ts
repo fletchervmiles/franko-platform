@@ -29,6 +29,10 @@ import { getActiveWebhooksForEvent } from '@/db/queries/webhooks-queries';
 import { Webhook } from '@/db/schema/webhooks';
 import { getModalById } from '@/db/queries/modals-queries';
 
+// Add a configurable minimum completion percentage required to trigger an email.
+// Defaults to 50% but can be overridden via the EMAIL_MIN_COMPLETION_PERCENT env var.
+const MIN_EMAIL_COMPLETION_RATE = parseInt(process.env.EMAIL_MIN_COMPLETION_PERCENT ?? '50', 10);
+
 /**
  * Finalizes a conversation by updating various metrics, generating a summary, and sending notification
  * 
@@ -182,7 +186,7 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
       modalNotificationsEnabled = false;
     }
     
-    if (modalNotificationsEnabled && !isNaN(completionRate) && completionRate > 0) {
+    if (modalNotificationsEnabled && !isNaN(completionRate) && completionRate >= MIN_EMAIL_COMPLETION_RATE) {
       try {
         // Extract conversation title from conversation plan if available
         let conversationTitle = undefined;
@@ -228,9 +232,9 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
         logger.error('Error sending enhanced response notification email:', emailError);
         // Continue even if email sending fails
       }
-    } else if (modalNotificationsEnabled && (isNaN(completionRate) || completionRate <= 0)) {
-      // Optionally log if email was skipped due to 0% completion
-      logger.info('Skipping email notification for 0% completion chat', { chatResponseId });
+    } else if (modalNotificationsEnabled && (isNaN(completionRate) || completionRate < MIN_EMAIL_COMPLETION_RATE)) {
+      // Optionally log if email was skipped due to completion below threshold
+      logger.info(`Skipping email notification – completion below threshold (${MIN_EMAIL_COMPLETION_RATE}%)`, { chatResponseId, completionRate });
     } else if (!modalNotificationsEnabled) {
       logger.info('Email notifications disabled for this modal', { modalId: chatInstance.modalId });
     }
