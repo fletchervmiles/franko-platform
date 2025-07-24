@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 const EXCLUDED_PATHS = ["/", "/pricing", "/faqs", "/terms", "/privacy"];
 
@@ -16,6 +17,26 @@ export function FrankoBubble() {
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
+
+  // Clean up bubble, iframe, and scripts on unmount so it doesn't persist after route changes
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined") {
+        try {
+          // Remove bubble button
+          document.querySelector('[aria-label="Open chat"]')?.remove();
+          // Remove Franko iframe
+          document.querySelector('iframe[src*="/embed/"]')?.remove();
+          // Remove any embed.js script tags that were added
+          document.querySelectorAll('script[src*="/embed.js"]').forEach((el) => el.parentNode?.removeChild(el));
+          // Clear the global API to avoid stale references
+          if (window.FrankoModal) delete (window as any).FrankoModal;
+        } catch (e) {
+          console.warn("[Franko] Cleanup error:", e);
+        }
+      }
+    };
+  }, []);
 
   return (
     <>

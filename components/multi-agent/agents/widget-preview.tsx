@@ -322,8 +322,11 @@ export function WidgetPreview({
   const [showPreChatForm, setShowPreChatForm] = useState(false)
 
   const handleAgentSelect = async (agent: Agent) => {
-    // Intercept: require form first
-    if (requirePreChatForm && !(window as any).FrankoUser?.user_metadata?.email) {
+    // Always show the pre-chat form when it is required for standalone (direct-link) embeds,
+    // even if identity data is already present. This avoids silently skipping the form for
+    // users who are logged in on the same domain, which was confusing when the “Ask for name
+    // & email” toggle is enabled.
+    if (requirePreChatForm) {
       setQueuedAgent(agent)
       setShowPreChatForm(true)
       return
