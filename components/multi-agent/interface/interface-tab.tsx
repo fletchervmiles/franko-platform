@@ -440,8 +440,8 @@ export function InterfaceTab() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  {/* User Message Color */}
-                  <div className="space-y-2">
+                  {/* User Message Color - COMMENTED OUT - UI removed but can be restored later */}
+                  {/* <div className="space-y-2">
                     <Label htmlFor="user-message-color">User Message Color</Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -469,7 +469,7 @@ export function InterfaceTab() {
                         />
                       </PopoverContent>
                     </Popover>
-                  </div>
+                  </div> */}
                 </>
               )}
             </div>
