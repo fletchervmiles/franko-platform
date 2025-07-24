@@ -66,12 +66,7 @@ export async function GET(request: Request) {
         
         // Content (escaped for CSV)
         summary: (response.transcript_summary || '').replace(/"/g, '""').replace(/\n/g, ' '),
-        transcript: (response.cleanTranscript || '').replace(/"/g, '""').replace(/\n/g, ' '),
-        
-        // Metadata
-        chatInstanceId: response.chatInstanceId,
-        responseId: response.id,
-        updatedAt: response.updatedAt.toISOString(),
+        transcript: (response.cleanTranscript || '').replace(/"/g, '""').replace(/\n/g, ' ')
       };
     });
 
@@ -87,10 +82,7 @@ export async function GET(request: Request) {
       'Interview End Time',
       'Completion Date',
       'Summary',
-      'Transcript',
-      'Chat Instance ID',
-      'Response ID',
-      'Last Updated'
+      'Transcript'
     ];
 
     const csvRows = [
@@ -106,10 +98,7 @@ export async function GET(request: Request) {
         `"${response.interviewEndTime}"`,
         `"${response.completionDate}"`,
         `"${response.summary}"`,
-        `"${response.transcript}"`,
-        `"${response.chatInstanceId}"`,
-        `"${response.responseId}"`,
-        `"${response.updatedAt}"`
+        `"${response.transcript}"`
       ].join(','))
     ];
 

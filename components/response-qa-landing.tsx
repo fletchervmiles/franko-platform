@@ -30,8 +30,6 @@ interface ContentItem {
 const promptSuggestionsList = [
   "From all selected interviews, what's the single most important insight, and why does it matter?",
   "Which recurring pain point costs users the most time, money, or frustration?",
-  "Which specific feature most often turns users into a paying customer?",
-  "What's the #1 reason customers cancel, in their own words?",
   "Which role + company type shows the strongest 'can't-live-without-it' sentiment?",
   "Which requested change would create the biggest lift in satisfaction or retention?"
 ];
