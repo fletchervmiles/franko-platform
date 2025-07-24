@@ -320,13 +320,13 @@ export function WidgetPreview({
   // Pre-chat form state (post agent selection)
   const [queuedAgent, setQueuedAgent] = useState<Agent | null>(null)
   const [showPreChatForm, setShowPreChatForm] = useState(false)
+  // Track whether the visitor has already completed the pre-chat form during this session
+  const [preChatDone, setPreChatDone] = useState(false)
 
   const handleAgentSelect = async (agent: Agent) => {
-    // Always show the pre-chat form when it is required for standalone (direct-link) embeds,
-    // even if identity data is already present. This avoids silently skipping the form for
-    // users who are logged in on the same domain, which was confusing when the “Ask for name
-    // & email” toggle is enabled.
-    if (requirePreChatForm) {
+    // Show the pre-chat form exactly once per session when required. After the visitor fills the
+    // form we set `preChatDone` so the chat flow can proceed normally.
+    if (requirePreChatForm && !preChatDone) {
       setQueuedAgent(agent)
       setShowPreChatForm(true)
       return
@@ -471,6 +471,7 @@ export function WidgetPreview({
         }
       }
     }
+    setPreChatDone(true)
     setShowPreChatForm(false)
     if (queuedAgent) {
       handleAgentSelect(queuedAgent)
