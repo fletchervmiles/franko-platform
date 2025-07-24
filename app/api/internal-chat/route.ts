@@ -177,8 +177,8 @@ export async function POST(request: Request) {
     while (retryCount < maxRetries) {
       try {
         // Select model based on retry count - Use Flash first, then Pro Preview as fallback
-        const model = retryCount === 0 ? geminiFlashModel : gemini25ProPreviewModel;
-        logger.info(`Using ${retryCount === 0 ? 'geminiFlashModel' : 'gemini25ProPreviewModel'} for internal chat request`);
+        const model = retryCount === 0 ? gemini25ProPreviewModel : geminiFlashModel;
+        logger.info(`Using ${retryCount === 0 ? 'gemini25ProPreviewModel' : 'geminiFlashModel'} for internal chat request`);
         
         const result = await streamText({
           model: model,

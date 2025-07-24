@@ -200,10 +200,6 @@ async function processChatInstanceContext(chatInstanceIds: string[], existingCon
         contextData += `Email: ${response.intervieweeEmail || "Not provided"}\n`;
         contextData += `User Words: ${responseUserWords}\n`;
         
-        if (response.transcript_summary) {
-          contextData += `Summary: ${response.transcript_summary}\n`;
-        }
-        
         contextData += "Transcript:\n";
         
         // Use cleanTranscript if available, otherwise fallback to messagesJson processing
