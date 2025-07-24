@@ -1,13 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Info } from "lucide-react"
 
 interface UsageCardProps {
   title: string
   used: number
   total: number
   percentage: number
+  infoTooltip?: string
 }
 
-export function UsageCard({ title, used, total, percentage }: UsageCardProps) {
+export function UsageCard({ title, used, total, percentage, infoTooltip }: UsageCardProps) {
   // Determine color based on percentage
   const getStatusColor = (percentage: number) => {
     if (percentage < 60) return "bg-emerald-500"
@@ -27,7 +30,21 @@ export function UsageCard({ title, used, total, percentage }: UsageCardProps) {
   return (
     <Card className="rounded-[6px] border bg-white shadow-sm">
       <CardHeader className="pb-2 pt-4">
-        <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+          {title}
+          {infoTooltip && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs text-xs">{infoTooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

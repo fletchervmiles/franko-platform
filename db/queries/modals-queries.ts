@@ -1,6 +1,8 @@
 import { db } from "@/db/db";
 import { modalsTable, type InsertModal, type SelectModal } from "@/db/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { chatResponsesTable } from "@/db/schema/chat-responses-schema";
+import { chatInstancesTable } from "@/db/schema/chat-instances-schema";
+import { eq, and, ne, count } from "drizzle-orm";
 
 /**
  * Create a new modal widget
@@ -69,6 +71,24 @@ export async function deleteModal(id: string, userId: string): Promise<void> {
   await db
     .delete(modalsTable)
     .where(and(eq(modalsTable.id, id), eq(modalsTable.userId, userId)));
+}
+
+/**
+ * Get the count of responses for a modal
+ */
+export async function getModalResponseCount(modalId: string): Promise<number> {
+  const result = await db
+    .select({ count: count() })
+    .from(chatResponsesTable)
+    .innerJoin(chatInstancesTable, eq(chatResponsesTable.chatInstanceId, chatInstancesTable.id))
+    .where(
+      and(
+        eq(chatInstancesTable.modalId, modalId),
+        eq(chatInstancesTable.isModalAgent, true)
+      )
+    );
+
+  return result[0]?.count || 0;
 }
 
 /**

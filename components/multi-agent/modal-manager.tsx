@@ -242,7 +242,35 @@ export default function ModalManager() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [modalToDelete, setModalToDelete] = useState<string | null>(null)
   const [editingModalId, setEditingModalId] = useState<string | null>(null)
+  const [responseCounts, setResponseCounts] = useState<Record<string, number>>({})
   const { toast } = useToast()
+
+  // Fetch response counts for all modals
+  const fetchResponseCounts = useCallback(async () => {
+    if (!modals.length) return
+    
+    const counts: Record<string, number> = {}
+    
+    // Fetch counts for all modals in parallel
+    await Promise.all(
+      modals.map(async (modal) => {
+        try {
+          const response = await fetch(`/api/modals/${modal.id}/response-count`)
+          if (response.ok) {
+            const data = await response.json()
+            counts[modal.id] = data.count
+          } else {
+            counts[modal.id] = 0
+          }
+        } catch (error) {
+          console.error(`Error fetching response count for modal ${modal.id}:`, error)
+          counts[modal.id] = 0
+        }
+      })
+    )
+    
+    setResponseCounts(counts)
+  }, [modals])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -256,6 +284,13 @@ export default function ModalManager() {
       loadUserModals()
     }
   }, [isMounted, loadUserModals])
+
+  // Fetch response counts when modals are loaded
+  useEffect(() => {
+    if (modals.length > 0) {
+      fetchResponseCounts()
+    }
+  }, [modals, fetchResponseCounts])
 
   // Load modal based on URL param on mount / param change
   useEffect(() => {
@@ -541,7 +576,7 @@ export default function ModalManager() {
             </div>
             <div className="order-3">
               <span className="text-sm text-muted-foreground">Responses</span>
-              <p className="text-sm font-light text-foreground">0</p>
+              <p className="text-sm font-light text-foreground">{responseCounts[modal.id] ?? 0}</p>
             </div>
             <div className="order-4">
               <span className="text-sm text-muted-foreground">Agents</span>

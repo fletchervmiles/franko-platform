@@ -43,19 +43,14 @@ export default async function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <UsageCard
-            title="Conversation Responses"
+            title="Responses"
             used={usageData.responses.used}
             total={usageData.responses.total}
             percentage={usageData.responses.percentage}
+            infoTooltip="A response is counted when a respondent meaningfully engages with the AI. Immediate abandonment won't count, but partially completed responses will."
           />
           <UsageCard
-            title="Conversation Plans"
-            used={usageData.conversationPlans.used}
-            total={usageData.conversationPlans.total}
-            percentage={usageData.conversationPlans.percentage}
-          />
-          <UsageCard
-            title="Q&A Messages"
+            title="Chat Messages"
             used={usageData.qaMessages.used}
             total={usageData.qaMessages.total}
             percentage={usageData.qaMessages.percentage}
