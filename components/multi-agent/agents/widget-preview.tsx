@@ -324,20 +324,31 @@ export function WidgetPreview({
   const [preChatDone, setPreChatDone] = useState(false)
 
   const handleAgentSelect = async (agent: Agent) => {
+    console.log('handleAgentSelect called:', { 
+      agentId: agent.id, 
+      requirePreChatForm, 
+      preChatDone, 
+      hasOnAgentSelect: !!onAgentSelect,
+      isPlayground 
+    });
+    
     // Show the pre-chat form exactly once per session when required. After the visitor fills the
     // form we set `preChatDone` so the chat flow can proceed normally.
     if (requirePreChatForm && !preChatDone) {
+      console.log('Showing pre-chat form');
       setQueuedAgent(agent)
       setShowPreChatForm(true)
       return
     }
 
     if (onAgentSelect) {
+      console.log('Calling onAgentSelect prop');
       onAgentSelect(agent);
       return;
     }
 
     if (isPlayground) {
+      console.log('Starting playground chat initialization');
       // Show loading state immediately for playground mode
       coreDemo.setView("loading")
       const targetModalId = isEmbedMode ? modalId : currentModal?.id;
