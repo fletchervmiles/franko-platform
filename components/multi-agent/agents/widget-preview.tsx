@@ -324,32 +324,20 @@ export function WidgetPreview({
   const [preChatDone, setPreChatDone] = useState(false)
 
   const handleAgentSelect = async (agent: Agent, bypassPreChatForm = false) => {
-    console.log('handleAgentSelect called:', { 
-      agentId: agent.id, 
-      requirePreChatForm, 
-      preChatDone, 
-      bypassPreChatForm,
-      hasOnAgentSelect: !!onAgentSelect,
-      isPlayground 
-    });
-    
     // Show the pre-chat form exactly once per session when required. After the visitor fills the
     // form we set `preChatDone` so the chat flow can proceed normally.
     if (requirePreChatForm && !preChatDone && !bypassPreChatForm) {
-      console.log('Showing pre-chat form');
       setQueuedAgent(agent)
       setShowPreChatForm(true)
       return
     }
 
     if (onAgentSelect) {
-      console.log('Calling onAgentSelect prop');
       onAgentSelect(agent);
       return;
     }
 
     if (isPlayground) {
-      console.log('Starting playground chat initialization');
       // Show loading state immediately for playground mode
       coreDemo.setView("loading")
       const targetModalId = isEmbedMode ? modalId : currentModal?.id;
@@ -400,9 +388,9 @@ export function WidgetPreview({
           body: JSON.stringify({
             modalId: targetModalId,
             agentType: agent.id,
-            intervieweeFirstName: null,
-            intervieweeSecondName: null,
-            intervieweeEmail: null,
+            intervieweeFirstName: identityData.user_metadata?.name || null,
+            intervieweeSecondName: null, // We don't collect last name in pre-chat form
+            intervieweeEmail: identityData.user_metadata?.email || null,
             ...(identityData.user_id && {
               user_id: identityData.user_id,
               user_hash: identityData.user_hash,
@@ -471,7 +459,6 @@ export function WidgetPreview({
   )
 
   const handlePreChatSubmit = (data: { name: string; email: string }) => {
-    console.log('handlePreChatSubmit called, preChatDone before:', preChatDone);
     // Save in window.FrankoUser
     if (typeof window !== 'undefined') {
       (window as any).FrankoUser = {
