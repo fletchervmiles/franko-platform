@@ -1,16 +1,18 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 export function FrankoBubble() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isSignedIn, userId } = useAuth();
   const { user } = useUser();
 
-  // Exact-match rule: bubble only on "/workspace"
-  const shouldRender = isSignedIn && pathname === "/workspace";
+  // Exact-match rule: bubble only on "/workspace" with NO query params
+  const hasQuery = searchParams && searchParams.toString().length > 0;
+  const shouldRender = isSignedIn && pathname === "/workspace" && !hasQuery;
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
@@ -58,7 +60,7 @@ export function FrankoBubble() {
     // Cleanup on unmount
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRender, userId, name, email]);
+  }, [shouldRender, userId, name, email, searchParams]);
 
   // No visual JSX needed; side-effect only component.
   return null;
