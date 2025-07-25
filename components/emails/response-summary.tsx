@@ -94,7 +94,7 @@ export const ResponseSummary: React.FC<Readonly<DesignProps>> = ({
         details.conversationTitle
       }</h1>
       <p style={{ margin: "4px 0 0 0", color: "#475569" }}>
-        Summary of feedback from {details.intervieweeFirstName}
+        Summary of feedback from {details.intervieweeFirstName || "anonymous"}
       </p>
     </div>
 
