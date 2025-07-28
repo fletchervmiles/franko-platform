@@ -6,16 +6,18 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function TryItYourselfSection() {
-  console.log('[LIFECYCLE] TryItYourselfSection component rendering/re-rendering');
-  console.log('[LIFECYCLE] Document readyState:', typeof document !== 'undefined' ? document.readyState : 'SSR');
-  console.log('[LIFECYCLE] Page visibility:', typeof document !== 'undefined' ? document.visibilityState : 'SSR');
-  
   const scriptInjectedRef = useRef(false);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
-  console.log('[LIFECYCLE] scriptInjectedRef.current:', scriptInjectedRef.current);
-  console.log('[LIFECYCLE] scriptRef.current:', scriptRef.current);
-  console.log('[LIFECYCLE] window.FrankoModal exists:', typeof window !== 'undefined' ? typeof (window as any)?.FrankoModal : 'SSR');
+  // Move all browser API access to useEffect to avoid hydration mismatches
+  useEffect(() => {
+    console.log('[LIFECYCLE] TryItYourselfSection component rendering/re-rendering');
+    console.log('[LIFECYCLE] Document readyState:', document.readyState);
+    console.log('[LIFECYCLE] Page visibility:', document.visibilityState);
+    console.log('[LIFECYCLE] scriptInjectedRef.current:', scriptInjectedRef.current);
+    console.log('[LIFECYCLE] scriptRef.current:', scriptRef.current);
+    console.log('[LIFECYCLE] window.FrankoModal exists:', typeof (window as any)?.FrankoModal);
+  }, []);
 
   // Add page lifecycle monitoring
   useEffect(() => {
