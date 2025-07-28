@@ -16,7 +16,48 @@ export default function TryItYourselfSection() {
     const script = document.createElement('script');
     script.setAttribute('data-franko-demo', 'slack');
     script.innerHTML = `
-      (function(){if(!window.FrankoModal){window.FrankoModal=(...a)=>{window.FrankoModal.q=window.FrankoModal.q||[];window.FrankoModal.q.push(a)};window.FrankoModal=new Proxy(window.FrankoModal,{get:(t,p)=>p==="q"?t.q:(...a)=>t(p,...a)})}const l=()=>{const s=document.createElement("script");s.src="https://franko.ai/embed.js";s.setAttribute("data-modal-slug","slack-1753101441774");s.setAttribute("data-mode","manual");document.head.appendChild(s)};document.readyState==="complete"?l():addEventListener("load",l)})();
+      (function () {
+        console.log('[Franko debug] A: Proxy IIFE executing');
+
+        // ---------------- Proxy Stub ----------------
+        if (!window.FrankoModal) {
+          window.FrankoModal = (...a) => {
+            window.FrankoModal.q = window.FrankoModal.q || [];
+            window.FrankoModal.q.push(a);
+          };
+          window.FrankoModal = new Proxy(window.FrankoModal, {
+            get: (t, p) => (p === "q" ? t.q : (...a) => t(p, ...a)),
+          });
+        }
+
+        console.log('[Franko debug] Proxy stub prepared, queue length:', window.FrankoModal.q?.length ?? 0);
+
+        const l = () => {
+          const s = document.createElement("script");
+          s.src = "https://franko.ai/embed.js";
+          s.setAttribute("data-modal-slug", "slack-1753101441774");
+          s.setAttribute("data-mode", "manual");
+
+          console.log('[Franko debug] B: Appending embed.js', s.src);
+
+          s.onload = () => {
+            console.log('[Franko debug] C: embed.js loaded, queue length before drain:', window.FrankoModal.q?.length ?? 0);
+            if (window.FrankoModal.q) {
+              window.FrankoModal.q.forEach(([m, ...a]) => window.FrankoModal[m] && window.FrankoModal[m](...a));
+              window.FrankoModal.q = [];
+            }
+            console.log('[Franko debug] C2: API ready. typeof open =', typeof window.FrankoModal.open);
+          };
+
+          s.onerror = (e) => {
+            console.error('[Franko debug] E: Failed to load embed.js', e);
+          };
+
+          document.head.appendChild(s);
+        };
+
+        document.readyState === "complete" ? l() : addEventListener("load", l);
+      })();
     `;
     document.body.appendChild(script);
 
@@ -31,6 +72,7 @@ export default function TryItYourselfSection() {
           frankoIframe.remove();
       }
       delete (window as any).FrankoModal;
+      console.log('[Franko debug] F: Cleanup ran, FrankoModal deleted');
     };
   }, []);
 
@@ -76,7 +118,7 @@ export default function TryItYourselfSection() {
   ];
 
   const handleLaunchModal = () => {
-    // console.log('handleLaunchModal called');
+    console.log('[Franko debug] Launch clicked. FrankoModal type:', typeof (window as any).FrankoModal, 'open is function?', typeof (window as any).FrankoModal?.open);
     // console.log('window.FrankoModal:', window.FrankoModal);
     // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
     // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
