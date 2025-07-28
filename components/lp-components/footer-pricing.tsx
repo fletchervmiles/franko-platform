@@ -16,7 +16,7 @@ export default function Footer() {
         <div className="pt-6 border-t border-gray-800 mt-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-gray-300 pb-4">
             <div className="flex items-center gap-1 mb-4 sm:mb-0">
-              <span>©{new Date().getFullYear()}</span>
+              <span>©2025</span>
               <span>-</span>
               <Link href="https://franko.ai" className="hover:underline">
                 Service provided by Franko.ai
