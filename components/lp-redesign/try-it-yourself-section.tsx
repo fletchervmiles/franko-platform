@@ -149,6 +149,15 @@ export default function TryItYourselfSection() {
 
   const handleLaunchModal = () => {
     console.log('[Franko debug] Launch clicked. FrankoModal type:', typeof (window as any).FrankoModal, 'open is function?', typeof (window as any).FrankoModal?.open);
+    
+    // Debug iframe state
+    const iframe = document.querySelector('iframe[src*="/embed/"]') as HTMLIFrameElement;
+    console.log('[Debug] Iframe element:', iframe);
+    console.log('[Debug] Iframe src:', iframe?.src);
+    console.log('[Debug] Iframe contentWindow:', iframe?.contentWindow);
+    console.log('[Debug] Iframe display style:', iframe?.style?.display);
+    console.log('[Debug] FrankoModal object:', (window as any).FrankoModal);
+    
     // console.log('window.FrankoModal:', window.FrankoModal);
     // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
     // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
