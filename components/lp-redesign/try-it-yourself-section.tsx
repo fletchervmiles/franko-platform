@@ -95,10 +95,11 @@ export default function TryItYourselfSection() {
       if (existingScript) {
         existingScript.remove();
       }
-      const frankoIframe = document.querySelector('iframe[src*="/embed/"]');
-      if (frankoIframe) {
-          frankoIframe.remove();
-      }
+      // Keep iframe in DOM; removing it causes openModal to reference a null contentWindow
+      // const frankoIframe = document.querySelector('iframe[src*="/embed/"]');
+      // if (frankoIframe) {
+      //     frankoIframe.remove();
+      // }
       // Intentionally keep window.FrankoModal to avoid race conditions if React remounts
       console.log('[Franko debug] F: Cleanup ran (iframe & script removed, global retained)');
       // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
