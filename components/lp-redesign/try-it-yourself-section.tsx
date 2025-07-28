@@ -23,17 +23,17 @@ export default function TryItYourselfSection() {
         console.log('[Franko debug] A: Proxy IIFE executing');
 
         // ---------------- Proxy Stub ----------------
-        if (!window.FrankoModal) {
-          window.FrankoModal = (...a) => {
-            window.FrankoModal.q = window.FrankoModal.q || [];
-            window.FrankoModal.q.push(a);
+        if (!window.FrankoModalDemo) {
+          window.FrankoModalDemo = (...a) => {
+            window.FrankoModalDemo.q = window.FrankoModalDemo.q || [];
+            window.FrankoModalDemo.q.push(a);
           };
-          window.FrankoModal = new Proxy(window.FrankoModal, {
+          window.FrankoModalDemo = new Proxy(window.FrankoModalDemo, {
             get: (t, p) => (p === "q" ? t.q : (...a) => t(p, ...a)),
           });
         }
 
-        console.log('[Franko debug] Proxy stub prepared, queue length:', window.FrankoModal.q?.length ?? 0);
+        console.log('[Franko debug] Proxy stub prepared, queue length:', window.FrankoModalDemo.q?.length ?? 0);
 
         const l = () => {
           const s = document.createElement("script");
@@ -44,12 +44,14 @@ export default function TryItYourselfSection() {
           console.log('[Franko debug] B: Appending embed.js', s.src);
 
           s.onload = () => {
-            console.log('[Franko debug] C: embed.js loaded, queue length before drain:', window.FrankoModal.q?.length ?? 0);
-            if (window.FrankoModal.q) {
-              window.FrankoModal.q.forEach(([m, ...a]) => window.FrankoModal[m] && window.FrankoModal[m](...a));
-              window.FrankoModal.q = [];
+            console.log('[Franko debug] C: embed.js loaded, queue length before drain:', window.FrankoModalDemo.q?.length ?? 0);
+            // Copy the real FrankoModal to our namespaced version
+            window.FrankoModalDemo = window.FrankoModal;
+            if (window.FrankoModalDemo.q) {
+              window.FrankoModalDemo.q.forEach(([m, ...a]) => window.FrankoModalDemo[m] && window.FrankoModalDemo[m](...a));
+              window.FrankoModalDemo.q = [];
             }
-            console.log('[Franko debug] C2: API ready. typeof open =', typeof window.FrankoModal.open);
+            console.log('[Franko debug] C2: API ready. typeof open =', typeof window.FrankoModalDemo.open);
           };
 
           s.onerror = (e) => {
@@ -100,8 +102,8 @@ export default function TryItYourselfSection() {
       // if (frankoIframe) {
       //     frankoIframe.remove();
       // }
-      // Intentionally keep window.FrankoModal to avoid race conditions if React remounts
-      console.log('[Franko debug] F: Cleanup ran (iframe & script removed, global retained)');
+      // Intentionally keep window.FrankoModalDemo to avoid race conditions if React remounts
+      console.log('[Franko debug] F: Cleanup ran (iframe & script removed, demo global retained)');
       // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
     };
   }, []);
@@ -148,7 +150,7 @@ export default function TryItYourselfSection() {
   ];
 
   const handleLaunchModal = () => {
-    console.log('[Franko debug] Launch clicked. FrankoModal type:', typeof (window as any).FrankoModal, 'open is function?', typeof (window as any).FrankoModal?.open);
+    console.log('[Franko debug] Launch clicked. FrankoModalDemo type:', typeof (window as any).FrankoModalDemo, 'open is function?', typeof (window as any).FrankoModalDemo?.open);
     
     // Debug iframe state
     const iframe = document.querySelector('iframe[src*="/embed/"]') as HTMLIFrameElement;
@@ -156,25 +158,25 @@ export default function TryItYourselfSection() {
     console.log('[Debug] Iframe src:', iframe?.src);
     console.log('[Debug] Iframe contentWindow:', iframe?.contentWindow);
     console.log('[Debug] Iframe display style:', iframe?.style?.display);
-    console.log('[Debug] FrankoModal object:', (window as any).FrankoModal);
+    console.log('[Debug] FrankoModalDemo object:', (window as any).FrankoModalDemo);
     
     // console.log('window.FrankoModal:', window.FrankoModal);
     // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
     // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
     
-    if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+    if ((window as any).FrankoModalDemo && typeof (window as any).FrankoModalDemo.open === 'function') {
       // console.log('Calling FrankoModal.open()');
-      (window as any).FrankoModal.open();
+      (window as any).FrankoModalDemo.open();
     } else {
-      console.warn("FrankoModal is not ready yet. Please wait a moment and try again.");
+      console.warn("FrankoModalDemo is not ready yet. Please wait a moment and try again.");
       // console.log('Checking again in 2 seconds...');
       setTimeout(() => {
         // console.log('Retry - window.FrankoModal:', window.FrankoModal);
-        if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+        if ((window as any).FrankoModalDemo && typeof (window as any).FrankoModalDemo.open === 'function') {
           // console.log('Retry successful, calling FrankoModal.open()');
-          (window as any).FrankoModal.open();
+          (window as any).FrankoModalDemo.open();
         } else {
-          console.error('FrankoModal still not ready after 2 seconds');
+          console.error('FrankoModalDemo still not ready after 2 seconds');
         }
       }, 2000);
     }
