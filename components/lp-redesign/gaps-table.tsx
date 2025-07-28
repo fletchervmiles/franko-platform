@@ -14,6 +14,7 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
   // Add hydration-safe screen size state
   const [isClient, setIsClient] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [showAllRows, setShowAllRows] = useState(false)
 
   // Hydration-safe initialization
   useEffect(() => {
