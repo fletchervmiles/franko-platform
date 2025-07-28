@@ -9,7 +9,23 @@ const ratelimitCache = new Map();
 // Function to detect mobile devices from User-Agent
 const isMobileDevice = (userAgent: string | null): boolean => {
   if (!userAgent) return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  
+  // More robust mobile detection that excludes common false positives
+  const mobileRegex = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  const tabletRegex = /iPad/i;
+  const desktopIndicators = /Windows NT|Macintosh|Linux x86_64|X11/i;
+  
+  // If it's clearly a desktop OS, don't treat as mobile even if other mobile keywords exist
+  if (desktopIndicators.test(userAgent)) {
+    return false;
+  }
+  
+  // Check for mobile devices (excluding iPad which should not redirect)
+  const isMobile = mobileRegex.test(userAgent);
+  const isTablet = tabletRegex.test(userAgent);
+  
+  // Only redirect for true mobile devices, not tablets
+  return isMobile && !isTablet;
 };
 
 // Define protected routes that require authentication
@@ -183,12 +199,21 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
-  // Check if user is on mobile and trying to access protected routes
-  const userAgent = req.headers.get('user-agent');
-  if (userId && isProtected && isMobileDevice(userAgent)) {
-    // Redirect to a "desktop only" page
-    return NextResponse.redirect(new URL('/desktop-only', req.url));
-  }
+  // DISABLED: Check if user is on mobile and trying to access protected routes
+  // const userAgent = req.headers.get('user-agent');
+  // const bypassMobileCheck = req.nextUrl.searchParams.get('force-desktop') === 'true';
+  // 
+  // if (userId && isProtected && isMobileDevice(userAgent) && !bypassMobileCheck) {
+  //   // Log the redirect for debugging purposes
+  //   console.log(`🚨 Mobile redirect triggered for user ${userId}:`, {
+  //     url: req.url,
+  //     userAgent: userAgent?.substring(0, 100) + (userAgent && userAgent.length > 100 ? '...' : ''),
+  //     timestamp: new Date().toISOString()
+  //   });
+  //   
+  //   // Redirect to a "desktop only" page
+  //   return NextResponse.redirect(new URL('/desktop-only', req.url));
+  // }
 
   // If authenticated, add userId to headers and allow access
   if (userId) {

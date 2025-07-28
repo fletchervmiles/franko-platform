@@ -6,37 +6,99 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function TryItYourselfSection() {
+  console.log('[LIFECYCLE] TryItYourselfSection component rendering/re-rendering');
+  console.log('[LIFECYCLE] Document readyState:', document.readyState);
+  console.log('[LIFECYCLE] Page visibility:', document.visibilityState);
+  
   const scriptInjectedRef = useRef(false);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
+  console.log('[LIFECYCLE] scriptInjectedRef.current:', scriptInjectedRef.current);
+  console.log('[LIFECYCLE] scriptRef.current:', scriptRef.current);
+  console.log('[LIFECYCLE] window.FrankoModal exists:', typeof (window as any)?.FrankoModal);
+
+  // Add page lifecycle monitoring
+  useEffect(() => {
+    const handleWindowLoad = () => {
+      console.log('[PAGE] Window load event fired');
+    };
+    
+    const handleVisibilityChange = () => {
+      console.log('[PAGE] Visibility changed to:', document.visibilityState);
+    };
+    
+    const handleBeforeUnload = () => {
+      console.log('[PAGE] Before unload - cleaning up');
+    };
+    
+    window.addEventListener('load', handleWindowLoad);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    console.log('[PAGE] Page lifecycle listeners added');
+    
+    return () => {
+      window.removeEventListener('load', handleWindowLoad);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      console.log('[PAGE] Page lifecycle listeners removed');
+    };
+  }, []);
+
   // Load the single script for the Slack modal demo when the component mounts.
   useEffect(() => {
+    console.log('[EFFECT] useEffect starting - window undefined?', typeof window === 'undefined', 'scriptInjected?', scriptInjectedRef.current);
+    
     if (typeof window === 'undefined' || scriptInjectedRef.current) {
+      console.log('[EFFECT] Early return - window undefined or script already injected');
       return;
     }
     
+    console.log('[EFFECT] Proceeding with script injection');
     scriptInjectedRef.current = true;
+    console.log('[EFFECT] Set scriptInjectedRef to true');
     
     // Simple direct script injection (like working workspace modal)
+    console.log('[EFFECT] Creating script element');
     const script = document.createElement('script');
     script.src = "https://franko.ai/embed.js";
     script.setAttribute("data-modal-slug", "slack-1753101441774");
     script.setAttribute("data-mode", "manual");
     script.async = true;
+    
+    console.log('[EFFECT] Script element created:', script);
+    console.log('[EFFECT] Script src:', script.src);
+    
     script.onload = () => {
       console.log('[Franko debug] Demo modal loaded successfully');
+      console.log('[SCRIPT-LOAD] Script onload fired');
+      console.log('[SCRIPT-LOAD] window.FrankoModal after load:', typeof (window as any).FrankoModal);
+      
+      // Check if iframe was created
+      const iframe = document.querySelector('iframe[src*="/embed/"]');
+      console.log('[SCRIPT-LOAD] Iframe after script load:', iframe);
     };
+    
     script.onerror = (e) => {
       console.error('[Franko debug] Failed to load demo modal', e);
+      console.error('[SCRIPT-ERROR] Script failed to load:', e);
     };
+    
+    console.log('[EFFECT] Setting scriptRef.current and appending to head');
     scriptRef.current = script;
     document.head.appendChild(script);
+    console.log('[EFFECT] Script appended to head');
 
     // Cleanup the script when the component unmounts
     return () => {
+      console.log('[CLEANUP] Cleanup function running');
+      console.log('[CLEANUP] scriptRef.current:', scriptRef.current);
+      
       if (scriptRef.current) {
+        console.log('[CLEANUP] Removing script from DOM');
         scriptRef.current.parentNode?.removeChild(scriptRef.current);
         scriptRef.current = null;
+        console.log('[CLEANUP] Script removed and ref cleared');
       }
       // Keep iframe in DOM; removing it causes openModal to reference a null contentWindow
       // const frankoIframe = document.querySelector('iframe[src*="/embed/"]');
@@ -46,8 +108,21 @@ export default function TryItYourselfSection() {
       // Intentionally keep window.FrankoModal to avoid race conditions if React remounts
       console.log('[Franko debug] F: Cleanup ran (iframe & script removed, global retained)');
       // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
+      console.log('[CLEANUP] Cleanup complete, scriptInjectedRef stays:', scriptInjectedRef.current);
     };
   }, []);
+
+  // Monitor component lifecycle and state changes
+  useEffect(() => {
+    console.log('[MONITOR] Component mounted/updated');
+    console.log('[MONITOR] Current window.FrankoModal:', typeof (window as any)?.FrankoModal);
+    console.log('[MONITOR] scriptInjectedRef:', scriptInjectedRef.current);
+    console.log('[MONITOR] scriptRef:', scriptRef.current);
+    
+    return () => {
+      console.log('[MONITOR] Component will unmount');
+    };
+  }); // No dependency array = runs on every render
 
   const demoCards = [
     {
@@ -91,6 +166,19 @@ export default function TryItYourselfSection() {
   ];
 
   const handleLaunchModal = () => {
+    console.log('=== MODAL LAUNCH ATTEMPT ===');
+    console.log('[LAUNCH] Button clicked at:', new Date().toISOString());
+    console.log('[LAUNCH] Component state - scriptInjectedRef:', scriptInjectedRef.current);
+    console.log('[LAUNCH] Component state - scriptRef.current:', scriptRef.current);
+    
+    // Check for script element in DOM
+    const scriptInDOM = document.querySelector('script[src*="embed.js"][data-modal-slug="slack-1753101441774"]');
+    console.log('[LAUNCH] Script element in DOM:', scriptInDOM);
+    
+    // Check for any embed scripts
+    const allEmbedScripts = document.querySelectorAll('script[src*="embed.js"]');
+    console.log('[LAUNCH] All embed scripts in DOM:', allEmbedScripts.length, allEmbedScripts);
+    
     console.log('[Franko debug] Launch clicked. FrankoModal type:', typeof (window as any).FrankoModal, 'open is function?', typeof (window as any).FrankoModal?.open);
     
     // Debug iframe state
@@ -101,26 +189,39 @@ export default function TryItYourselfSection() {
     console.log('[Debug] Iframe display style:', iframe?.style?.display);
     console.log('[Debug] FrankoModal object:', (window as any).FrankoModal);
     
+    // Check for multiple iframes
+    const allIframes = document.querySelectorAll('iframe[src*="/embed/"]');
+    console.log('[LAUNCH] All embed iframes in DOM:', allIframes.length, allIframes);
+    
+    // If FrankoModal exists but iframe doesn't, that's the core issue
+    if ((window as any).FrankoModal && !iframe) {
+      console.error('[LAUNCH] ⚠️  MISMATCH: FrankoModal API exists but iframe is missing!');
+      console.error('[LAUNCH] This indicates a stale API reference');
+    }
+    
     // console.log('window.FrankoModal:', window.FrankoModal);
     // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
     // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
     
     if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
-      // console.log('Calling FrankoModal.open()');
+      console.log('[LAUNCH] Calling FrankoModal.open()');
       (window as any).FrankoModal.open();
     } else {
+      console.warn('[LAUNCH] FrankoModal not ready - API missing or invalid');
       console.warn("FrankoModal is not ready yet. Please wait a moment and try again.");
       // console.log('Checking again in 2 seconds...');
       setTimeout(() => {
-        // console.log('Retry - window.FrankoModal:', window.FrankoModal);
+        console.log('[LAUNCH] Retry after 2s - window.FrankoModal:', (window as any).FrankoModal);
         if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
-          // console.log('Retry successful, calling FrankoModal.open()');
+          console.log('[LAUNCH] Retry successful, calling FrankoModal.open()');
           (window as any).FrankoModal.open();
         } else {
+          console.error('[LAUNCH] Retry failed - FrankoModal still not ready after 2 seconds');
           console.error('FrankoModal still not ready after 2 seconds');
         }
       }, 2000);
     }
+    console.log('=== END MODAL LAUNCH ATTEMPT ===');
   };
 
   const getIcon = (iconType: string) => {
