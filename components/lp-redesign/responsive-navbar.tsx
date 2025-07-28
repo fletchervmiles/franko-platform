@@ -11,6 +11,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 export default function ResponsiveNavbar() {
   const [isDarkSection, setIsDarkSection] = useState(true) // Start with dark section (hero)
   const [showModal, setShowModal] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+  const [currentSection, setCurrentSection] = useState('hero')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, isLoaded } = useUser()
 
@@ -30,11 +32,16 @@ export default function ResponsiveNavbar() {
     }
   }
 
+  // Hydration-safe scroll handlers
   useEffect(() => {
+    setIsClient(true)
+    
     const handleScroll = () => {
+      if (!isClient) return
+      
       const scrollY = window.scrollY
       
-      // Get section elements and their positions relative to the document
+      // Get all sections after hydration
       const heroSection = document.querySelector('[data-section="hero"]') as HTMLElement
       const tryItSection = document.querySelector('[data-section="try-it-yourself"]') as HTMLElement
       const pricingSection = document.querySelector('[data-section="pricing"]') as HTMLElement
@@ -101,7 +108,7 @@ export default function ResponsiveNavbar() {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleScroll)
     }
-  }, [])
+  }, [isClient])
 
   const logoSrc = isDarkSection ? "/assets/text-logo-white.svg" : "/assets/text-logo-dark.svg"
   const textColor = isDarkSection ? "text-white" : "text-[#0C0A08]"

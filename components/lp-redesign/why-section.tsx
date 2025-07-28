@@ -6,14 +6,18 @@ import { useState, useEffect } from "react"
 export default function WhySection() {
   const [showTooltip1, setShowTooltip1] = useState(false)
   const [showTooltip2, setShowTooltip2] = useState(false)
+  // Initialize with server-safe default
   const [isMobile, setIsMobile] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
-  // Check if mobile on mount and window resize
+  // Check if mobile on mount and window resize - hydration safe
   useEffect(() => {
+    setIsClient(true)
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
 
+    // Only run after client hydration
     checkMobile()
     window.addEventListener("resize", checkMobile)
 

@@ -10,14 +10,21 @@ interface GapsTableProps {
 }
 
 export default function GapsTable({ isMobile = false }: GapsTableProps) {
-  // Set default expanded state based on mobile/desktop
-  const [expandedRows, setExpandedRows] = useState<number[]>(isMobile ? [] : [0]) // First row expanded by default on desktop only
-  const [showAllRows, setShowAllRows] = useState(false)
+  const [expandedRows, setExpandedRows] = useState<number[]>([])
+  // Add hydration-safe screen size state
+  const [isClient, setIsClient] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
 
-  // Update expandedRows when isMobile prop changes
+  // Hydration-safe initialization
   useEffect(() => {
-    setExpandedRows(isMobile ? [] : [0])
-  }, [isMobile])
+    setIsClient(true)
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 768)
+    }
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // Map of border colors for each gap
   const borderColors = {
@@ -114,10 +121,10 @@ export default function GapsTable({ isMobile = false }: GapsTableProps) {
   const isRowExpanded = (index: number) => {
     // On mobile, only show if explicitly expanded
     // On desktop, always show (or if explicitly expanded)
-    if (isMobile) {
+    if (isMobile || !isClient) {
       return expandedRows.includes(index)
     } else {
-      return expandedRows.includes(index) || window.innerWidth >= 768
+      return expandedRows.includes(index) || isDesktop
     }
   }
 
