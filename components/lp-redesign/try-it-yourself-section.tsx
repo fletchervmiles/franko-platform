@@ -7,6 +7,7 @@ import Link from "next/link";
 
 export default function TryItYourselfSection() {
   const scriptInjectedRef = useRef(false);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
 
   // Load the single script for the Slack modal demo when the component mounts.
   useEffect(() => {
@@ -16,94 +17,34 @@ export default function TryItYourselfSection() {
     
     scriptInjectedRef.current = true;
     
+    // Simple direct script injection (like working workspace modal)
     const script = document.createElement('script');
-    script.setAttribute('data-franko-demo', 'slack');
-    script.innerHTML = `
-      (function () {
-        console.log('[Franko debug] A: Proxy IIFE executing');
-
-        // ---------------- Proxy Stub ----------------
-        if (!window.FrankoModalDemo) {
-          window.FrankoModalDemo = (...a) => {
-            window.FrankoModalDemo.q = window.FrankoModalDemo.q || [];
-            window.FrankoModalDemo.q.push(a);
-          };
-          window.FrankoModalDemo = new Proxy(window.FrankoModalDemo, {
-            get: (t, p) => (p === "q" ? t.q : (...a) => t(p, ...a)),
-          });
-        }
-
-        console.log('[Franko debug] Proxy stub prepared, queue length:', window.FrankoModalDemo.q?.length ?? 0);
-
-        const l = () => {
-          const s = document.createElement("script");
-          s.src = "https://franko.ai/embed.js";
-          s.setAttribute("data-modal-slug", "slack-1753101441774");
-          s.setAttribute("data-mode", "manual");
-
-          console.log('[Franko debug] B: Appending embed.js', s.src);
-
-          s.onload = () => {
-            console.log('[Franko debug] C: embed.js loaded, queue length before drain:', window.FrankoModalDemo.q?.length ?? 0);
-            // Copy the real FrankoModal to our namespaced version
-            window.FrankoModalDemo = window.FrankoModal;
-            if (window.FrankoModalDemo.q) {
-              window.FrankoModalDemo.q.forEach(([m, ...a]) => window.FrankoModalDemo[m] && window.FrankoModalDemo[m](...a));
-              window.FrankoModalDemo.q = [];
-            }
-            console.log('[Franko debug] C2: API ready. typeof open =', typeof window.FrankoModalDemo.open);
-          };
-
-          s.onerror = (e) => {
-            console.error('[Franko debug] E: Failed to load embed.js', e);
-          };
-
-          document.head.appendChild(s);
-        };
-
-        document.readyState === "complete" ? l() : addEventListener("load", l);
-      })();
-    `;
-    document.body.appendChild(script);
-
-    // ---- Diagnostic patch: log every embed.js injection ----
-    if (!(window as any)._frankoInjectionMonitor) {
-      try {
-        const originalAppendChild = HTMLElement.prototype.appendChild;
-        // Monkey-patch once
-        HTMLElement.prototype.appendChild = function (...args: any[]) {
-          const el = args[0] as HTMLElement;
-          if (
-            el?.tagName === 'SCRIPT' &&
-            (el as HTMLScriptElement).src &&
-            (el as HTMLScriptElement).src.includes('embed.js')
-          ) {
-            console.warn(
-              '[Franko debug] embed.js being injected. slug:',
-              (el as HTMLScriptElement).getAttribute('data-modal-slug') || 'N/A'
-            );
-          }
-          return (originalAppendChild as any).apply(this, args);
-        };
-        (window as any)._frankoInjectionMonitor = true;
-      } catch (err) {
-        console.error('[Franko debug] Failed to patch appendChild', err);
-      }
-    }
+    script.src = "https://franko.ai/embed.js";
+    script.setAttribute("data-modal-slug", "slack-1753101441774");
+    script.setAttribute("data-mode", "manual");
+    script.async = true;
+    script.onload = () => {
+      console.log('[Franko debug] Demo modal loaded successfully');
+    };
+    script.onerror = (e) => {
+      console.error('[Franko debug] Failed to load demo modal', e);
+    };
+    scriptRef.current = script;
+    document.head.appendChild(script);
 
     // Cleanup the script when the component unmounts
     return () => {
-      const existingScript = document.querySelector('script[data-franko-demo="slack"]');
-      if (existingScript) {
-        existingScript.remove();
+      if (scriptRef.current) {
+        scriptRef.current.parentNode?.removeChild(scriptRef.current);
+        scriptRef.current = null;
       }
       // Keep iframe in DOM; removing it causes openModal to reference a null contentWindow
       // const frankoIframe = document.querySelector('iframe[src*="/embed/"]');
       // if (frankoIframe) {
       //     frankoIframe.remove();
       // }
-      // Intentionally keep window.FrankoModalDemo to avoid race conditions if React remounts
-      console.log('[Franko debug] F: Cleanup ran (iframe & script removed, demo global retained)');
+      // Intentionally keep window.FrankoModal to avoid race conditions if React remounts
+      console.log('[Franko debug] F: Cleanup ran (iframe & script removed, global retained)');
       // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
     };
   }, []);
@@ -150,7 +91,7 @@ export default function TryItYourselfSection() {
   ];
 
   const handleLaunchModal = () => {
-    console.log('[Franko debug] Launch clicked. FrankoModalDemo type:', typeof (window as any).FrankoModalDemo, 'open is function?', typeof (window as any).FrankoModalDemo?.open);
+    console.log('[Franko debug] Launch clicked. FrankoModal type:', typeof (window as any).FrankoModal, 'open is function?', typeof (window as any).FrankoModal?.open);
     
     // Debug iframe state
     const iframe = document.querySelector('iframe[src*="/embed/"]') as HTMLIFrameElement;
@@ -158,25 +99,25 @@ export default function TryItYourselfSection() {
     console.log('[Debug] Iframe src:', iframe?.src);
     console.log('[Debug] Iframe contentWindow:', iframe?.contentWindow);
     console.log('[Debug] Iframe display style:', iframe?.style?.display);
-    console.log('[Debug] FrankoModalDemo object:', (window as any).FrankoModalDemo);
+    console.log('[Debug] FrankoModal object:', (window as any).FrankoModal);
     
     // console.log('window.FrankoModal:', window.FrankoModal);
     // console.log('typeof window.FrankoModal:', typeof window.FrankoModal);
     // console.log('window.FrankoModal.open:', (window as any).FrankoModal?.open);
     
-    if ((window as any).FrankoModalDemo && typeof (window as any).FrankoModalDemo.open === 'function') {
+    if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
       // console.log('Calling FrankoModal.open()');
-      (window as any).FrankoModalDemo.open();
+      (window as any).FrankoModal.open();
     } else {
-      console.warn("FrankoModalDemo is not ready yet. Please wait a moment and try again.");
+      console.warn("FrankoModal is not ready yet. Please wait a moment and try again.");
       // console.log('Checking again in 2 seconds...');
       setTimeout(() => {
         // console.log('Retry - window.FrankoModal:', window.FrankoModal);
-        if ((window as any).FrankoModalDemo && typeof (window as any).FrankoModalDemo.open === 'function') {
+        if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
           // console.log('Retry successful, calling FrankoModal.open()');
-          (window as any).FrankoModalDemo.open();
+          (window as any).FrankoModal.open();
         } else {
-          console.error('FrankoModalDemo still not ready after 2 seconds');
+          console.error('FrankoModal still not ready after 2 seconds');
         }
       }, 2000);
     }
