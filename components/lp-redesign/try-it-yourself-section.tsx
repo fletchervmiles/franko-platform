@@ -64,6 +64,31 @@ export default function TryItYourselfSection() {
     `;
     document.body.appendChild(script);
 
+    // ---- Diagnostic patch: log every embed.js injection ----
+    if (!(window as any)._frankoInjectionMonitor) {
+      try {
+        const originalAppendChild = HTMLElement.prototype.appendChild;
+        // Monkey-patch once
+        HTMLElement.prototype.appendChild = function (...args: any[]) {
+          const el = args[0] as HTMLElement;
+          if (
+            el?.tagName === 'SCRIPT' &&
+            (el as HTMLScriptElement).src &&
+            (el as HTMLScriptElement).src.includes('embed.js')
+          ) {
+            console.warn(
+              '[Franko debug] embed.js being injected. slug:',
+              (el as HTMLScriptElement).getAttribute('data-modal-slug') || 'N/A'
+            );
+          }
+          return (originalAppendChild as any).apply(this, args);
+        };
+        (window as any)._frankoInjectionMonitor = true;
+      } catch (err) {
+        console.error('[Franko debug] Failed to patch appendChild', err);
+      }
+    }
+
     // Cleanup the script when the component unmounts
     return () => {
       const existingScript = document.querySelector('script[data-franko-demo="slack"]');
