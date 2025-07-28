@@ -225,11 +225,13 @@ export default function TryItYourselfSection() {
           <MousePointerClick className="mr-2 h-4 w-4" /> Launch Modal
         </Button>
       ) : (
-        <Button asChild variant="secondary" size="sm" className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center">
-            <Link href={card.href || "#"} target="_blank">
-                <LinkIcon className="mr-2 h-4 w-4" /> View Demo
-            </Link>
-        </Button>
+        <Link 
+          href={card.href || "#"} 
+          target="_blank"
+          className="mt-4 w-full text-[#0C0A08] bg-[rgba(228,235,246,1)] hover:bg-gray-200 flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          <LinkIcon className="mr-2 h-4 w-4" /> View Demo
+        </Link>
       )}
     </div>
   );
