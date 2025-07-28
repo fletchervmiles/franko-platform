@@ -2,16 +2,19 @@ import Container from "@/components/lp-redesign/container";
 import Image from "next/image";
 import { Code, Send, Link as LinkIcon, MousePointerClick, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function TryItYourselfSection() {
+  const scriptInjectedRef = useRef(false);
 
   // Load the single script for the Slack modal demo when the component mounts.
   useEffect(() => {
-    if (typeof window === 'undefined' || document.querySelector('script[data-franko-demo="slack"]')) {
+    if (typeof window === 'undefined' || scriptInjectedRef.current) {
       return;
     }
+    
+    scriptInjectedRef.current = true;
     
     const script = document.createElement('script');
     script.setAttribute('data-franko-demo', 'slack');
@@ -73,6 +76,7 @@ export default function TryItYourselfSection() {
       }
       delete (window as any).FrankoModal;
       console.log('[Franko debug] F: Cleanup ran, FrankoModal deleted');
+      // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
     };
   }, []);
 
