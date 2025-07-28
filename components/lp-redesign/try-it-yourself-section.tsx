@@ -15,7 +15,7 @@ export default function TryItYourselfSection() {
 
   console.log('[LIFECYCLE] scriptInjectedRef.current:', scriptInjectedRef.current);
   console.log('[LIFECYCLE] scriptRef.current:', scriptRef.current);
-  console.log('[LIFECYCLE] window.FrankoModal exists:', typeof (window as any)?.FrankoModal);
+  console.log('[LIFECYCLE] window.FrankoModal exists:', typeof window !== 'undefined' ? typeof (window as any)?.FrankoModal : 'SSR');
 
   // Add page lifecycle monitoring
   useEffect(() => {
