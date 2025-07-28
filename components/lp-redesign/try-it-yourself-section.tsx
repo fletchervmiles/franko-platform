@@ -7,8 +7,8 @@ import Link from "next/link";
 
 export default function TryItYourselfSection() {
   console.log('[LIFECYCLE] TryItYourselfSection component rendering/re-rendering');
-  console.log('[LIFECYCLE] Document readyState:', document.readyState);
-  console.log('[LIFECYCLE] Page visibility:', document.visibilityState);
+  console.log('[LIFECYCLE] Document readyState:', typeof document !== 'undefined' ? document.readyState : 'SSR');
+  console.log('[LIFECYCLE] Page visibility:', typeof document !== 'undefined' ? document.visibilityState : 'SSR');
   
   const scriptInjectedRef = useRef(false);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
