@@ -99,8 +99,8 @@ export default function TryItYourselfSection() {
       if (frankoIframe) {
           frankoIframe.remove();
       }
-      delete (window as any).FrankoModal;
-      console.log('[Franko debug] F: Cleanup ran, FrankoModal deleted');
+      // Intentionally keep window.FrankoModal to avoid race conditions if React remounts
+      console.log('[Franko debug] F: Cleanup ran (iframe & script removed, global retained)');
       // Note: scriptInjectedRef.current stays true to prevent re-injection on Strict Mode remount
     };
   }, []);

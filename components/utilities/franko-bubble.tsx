@@ -31,7 +31,8 @@ export function FrankoBubble() {
           scriptRef.current.parentNode?.removeChild(scriptRef.current);
           scriptRef.current = null;
         }
-        if (window.FrankoModal) delete (window as any).FrankoModal;
+        // Keep global FrankoModal to avoid race conditions during React remounts
+        // if (window.FrankoModal) delete (window as any).FrankoModal;
       } catch (err) {
         console.warn("[Franko] Cleanup error:", err);
       }
