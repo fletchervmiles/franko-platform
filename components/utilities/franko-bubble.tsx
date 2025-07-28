@@ -26,7 +26,8 @@ export function FrankoBubble() {
     const cleanup = () => {
       try {
         document.querySelector('[aria-label="Open chat"]')?.remove();
-        document.querySelector('iframe[src*="/embed/"]')?.remove();
+        // Only remove the bubble's own iframe, not all embed iframes
+        document.querySelector('iframe[src*="/embed/franko-1753006030406"]')?.remove();
         if (scriptRef.current) {
           scriptRef.current.parentNode?.removeChild(scriptRef.current);
           scriptRef.current = null;
