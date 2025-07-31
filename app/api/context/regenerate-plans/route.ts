@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
-import { getChatInstancesByUserId, updateChatInstanceConversationPlan, type SelectChatInstance } from "@/db/queries/chat-instances-queries";
+import { getChatInstancesByUserId, updateChatInstanceConversationPlan } from "@/db/queries/chat-instances-queries";
+import { type SelectChatInstance } from "@/db/schema/chat-instances-schema";
 import { generateUseCaseConversationPlan } from "@/ai_folder/create-plans";
 import { createObjectiveProgressFromPlan } from "@/ai_folder/create-actions";
 
