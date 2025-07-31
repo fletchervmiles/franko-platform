@@ -143,13 +143,14 @@ export async function generateConversationPlanFromForm({
     }
 
     // Replace all template variables with actual values
+    // Use global replacement to handle multiple occurrences of the same placeholder
     const systemPrompt = promptTemplate
-      .replace('{conversation_topic}', topic)
-      .replace('{converastion_duration}', duration)
-      .replace('{additional_details}', additionalDetails || 'None provided')
-      .replace('{organisation_name}', profile.organisationName || '')
-      .replace('{organisation_description}', profile.organisationDescription || '')
-      .replace('{organisation_description_demo_only}', profile.organisationDescriptionDemoOnly || '');
+      .replace(/{conversation_topic}/g, topic)
+      .replace(/{converastion_duration}/g, duration)
+      .replace(/{additional_details}/g, additionalDetails || 'None provided')
+      .replace(/{organisation_name}/g, profile.organisationName || '')
+      .replace(/{organisation_description}/g, profile.organisationDescription || '')
+      .replace(/{organisation_description_demo_only}/g, profile.organisationDescriptionDemoOnly || '');
     
     // Log the populated prompt for debugging
     console.log('\n=== CONVERSATION PLAN PROMPT ===');

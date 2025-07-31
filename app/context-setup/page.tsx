@@ -56,17 +56,44 @@ const contextSetupSchema = z.object({
 
 type ContextSetupValues = z.infer<typeof contextSetupSchema>
 
-// Step configurations for ProcessingSteps
+// Processing step configurations
 const REGENERATE_CONTEXT_STEPS = [
-  { name: 'Extracting website content', status: 'processing' as const },
+  { name: 'Extracting website content', status: 'waiting' as const },
   { name: 'Generating AI knowledge base', status: 'waiting' as const },
   { name: 'Updating knowledge base', status: 'waiting' as const },
   { name: 'Retraining all agents', status: 'waiting' as const }
 ]
 
 const REGENERATE_AGENTS_STEPS = [
-  { name: 'Updating agent conversation plans', status: 'processing' as const }
+  { name: 'Updating agent conversation plans', status: 'waiting' as const }
 ]
+
+// Processing configuration
+const getProcessingConfig = (isRegeneratingContext: boolean, isRegeneratingAgents: boolean) => {
+  if (isRegeneratingContext) {
+    return {
+      title: "Updating your context",
+      subtitle: "Re-extracting website content and retraining agents. This ensures your agents have the latest information.",
+      steps: REGENERATE_CONTEXT_STEPS,
+      completionMessage: "Context updated and agents retrained successfully! Your agents now have the latest knowledge."
+    }
+  } else if (isRegeneratingAgents) {
+    return {
+      title: "Updating your agents", 
+      subtitle: "Retraining agents with current context. Your existing modals and share links will continue working.",
+      steps: REGENERATE_AGENTS_STEPS,
+      completionMessage: "Agents retrained successfully! They're now updated with your current context."
+    }
+  }
+  
+  // Fallback (shouldn't happen)
+  return {
+    title: "Processing...",
+    subtitle: "Please wait while we complete your request.",
+    steps: [],
+    completionMessage: "Operation completed successfully!"
+  }
+}
 
 // Query functions
 const fetchProfile = async (userId: string) => {
@@ -145,6 +172,8 @@ function ContextSetupInnerPage() {
   const [activeTab, setActiveTab] = useState("organization")
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [isPlanRegenerating, setIsPlanRegenerating] = useState(false)
+  const [contextComplete, setContextComplete] = useState(false)
+  const [agentsComplete, setAgentsComplete] = useState(false)
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   // Additional queries for agent training center
@@ -180,10 +209,14 @@ function ContextSetupInnerPage() {
         console.log('Setting description in cache:', data.description.substring(0, 50) + '...');
         queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
           if (!old) return old;
+          // Preserve ALL existing fields, only update description-related fields
           return {
             ...old,
             organisationDescription: data.description,
             organisationDescriptionCompleted: true,
+            // Explicitly preserve critical fields that might be lost in race conditions
+            organisationName: old.organisationName,
+            organisationUrl: old.organisationUrl,
           };
         });
         setDescription(data.description);
@@ -218,8 +251,14 @@ function ContextSetupInnerPage() {
       setLoadingProgress(0)
       // refetchSetupStatus(); // Moved into the .then() chain
 
-      // Step 2: regenerate all existing plans
-      regenerateAllPlans()
+      // Step 2: regenerate all existing plans - this will complete when agents finish
+      regenerateAllPlans().then(() => {
+        // Mark context as complete for processing steps only after agents are done
+        setContextComplete(true)
+      }).catch(() => {
+        // If agent regeneration fails, still mark context as complete since context generation succeeded
+        setContextComplete(true)
+      })
     },
     onError: (error) => {
       toast({
@@ -228,6 +267,7 @@ function ContextSetupInnerPage() {
         description: error instanceof Error ? error.message : "Failed to update context. Please try again.",
       })
       setLoadingProgress(0)
+      setContextComplete(false)
     }
   })
 
@@ -382,10 +422,14 @@ function ContextSetupInnerPage() {
     // Optimistically update cache first for immediate UI feedback
     queryClient.setQueryData(queryKeys.profile(user?.id), (old: any) => {
       if (!old) return old;
+      // Preserve ALL existing fields, only update description-related fields
       return {
         ...old,
         organisationDescription: updatedContext,
         organisationDescriptionCompleted: true,
+        // Explicitly preserve critical fields that might be lost in race conditions
+        organisationName: old.organisationName,
+        organisationUrl: old.organisationUrl,
       };
     });
     
@@ -414,15 +458,24 @@ function ContextSetupInnerPage() {
   const regenerateAllPlans = async () => {
     try {
       setIsPlanRegenerating(true)
+      setAgentsComplete(false) // Reset completion state
+      
       const resp = await fetch('/api/context/regenerate-plans', { method: 'POST' })
       const result = await resp.json()
       if (!resp.ok) {
         throw new Error(result.error || 'Failed to regenerate plans')
       }
+      
       toast({ title: 'Plans refreshed', description: `${result.regenerated} updated, ${result.failed?.length || 0} failed.` })
-      // Invalidate chat instances cache if you have one
+      
+      // Mark agents as complete for processing steps
+      setAgentsComplete(true)
+      
+      // Invalidate relevant caches
+      queryClient.invalidateQueries({ queryKey: ['userStats', user?.id] })
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
+      setAgentsComplete(false)
     } finally {
       setIsPlanRegenerating(false)
     }
@@ -430,6 +483,10 @@ function ContextSetupInnerPage() {
 
   const handleRegenerateContext = () => {
     if (!user?.id) return
+    // Reset completion states
+    setContextComplete(false)
+    setAgentsComplete(false)
+    
     // Same as current regenerate - scrape website + retrain
     mutate({
       userId: user.id,
@@ -443,13 +500,21 @@ function ContextSetupInnerPage() {
     regenerateAllPlans()
   }
 
+  const handleProcessingComplete = () => {
+    // Reset states when user dismisses success modal
+    setContextComplete(false)
+    setAgentsComplete(false)
+  }
+
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
         {(isPending || isPlanRegenerating) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
             <ProcessingSteps
-              steps={isPending ? REGENERATE_CONTEXT_STEPS : REGENERATE_AGENTS_STEPS}
+              {...getProcessingConfig(isPending, isPlanRegenerating)}
+              isComplete={isPending ? contextComplete : agentsComplete}
+              onComplete={handleProcessingComplete}
             />
           </div>
         )}

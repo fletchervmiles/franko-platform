@@ -115,6 +115,27 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     const organizationContext = profile.organisationDescription || '';
     const conversationPlan = chatInstance.conversationPlan || {};
     const organisationDescriptionDemoOnly = profile.organisationDescriptionDemoOnly || '';
+    
+    // Validate critical organization data before caching
+    if (!organizationName.trim()) {
+      logger.warn(`Refusing to cache prompt with empty organizationName`, { 
+        chatInstanceId, 
+        userId: chatInstance.userId,
+        hasContext: !!organizationContext.trim(),
+        agentType: chatInstance.agentType 
+      });
+      throw new Error(`Cannot cache prompt: organizationName is empty for user ${chatInstance.userId}`);
+    }
+    
+    if (!organizationContext.trim()) {
+      logger.warn(`Refusing to cache prompt with empty organizationContext`, { 
+        chatInstanceId, 
+        userId: chatInstance.userId,
+        organizationName: organizationName.substring(0, 20) + '...',
+        agentType: chatInstance.agentType 
+      });
+      throw new Error(`Cannot cache prompt: organizationContext is empty for user ${chatInstance.userId}`);
+    }
     // Determine whether to use agent-specific prompts or legacy main agent
     const agentType = chatInstance.agentType; // Keep null for existing chat instances
     const isModalAgent = chatInstance.isModalAgent === true;
@@ -169,11 +190,12 @@ export async function populatePromptCache(chatInstanceId: string): Promise<strin
     }
 
     // Populate the prompt template with organization details, conversation plan, and demo content
+    // Use global replacement to handle multiple occurrences of the same placeholder
     const populatedPrompt = promptTemplate
-      .replace('{organisation_name}', organizationName)
-      .replace('{organisation_description}', organizationContext)
-      .replace('{conversation_plan}', formattedConversationPlan)
-      .replace('{organisation_description_demo_only}', organisationDescriptionDemoOnly);
+      .replace(/{organisation_name}/g, organizationName)
+      .replace(/{organisation_description}/g, organizationContext)
+      .replace(/{conversation_plan}/g, formattedConversationPlan)
+      .replace(/{organisation_description_demo_only}/g, organisationDescriptionDemoOnly);
 
     // Store with both keys to ensure both lookup methods work
     promptCache.set(cacheKey, populatedPrompt);
@@ -209,6 +231,19 @@ export async function warmAgentPrompt(chatInstanceId: string, agentType: string)
     }
     
     const organizationName = profile.organisationName || '';
+    const organizationContext = profile.organisationDescription || '';
+    
+    // Validate critical organization data before warming
+    if (!organizationName.trim() || !organizationContext.trim()) {
+      console.log(`WARM: Skipping prompt warming due to incomplete org data`, { 
+        chatInstanceId, 
+        agentType,
+        hasName: !!organizationName.trim(),
+        hasContext: !!organizationContext.trim()
+      });
+      return; // Don't cache incomplete data
+    }
+    
     const cacheKey = createAgentCacheKey(chatInstanceId, agentType, organizationName);
     
     // Check if already cached

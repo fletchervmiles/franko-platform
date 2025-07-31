@@ -96,11 +96,26 @@ interface ProcessingStepsProps {
   steps?: Step[]
   currentStep?: string
   progress?: number
+  title?: string
+  subtitle?: string
+  completionMessage?: string
+  isComplete?: boolean
+  onComplete?: () => void
 }
 
-export default function ProcessingSteps({ steps, currentStep, progress }: ProcessingStepsProps) {
+export default function ProcessingSteps({ 
+  steps, 
+  currentStep, 
+  progress, 
+  title = "Creating your account",
+  subtitle = "We're doing this prep so you don't have to. Here's what's happening:",
+  completionMessage = "Your interview agents will be trained and ready to go!",
+  isComplete: externalComplete = false,
+  onComplete
+}: ProcessingStepsProps) {
   const [activeStep, setActiveStep] = useState(0)
-  const [isComplete, setIsComplete] = useState(false)
+  const [internalComplete, setInternalComplete] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [dots, setDots] = useState("")
 
   const defaultSteps = [
@@ -148,52 +163,104 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
     }))
   }
 
-  // Use passed steps if provided, real-time progress if available, otherwise animated default steps
+  // Use passed steps if provided, real-time progress if available, otherwise animated steps
   const visibleSteps: Step[] = steps || 
     (progress !== undefined && currentStep ? createStepsFromProgress() : 
-     // Always show all 4 steps to prevent flickering
+     // Use default steps with smart simulation
      defaultSteps.map((name, index) => ({
        name,
-       status: index < activeStep ? "completed" : index === activeStep ? (isComplete ? "completed" : "processing") : "waiting",
+       status: index < activeStep ? "completed" : 
+               index === activeStep ? (internalComplete ? "completed" : "processing") : 
+               "waiting",
      })))
 
+  // Smart progress simulation
   useEffect(() => {
     // Only run animation if using default steps (not passed props or real-time data)
     if (steps || (progress !== undefined && currentStep)) return;
 
-    if (isComplete && activeStep < defaultSteps.length - 1) {
+    const stepsToUse = steps || defaultSteps;
+
+    // If external operation is complete and we haven't shown success yet
+    if (externalComplete && !showSuccess) {
+      // Quickly complete all remaining steps
       const timer = setTimeout(() => {
-        setIsComplete(false)
-        setActiveStep((prev) => prev + 1)
-      }, 500) // Time to pause on completed step before showing next
-      return () => clearTimeout(timer)
+        setActiveStep(stepsToUse.length - 1);
+        setInternalComplete(true);
+        
+        // After a brief pause, show success
+        setTimeout(() => {
+          setShowSuccess(true);
+          onComplete?.();
+        }, 500);
+      }, 300);
+      return () => clearTimeout(timer);
     }
 
-    if (!isComplete && activeStep < defaultSteps.length) {
-      const timer = setTimeout(() => {
-        setIsComplete(true)
-      }, 2000) // Time each step takes to "process"
-      return () => clearTimeout(timer)
+    // Don't advance past the final step until external operation completes
+    if (activeStep === stepsToUse.length - 1 && !externalComplete) {
+      // Keep processing the final step but don't complete it
+      if (!internalComplete) {
+        const timer = setTimeout(() => {
+          // Don't set internalComplete - keep showing processing spinner
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+      return;
     }
 
-    // Reset animation after all steps complete
-    if (isComplete && activeStep === defaultSteps.length - 1) {
+    // Normal step progression
+    if (internalComplete && activeStep < stepsToUse.length - 1) {
       const timer = setTimeout(() => {
-        setActiveStep(0)
-        setIsComplete(false)
-      }, 3000) // Time to wait before resetting
-      return () => clearTimeout(timer)
+        setInternalComplete(false);
+        setActiveStep((prev) => prev + 1);
+      }, 500); // Time to pause on completed step before showing next
+      return () => clearTimeout(timer);
     }
-  }, [activeStep, isComplete, defaultSteps.length, steps, progress, currentStep])
+
+    if (!internalComplete && activeStep < stepsToUse.length) {
+      const timer = setTimeout(() => {
+        setInternalComplete(true);
+      }, 2000); // Time each step takes to "process"
+      return () => clearTimeout(timer);
+    }
+  }, [activeStep, internalComplete, externalComplete, showSuccess, steps, progress, currentStep, defaultSteps, onComplete]);
+
+  // Success state
+  if (showSuccess) {
+    return (
+      <div className="w-full max-w-lg mx-auto bg-[#1A1919] rounded-lg shadow-xl p-6 sm:p-8">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-[#E4F222] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="h-8 w-8 text-[#1A1919]" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            All done!
+          </h1>
+          <p className="text-sm sm:text-base text-white/60 mb-6">
+            {completionMessage}
+          </p>
+          {onComplete && (
+            <button
+              onClick={() => setShowSuccess(false)}
+              className="px-4 py-2 bg-[#E4F222] text-[#1A1919] rounded-md font-medium hover:bg-[#F5FF78] transition-colors"
+            >
+              Continue
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-lg mx-auto bg-[#1A1919] rounded-lg shadow-xl p-6 sm:p-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
-        Creating your account
-        <span className="inline-block w-6 text-left">{dots}</span>
+        {title}
+        {!showSuccess && <span className="inline-block w-6 text-left">{dots}</span>}
       </h1>
       <p className="text-sm sm:text-base text-center text-white/60 mb-6 sm:mb-8">
-        We&apos;re doing this prep so you don&apos;t have to. Here&apos;s what&apos;s happening:
+        {subtitle}
       </p>
       <div className="space-y-2">
         <AnimatePresence initial={false}>
@@ -230,7 +297,7 @@ export default function ProcessingSteps({ steps, currentStep, progress }: Proces
         </AnimatePresence>
       </div>
       <p className="text-xs sm:text-sm text-center text-white/60 mt-6 sm:mt-8">
-      This takes 1-2 minutes. Your interview agents will be trained and ready to go!
+        This usually takes under a minute.
       </p>
     </div>
   )

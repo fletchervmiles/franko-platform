@@ -213,7 +213,7 @@ export function AgentTrainingCenter({
                       </Button>
                     </TooltipTrigger>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-white">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Re-extract context from website & retrain agents?</AlertDialogTitle>
                       <AlertDialogDescription>

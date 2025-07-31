@@ -5,6 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { InsertProfile, profilesTable, SelectProfile } from "../schema";
 import { logger } from '@/lib/logger';
 import { safeStringify } from '@/utils/db-utils';
+import { withProfileLock } from '@/lib/profile-lock';
 
 export const createProfile = async (data: InsertProfile) => {
   try {
@@ -59,34 +60,41 @@ export const getAllProfiles = async (): Promise<SelectProfile[]> => {
 };
 
 export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
-  try {
-    const updatedProfile = await db
-      .update(profilesTable)
-      .set(data)
-      .where(eq(profilesTable.userId, userId))
-      .returning();
-    
-    if (!updatedProfile || updatedProfile.length === 0) {
-      logger.error("No profile was updated for userId:", userId);
-      throw new Error("Profile update failed - no rows updated");
+  return withProfileLock(userId, async () => {
+    try {
+      logger.debug("Starting profile update with lock", { userId, fieldsToUpdate: Object.keys(data) });
+      
+      const updatedProfile = await db
+        .update(profilesTable)
+        .set(data)
+        .where(eq(profilesTable.userId, userId))
+        .returning();
+      
+      if (!updatedProfile || updatedProfile.length === 0) {
+        logger.error("No profile was updated for userId:", userId);
+        throw new Error("Profile update failed - no rows updated");
+      }
+      
+      logger.info("Profile successfully updated:", {
+        userId: updatedProfile[0]?.userId,
+        id: updatedProfile[0]?.id?.toString(),
+        updatedFields: Object.keys(data)
+      });
+      return updatedProfile;
+    } catch (error) {
+      logger.error("Error updating profile:", {
+        userId,
+        data,
+        error: error instanceof Error ? error.message : error
+      });
+      throw error;
     }
-    
-    logger.info("Profile successfully updated:", {
-      userId: updatedProfile[0]?.userId,
-      id: updatedProfile[0]?.id?.toString(),
-    });
-    return updatedProfile;
-  } catch (error) {
-    logger.error("Error updating profile:", {
-      userId,
-      data,
-      error: error instanceof Error ? error.message : error
-    });
-    throw error;
-  }
+  });
 };
 
 export const updateProfileByStripeCustomerId = async (stripeCustomerId: string, data: Partial<InsertProfile>) => {
+  // Note: We can't use withProfileLock here since we don't have userId
+  // This is mainly used by Stripe webhooks and should be less prone to race conditions
   try {
     const [updatedProfile] = await db.update(profilesTable).set(data).where(eq(profilesTable.stripeCustomerId, stripeCustomerId)).returning();
     return updatedProfile;
