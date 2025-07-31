@@ -56,32 +56,28 @@ const contextSetupSchema = z.object({
 
 type ContextSetupValues = z.infer<typeof contextSetupSchema>
 
-// Processing step configurations
-const REGENERATE_CONTEXT_STEPS = [
-  { name: 'Extracting website content', status: 'waiting' as const },
-  { name: 'Generating AI knowledge base', status: 'waiting' as const },
-  { name: 'Updating knowledge base', status: 'waiting' as const },
-  { name: 'Retraining all agents', status: 'waiting' as const }
-]
-
-const REGENERATE_AGENTS_STEPS = [
-  { name: 'Updating agent conversation plans', status: 'waiting' as const }
-]
-
-// Processing configuration
+// Processing configuration with dynamic steps
 const getProcessingConfig = (isRegeneratingContext: boolean, isRegeneratingAgents: boolean) => {
   if (isRegeneratingContext) {
     return {
       title: "Updating your context",
       subtitle: "Re-extracting website content and retraining agents. This ensures your agents have the latest information.",
-      steps: REGENERATE_CONTEXT_STEPS,
+      steps: [
+        "Extracting website content",
+        "Generating AI knowledge base", 
+        "Updating knowledge base",
+        "Retraining all agents"
+      ],
       completionMessage: "Context updated and agents retrained successfully! Your agents now have the latest knowledge."
     }
   } else if (isRegeneratingAgents) {
     return {
       title: "Updating your agents", 
       subtitle: "Retraining agents with current context. Your existing modals and share links will continue working.",
-      steps: REGENERATE_AGENTS_STEPS,
+      steps: [
+        "Loading current context",
+        "Updating agent conversation plans"
+      ],
       completionMessage: "Agents retrained successfully! They're now updated with your current context."
     }
   }

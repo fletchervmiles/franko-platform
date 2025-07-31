@@ -93,7 +93,7 @@ interface Step {
 }
 
 interface ProcessingStepsProps {
-  steps?: Step[]
+  steps?: Step[] | string[]  // Can be step objects or string array for dynamic simulation
   currentStep?: string
   progress?: number
   title?: string
@@ -163,11 +163,21 @@ export default function ProcessingSteps({
     }))
   }
 
-  // Use passed steps if provided, real-time progress if available, otherwise animated steps
-  const visibleSteps: Step[] = steps || 
+  // Determine which steps to use for simulation
+  const getStepsForSimulation = (): string[] => {
+    if (steps && Array.isArray(steps) && steps.length > 0 && typeof steps[0] === 'string') {
+      return steps as string[]
+    }
+    return defaultSteps
+  }
+
+  const stepsForSimulation = getStepsForSimulation()
+
+  // Use passed steps if they're Step objects, real-time progress if available, otherwise animated steps
+  const visibleSteps: Step[] = (steps && Array.isArray(steps) && steps.length > 0 && typeof steps[0] === 'object') ? steps as Step[] :
     (progress !== undefined && currentStep ? createStepsFromProgress() : 
-     // Use default steps with smart simulation
-     defaultSteps.map((name, index) => ({
+     // Use dynamic steps (either custom or default) with smart simulation
+     stepsForSimulation.map((name, index) => ({
        name,
        status: index < activeStep ? "completed" : 
                index === activeStep ? (internalComplete ? "completed" : "processing") : 
@@ -176,16 +186,17 @@ export default function ProcessingSteps({
 
   // Smart progress simulation
   useEffect(() => {
-    // Only run animation if using default steps (not passed props or real-time data)
-    if (steps || (progress !== undefined && currentStep)) return;
-
-    const stepsToUse = steps || defaultSteps;
+    // Only run simulation if using dynamic steps (not static step objects or real-time data)
+    const hasStaticSteps = steps && Array.isArray(steps) && steps.length > 0 && typeof steps[0] === 'object'
+    const hasRealTimeData = progress !== undefined && currentStep
+    
+    if (hasStaticSteps || hasRealTimeData) return;
 
     // If external operation is complete and we haven't shown success yet
     if (externalComplete && !showSuccess) {
       // Quickly complete all remaining steps
       const timer = setTimeout(() => {
-        setActiveStep(stepsToUse.length - 1);
+        setActiveStep(stepsForSimulation.length - 1);
         setInternalComplete(true);
         
         // After a brief pause, show success
@@ -198,7 +209,7 @@ export default function ProcessingSteps({
     }
 
     // Don't advance past the final step until external operation completes
-    if (activeStep === stepsToUse.length - 1 && !externalComplete) {
+    if (activeStep === stepsForSimulation.length - 1 && !externalComplete) {
       // Keep processing the final step but don't complete it
       if (!internalComplete) {
         const timer = setTimeout(() => {
@@ -210,7 +221,7 @@ export default function ProcessingSteps({
     }
 
     // Normal step progression
-    if (internalComplete && activeStep < stepsToUse.length - 1) {
+    if (internalComplete && activeStep < stepsForSimulation.length - 1) {
       const timer = setTimeout(() => {
         setInternalComplete(false);
         setActiveStep((prev) => prev + 1);
@@ -218,13 +229,13 @@ export default function ProcessingSteps({
       return () => clearTimeout(timer);
     }
 
-    if (!internalComplete && activeStep < stepsToUse.length) {
+    if (!internalComplete && activeStep < stepsForSimulation.length) {
       const timer = setTimeout(() => {
         setInternalComplete(true);
       }, 2000); // Time each step takes to "process"
       return () => clearTimeout(timer);
     }
-  }, [activeStep, internalComplete, externalComplete, showSuccess, steps, progress, currentStep, defaultSteps, onComplete]);
+  }, [activeStep, internalComplete, externalComplete, showSuccess, steps, progress, currentStep, stepsForSimulation, onComplete]);
 
   // Success state
   if (showSuccess) {
