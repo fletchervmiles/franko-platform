@@ -92,7 +92,7 @@ export async function POST() {
         });
         
         updatePromises.push(...instanceUpdatePromises);
-      } else if (result.status === 'fulfilled') {
+      } else if (result.status === 'fulfilled' && !result.value.success) {
         // Plan generation failed for this agent type
         const { agentType, error } = result.value;
         logger.error(`[regen] Skipping ${instancesByAgentType[agentType].length} instances of ${agentType} due to plan generation failure: ${error}`);
