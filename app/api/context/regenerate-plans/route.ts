@@ -3,8 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
 import { getChatInstancesByUserId } from "@/db/queries/chat-instances-queries";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { generateUseCaseConversationPlan } = require("@/ai_folder/create-plans");
+import { generateUseCaseConversationPlan } from "@/ai_folder/create-plans";
 
 // Allow long-running function (5 min)
 export const maxDuration = 300;
@@ -71,7 +70,9 @@ export async function POST() {
 
     return NextResponse.json({ success: true, regenerated, failed });
   } catch (error) {
-    logger.error("[regen] Unexpected error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logger.error("[regen] Unexpected error:", { error: errorMessage, stack: errorStack });
+    return NextResponse.json({ error: `Internal server error: ${errorMessage}` }, { status: 500 });
   }
 } 

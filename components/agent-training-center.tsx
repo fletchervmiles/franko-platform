@@ -61,19 +61,11 @@ export function AgentTrainingCenter({
 
     // Smart logic: Check timestamps first, then fall back to conversation plans
     const lastTrained = profile?.agentLastTrainedAt
-    const lastUpdate = profile?.updatedAt
     
     // If we have timestamp tracking
     if (lastTrained) {
-      if (lastUpdate && new Date(lastUpdate) > new Date(lastTrained)) {
-        return { 
-          status: 'stale', 
-          color: 'yellow', 
-          message: 'Agents need retraining',
-          icon: '⚠️' 
-        }
-      }
-      
+      // For now, just consider agents with timestamps as trained
+      // In the future we could compare against context update times specifically
       return { 
         status: 'synced', 
         color: 'green', 

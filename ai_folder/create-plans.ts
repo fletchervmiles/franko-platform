@@ -94,7 +94,7 @@ export async function generateAllUseCaseConversationPlans({
 /**
  * Generate a conversation plan for a specific use-case agent
  */
-async function generateUseCaseConversationPlan({
+export async function generateUseCaseConversationPlan({
   agentId,
   chatInstanceId,
   organisationName,
