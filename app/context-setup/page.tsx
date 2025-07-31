@@ -171,11 +171,12 @@ function ContextSetupInnerPage() {
   const [contextComplete, setContextComplete] = useState(false)
   const [agentsComplete, setAgentsComplete] = useState(false)
   const [isContextRegenerating, setIsContextRegenerating] = useState(false)
+  const [showProcessingModal, setShowProcessingModal] = useState(false)
 
   // Debug logging for state changes
   useEffect(() => {
-    console.log('🔄 State update - contextComplete:', contextComplete, 'agentsComplete:', agentsComplete, 'isContextRegenerating:', isContextRegenerating)
-  }, [contextComplete, agentsComplete, isContextRegenerating])
+    console.log('🔄 State update - contextComplete:', contextComplete, 'agentsComplete:', agentsComplete, 'isContextRegenerating:', isContextRegenerating, 'showProcessingModal:', showProcessingModal)
+  }, [contextComplete, agentsComplete, isContextRegenerating, showProcessingModal])
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   // Additional queries for agent training center
@@ -258,12 +259,12 @@ function ContextSetupInnerPage() {
         console.log('🎉 Agent regeneration completed, marking context as complete')
         // Mark context as complete for processing steps only after agents are done
         setContextComplete(true)
-        setIsContextRegenerating(false)  // Reset flag
+        // DON'T reset isContextRegenerating here - let the success modal handle it
       }).catch((error) => {
         console.log('❌ Agent regeneration failed, but marking context as complete anyway:', error)
         // If agent regeneration fails, still mark context as complete since context generation succeeded
         setContextComplete(true)
-        setIsContextRegenerating(false)  // Reset flag
+        // DON'T reset isContextRegenerating here - let the success modal handle it
       })
     },
     onError: (error) => {
@@ -275,6 +276,7 @@ function ContextSetupInnerPage() {
       setLoadingProgress(0)
       setContextComplete(false)
       setIsContextRegenerating(false)  // Reset flag on error
+      setShowProcessingModal(false)   // Hide modal on error
     }
   })
 
@@ -498,6 +500,12 @@ function ContextSetupInnerPage() {
       console.error('❌ Agent regeneration failed:', err)
       toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
       setAgentsComplete(false)
+      
+      // Hide modal on error if this is standalone agent retraining
+      if (!isPartOfContextRegeneration) {
+        setShowProcessingModal(false)
+      }
+      
       throw err // Re-throw so the .catch() in the calling code executes
     } finally {
       if (!isPartOfContextRegeneration) {
@@ -512,6 +520,7 @@ function ContextSetupInnerPage() {
     setContextComplete(false)
     setAgentsComplete(false)
     setIsContextRegenerating(true)
+    setShowProcessingModal(true)  // Show modal
     
     // Same as current regenerate - scrape website + retrain
     mutate({
@@ -523,6 +532,7 @@ function ContextSetupInnerPage() {
 
   const handleRegenerateAgents = () => {
     // New - just retrain with current context
+    setShowProcessingModal(true)  // Show modal
     regenerateAllPlans()
   }
 
@@ -531,12 +541,13 @@ function ContextSetupInnerPage() {
     setContextComplete(false)
     setAgentsComplete(false)
     setIsContextRegenerating(false)
+    setShowProcessingModal(false)  // Hide modal
   }
 
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
-        {(isContextRegenerating || isPlanRegenerating) && (
+        {showProcessingModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
             <ProcessingSteps
               {...getProcessingConfig(isContextRegenerating, isPlanRegenerating)}
