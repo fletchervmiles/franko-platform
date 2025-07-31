@@ -118,6 +118,15 @@ export default function ProcessingSteps({
   const [showSuccess, setShowSuccess] = useState(false)
   const [dots, setDots] = useState("")
 
+  // Debug logging for prop changes
+  useEffect(() => {
+    console.log('📥 ProcessingSteps props update:', { 
+      title, 
+      isComplete: externalComplete, 
+      steps: steps?.length ? `${steps.length} steps` : 'no steps'
+    })
+  }, [title, externalComplete, steps])
+
   const defaultSteps = [
     "Researching your company",
     "Creating a context report for your agents",
@@ -190,17 +199,30 @@ export default function ProcessingSteps({
     const hasStaticSteps = steps && Array.isArray(steps) && steps.length > 0 && typeof steps[0] === 'object'
     const hasRealTimeData = progress !== undefined && currentStep
     
+    console.log('🔄 ProcessingSteps useEffect:', { 
+      activeStep, 
+      internalComplete, 
+      externalComplete, 
+      showSuccess, 
+      hasStaticSteps, 
+      hasRealTimeData,
+      stepsLength: stepsForSimulation.length 
+    })
+    
     if (hasStaticSteps || hasRealTimeData) return;
 
     // If external operation is complete and we haven't shown success yet
     if (externalComplete && !showSuccess) {
+      console.log('🎯 External operation complete detected, completing all steps')
       // Quickly complete all remaining steps
       const timer = setTimeout(() => {
+        console.log('🏁 Setting active step to final step and completing')
         setActiveStep(stepsForSimulation.length - 1);
         setInternalComplete(true);
         
         // After a brief pause, show success
         setTimeout(() => {
+          console.log('✅ Showing success modal')
           setShowSuccess(true);
           onComplete?.();
         }, 500);

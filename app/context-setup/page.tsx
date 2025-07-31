@@ -171,6 +171,11 @@ function ContextSetupInnerPage() {
   const [contextComplete, setContextComplete] = useState(false)
   const [agentsComplete, setAgentsComplete] = useState(false)
   const [isContextRegenerating, setIsContextRegenerating] = useState(false)
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🔄 State update - contextComplete:', contextComplete, 'agentsComplete:', agentsComplete, 'isContextRegenerating:', isContextRegenerating)
+  }, [contextComplete, agentsComplete, isContextRegenerating])
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   // Additional queries for agent training center
@@ -250,10 +255,12 @@ function ContextSetupInnerPage() {
 
       // Step 2: regenerate all existing plans as part of context regeneration
       regenerateAllPlans(true).then(() => {
+        console.log('🎉 Agent regeneration completed, marking context as complete')
         // Mark context as complete for processing steps only after agents are done
         setContextComplete(true)
         setIsContextRegenerating(false)  // Reset flag
-      }).catch(() => {
+      }).catch((error) => {
+        console.log('❌ Agent regeneration failed, but marking context as complete anyway:', error)
         // If agent regeneration fails, still mark context as complete since context generation succeeded
         setContextComplete(true)
         setIsContextRegenerating(false)  // Reset flag
@@ -457,6 +464,8 @@ function ContextSetupInnerPage() {
 
   const regenerateAllPlans = async (isPartOfContextRegeneration = false) => {
     try {
+      console.log('🤖 Starting agent regeneration, isPartOfContextRegeneration:', isPartOfContextRegeneration)
+      
       // Only show separate agent modal if this is NOT part of context regeneration
       if (!isPartOfContextRegeneration) {
         setIsPlanRegenerating(true)
@@ -469,6 +478,8 @@ function ContextSetupInnerPage() {
         throw new Error(result.error || 'Failed to regenerate plans')
       }
       
+      console.log('✅ Agent regeneration API succeeded:', result)
+      
       // Only show agent-specific toast if this is standalone agent retraining
       if (!isPartOfContextRegeneration) {
         toast({ 
@@ -479,12 +490,15 @@ function ContextSetupInnerPage() {
       
       // Mark agents as complete for processing steps
       setAgentsComplete(true)
+      console.log('🎯 Set agentsComplete to true')
       
       // Invalidate relevant caches
       queryClient.invalidateQueries({ queryKey: ['userStats', user?.id] })
     } catch (err: any) {
+      console.error('❌ Agent regeneration failed:', err)
       toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
       setAgentsComplete(false)
+      throw err // Re-throw so the .catch() in the calling code executes
     } finally {
       if (!isPartOfContextRegeneration) {
         setIsPlanRegenerating(false)
