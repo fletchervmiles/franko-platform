@@ -61,7 +61,8 @@ export async function generateAllUseCaseConversationPlans({
         agentId,
         chatInstanceId,
         organisationName,
-        organisationDescription
+        organisationDescription,
+        autoSave: true // Keep existing behavior for other callers
       });
       
       results[agentId] = { success: true, plan, chatInstanceId };
@@ -98,12 +99,14 @@ export async function generateUseCaseConversationPlan({
   agentId,
   chatInstanceId,
   organisationName,
-  organisationDescription
+  organisationDescription,
+  autoSave = true
 }: {
   agentId: string;
-  chatInstanceId: string;
+  chatInstanceId?: string;
   organisationName: string;
   organisationDescription: string;
+  autoSave?: boolean;
 }): Promise<ConversationPlan> {
   
   logger.debug(`Generating conversation plan for agent ${agentId}`, { 
@@ -237,19 +240,28 @@ export async function generateUseCaseConversationPlan({
     objectives: objectivesArray
   };
   
-  // Save the conversation plan to the database
-  await updateChatInstanceConversationPlan(chatInstanceId, plan);
-  
-  // Create and save the objective progress
-  await createObjectiveProgressFromPlan(plan, chatInstanceId);
-  
-  logger.info(`Conversation plan saved for ${agentId}:`, {
-    title: plan.title,
-    duration: plan.duration,
-    objectiveCount: plan.objectives.length,
-    modelUsed,
-    chatInstanceId
-  });
+  // Save the conversation plan to the database (only if autoSave is enabled)
+  if (autoSave && chatInstanceId) {
+    await updateChatInstanceConversationPlan(chatInstanceId, plan);
+    
+    // Create and save the objective progress
+    await createObjectiveProgressFromPlan(plan, chatInstanceId);
+    
+    logger.info(`Conversation plan saved for ${agentId}:`, {
+      title: plan.title,
+      duration: plan.duration,
+      objectiveCount: plan.objectives.length,
+      modelUsed,
+      chatInstanceId
+    });
+  } else {
+    logger.info(`Conversation plan generated for ${agentId}:`, {
+      title: plan.title,
+      duration: plan.duration,
+      objectiveCount: plan.objectives.length,
+      modelUsed
+    });
+  }
   
   return plan;
 }

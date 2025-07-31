@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
 import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
-import { getChatInstancesByUserId } from "@/db/queries/chat-instances-queries";
+import { getChatInstancesByUserId, updateChatInstanceConversationPlan, type SelectChatInstance } from "@/db/queries/chat-instances-queries";
 import { generateUseCaseConversationPlan } from "@/ai_folder/create-plans";
+import { createObjectiveProgressFromPlan } from "@/ai_folder/create-actions";
 
 // Allow long-running function (5 min)
 export const maxDuration = 300;
@@ -17,7 +18,7 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    logger.info(`[regen] Regenerating plans for ${userId}`);
+    logger.info(`[regen] Regenerating plans for ${userId} (optimized)`);
 
     // Get latest profile description
     const profile = await getProfileByUserId(userId);
@@ -31,31 +32,88 @@ export async function POST() {
       return NextResponse.json({ success: true, regenerated: 0 });
     }
 
-    let regenerated = 0;
-    const failed: string[] = [];
+    // 🚀 OPTIMIZATION: Group instances by agent type
+    const instancesByAgentType: Record<string, SelectChatInstance[]> = {};
+    chatInstances.forEach(instance => {
+      const agentType = instance.agentType || 'unknown';
+      if (!instancesByAgentType[agentType]) {
+        instancesByAgentType[agentType] = [];
+      }
+      instancesByAgentType[agentType].push(instance);
+    });
 
-    await Promise.allSettled(
-      chatInstances.map((instance) =>
-        generateUseCaseConversationPlan({
-          agentId: instance.agentType || "",
-          chatInstanceId: instance.id,
+    const uniqueAgentTypes = Object.keys(instancesByAgentType).filter(type => type !== 'unknown');
+    logger.info(`[regen] Found ${uniqueAgentTypes.length} unique agent types across ${chatInstances.length} instances`);
+
+    // 🚀 STEP 1: Generate plans for unique agent types in PARALLEL
+    const planGenerationPromises = uniqueAgentTypes.map(async (agentType) => {
+      try {
+        const plan = await generateUseCaseConversationPlan({
+          agentId: agentType,
           organisationName: profile.organisationName || "Your Company",
           organisationDescription: profile.organisationDescription,
-        } as any)
-      )
-    ).then((results) => {
-      results.forEach((res, idx) => {
-        if (res.status === "fulfilled") {
-          regenerated++;
-        } else {
-          failed.push(chatInstances[idx].id);
-          logger.error(`[regen] Plan generation rejected for chat ${chatInstances[idx].id}:`, res.reason);
-        }
-      });
+          autoSave: false // Don't auto-save, we'll handle this manually
+        });
+        
+        return { agentType, plan, success: true };
+      } catch (error) {
+        logger.error(`[regen] Plan generation failed for ${agentType}:`, error);
+        return { agentType, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    });
+
+    const planResults = await Promise.allSettled(planGenerationPromises);
+    
+    // 🚀 STEP 2: Apply plans to all instances in PARALLEL 
+    const updatePromises: Promise<{ success: boolean; instanceId: string; agentType: string }>[] = [];
+    const successfulPlans: Array<{ agentType: string; plan: any }> = [];
+
+    planResults.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.success) {
+        const { agentType, plan } = result.value;
+        successfulPlans.push({ agentType, plan });
+        const instances = instancesByAgentType[agentType];
+        
+        // Create update promises for all instances of this agent type
+        const instanceUpdatePromises = instances.map(async (instance) => {
+          try {
+            await updateChatInstanceConversationPlan(instance.id, plan);
+            await createObjectiveProgressFromPlan(plan, instance.id);
+            return { success: true, instanceId: instance.id, agentType };
+          } catch (error) {
+            logger.error(`[regen] Failed to update instance ${instance.id}:`, error);
+            return { success: false, instanceId: instance.id, agentType };
+          }
+        });
+        
+        updatePromises.push(...instanceUpdatePromises);
+      } else if (result.status === 'fulfilled') {
+        // Plan generation failed for this agent type
+        const { agentType, error } = result.value;
+        logger.error(`[regen] Skipping ${instancesByAgentType[agentType].length} instances of ${agentType} due to plan generation failure: ${error}`);
+      }
+    });
+
+    // Execute all database updates in parallel
+    const updateResults = await Promise.allSettled(updatePromises);
+    
+    // Count results
+    let regenerated = 0;
+    const failed: string[] = [];
+    
+    updateResults.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.success) {
+        regenerated++;
+      } else if (result.status === 'fulfilled') {
+        failed.push(result.value.instanceId);
+      } else {
+        // Promise was rejected
+        logger.error(`[regen] Update promise rejected:`, result.reason);
+      }
     });
 
     const duration = Date.now() - startTime;
-    logger.info(`[regen] Finished. Success ${regenerated}/${chatInstances.length}. Time ${duration}ms`);
+    logger.info(`[regen] Finished. Generated ${successfulPlans.length}/${uniqueAgentTypes.length} unique plans, updated ${regenerated}/${chatInstances.length} instances in ${duration}ms`);
 
     // Update agent training timestamp
     try {
