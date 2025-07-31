@@ -250,10 +250,13 @@ function ContextSetupInnerPage() {
           console.error('Error during sequential refetch operations:', error);
         });
 
-      toast({
-        title: "Context Updated!",
-        description: "Your website content has been extracted and all agents have been retrained with the latest information.",
-      })
+      // Show toast after a delay so it appears after success modal
+      setTimeout(() => {
+        toast({
+          title: "Context Updated!",
+          description: "Your website content has been extracted and all agents have been retrained with the latest information.",
+        })
+      }, 1000)
       
       // router.refresh(); // Temporarily commented out to isolate its effect
 
@@ -490,10 +493,13 @@ function ContextSetupInnerPage() {
       
       // Only show agent-specific toast if this is standalone agent retraining
       if (!isPartOfContextRegeneration) {
+              // Show toast after a short delay so it appears after success modal
+      setTimeout(() => {
         toast({ 
           title: 'Agents Updated!', 
           description: `Successfully retrained ${result.regenerated} agent${result.regenerated !== 1 ? 's' : ''} with your current context.${result.failed?.length ? ` ${result.failed?.length} failed.` : ''}` 
         })
+      }, 1000)
       }
       
       // Mark agents as complete for processing steps

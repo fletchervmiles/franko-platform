@@ -209,7 +209,7 @@ export default function ProcessingSteps({
         setTimeout(() => {
           console.log('✅ Showing success modal now!')
           setShowSuccess(true);
-          onComplete?.();
+          // Don't call onComplete here - let the Continue button handle it
         }, 500);
       }, 300);
       return () => clearTimeout(timer);
@@ -260,7 +260,11 @@ export default function ProcessingSteps({
           </p>
           {onComplete && (
             <button
-              onClick={() => setShowSuccess(false)}
+              onClick={() => {
+                console.log('🎬 User clicked Continue button')
+                setShowSuccess(false)
+                onComplete()
+              }}
               className="px-4 py-2 bg-[#E4F222] text-[#1A1919] rounded-md font-medium hover:bg-[#F5FF78] transition-colors"
             >
               Continue
