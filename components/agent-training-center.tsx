@@ -164,7 +164,7 @@ export function AgentTrainingCenter({
                       </Button>
                     </TooltipTrigger>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-white">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Retrain agents with current context?</AlertDialogTitle>
                       <AlertDialogDescription>
