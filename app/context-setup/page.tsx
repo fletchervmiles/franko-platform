@@ -57,8 +57,8 @@ const contextSetupSchema = z.object({
 type ContextSetupValues = z.infer<typeof contextSetupSchema>
 
 // Processing configuration with dynamic steps
-const getProcessingConfig = (isRegeneratingContext: boolean, isRegeneratingAgents: boolean) => {
-  if (isRegeneratingContext) {
+const getProcessingConfig = (isContextRegenerating: boolean, isAgentsRegenerating: boolean) => {
+  if (isContextRegenerating) {
     return {
       title: "Updating your context",
       subtitle: "Re-extracting website content and retraining agents. This ensures your agents have the latest information.",
@@ -70,7 +70,7 @@ const getProcessingConfig = (isRegeneratingContext: boolean, isRegeneratingAgent
       ],
       completionMessage: "Context updated and agents retrained successfully! Your agents now have the latest knowledge."
     }
-  } else if (isRegeneratingAgents) {
+  } else if (isAgentsRegenerating) {
     return {
       title: "Updating your agents", 
       subtitle: "Retraining agents with current context. Your existing modals and share links will continue working.",
@@ -170,6 +170,7 @@ function ContextSetupInnerPage() {
   const [isPlanRegenerating, setIsPlanRegenerating] = useState(false)
   const [contextComplete, setContextComplete] = useState(false)
   const [agentsComplete, setAgentsComplete] = useState(false)
+  const [isContextRegenerating, setIsContextRegenerating] = useState(false)
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
   // Additional queries for agent training center
@@ -238,8 +239,8 @@ function ContextSetupInnerPage() {
         });
 
       toast({
-        title: "Success!",
-        description: "Your context has been generated successfully.",
+        title: "Context Updated!",
+        description: "Your website content has been extracted and all agents have been retrained with the latest information.",
       })
       
       // router.refresh(); // Temporarily commented out to isolate its effect
@@ -247,13 +248,15 @@ function ContextSetupInnerPage() {
       setLoadingProgress(0)
       // refetchSetupStatus(); // Moved into the .then() chain
 
-      // Step 2: regenerate all existing plans - this will complete when agents finish
-      regenerateAllPlans().then(() => {
+      // Step 2: regenerate all existing plans as part of context regeneration
+      regenerateAllPlans(true).then(() => {
         // Mark context as complete for processing steps only after agents are done
         setContextComplete(true)
+        setIsContextRegenerating(false)  // Reset flag
       }).catch(() => {
         // If agent regeneration fails, still mark context as complete since context generation succeeded
         setContextComplete(true)
+        setIsContextRegenerating(false)  // Reset flag
       })
     },
     onError: (error) => {
@@ -264,6 +267,7 @@ function ContextSetupInnerPage() {
       })
       setLoadingProgress(0)
       setContextComplete(false)
+      setIsContextRegenerating(false)  // Reset flag on error
     }
   })
 
@@ -451,10 +455,13 @@ function ContextSetupInnerPage() {
     )}></span>
   );
 
-  const regenerateAllPlans = async () => {
+  const regenerateAllPlans = async (isPartOfContextRegeneration = false) => {
     try {
-      setIsPlanRegenerating(true)
-      setAgentsComplete(false) // Reset completion state
+      // Only show separate agent modal if this is NOT part of context regeneration
+      if (!isPartOfContextRegeneration) {
+        setIsPlanRegenerating(true)
+        setAgentsComplete(false) // Reset completion state
+      }
       
       const resp = await fetch('/api/context/regenerate-plans', { method: 'POST' })
       const result = await resp.json()
@@ -462,7 +469,13 @@ function ContextSetupInnerPage() {
         throw new Error(result.error || 'Failed to regenerate plans')
       }
       
-      toast({ title: 'Plans refreshed', description: `${result.regenerated} updated, ${result.failed?.length || 0} failed.` })
+      // Only show agent-specific toast if this is standalone agent retraining
+      if (!isPartOfContextRegeneration) {
+        toast({ 
+          title: 'Agents Updated!', 
+          description: `Successfully retrained ${result.regenerated} agent${result.regenerated !== 1 ? 's' : ''} with your current context.${result.failed?.length ? ` ${result.failed?.length} failed.` : ''}` 
+        })
+      }
       
       // Mark agents as complete for processing steps
       setAgentsComplete(true)
@@ -473,15 +486,18 @@ function ContextSetupInnerPage() {
       toast({ variant: 'destructive', title: 'Error', description: err.message || 'Plan regeneration failed' })
       setAgentsComplete(false)
     } finally {
-      setIsPlanRegenerating(false)
+      if (!isPartOfContextRegeneration) {
+        setIsPlanRegenerating(false)
+      }
     }
   }
 
   const handleRegenerateContext = () => {
     if (!user?.id) return
-    // Reset completion states
+    // Reset completion states and set context regeneration flag
     setContextComplete(false)
     setAgentsComplete(false)
+    setIsContextRegenerating(true)
     
     // Same as current regenerate - scrape website + retrain
     mutate({
@@ -500,16 +516,17 @@ function ContextSetupInnerPage() {
     // Reset states when user dismisses success modal
     setContextComplete(false)
     setAgentsComplete(false)
+    setIsContextRegenerating(false)
   }
 
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
-        {(isPending || isPlanRegenerating) && (
+        {(isContextRegenerating || isPlanRegenerating) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
             <ProcessingSteps
-              {...getProcessingConfig(isPending, isPlanRegenerating)}
-              isComplete={isPending ? contextComplete : agentsComplete}
+              {...getProcessingConfig(isContextRegenerating, isPlanRegenerating)}
+              isComplete={isContextRegenerating ? contextComplete : agentsComplete}
               onComplete={handleProcessingComplete}
             />
           </div>
@@ -526,7 +543,7 @@ function ContextSetupInnerPage() {
           profile={profile}
           onRegenerateContext={handleRegenerateContext}
           onRegenerateAgents={handleRegenerateAgents}
-          isRegeneratingContext={isPending}
+          isRegeneratingContext={isContextRegenerating}
           isRegeneratingAgents={isPlanRegenerating}
           chatInstancesCount={chatInstancesCount}
           modalCount={modalCount}
@@ -741,13 +758,13 @@ function ContextSetupInnerPage() {
                             <Button
                               type="submit"
                               size="sm"
-                              disabled={isPending || isSavingCardEdits}
+                              disabled={isPending || isSavingCardEdits || isContextRegenerating}
                               className={cn(
                                 "h-9 px-4 bg-[#E4F222] hover:bg-[#F5FF78] text-black",
                                 shouldPulse && "animate-pulse-edge",
                               )}
                             >
-                              {isPending ? (
+                              {(isPending || isContextRegenerating) ? (
                                 <div className="flex items-center">
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                   <span>Generating...</span>
@@ -765,7 +782,7 @@ function ContextSetupInnerPage() {
                               variant="outline"
                               onClick={handleAddManualContext}
                               className="h-9 px-4 flex items-center gap-2"
-                              disabled={isPending || isSavingCardEdits}
+                              disabled={isPending || isSavingCardEdits || isContextRegenerating}
                             >
                               <PlusCircle className="h-4 w-4" />
                               Add Context Manually
