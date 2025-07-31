@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { logger } from "@/lib/logger";
-import { getProfileByUserId } from "@/db/queries/profiles-queries";
+import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
 import { getChatInstancesByUserId } from "@/db/queries/chat-instances-queries";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { generateUseCaseConversationPlan } = require("@/ai_folder/create-plans");
@@ -57,6 +57,17 @@ export async function POST() {
 
     const duration = Date.now() - startTime;
     logger.info(`[regen] Finished. Success ${regenerated}/${chatInstances.length}. Time ${duration}ms`);
+
+    // Update agent training timestamp
+    try {
+      await updateProfile(userId, {
+        agentLastTrainedAt: new Date()
+      });
+      logger.info(`[regen] Updated agent training timestamp for user ${userId}`);
+    } catch (updateError) {
+      logger.error(`[regen] Failed to update agent training timestamp:`, updateError);
+      // Don't fail the entire operation for this
+    }
 
     return NextResponse.json({ success: true, regenerated, failed });
   } catch (error) {

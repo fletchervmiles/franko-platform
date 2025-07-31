@@ -10,7 +10,7 @@ import {
   getUserAgentChatInstance
 } from "@/db/queries/modal-chat-instances-queries";
 import { agentsData } from "@/lib/agents-data";
-import { getProfileByUserId } from "@/db/queries/profiles-queries";
+import { getProfileByUserId, updateProfile } from "@/db/queries/profiles-queries";
 import { isDarkColor } from "@/lib/color-utils";
 
 export const maxDuration = 120;
@@ -222,6 +222,25 @@ export async function POST(request: Request) {
     );
 
     console.log("[modals] Created chat instances count:", chatInstances.length);
+
+    // Update agent training timestamp for new agents with conversation plans
+    try {
+      const agentsWithPlans = chatInstances.filter(instance => 
+        instance.conversationPlan && 
+        typeof instance.conversationPlan === 'object' &&
+        Object.keys(instance.conversationPlan).length > 0
+      ).length;
+
+      if (agentsWithPlans > 0) {
+        await updateProfile(userId, {
+          agentLastTrainedAt: new Date()
+        });
+        console.log(`[modals] Updated agent training timestamp for ${agentsWithPlans} agents`);
+      }
+    } catch (updateError) {
+      console.error("[modals] Failed to update agent training timestamp:", updateError);
+      // Don't fail the entire operation for this
+    }
 
     // Return the modal with chat instances
     const response = {

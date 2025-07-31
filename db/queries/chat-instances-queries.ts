@@ -1,6 +1,6 @@
 'use server'
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql, count } from "drizzle-orm";
 import { db } from "../db";
 import { chatInstancesTable, type InsertChatInstance, type SelectChatInstance, type ObjectiveProgress } from "../schema/chat-instances-schema";
 import { profilesTable } from "../schema/profiles-schema";
@@ -43,6 +43,20 @@ export async function createChatInstance(chat: InsertChatInstance): Promise<Sele
   } catch (error) {
     console.error("Failed to create chat instance:", error);
     throw new Error("Failed to create chat instance");
+  }
+}
+
+export async function getChatInstancesCountByUserId(userId: string): Promise<number> {
+  try {
+    const result = await db
+      .select({ count: count() })
+      .from(chatInstancesTable)
+      .where(eq(chatInstancesTable.userId, userId));
+
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.error("Failed to get chat instances count for user:", { userId, error });
+    return 0;
   }
 }
 

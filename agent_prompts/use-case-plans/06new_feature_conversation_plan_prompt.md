@@ -108,97 +108,49 @@ Always weave in **specific details**—like unique selling propositions or known
 
 **Feature Wishlist**
 
-(active customer)
+## Inputs
 
-OBJECTIVE – Identify the next feature users want most in {organisation_name} and understand the pain, workaround, and impact behind that request.
+1.  **Conversation Topic Playbook: Feature Wishlist**
 
-Conversation pacing
-• Objectives = 1
-• Conversation turns = 4
+    Your goal is to generate a conversation plan that outlines a two-part product discovery mission for an intelligent agent. The plan must be highly tailored to the specific organization. It should not be a rigid script, but rather two clear objectives, each with a **Mission** and a **Strategic Toolkit**. This structure provides a clear purpose while empowering the agent with flexible, context-aware strategies.
 
-Founder wants to learn
-• User-named feature idea in their own words
-• Recent moment it’s needed AND what they have to do instead (workaround)
-• Pain / friction or desired outcome blocked or caused by that workaround (lost results, time, money, stress, risk)
-• Frequency or scale of the need (daily, weekly, at launch, at >N users, etc.)
-• Impact if shipped (hours saved, revenue gained, churn avoided, delight)
-• Relative urgency / must-have vs nice-to-have
-• (If it surfaces) willingness to pay or upgrade
-• Always wrap up with a thank you for their suggestions
+    ---
+    **Objective 01: Identify the Request and its Root Problem**
+    *(3 turns)*
 
-Reference buckets
-(build 2–4-item recognition lists if replies are vague)
+    *   **Mission:** To identify the user's single most desired new feature and uncover the specific, real-world problem or unmet need that is driving the request.
+    *   **Strategic Toolkit:**
+        *   **Mandated Opening:** The conversation plan **must** instruct the agent to open with this exact, verbatim question: **“Thanks for joining! We’ll keep this short and sharp! So, which feature would you love us to build next for {organisation_name}?”**
+        *   **Ensure Focus on a Single Feature:** The agent's immediate follow-up task is to ensure the conversation focuses on **one single feature idea**. If the user's answer to the opener is a long list, the agent should use a **Recognition List** to have them prioritize the single most impactful one.
+        *   **Get the Story with *Contextual* Story Scaffolding:** To understand the *why* behind the feature, the agent must ask for the story of the last time they needed it.
+        *   **Instruction for Contextual Story Scaffolding:** Instruct the agent to **synthesize its examples from the `organisationDescription`**. It should look at the `Customer Persona`, `JTBD`, and known `Improvement Areas` to create 2-3 plausible pain points. For a project management tool, it might suggest 'a time you struggled to see a project's progress' or 'a moment you had to manually update a client.' The question must conclude with a friendly, open-ended phrase like "—or something like that?" to give the user agency.
 
-Common feature themes
-– New integration (CRM, GitHub, Slack)
-– Advanced reporting / analytics
-– Automated workflows
-– Collaboration / permissions
-– Mobile or desktop app
-– Custom branding / white-label
-– Security / compliance
-– AI assistance (drafts, refactor)
+    ---
+    **Objective 02: Uncover the Impact and Urgency**
+    *(3 turns)*
 
-Typical pain points without the feature
-– No workaround available or an ineffective workaround
-– Manual copy-paste
-– Multiple tools / context-switching
-– Slow release cycle
-– Data blind spots / errors
-– Extra cost for add-on tools
-– Re-work / inconsistent UX
+    *   **Mission:** To quantify the business impact of not having this feature and to understand how critical the request is to the user's success.
+    *   **Strategic Toolkit:**
+        *   **Guidance for Agency:** The plan should instruct the agent to naturally transition from the "problem story" to its wider consequences. The agent has the flexibility to explore the following two areas in the order that feels most natural to the conversation.
+        *   **Instruction - Quantify the Pain & Impact:** To understand the feature's value, guide the agent to ask questions that put a **scale to the pain**. The agent should probe for its **frequency** (how often does this problem occur?), the **time wasted on the current workaround**, or the **business risk** it creates (e.g., inaccurate reports, missed deadlines, client frustration).
+        *   **Instruction - Gauge the Urgency:** To understand priority, guide the agent to ask about how critical this feature is. The agent must find out if this is a **"must-have" that's blocking their success** or a **"nice-to-have" that would simply improve their workflow**. This helps distinguish urgent needs from minor conveniences.
+        *   **Concluding the Objective:** The objective is complete once the agent understands the scale of the pain and the urgency of the request.
 
-Workarounds in use today
-– Spreadsheets
-– Zapier / scripts
-– Separate SaaS tool
-– Ask devs to build
-– Do without / skip feature
+    ---
+    **Strategic Resource: Recognition List Buckets**
+    *(Use these as direct source material when executing the Recognition List strategy)*
 
-Impact / urgency clues
-– Time lost (<1 hr, 1–3 hrs, 3–10 hrs a week)
-– Revenue at stake (<$100, $100–$500, $500+)
-– Looming launch / client deadline
-– High user frustration / churn risk
-– Lost effectiveness / reduces utility of the tool itself
+    *   **Common Feature Themes:** `New integration`, `Advanced reporting / analytics`, `Automated workflows`, `Collaboration / permissions`, `Mobile or desktop app`, `AI assistance`.
+    *   **Typical Pain Points:** `Manual copy-paste`, `Multiple tools / context-switching`, `Slow release cycle`, `Data blind spots / errors`, `Extra cost for add-on tools`.
+    *   **Impact / Urgency Clues:** `Time lost weekly`, `Revenue at stake`, `Looming deadline`, `High user frustration`, `Risk of churn`.
 
-Planner note
-If the user offers a laundry list, ask them to pick the single feature that would help most right now, or present a recognition list.
-
-Agent must (Important)
-Open with exactly:
-“Thanks for joining! We’ll keep this short and sharp! So, which feature would you love us to build next for {organisation_name}?”
-
-Copy that sentence verbatim into the first agent-guidance bullet.
-
-Agent guidance (flexible probes—use only what fits the flow)
-
-Clarify the feature
-• Encourage them to choose their highest-value idea.
-• Recognition list if they’re unsure.
-
-Capture use-case, pain & workaround in one go
-• Example phrasing:
-“When did you last need that feature, what did you do instead, and what was painful about it?”
-• Focus on the inconvenience or risk—not just minutes spent.
-• Look for frequency or scale triggers.
-
-Explore impact & urgency
-• Determine and seek to understand why the user cares - i.e. what does not having this stop them from doing or achieving? 
-• Determine what this would unlock—time, money, sanity. Add quantitative ranges only if it makes sense in the context of why they care. I.e. sometimes it's a low effort workaround but the problem is it doesn't get the desired result.
-• Log a friendly range if numbers surface naturally.
-
-Priority & willingness to pay
-• Determine how soon would they want to solve this. 
-• Note if they’d upgrade or pay extra (only if mentioned—don’t push).
-
-Skip probes already answered; wrap once feature, pain, workaround, impact, and urgency are clear. Finish with a thank-you for their suggestions as part of the wrap up. 
-
-Success criteria
-• One clear feature request recorded in the user’s words
-• Concrete use-case with pain and current workaround captured
-• Impact and urgency described (time, money, stress, risk)
-• Any willingness-to-pay insight noted
+    ---
+    **Success Criteria for the Plan**
+    The generated two-objective plan is successful if, by the end of the entire conversation, it has equipped the agent to capture:
+    1.  **The Feature Request:** A single, clearly identified feature idea.
+    2.  **The Root Problem:** A concrete story of the pain the user experiences without it.
+    3.  **The Impact:** The quantified pain (e.g., frequency, time lost, risk).
+    4.  **The Urgency:** A clear sense of whether the feature is a "must-have" or "nice-to-have."
 
 2. Organisation Description:
 
@@ -298,98 +250,45 @@ agentGuidance MUST contain 2-4 strings, and non-ASCII quotes/backticks are not a
 
 —
 
-
 ## Example Conversation Plans
 
 Examples for Reference Only.
-
 
 ### EXAMPLE 01
 
 
 {
-"thinking": {
-"topicStrategy": "When prioritising the roadmap, the cleanest signal comes from a short, well-structured chat that nails one feature request, the workaround users employ today, the pain that workaround causes, and the impact of fixing it. Best practice is to combine probes so you capture use-case, pain, frequency, and urgency in just 3-4 questions, finishing inside ~4 minutes. Verbatim wording matters: it helps engineering scope accurately and lets marketing echo customer language later. A brisk pace avoids survey fatigue and keeps the answers concrete.",
-"appliedToOrganisation": "For v0—an AI pair-programmer that already accelerates React/Tailwind work—likely asks will centre on deeper integrations (GitHub PR flows, Slack generation), smoother local refactoring, or better error-handling. Each ties to improvement areas noted in feedback. Understanding which of these matters most, how often the pain strikes (e.g., every commit), and whether users would upgrade from Free to Premium or Team informs both feature sequencing and revenue impact. The same chat can surface quantifiable wins (hours/week saved) to reinforce v0’s speed-and-efficiency positioning.",
-"userPersona": "Assume an active frontend developer or indie maker on Free or Premium credits. They value modern stacks, hate repetitive setup, and juggle side projects on tight timelines. They speak technical shorthand, respond well to concise questions, and can quantify pain in hours lost or workflow friction. Budget is real: saving tokens or paying $20/month is weighed against alternative tooling (Zapier scripts, extra SaaS). Recognising their context (local dev, GitHub, Figma import) keeps the conversation relevant and respectful.",
-"durationThoughts": "‘Most chats finish in 4–5 total messages’ translates to roughly 4 turns (agent + customer = 1 turn). One focused objective will do. Turn 1: mandated opener. Turn 2: capture use-case, pain, workaround. Turn 3: impact & urgency. Turn 4: priority / willingness to pay and wrap. Aim for ~45 seconds per turn; remind the agent to skip probes already answered so the chat stays under 4 minutes."
-},
-"title": "4-Turn Feature Wishlist Deep-Dive for v0 Active Customers",
-"duration": 4,
-"summary": "A concise, four-turn plan that surfaces one must-have feature, the current workaround, its pain, impact size, urgency, and any upgrade intent—fueling the v0 roadmap and pricing insights.",
-"objectives": [
-{
-"objective01": "Elicit the customer’s single highest-value next feature for v0 and uncover its pain, workaround, impact, urgency, and upgrade potential.",
-"desiredOutcome": "One clear feature in the customer’s words, a concrete use-case example, quantified pain (time, money, stress), sense of urgency, and any willingness to pay—ready for roadmap scoring.",
-"agentGuidance": [
-"Begin with the required opener exactly: "Thanks for joining! We’ll keep this short and sharp! So, which feature would you love us to build next for v0?"",
-"If they give a shopping list, ask them to pick the single feature that would help most right now or deploy a recognition list: "new GitHub integration / advanced analytics dashboard / automated workflows / mobile app".",
-"Combine probes: "When did you last need that feature, what did you do instead, and what was painful about it?" Listen for workarounds like spreadsheets, Zapier, or asking devs to build, and capture the pain in their wording.",
-"Quantify impact and urgency lightly: ranges such as "1–3 hrs a week" or "$500+ revenue at stake" are enough. If they are vague, request a concrete example anchored in time or reuse the recognition list (time lost, revenue, looming launch).",
-"Close by gauging priority: "Is this a must-have you’d upgrade for, or more of a nice-to-have?" Note any mention of moving from Free to Premium/Team; skip if they already volunteered payment signals."
-],
-"expectedConversationTurns": 4
-}
-]
-}
-
-
-### EXAMPLE 02
-
-
-
-{
   "thinking": {
-    "topicStrategy": "Feature-wishlist interviews surface the single highest-value idea in the customer’s own words, plus the concrete pain and workaround behind it. Best practice: fast, focused probing—start with an open request, then anchor to a recent moment, quantify friction (time, money, stress, risk), and check urgency or upgrade intent. A four-turn ‘short and sharp’ format keeps momentum and yields prioritisation data founders can sort by impact and effort.",
-    "appliedToOrganisation": "For Smartlead, likely asks include deeper analytics, extra CRM or Slack integrations, or fixes to the master inbox. Each links to core differentiators—unlimited mailboxes, deliverability, unified inbox. By hearing the workaround (e.g., Zapier hacks or spreadsheets) we can size wasted hours and show how Smartlead’s API, mailbox rotation, or upcoming AI features could erase that pain and reinforce the brand’s automation-and-scale promise.",
-    "userPersona": "Interviewee is an active Smartlead user—often a lead-gen agency owner or sales pro juggling many campaigns. They prize deliverability, volume, and reliability, feel friction when switching tools or losing data clarity, and care about ROI in hours saved and clients retained. Expect concise, metric-minded answers, but be ready to coax specifics if they default to broad complaints.",
-    "durationThoughts": "The brief specifies one objective and exactly four turns. Plan: Turn 1 opener (feature idea), Turn 2 clarify use-case, Turn 3 probe pain & workaround, Turn 4 capture impact, urgency, and any pay-signal, then wrap. Aim ~30–40 seconds per turn, prompting concrete examples if answers drift."
+    "topicStrategy": "Feature-wishlist interviews succeed when they zero in on one concrete idea and trace it back to the real-world friction that sparked it. Instead of debating solution details, the conversation should surface the last painful moment, quantify how often it recurs, and clarify whether the pain blocks success or merely annoys. Crisp framing avoids biased leading, while recognition lists keep things moving if a customer is vague. Three turns per objective is enough to capture the feature, story, impact, and urgency so product teams can rank demand and size ROI.",
+    "appliedToOrganisation": "For Perplexity, knowing which next feature matters most helps prioritise a packed roadmap that already spans Deep Research, Copilot, and multimodal search. Researchers may beg for citation-export tools; professionals might crave dashboard analytics; mobile users could want offline mode. By anchoring the story in tasks like verifying sources for a report or juggling multiple AI models, the agent can connect pain directly to Perplexity’s paid tiers (Pro, Max) and retention levers. Quantifying minutes saved or churn risk will let the team judge whether a request deserves a sprint or a strategic initiative.",
+    "userPersona": "Interviewees are likely power users from the Researcher or Professional personas: time-poor, accuracy-obsessed, and willing to pay $20-$40 per month for reliable, cited answers. They care about trust, speed, and workflow fit. Because they already embrace AI tools, they will respond well to direct, efficiency-focused questions. They may also reference alternative tools (Google, ChatGPT) when describing pain, so the agent should listen for competitive signals and pricing sensitivity.",
+    "durationThoughts": "With 6 total turns, two symmetrical objectives at 3 turns each keep the conversation tight (≈3 minutes). Turn 1: mandated opener; Turn 2: clarification/prioritisation; Turn 3: story deep-dive. Objective 02 mirrors this: Turn 4: impact probe; Turn 5: urgency probe; Turn 6: summarise confirmation. Coach the agent to watch the clock—about 30 seconds per agent turn—to finish within the promised “short and sharp” window."
   },
-  "title": "Smartlead 4-Turn Feature Wishlist Deep Dive",
-  "duration": 4,
-  "summary": "A focused, four-turn script that captures one clear feature request, the real-world pain and workaround, plus impact and urgency cues to guide Smartlead’s roadmap.",
+  "title": "Perplexity Feature Wishlist Discovery – 6-Turn Plan",
+  "duration": 6,
+  "summary": "A two-objective, 6-turn plan that captures one top feature request, the story behind it, and the quantified impact and urgency, tailored to Perplexity’s research-driven user base.",
   "objectives": [
     {
-      "objective01": "Identify the customer’s single most-desired next feature and uncover the pain, workaround, impact, and urgency behind it.",
-      "desiredOutcome": "Founder receives one verbatim feature idea, a concrete recent scenario, quantified friction, frequency, and any upgrade willingness—ready for prioritisation.",
+      "objective01": "Identify the single requested feature and the root problem behind it.",
+      "desiredOutcome": "Have one clearly prioritised feature idea plus a concrete story of when the user last felt the need for it.",
       "agentGuidance": [
-        "Begin with the required opener exactly: "Thanks for joining! We'll keep this short and sharp! So, which feature would you love us to build next for Smartlead?"",
-        "If they list more than one or stay vague, steer them to choose the top priority; offer this recognition list if needed: new integration / advanced reporting / automated workflows / collaboration permissions.",
-        "After the feature is named, learn when they last needed it, what workaround they used (spreadsheets, Zapier, separate SaaS, or doing without), and what hurt—capture time lost, errors, or client risk.",
-        "Quantify frequency and stakes (daily vs launch, <1 hr vs 3-10 hrs, <$100 vs $500+ revenue) and note how soon they’d like a fix or if they’d pay to upgrade; wrap once these points are clear."
+        "Open verbatim: “Thanks for joining! We’ll keep this short and sharp! So, which feature would you love us to build next for Perplexity?”",
+        "If they list several ideas, deploy a recognition list to narrow: new integration with Notion, offline mobile mode, advanced citation manager — ask which would change their day the most.",
+        "Elicit the last time they needed the feature; suggest scenarios like verifying a citation for a client deck, copying research into multiple docs, or losing track of a Thread — then ask, or something like that?",
+        "If the answer is vague (e.g., “everything”), immediately request a concrete recent example or re-present the recognition list instead of rephrasing the broad question."
       ],
-      "expectedConversationTurns": 4
+      "expectedConversationTurns": "3"
+    },
+    {
+      "objective02": "Uncover the impact of lacking the feature and gauge its urgency.",
+      "desiredOutcome": "Know frequency, time/risk cost, and whether the feature is a must-have or nice-to-have.",
+      "agentGuidance": [
+        "Bridge from the story: explore how often this situation arises, minutes or hours lost, and any risk like inaccurate citations or missed deadlines.",
+        "Quantify stakes: probe for weekly time lost, revenue or subscription decisions at risk, or client frustration; note any numbers the user volunteers.",
+        "Clarify urgency: ask if the absence blocks success or merely improves workflow; listen for cues such as impending research deadlines or willingness to upgrade tiers.",
+        "If impact replies are generic, prompt for scale (times per week, dollars at stake) or use recognition clues: time lost weekly, revenue at stake, looming deadline."
+      ],
+      "expectedConversationTurns": "3"
     }
   ]
 }
-
-
-### EXAMPLE 03
-
-
-{
-  "thinking": {
-    "topicStrategy": "A feature-wishlist interview should stay laser-focused on one idea: capture the customer’s own wording of their most-wanted feature, then dig for the recent moment it was missing, the workaround they used, and the tangible or emotional pain that workaround caused. Quantify frequency (daily, weekly, at launch) and cost (time, money, stress) so the product team can score impact and urgency. Tight four-turn pacing keeps energy high, avoids meandering wish-lists, and still yields copy-ready insight for prioritisation, pricing, and roadmap arguments.",
-    "appliedToOrganisation": "For Oura, likely asks include more accurate workout tracking, longer battery life, a detailed web dashboard, or richer stress-recovery analytics. Each ties directly to brand pillars like ‘Data so accurate it’s personal’ and ‘Empowering the health journey.’ Understanding the pain—e.g., switching to a smartwatch mid-workout or exporting CSVs into spreadsheets—reveals lost engagement and churn risk. If a feature promises to extend membership value (subscription retention) or justify an upsell ring generation, product can align investments with revenue upside and customer delight.",
-    "userPersona": "Assume an engaged Oura member who wears the ring daily and pays for membership. Motivations: optimise sleep/recovery, trust data accuracy, and feel cared for by a science-backed, design-led brand. Frustrations: manual data exports, battery degradation mid-trip, gaps in workout detection. They value concise, respectful dialogue, are data-savvy, and respond well when their health goals are acknowledged. Expect pragmatic examples (\"I had to open Strava for HR zones\") and a willingness to name trade-offs if the feature unlocks clear benefit.",
-    "durationThoughts": "Four turns demand a single objective. Turn 1: mandated opener and feature capture. Turn 2: clarify feature and discern a recent use-case plus workaround. Turn 3: probe pain, frequency, and impact with a concrete example or recognition list. Turn 4: gauge urgency and any implied willingness to pay, then thank them. Coach the agent to keep each turn under 45 seconds, listen actively, and skip any probe that the customer has already answered."
-  },
-  "title": "4-Turn Next-Feature Deep-Dive for an Active Oura Member",
-  "duration": 4,
-  "summary": "A concise four-turn plan designed to surface one clear feature request—highlighting a recent scenario, capturing the user's current workaround and emotional or practical pain, then exploring frequency, impact, and any urgency or interest in upgrading. This provides Oura actionable insights grounded in genuine user experience and pain.",
-  "objectives": [
-    {
-      "objective01": "Identify clearly the single next feature the customer most wants—emphasizing a vivid, recent scenario, the workaround they currently use, and clearly anchoring the emotional or practical pain involved, before considering frequency, measurable impact, or upgrade intent.",
-      "desiredOutcome": "The next-most-desired feature clearly named by the customer, described with a concrete real-life scenario; the manual workaround and associated emotional or practical pain clearly understood first. Then, as relevant, capture frequency of experiencing the pain, measurable or quantifiable impact, and explicit willingness to upgrade or pay extra if mentioned voluntarily by user.",
-      "agentGuidance": [
-        "Begin with the exact opener: 'Thanks for joining! We’ll keep this short and sharp—so, which feature would you love us to build next for Oura?'",
-        "If the participant hesitates or offers many ideas, ask them clearly which would help most right now; offer examples if needed: advanced reporting dashboard / longer battery life / more accurate workout tracking / web interface.",
-        "Once a desired feature is identified clearly, immediately learn about the most recent time they experienced needing it—prompting them specifically for the emotional or practical pain they felt. Understand clearly why the current solution or workaround frustrates or limits them (including emotional friction, confusion, wasted effort, or lost confidence in Oura). Request specific examples if their description is vague.",
-        "Only after clarifying clearly why it matters or why it hurts, quantify the impact and frequency if relevant: how often the frustration or manual workaround arises and how it negatively influences their experience. Note if the user voluntarily mentions willingness to pay more or upgrade—avoid prompting directly. Then thank them warmly for their input."
-      ],
-      "expectedConversationTurns": 4
-    }
-  ]
-}
-
-

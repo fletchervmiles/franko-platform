@@ -34,6 +34,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
+import { AgentTrainingCenter } from "@/components/agent-training-center"
 // import { useSetupChecklist } from "@/contexts/setup-checklist-context";
 
 const contextSetupSchema = z.object({
@@ -55,10 +56,30 @@ const contextSetupSchema = z.object({
 
 type ContextSetupValues = z.infer<typeof contextSetupSchema>
 
+// Step configurations for ProcessingSteps
+const REGENERATE_CONTEXT_STEPS = [
+  { name: 'Extracting website content', status: 'processing' as const },
+  { name: 'Generating AI knowledge base', status: 'waiting' as const },
+  { name: 'Updating knowledge base', status: 'waiting' as const },
+  { name: 'Retraining all agents', status: 'waiting' as const }
+]
+
+const REGENERATE_AGENTS_STEPS = [
+  { name: 'Updating agent conversation plans', status: 'processing' as const }
+]
+
 // Query functions
 const fetchProfile = async (userId: string) => {
   const profile = await getProfileByUserId(userId)
   return profile
+}
+
+const fetchUserStats = async () => {
+  const response = await fetch('/api/stats')
+  if (!response.ok) {
+    throw new Error('Failed to fetch user stats')
+  }
+  return response.json()
 }
 
 const submitContext = async (data: {
@@ -125,6 +146,17 @@ function ContextSetupInnerPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [isPlanRegenerating, setIsPlanRegenerating] = useState(false)
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
+
+  // Additional queries for agent training center
+  const { data: userStats } = useQuery({
+    queryKey: ['userStats', user?.id],
+    queryFn: fetchUserStats,
+    enabled: !!user?.id
+  })
+
+  const chatInstancesCount = userStats?.chatInstancesCount || 0
+  const modalCount = userStats?.modalCount || 0
+  const agentsWithPlans = userStats?.agentsWithPlans || 0
 
   const form = useForm<ContextSetupValues>({
     resolver: zodResolver(contextSetupSchema),
@@ -396,13 +428,28 @@ function ContextSetupInnerPage() {
     }
   }
 
+  const handleRegenerateContext = () => {
+    if (!user?.id) return
+    // Same as current regenerate - scrape website + retrain
+    mutate({
+      userId: user.id,
+      organisationUrl: form.getValues("url"),
+      organisationName: form.getValues("orgName"),
+    })
+  }
+
+  const handleRegenerateAgents = () => {
+    // New - just retrain with current context
+    regenerateAllPlans()
+  }
+
   return (
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
-        {isPlanRegenerating && (
+        {(isPending || isPlanRegenerating) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
             <ProcessingSteps
-              steps={[{ name: 'Regenerating agent plans', status: 'processing' }]}
+              steps={isPending ? REGENERATE_CONTEXT_STEPS : REGENERATE_AGENTS_STEPS}
             />
           </div>
         )}
@@ -411,6 +458,21 @@ function ContextSetupInnerPage() {
             Context
           </h1>
         </div>
+
+        {/* Agent Training Center - Above all other cards */}
+        <AgentTrainingCenter
+          userId={user?.id || ''}
+          profile={profile}
+          onRegenerateContext={handleRegenerateContext}
+          onRegenerateAgents={handleRegenerateAgents}
+          isRegeneratingContext={isPending}
+          isRegeneratingAgents={isPlanRegenerating}
+          chatInstancesCount={chatInstancesCount}
+          modalCount={modalCount}
+          agentsWithPlans={agentsWithPlans}
+          hasUrl={!!form.watch("url")}
+          hasContext={!!profile?.organisationDescription}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-10">
@@ -441,46 +503,6 @@ function ContextSetupInnerPage() {
                         <p className="text-sm text-gray-500">Add your business details. This information builds the foundation for your AI Agents.</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {!isCardEditing && profile?.organisationDescription && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                type="button"
-                                size="sm"
-                                disabled={isPending || isSavingCardEdits}
-                                className="h-8 text-xs px-4 flex items-center gap-1 bg-[#E4F222] hover:bg-[#F5FF78] text-black"
-                              >
-                                {isPending ? (
-                                  <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    <span>Regenerating...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <RefreshCw className="h-3 w-3" />
-                                    Regenerate Context
-                                  </>
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Regenerate context &amp; agent plans?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  We'll re-crawl your website to update the company description and rebuild all existing agent scripts. No data is lost and share links keep working. This may take up to a minute.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => onSubmit(form.getValues())}
-                                >
-                                  Continue
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
                         {!isCardEditing && (
                           <Button onClick={handleEditCard} variant="outline" size="sm" className="h-8 text-xs px-4">
                             Edit

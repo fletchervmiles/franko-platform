@@ -34,6 +34,11 @@ export const profilesTable = pgTable("profiles", {
    * Null until the workspace owner opts to use identity verification.
    */
   verificationSecret: text("verification_secret"),
+  /**
+   * Timestamp when agents were last trained/retrained.
+   * Used to track if agents need retraining after context changes.
+   */
+  agentLastTrainedAt: timestamp("agent_last_trained_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

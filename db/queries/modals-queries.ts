@@ -110,6 +110,18 @@ export async function isEmbedSlugAvailable(embedSlug: string, excludeModalId?: s
 }
 
 /**
+ * Get the count of modals for a user
+ */
+export async function getModalCountByUserId(userId: string): Promise<number> {
+  const result = await db
+    .select({ count: count() })
+    .from(modalsTable)
+    .where(eq(modalsTable.userId, userId));
+
+  return result[0]?.count || 0;
+}
+
+/**
  * Update modal brand settings
  */
 export async function updateModalBrandSettings(

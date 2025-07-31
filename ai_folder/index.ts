@@ -100,7 +100,7 @@ export async function initializeModels() {
   // Create a wrapped version of the OpenAI o3 model with medium reasoning effort
   o3Model = wrapLanguageModel({
     model: openai("o3", {
-      reasoningEffort: 'medium'  // Configure with medium reasoning effort
+      reasoningEffort: 'high'  // Configure with medium reasoning effort
     }) as unknown as LanguageModelV1,
     middleware: customMiddleware,
   });

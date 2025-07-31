@@ -45,19 +45,10 @@ Re-phrasing the same broad question is not allowed. Include this in guidance.
 You will receive these inputs:
 
 1. **Describe Your Conversation Topic**
-    * User response to: "What do you want to learn from your customers?"
-    * Example: "I want to learn why customers abandon their carts during checkout."
 
-2. **Set the Conversation Duration**
-    * A user-selected option providing the approximate time, depth description, and total turns:
-        * Format: `"≈ {estimated time} ({depth description}) - {number} turns"`
-        * Example: `"≈ 5 min (Recommended) - 10 turns"`
+General instructions on the topic and the conversation plan to construct.
 
-3. **Optional: Any Additional Details or Instructions**
-    * User response to: "Add any specific questions or context to shape the conversation."
-    * Example: "Ask about shipping costs and mention website usability."
-
-4. **Organisational Description**
+2. **Organisational Description**
     * The **organisational description** is crucial for contextualizing each objective. Depending on user inputs, you may receive a **formatted report** with some or all of these headings:
 
 1. Context Overview  
@@ -106,91 +97,49 @@ Always weave in **specific details**—like unique selling propositions or known
 
 1. Description of the Conversation Topic:
 
-**Improvement & Friction**
+## Inputs
 
-(trial / free user, active customer)
+1.  **Conversation Topic Playbook: Improvement & Friction**
 
-OBJECTIVE – Surface the most important gap, annoyance, or missing piece in {organisation_name}, and understand why it matters to the user.
+    Your goal is to generate a conversation plan that outlines a two-part diagnostic mission for an intelligent agent. This plan should not be a rigid script. Instead, define two clear objectives, each with a **Mission** and a **Strategic Toolkit**. This structure provides a clear purpose for each part of the conversation while empowering the agent with flexible strategies to use as the discussion dictates.
 
-Duration
-• Turn count = 4 messages
-• Objective count = 1 objective
+    ---
+    **Objective 01: Deconstruct the Core Problem**
+    *(3 turns)*
 
-Founder wants to learn  
-• User-named top gap or friction point (feature missing, UX confusing, speed, price, etc.)  
-• Root cause or moment it shows up (“always when…, only at scale…, after update…”)  
-• Impact size / frequency (how often, how painful, time wasted, revenue at risk)  
-• Current workaround (manual hack, extra tool, abandon task)  
-• Desired improvement or success metric (“If X happened, we’d save 3 hrs / hit Y target”)
+    *   **Mission:** To identify a single, specific point of user friction and build a complete, detailed picture of the event where it occurs.
+    *   **Strategic Toolkit:**
+        *   **Mandated Opening:** The conversation plan **must** instruct the agent to open with this exact, verbatim question: **“Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve {organisation_name} for you?”**
+        *   **Ensure Focus on a Single Problem:** The agent's immediate follow-up task is to ensure the conversation focuses on **one single problem**. If the user's answer to the opener lists multiple issues, the agent should immediately use a **Recognition List** to have them prioritize one before proceeding.
+        *   **Get the Story with "Story Scaffolding":** To understand the problem, the agent must ask for a specific, recent example. The plan must guide the agent to execute this by offering 2-3 brief, archetypal examples to make the request easier (e.g., 'a confusing moment,' 'a task that took longer than expected'). The question must conclude with a friendly, open-ended phrase like "—or was it something else?" to ensure the user feels in control.
 
-Reference buckets  
-(create 2-4-item recognition lists if answers are vague)
+    ---
+    **Objective 02: Uncover the Consequence and Desired State**
+    *(3 turns)*
 
-Gaps / friction  
-– Missing integration
-– Manual steps still needed
-– Confusing workflow
-– Slow performance
-– Limited seats / limits
-– Data / reporting gaps
-– Price structure
-– Mobile / platform support
-– Reliability / bugs
+    *   **Mission:** To understand the full business and personal impact of the problem, and to capture the user's vision for a perfect solution.
+    *   **Strategic Toolkit:**
+        *   **Guidance for Agency:** The plan should instruct the agent to naturally transition from the "problem story" to its consequences. The agent has the flexibility to explore the following two areas in the order that feels most natural to the conversation.
+        *   **Instruction - Quantify the Pain:** To understand the problem's true impact, guide the agent to ask questions that put a scale to the pain. The agent should probe for its **frequency** (e.g., does this happen daily or just on big projects?), the **time it wastes** (minutes or hours?), or its **severity** (is it a minor annoyance or a major roadblock?).
+        *   **Instruction - Uncover the Workaround:** To understand the stakes, guide the agent to ask about the user's current "fallback plan." The agent must find out what the user is **forced to do instead** when they hit this problem. Are they switching to a spreadsheet, using another paid tool, asking a colleague for help, or just giving up on the task? This reveals the true cost of the friction.
+        *   **Concluding the Objective:** The objective is complete once the agent understands the pain and its workaround, and has asked the user to describe what a "perfect fix" would look like or do for them.
 
-Root-cause clues
-– Happens at high volume
-– Only on certain roles/devices
-– After latest update
-– During onboarding
-– When collaborating
+    ---
+    **Strategic Resource: Recognition List Buckets**
+    *(Use these as direct source material when executing the Recognition List strategy)*
 
-Impact / pain  
-– Time lost (<1 hr, 1-3 hrs, 3-10 hrs a week)  
-– Revenue / conversion hit (<$100, $100-$500, $500+)  
-– User frustration / morale  – Risk of churn or missed launch
+    *   **Gaps / Friction:** `Missing integration`, `Manual steps still needed`, `Confusing workflow`, `Slow performance`, `Limited seats / limits`, `Data / reporting gaps`, `Price structure`, `Reliability / bugs`.
+    *   **Impact / Pain:** `Time lost`, `Revenue / conversion hit`, `User frustration / morale`, `Risk of churn or missed launch`.
+    *   **Common Workarounds:** `Spreadsheets`, `Zapier / scripts`, `Another paid tool`, `Hire help`, `Ignore task`.
 
-Common workarounds
-– Spreadsheets
-– Zapier / scripts
-– Another paid tool
-– Hire help
-– Ignore task
-
-Planner note  
-If the user says “nothing really” or “just polish,” ask for the last minor annoyance or offer a recognition list from the buckets above.
-
-Agent must (Important)  
-Open with exactly:  
-“Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve {organisation_name} for you?”
-
-Copy that sentence verbatim into the first agent-guidance bullet. The guidance point should start with "Begin with the required opener exactly: ..."
-
-Agent guidance (flexible probes—use what fits the flow)
-
-1. Clarify the gap  
-   • Encourage them to pick the single biggest annoyance or blocker.  
-   • Recognition list if they’re unsure.
-
-2. Pin down the context / root cause  
-   • Ask when or where it appears: “Is there a specific moment it bites?”  
-   • Look for frequency or scale triggers.
-
-3. Explore impact  
-   • “What’s the ripple effect—time, money, stress?”  
-   • If natural, log a friendly range (time or dollar).
-
-4. Current workaround & desired fix  
-   • “How are you handling it today?”  
-   • “What would ‘fixed’ look like for you?”
-
-Skip probes already answered; wrap once gap, cause, impact, and wish-list fix are captured.
-
-Success criteria  
-• One clear gap or friction point recorded in the user’s words  
-• Context / root cause understood  
-• Impact quantified or described (time, money, frustration, risk)  
-• Existing workaround and desired improvement noted
-
+    ---
+    **Success Criteria for the Plan**
+    The generated two-objective plan is successful if, by the end of the entire conversation, it has equipped the agent to capture:
+    1.  **The Friction:** A single, clearly identified gap or annoyance.
+    2.  **The Context:** A specific story of when and where the friction occurs.
+    3.  **The Impact:** The quantified pain (e.g., frequency, time lost).
+    4.  **The Workaround:** The user's current fallback solution.
+    5.  **The Desired Fix:** The user's vision for a solution.
 
 
 2. Organisation Description:
@@ -297,410 +246,40 @@ Examples for Reference Only.
 
 ### EXAMPLE 01
 
-
+{
+  "thinking": {
+    "topicStrategy": "Pinpointing a single moment of user friction, then unpacking its impact and desired fix, is one of the fastest ways to surface high-value roadmap ideas. Great discovery calls avoid laundry-lists, instead driving to one vivid story, quantifying the cost and capturing the user’s dream outcome. Doing this in only six turns demands laser-focused prompts, quick prioritisation tools and clear scaffolding so the customer can recall specifics without effort.",
+    "appliedToOrganisation": "For Perplexity, isolating a sharp pain point tells us which part of the answer-engine experience stalls research flow. Maybe Deep Research caps feel limiting, citations aren’t export-friendly, or model-switching is hidden. Understanding the fallout—lost billable hours for consultants, missed citation deadlines for students—lets product teams weigh ROI on fixes. Because Perplexity’s edge is speed, trust and breadth, any friction that forces users back to Google, spreadsheets or a rival LLM is an urgent threat and should surface quickly in this interview.",
+    "userPersona": "Assume today’s interviewee is a \"Professional Researcher\" persona: time-poor, accuracy-obsessed consultants or analysts who lean on Perplexity’s Deep Research, citation links and multi-model options. They value transparency, hate manual copy-paste workarounds, pay for Pro, and judge tools by minutes saved and confidence gained. They’ll respond well to a clear agenda, recognition lists, and empathy for deadlines.",
+    "durationThoughts": "With only 6 total turns (≈3–4 min), allocate 3 turns per objective: Turn 1 – mandated opener & prioritisation, Turn 2 – story capture, Turn 3 – clarifying follow-up. Then Turn 4 – transition + quantify pain, Turn 5 – workaround probe, Turn 6 – ideal fix. Coach the agent to time-check after Turn 4 (“We’re halfway, a couple more quick questions”)."
+  },
+  "title": "Perplexity Friction Dive: 6-Turn Discovery Blueprint",
+  "duration": 6,
+  "summary": "A two-objective, six-turn plan that helps the agent isolate one concrete Perplexity pain point, capture a vivid story, measure its business impact, reveal current workarounds, and record the user’s vision of a perfect fix—delivered in our friendly, concise brand voice.",
+  "objectives": [
     {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "hi I'm ready"
-        }
-      ]
+      "objective01": "Deconstruct the Core Problem",
+      "desiredOutcome": "Lock onto ONE clear friction point and obtain a time-anchored story describing when, where and how it occurs.",
+      "agentGuidance": [
+        "OPEN EXACTLY with: “Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve Perplexity for you?”",
+        "If the user lists several issues, deploy a Recognition List and ask which matters most: “Deep Research query limit / Model-switch confusion / File-upload errors / Free-plan cap” then proceed only with the chosen one.",
+        "Elicit a fresh story: invite a recent, specific moment using scaffolding: “Was it a confusing workflow step, a task that took longer than expected, or a missing citation export—or was it something else?”",
+        "Drill-Down Follow-Up Rule: if they answer generically (“it’s just slow”), ask for an example anchored in time but also in context of the existing conversation (e.g., “Which report were you building yesterday when speed became an issue?”).",
+        "Keep tone curious and concise—mirror their wording, nod to our ‘Where Knowledge Begins’ ethos, and avoid debating solutions yet."
+      ],
+      "expectedConversationTurns": "3"
     },
     {
-      "id": "msg_685239bb6e7081a1808835c9279826350b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User signals readiness to begin the interview.\",\n  \"currentObjectiveContext\": \"Objective01: Surface the user’s single most painful gap or friction point with v0.\",\n  \"currentOrganizationContext\": \"v0 aims to speed web development; pinpointing one friction helps prioritize fixes like local integration, credit clarity, or error handling.\",\n  \"thought\": \"Need the required opener to gather their top improvement wish. Using askQuestion move to launch objective.\",\n  \"Turns\": \"objective01 count +1 → now 1/4, status current, 3 turns remaining.\",\n  \"moves\": [\n    \"askQuestion\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 1,\n      \"target\": 4,\n      \"guidance\": \"3 turns remaining\"\n    }\n  },\n  \"response\": \"Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve v0 for you?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "I wish it was faster and the manual UI feature you've added doesn't seem to work welll - quite buggy "
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User listed two issues: slow performance and buggy manual UI feature; they haven’t singled out the main blocker yet.\",\n  \"currentObjectiveContext\": \"Objective01: Identify the single most painful friction to drill into.\",\n  \"currentOrganizationContext\": \"Pinpointing whether speed or manual-UI bugs hurt more guides v0 on performance tuning versus feature stability.\",\n  \"thought\": \"Use zoomInRecognition to have them choose one concrete blocker so we can dive deeper next.\",\n  \"Turns\": \"objective01 count +1 → now 2/4, status current, 2 turns remaining.\",\n  \"moves\": [\n    \"zoomInRecognition\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 2,\n      \"target\": 4,\n      \"guidance\": \"2 turns remaining\"\n    }\n  },\n  \"response\": \"Thanks for sharing! Hmm which hurts your workflow more right now—overall speed or the buggy manual-UI feature, and why?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "the speed because it just makes the editing process a lot longer, having to wait between turns"
-        }
-      ]
-    },
-    {
-      "id": "msg_68523a737f1881a198878b53c2c91a330b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User says overall speed is the main pain; waiting between generations slows editing.\",\n  \"currentObjectiveContext\": \"Objective01: Drill into speed friction—gather concrete context of when it bites most.\",\n  \"currentOrganizationContext\": \"v0 promises rapid iteration; delays between turns undermine ‘build at speed of thought’. Need specifics on typical wait.\",\n  \"thought\": \"Use askForExample to anchor a recent slow session and reveal wait time.\",\n  \"Turns\": \"objective01 count +1 → now 3/4, status current, 1 turn remaining.\",\n  \"moves\": [\n    \"askForExample\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 3,\n      \"target\": 4,\n      \"guidance\": \"1 turn remaining\"\n    }\n  },\n  \"response\": \"Got it—that’s frustrating. Could you walk me through your last slow session: what were you editing and roughly how long did each generation take?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "I was editing a dashboard UI and I don't know... probably a minute or so"
-        }
-      ]
-    },
-    {
-      "id": "msg_68523ae4133081a1ba47c0fd510d84bd0b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"They described editing a dashboard UI with ~1-minute waits between generations; speed delay is core pain.\",\n  \"currentObjectiveContext\": \"Still objective01: capture workaround so we have full friction story before closing this objective.\",\n  \"currentOrganizationContext\": \"Understanding coping steps reveals whether users multitask, abandon, or switch tools during v0’s lag—informing urgency for performance work.\",\n  \"thought\": \"Use delveDeeper to uncover their present workaround during the wait, completing our data set.\",\n  \"Turns\": \"objective01 count +1 → now 4/4, reaches target → status done, guidance completed. No other objective increments.\",\n  \"moves\": [\n    \"delveDeeper\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"That delay sounds disruptive—what do you usually do or switch to while v0 churns for that minute?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "hmm I try and think about the next update or do something useful but it's mostly dead time"
-        }
-      ]
-    },
-    {
-      "id": "msg_68523b14af8081a1831f7e93cf4703ec0b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User described their workaround—mostly idle time thinking ahead during v0’s minute-long waits.\",\n  \"currentObjectiveContext\": \"All objectives finished; time to wrap up.\",\n  \"currentOrganizationContext\": \"Insight: 1-minute generation delays create unproductive dead time, undermining v0’s speed promise.\",\n  \"thought\": \"Offer appreciation, lightly recap, invite any last thoughts using encourageWrapUp move.\",\n  \"Turns\": \"No objective increments; objective01 already done.\",\n  \"moves\": [\n    \"encourageWrapUp\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Thanks for explaining that downtime—super helpful. Before we close, is there anything else on your mind that could make v0 better?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "if it remembered the bugs from previous turns"
-        }
-      ]
-    },
-    {
-      "id": "msg_68523b49462081a185596feced9a6ceb0b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User added another wish: v0 should remember bugs from previous turns.\",\n  \"currentObjectiveContext\": \"All interview objectives completed; we're in closing sequence asking for any final thoughts.\",\n  \"currentOrganizationContext\": \"Memory of prior bugs could enhance error handling—a useful supplementary insight for v0’s roadmap.\",\n  \"thought\": \"Acknowledge new point warmly and offer one final chance to share; use encourageWrapUp move.\",\n  \"Turns\": \"No objective increments; objective01 remains done.\",\n  \"moves\": [\n    \"encourageWrapUp\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Got it—remembering past bugs would be a big help. Anything else you’d like to add before we wrap up?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "no that's it for now"
-        }
-      ]
-    },
-    {
-      "id": "msg_68523b79bfac81a195747599fe59412a0b0aa9932e803cc2",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User confirmed they have nothing else to add.\",\n  \"currentObjectiveContext\": \"All objectives completed; conversation closing.\",\n  \"currentOrganizationContext\": \"No further inquiry needed; wrap-up for v0 insights.\",\n  \"thought\": \"Provide mandated final closing phrase.\",\n  \"Turns\": \"No objective increments; objective01 remains done.\",\n  \"moves\": [],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Ok, you've been awesome! We've now concluded the Conversation. Have a great day and thanks again!\"\n}"
-        }
-      ]
+      "objective02": "Uncover the Consequence and Desired State",
+      "desiredOutcome": "Quantify the pain, surface the current workaround, and capture what a perfect Perplexity fix would look like.",
+      "agentGuidance": [
+        "Bridge naturally: summarise the story in a sentence, then ask how often it happens and how much time or revenue it costs; offer ranges if they hesitate (daily/weekly, minutes/hours, minor annoyance/major blocker).",
+        "Probe workaround using a Recognition List: “Do you switch back to Google, copy results into spreadsheets, run a separate paid LLM, or just abandon the task?” Confirm which best fits.",
+        "If answers stay vague, drill into a real example (“Last time you switched to Google, what date was that and how long did it take?”).",
+        "Explore desired future: ask them to imagine the friction is gone—what would a ‘perfect fix’ let them do faster, better, or cheaper? Listen for metrics like saved research hours or boosted confidence.",
+        "Close with appreciation, reinforcing Perplexity’s commitment to transparency and speed, and note any feature hints (e.g., bulk citation export) for product follow-up."
+      ],
+      "expectedConversationTurns": "3"
     }
   ]
-
-
-
-### EXAMPLE 02
-
-
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "hi I'm ready"
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User signals readiness to begin the chat.\",\n  \"currentObjectiveContext\": \"Objective01: uncover their single biggest Smartlead gap.\",\n  \"currentOrganizationContext\": \"Smartlead wants to pinpoint the most painful user friction for prioritised fixes.\",\n  \"thought\": \"Lead with the prescribed opener using move askQuestion to kick off the gap-identification.\",\n  \"Turns\": \"objective01 count incremented 0 ➜ 1; still current, 3 turns remaining.\",\n  \"moves\": [\n    \"askQuestion\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 1,\n      \"target\": 4,\n      \"guidance\": \"3 turns remaining\"\n    }\n  },\n  \"response\": \"Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve Smartlead for you?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "it'd be good to make edits to all my emails accounts at once instead of having to do each individually "
-        }
-      ]
-    },
-    {
-      "id": "msg_685240d9610481a39bb8fdce35b7e91b016d3f1a4c381b5e",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User says their biggest gap is lacking a bulk-edit option—now they must tweak every mailbox individually.\",\n  \"currentObjectiveContext\": \"Still on objective01: clarify the specific moment this friction appears to map root context.\",\n  \"currentOrganizationContext\": \"Smartlead’s unlimited mailboxes make scale easy, but no bulk-edit slows agencies juggling dozens of accounts.\",\n  \"thought\": \"Use askForExample to surface a concrete, recent incident—they’ll recall details like time cost and task type, enabling impact sizing next.\",\n  \"Turns\": \"objective01 count incremented 1 ➜ 2; still current, 2 turns remaining.\",\n  \"moves\": [\n    \"askForExample\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 2,\n      \"target\": 4,\n      \"guidance\": \"2 turns remaining\"\n    }\n  },\n  \"response\": \"Makes sense—that’s tedious. What was the most recent time you updated several accounts, and what exactly were you changing?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "just changing warm up details for each but I have a bunch so i need to go through the list and do them one by one ... small thing but would be nice if you could make bulk updates"
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User detailed the chore: updating warm-up settings mailbox-by-mailbox; feels minor but tedious.\",\n  \"currentObjectiveContext\": \"Objective01: quantify the cost of this repetitive warm-up editing to gauge impact.\",\n  \"currentOrganizationContext\": \"Bulk actions could amplify Smartlead’s unlimited-mailbox advantage by saving agencies hours on routine changes like warm-ups.\",\n  \"thought\": \"Use askQuestion to elicit time and monetary impact; this numeric detail readies us for final workaround/ideal fix probe.\",\n  \"Turns\": \"objective01 count incremented 2 ➜ 3; still current, 1 turn remaining.\",\n  \"moves\": [\n    \"askQuestion\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 3,\n      \"target\": 4,\n      \"guidance\": \"1 turn remaining\"\n    }\n  },\n  \"response\": \"Thanks for sharing! Roughly how many minutes or dollars does that mailbox-by-mailbox warm-up tweaking cost you each week?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "it's not much actually, just a few minutes. it's more of a small inconvenience "
-        }
-      ]
-    },
-    {
-      "id": "msg_68524333eca881a392ef5dfb4d1392d7016d3f1a4c381b5e",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User says the impact is only a minor inconvenience—just a few minutes each time.\",\n  \"currentObjectiveContext\": \"Objective01: capture their ideal bulk-edit solution and wrap this objective.\",\n  \"currentOrganizationContext\": \"Bulk-edit could strengthen Smartlead’s unlimited-mailbox pitch by smoothing routine warm-up tweaks.\",\n  \"thought\": \"Use askQuestion to learn what an ideal bulk-update flow looks like, fulfilling workaround/desired fix detail.\",\n  \"Turns\": \"objective01 count 3 ➜ 4; target reached, status set to done. No other objectives incremented.\",\n  \"moves\": [\n    \"askQuestion\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Got it, thanks! If we added a bulk-update tool, how should that flow ideally work for you?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "probably just exactly the same as it works now for individual emails but you can just select \"update all\" or something "
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User sketched their ideal: identical edit screen plus an “update all” toggle; seems satisfied.\",\n  \"currentObjectiveContext\": \"All objectives finished; now initiate friendly wrap-up.\",\n  \"currentOrganizationContext\": \"Smartlead has clear guidance on desired bulk-edit UX; conversation can close.\",\n  \"thought\": \"Use encourageWrapUp to invite any final thoughts without opening new objectives.\",\n  \"Turns\": \"No objective increments; objective01 already done, nothing further.\",\n  \"moves\": [\n    \"encourageWrapUp\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Great feedback! Before we finish, is there anything else you're thinking about or any final suggestions to help us improve Smartlead?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "I think the pricing could be cheaper"
-        }
-      ]
-    },
-    {
-      "id": "msg_685276b0e55c81a3827b4bbb7d6fd9ce016d3f1a4c381b5e",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User brought up a new concern: Smartlead’s pricing feels high.\",\n  \"currentObjectiveContext\": \"Main gap objective is complete; we’re in the wrap-up follow-up phase addressing this fresh pricing point.\",\n  \"currentOrganizationContext\": \"Smartlead offers tiered plans with unlimited mailboxes; feedback on perceived price/value helps refine packaging.\",\n  \"thought\": \"Ask one concise clarifying question to pinpoint which pricing element feels expensive.\",\n  \"Turns\": \"No objective changes; objective01 remains done.\",\n  \"moves\": [\n    \"clarifyOrProbe\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Understood—when you say cheaper, which specific cost feels steep: monthly base fee, add-ons, or another part?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "yeah just the monthly cost and the gap between basic and pro"
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User clarified pricing pain: monthly fee and jump from Basic to Pro feel high.\",\n  \"currentObjectiveContext\": \"All set; we're wrapping up, inviting any last thoughts.\",\n  \"currentOrganizationContext\": \"Pricing feedback helps Smartlead fine-tune tier gaps and perceived value.\",\n  \"thought\": \"Use encourageWrapUp to thank them and offer a final chance to add anything.\",\n  \"Turns\": \"No objective increments; objective01 already done.\",\n  \"moves\": [\n    \"encourageWrapUp\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Thanks for clarifying, that's super helpful. Anything else at all you'd like to share before we finish up?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "no that's everything"
-        }
-      ]
-    },
-    {
-      "id": "msg_6852779a2c3c81a39d632c27bd39c936016d3f1a4c381b5e",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User is finished.\",\n  \"currentObjectiveContext\": \"Wrap-up complete.\",\n  \"currentOrganizationContext\": \"Conversation closed with key insights on bulk-edit need and pricing perception.\",\n  \"thought\": \"Return mandated final phrase.\",\n  \"Turns\": \"No objective changes.\",\n  \"moves\": [],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Ok, you've been awesome! We've now concluded the Conversation. Have a great day and thanks again!\"\n}"
-        }
-      ]
-    }
-  ]
-
-
-
-### EXAMPLE 03
-
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "Hi I'm ready"
-        }
-      ]
-    },
-    {
-      "id": "msg_68528010e67481a1823244d7bf87507f0e7384f5b42ee6e7",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User indicates they’re ready to begin the interview.\",\n  \"currentObjectiveContext\": \"Objective01: Identify their single biggest gap or friction with Oura.\",\n  \"currentOrganizationContext\": \"Oura seeks to prioritize fixes—common gaps include battery life, subscription value, activity accuracy, integrations. We need the user’s top issue.\",\n  \"thought\": \"Kick off with the mandated opener using askQuestion to launch gap discovery.\",\n  \"Turns\": \"objective01 count 0 ➜ 1; status current, 3 turns remaining.\",\n  \"moves\": [\n    \"askQuestion\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 1,\n      \"target\": 4,\n      \"guidance\": \"3 turns remaining\"\n    }\n  },\n  \"response\": \"Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve Oura for you?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "I'd like more personalised tips. I also like the little options to add why I'm not feeling well. Those would be good to add daily just so I feel like then I can get more data based on my behaviour combined with sleep."
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User wants richer personalized tips and daily context-tagging to deepen behavior-sleep insights.\",\n  \"currentObjectiveContext\": \"Objective01: Pinpoint their single biggest improvement need before digging into root details.\",\n  \"currentOrganizationContext\": \"Oura’s value hinges on actionable insights; clarifying whether guidance depth or tagging friction hurts more steers feature focus.\",\n  \"thought\": \"Use zoomInRecognition to have them choose one main pain—personalized tips versus daily tag prompts—so we can drill deeper next.\",\n  \"Turns\": \"objective01 count 1 ➜ 2; status current, 2 turns remaining.\",\n  \"moves\": [\n    \"zoomInRecognition\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 2,\n      \"target\": 4,\n      \"guidance\": \"2 turns remaining\"\n    }\n  },\n  \"response\": \"That's really useful insight, thanks for sharing! Which would help you most right now—richer personalized tips or a simple daily prompt for context tags, and why?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "I think both, they're related... can't get personalized insights as easily wtihout sharing the additional data I guess?"
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User views daily context-tagging and richer tips as intertwined; both missing blocks better personalization.\",\n  \"currentObjectiveContext\": \"Objective01: Anchor this combined gap with a concrete recent moment to uncover root context.\",\n  \"currentOrganizationContext\": \"Personalized guidance is Oura’s promise; knowing when missing tags hurt insights clarifies feature priorities around prompts and recommendation logic.\",\n  \"thought\": \"Need a tangible example for root-cause exploration, so use askForExample to prompt a specific recent instance.\",\n  \"Turns\": \"objective01 count 2 ➜ 3; status current, 1 turn remaining.\",\n  \"moves\": [\n    \"askForExample\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"current\",\n      \"count\": 3,\n      \"target\": 4,\n      \"guidance\": \"1 turn remaining\"\n    }\n  },\n  \"response\": \"Got it—those definitely go hand-in-hand. Could you walk me through the last time you looked to Oura for a personalized tip, but felt it was missing the context?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "yeah I just feel like when I log in, it's got a lot of data but the recommendations and guidance around the data is just generic. So I think it I guess each time I look at the app. I still like it but would be a nice to have."
-        }
-      ]
-    },
-    {
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User feels Oura’s guidance is generic every time they open the app; richer context would improve usefulness but it’s currently just “nice to have.”\",\n  \"currentObjectiveContext\": \"Objective01: Capture impact on trust/experience and any workaround or success metric to complete the gap profile.\",\n  \"currentOrganizationContext\": \"If generic advice erodes trust, enhancing recommendation logic and prompting tags could strengthen Oura’s core value of meaningful, personalized insights.\",\n  \"thought\": \"Ask directly about how generic guidance affects their trust and decisions, fulfilling impact sizing before closing the objective.\",\n  \"Turns\": \"objective01 count 3 ➜ 4; target reached → status done, guidance completed. No other objective increments.\",\n  \"moves\": [\n    \"clarifyOrProbe\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"I hear you—generic tips can feel impersonal. When advice feels generic each login, how does that shape your usage or trust in Oura’s data?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "well I still use it but I do get less value. And it's expensive, I've unsubscribed a few times but then ended up coming back "
-        }
-      ]
-    },
-    {
-      "id": "msg_6852829cdc9881a183fcc9d65f3259320e7384f5b42ee6e7",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User still uses Oura but feels reduced value; cost led them to unsubscribe a few times before returning.\",\n  \"currentObjectiveContext\": \"All objectives completed; begin wrap-up.\",\n  \"currentOrganizationContext\": \"Insight: generic guidance lowers perceived value, influencing subscription churn despite continued device use.\",\n  \"thought\": \"Offer warm acknowledgement and invite any final thoughts using encourageWrapUp.\",\n  \"Turns\": \"No objective increments; objective01 remains done.\",\n  \"moves\": [\n    \"encourageWrapUp\"\n  ],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Thanks for sharing that—it’s really helpful to understand. Anything else you’d like to mention before we finish up?\"\n}"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "input_text",
-          "text": "no that's it"
-        }
-      ]
-    },
-    {
-      "id": "msg_685282d45abc81a1916a20eb3447d0ee0e7384f5b42ee6e7",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "output_text",
-          "text": "{\n  \"userIntent\": \"User indicates they’re finished and have no additional comments.\",\n  \"currentObjectiveContext\": \"Wrap-up complete; conversation ready to close.\",\n  \"currentOrganizationContext\": \"Captured insight: generic guidance reduces perceived value, influencing subscription churn despite continued ring use.\",\n  \"thought\": \"Provide mandated final closing phrase.\",\n  \"Turns\": \"No objective changes; objective01 remains done.\",\n  \"moves\": [],\n  \"currentObjectives\": {\n    \"objective01\": {\n      \"status\": \"done\",\n      \"count\": 4,\n      \"target\": 4,\n      \"guidance\": \"completed\"\n    }\n  },\n  \"response\": \"Ok, you've been awesome! We've now concluded the Conversation. Have a great day and thanks again!\"\n}"
-        }
-      ]
-    }
-  ]
-
+}

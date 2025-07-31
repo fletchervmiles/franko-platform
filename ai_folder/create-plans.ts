@@ -12,7 +12,7 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '@/lib/logger';
 import { updateChatInstanceConversationPlan } from "@/db/queries/chat-instances-queries";
-import { geminiFlashModel, gemini25ProPreviewModel } from ".";
+import { geminiFlashModel, gemini25ProPreviewModel, o3Model } from ".";
 import type { ConversationPlan } from "@/components/conversationPlanSchema";
 import { createObjectiveProgressFromPlan } from "./create-actions";
 import { agentsData } from "@/lib/agents-data";
@@ -166,15 +166,15 @@ async function generateUseCaseConversationPlan({
   });
   
   // Try primary model first, then fallback
-  const primaryModel = geminiFlashModel;
-  const fallbackModel = gemini25ProPreviewModel;
+  const primaryModel = o3Model;
+  const fallbackModel = geminiFlashModel;
   
   let rawPlan: any;
   let modelUsed: string;
   
   try {
-    // Attempt 1: Primary model (Gemini 2.5 Flash)
-    modelUsed = `Gemini 2.5 Flash`;
+    // Attempt 1: Primary model (OpenAI o3)
+    modelUsed = `OpenAI o3`;
     logger.debug(`Attempting conversation plan generation with primary model: ${modelUsed} for ${agentId}`);
     
     const result = await generateObject({
@@ -191,7 +191,7 @@ async function generateUseCaseConversationPlan({
     logger.warn(`Primary model failed for ${agentId}, trying fallback:`, primaryError);
     
     // Attempt 2: Fallback model
-    modelUsed = `Gemini 2.5 Pro Preview`;
+    modelUsed = `Gemini 2.5 Flash`;
     logger.debug(`Attempting conversation plan generation with fallback model: ${modelUsed} for ${agentId}`);
     
     try {
