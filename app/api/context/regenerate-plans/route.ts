@@ -7,6 +7,18 @@ import { type SelectChatInstance } from "@/db/schema/chat-instances-schema";
 import { generateUseCaseConversationPlan } from "@/ai_folder/create-plans";
 import { createObjectiveProgressFromPlan } from "@/ai_folder/create-actions";
 
+// Type helpers for plan generation results
+interface PlanSuccess {
+  agentType: string;
+  plan: import("@/components/conversationPlanSchema").ConversationPlan;
+  success: true;
+}
+interface PlanFailure {
+  agentType: string;
+  error: string;
+  success: false;
+}
+
 // Allow long-running function (5 min)
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -47,7 +59,7 @@ export async function POST() {
     logger.info(`[regen] Found ${uniqueAgentTypes.length} unique agent types across ${chatInstances.length} instances`);
 
     // 🚀 STEP 1: Generate plans for unique agent types in PARALLEL
-    const planGenerationPromises = uniqueAgentTypes.map(async (agentType) => {
+    const planGenerationPromises: Promise<PlanSuccess | PlanFailure>[] = uniqueAgentTypes.map(async (agentType): Promise<PlanSuccess | PlanFailure> => {
       try {
         const plan = await generateUseCaseConversationPlan({
           agentId: agentType,
@@ -56,10 +68,10 @@ export async function POST() {
           autoSave: false // Don't auto-save, we'll handle this manually
         });
         
-        return { agentType, plan, success: true };
+        return { agentType, plan, success: true } as PlanSuccess;
       } catch (error) {
         logger.error(`[regen] Plan generation failed for ${agentType}:`, error);
-        return { agentType, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+        return { agentType, error: error instanceof Error ? error.message : 'Unknown error', success: false } as PlanFailure;
       }
     });
 
@@ -71,7 +83,7 @@ export async function POST() {
 
     planResults.forEach((result) => {
       if (result.status === 'fulfilled' && result.value.success) {
-        const { agentType, plan } = result.value;
+        const { agentType, plan } = result.value as PlanSuccess;
         successfulPlans.push({ agentType, plan });
         const instances = instancesByAgentType[agentType];
         
