@@ -6,6 +6,7 @@ import { getChatInstancesByUserId, updateChatInstanceConversationPlan } from "@/
 import { type SelectChatInstance } from "@/db/schema/chat-instances-schema";
 import { generateUseCaseConversationPlan } from "@/ai_folder/create-plans";
 import { createObjectiveProgressFromPlan } from "@/ai_folder/create-actions";
+import { type ConversationPlan } from "@/components/conversationPlanSchema";
 
 // Allow long-running function (5 min)
 export const maxDuration = 300;
@@ -47,7 +48,10 @@ export async function POST() {
     logger.info(`[regen] Found ${uniqueAgentTypes.length} unique agent types across ${chatInstances.length} instances`);
 
     // 🚀 STEP 1: Generate plans for unique agent types in PARALLEL
-    const planGenerationPromises = uniqueAgentTypes.map(async (agentType) => {
+    const planGenerationPromises = uniqueAgentTypes.map(async (agentType): Promise<
+      | { agentType: string; plan: ConversationPlan; success: true }
+      | { agentType: string; error: string; success: false }
+    > => {
       try {
         const plan = await generateUseCaseConversationPlan({
           agentId: agentType,
@@ -67,7 +71,7 @@ export async function POST() {
     
     // 🚀 STEP 2: Apply plans to all instances in PARALLEL 
     const updatePromises: Promise<{ success: boolean; instanceId: string; agentType: string }>[] = [];
-    const successfulPlans: Array<{ agentType: string; plan: any }> = [];
+    const successfulPlans: Array<{ agentType: string; plan: ConversationPlan }> = [];
 
     planResults.forEach((result) => {
       if (result.status === 'fulfilled' && result.value.success) {
