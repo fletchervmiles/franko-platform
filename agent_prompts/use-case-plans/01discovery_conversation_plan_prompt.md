@@ -45,19 +45,10 @@ Re-phrasing the same broad question is not allowed. Include this in guidance.
 You will receive these inputs:
 
 1. **Describe Your Conversation Topic**
-    * User response to: "What do you want to learn from your customers?"
-    * Example: "I want to learn why customers abandon their carts during checkout."
 
-2. **Set the Conversation Duration**
-    * A user-selected option providing the approximate time, depth description, and total turns:
-        * Format: `"≈ {estimated time} ({depth description}) - {number} turns"`
-        * Example: `"≈ 5 min (Recommended) - 10 turns"`
+General instructions on the topic and the conversation plan to construct.
 
-3. **Optional: Any Additional Details or Instructions**
-    * User response to: "Add any specific questions or context to shape the conversation."
-    * Example: "Ask about shipping costs and mention website usability."
-
-4. **Organisational Description**
+2. **Organisational Description**
     * The **organisational description** is crucial for contextualizing each objective. Depending on user inputs, you may receive a **formatted report** with some or all of these headings:
 
 1. Context Overview  
@@ -115,7 +106,7 @@ OBJECTIVE – Learn where they found you, what hooked them, and the job they hop
 
 Duration:
 Conversation turns = 6
-Conversation Objectives = 2objectives
+Conversation Objectives = 2 objectives
 
 Founder wants to know
 ▪ Discovery channel (referral, ad, content, etc.)  

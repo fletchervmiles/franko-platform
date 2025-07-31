@@ -62,11 +62,25 @@ export const getAllProfiles = async (): Promise<SelectProfile[]> => {
 export const updateProfile = async (userId: string, data: Partial<InsertProfile>) => {
   return withProfileLock(userId, async () => {
     try {
-      logger.debug("Starting profile update with lock", { userId, fieldsToUpdate: Object.keys(data) });
+      // Sanitize: remove undefined or empty-string fields to avoid overwriting with blanks
+      const sanitizedData: Partial<InsertProfile> = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => {
+          if (v === undefined) return false;
+          if (typeof v === 'string' && v.trim() === '') return false;
+          return true;
+        })
+      );
+
+      if (Object.keys(sanitizedData).length === 0) {
+        logger.debug("No valid profile fields to update after sanitization", { userId });
+        return await getProfile(userId) as any; // return existing profile
+      }
+
+      logger.debug("Starting profile update with lock", { userId, fieldsToUpdate: Object.keys(sanitizedData) });
       
       const updatedProfile = await db
         .update(profilesTable)
-        .set(data)
+        .set(sanitizedData)
         .where(eq(profilesTable.userId, userId))
         .returning();
       
