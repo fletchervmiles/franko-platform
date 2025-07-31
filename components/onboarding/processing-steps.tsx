@@ -198,13 +198,16 @@ export default function ProcessingSteps({
 
     // If external operation is complete and we haven't shown success yet
     if (externalComplete && !showSuccess) {
+      console.log('🎯 External completion detected, showing success in 800ms')
       // Quickly complete all remaining steps
       const timer = setTimeout(() => {
+        console.log('🏁 Setting final step complete')
         setActiveStep(stepsForSimulation.length - 1);
         setInternalComplete(true);
         
         // After a brief pause, show success
         setTimeout(() => {
+          console.log('✅ Showing success modal now!')
           setShowSuccess(true);
           onComplete?.();
         }, 500);

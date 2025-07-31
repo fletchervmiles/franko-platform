@@ -175,7 +175,13 @@ function ContextSetupInnerPage() {
 
   // Debug logging for state changes
   useEffect(() => {
-    console.log('🔄 State update - contextComplete:', contextComplete, 'agentsComplete:', agentsComplete, 'isContextRegenerating:', isContextRegenerating, 'showProcessingModal:', showProcessingModal)
+    console.log('🔄 State update:', { 
+      contextComplete, 
+      agentsComplete, 
+      isContextRegenerating, 
+      showProcessingModal,
+      isComplete: isContextRegenerating ? contextComplete : agentsComplete 
+    })
   }, [contextComplete, agentsComplete, isContextRegenerating, showProcessingModal])
   // const { progress: setupProgress, refetchStatus: refetchSetupStatus } = useSetupChecklist();
 
@@ -548,7 +554,7 @@ function ContextSetupInnerPage() {
     <NavSidebar>
       <div className="w-full p-4 md:p-8 lg:p-12">
         {showProcessingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/80">
             <ProcessingSteps
               {...getProcessingConfig(isContextRegenerating, isPlanRegenerating)}
               isComplete={isContextRegenerating ? contextComplete : agentsComplete}
