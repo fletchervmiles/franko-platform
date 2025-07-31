@@ -52,7 +52,7 @@ export async function POST() {
         const plan = await generateUseCaseConversationPlan({
           agentId: agentType,
           organisationName: profile.organisationName || "Your Company",
-          organisationDescription: profile.organisationDescription,
+          organisationDescription: profile.organisationDescription!, // Safe due to validation above
           autoSave: false // Don't auto-save, we'll handle this manually
         });
         
