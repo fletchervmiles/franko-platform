@@ -83,7 +83,8 @@ export async function POST() {
       userId: user.id,
       firstName: user.firstName || undefined,
       secondName: user.lastName || undefined,
-      email: email || undefined,
+      // Only sync email if this is not a demo account
+      ...(existingProfile?.isDemoAccount ? {} : { email: email || undefined }),
       membership: existingProfile?.membership || "free",
       totalResponsesQuota: existingProfile?.totalResponsesQuota || PLAN_RESPONSES.free,
       totalInternalChatQueriesQuota: existingProfile?.totalInternalChatQueriesQuota || PLAN_INTERNAL_CHAT_QUERIES.free,

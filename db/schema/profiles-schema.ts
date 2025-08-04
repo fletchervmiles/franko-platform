@@ -39,6 +39,11 @@ export const profilesTable = pgTable("profiles", {
    * Used to track if agents need retraining after context changes.
    */
   agentLastTrainedAt: timestamp("agent_last_trained_at"),
+  /**
+   * Flag to indicate if this is a demo account.
+   * Demo accounts have their email protected from automatic Clerk syncing.
+   */
+  isDemoAccount: boolean("is_demo_account").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

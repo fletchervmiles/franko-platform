@@ -110,7 +110,7 @@ Always weave in **specific details**—like unique selling propositions or known
     *   **Mission:** To identify a single, specific point of user friction and build a complete, detailed picture of the event where it occurs.
     *   **Strategic Toolkit:**
         *   **Mandated Opening:** The conversation plan **must** instruct the agent to open with this exact, verbatim question: **“Thanks for joining! We’ll keep this short and sharp! To start, what's the one thing we could do to improve {organisation_name} for you?”**
-        *   **Ensure Focus on a Single Problem:** The agent's immediate follow-up task is to ensure the conversation focuses on **one single problem**. If the user's answer to the opener lists multiple issues, the agent should immediately use a **Recognition List** to have them prioritize one before proceeding.
+        *   **Ensure Focus on a Single Problem:** The agent's immediate follow-up task is to ensure the conversation focuses on **one single problem**. If the user's answer to the opener lists multiple issues, the agent should immediately use a **Recognition List** to have them prioritize one before proceeding. Always give an "or something else" type of option rather than assuming.
         *   **Get the Story with "Story Scaffolding":** To understand the problem, the agent must ask for a specific, recent example. The plan must guide the agent to execute this by offering 2-3 brief, archetypal examples to make the request easier (e.g., 'a confusing moment,' 'a task that took longer than expected'). The question must conclude with a friendly, open-ended phrase like "—or was it something else?" to ensure the user feels in control.
 
     ---
