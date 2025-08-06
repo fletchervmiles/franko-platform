@@ -219,7 +219,8 @@ export async function finalizeConversation(chatResponseId: string): Promise<void
             transcript || undefined,
             chatResponse.intervieweeFirstName || undefined,
             totalInterviewMinutes || undefined,
-            chatResponse.agentType || undefined
+            chatResponse.agentType || undefined,
+            userProfile.organisationName || undefined
           );
           
           logger.info('Enhanced response notification email sent successfully');

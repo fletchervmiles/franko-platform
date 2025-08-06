@@ -32,7 +32,7 @@ export const ResponseNotification: React.FC<Readonly<ResponseNotificationProps>>
         marginBottom: '16px',
         color: '#111'
       }}>
-        New Response Received
+        New Feedback Received
       </h1>
       
       <p style={{ margin: '14px 0' }}>
@@ -40,7 +40,7 @@ export const ResponseNotification: React.FC<Readonly<ResponseNotificationProps>>
       </p>
       
       <p style={{ margin: '14px 0' }}>
-        Good news! You've received a new response {conversationTitle ? `for "${conversationTitle}"` : 'to your conversation'}.
+        Good news! You've received new feedback from a user.
       </p>
       
       <p style={{ margin: '14px 0' }}>
@@ -66,7 +66,7 @@ export const ResponseNotification: React.FC<Readonly<ResponseNotificationProps>>
             transition: 'all 0.2s ease',
           }}
         >
-          View Response
+          View Feedback
         </a>
       </div>
     </div>
@@ -79,7 +79,7 @@ export const ResponseNotification: React.FC<Readonly<ResponseNotificationProps>>
       paddingTop: '10px',
     }}>
       <p>
-        You're receiving this email because you've enabled response notifications.
+        You're receiving this email because you've enabled feedback notifications.
         You can update your preferences in the conversation settings.
       </p>
       <p>© {new Date().getFullYear()} Franko AI. All rights reserved.</p>

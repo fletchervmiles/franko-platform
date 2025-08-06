@@ -77,18 +77,22 @@ export async function sendResponseNotification(
   to: string,
   firstName: string,
   conversationTitle?: string,
-  modalId?: string
+  modalId?: string,
+  organizationName?: string
 ) {
   try {
     // build unsubscribe URL if chat id provided
     const unsubscribeUrl = modalId ? `https://franko.ai/api/unsubscribe?modalId=${modalId}` : 'https://franko.ai/unsubscribe';
 
+    // Create subject with organization name
+    const subject = organizationName 
+      ? `New ${organizationName} Feedback Received`
+      : 'New Feedback Received';
+
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
       to: [to],
-      subject: conversationTitle
-        ? `New Response for "${conversationTitle}"`
-        : 'New Response Received',
+      subject,
       react: ResponseNotification({
         firstName,
         conversationTitle,
@@ -123,7 +127,8 @@ export async function sendEnhancedResponseNotification(
   cleanTranscript?: string,
   intervieweeFirstName?: string,
   totalInterviewMinutes?: number,
-  agentType?: string
+  agentType?: string,
+  organizationName?: string
 ) {
   try {
     // build unsubscribe URL
@@ -159,12 +164,15 @@ export async function sendEnhancedResponseNotification(
       agentType,
     };
 
+    // Create subject with organization name
+    const subject = organizationName 
+      ? `New ${organizationName} Feedback Received`
+      : 'New Feedback Received';
+
     const { data, error } = await resend.emails.send({
       from: 'Franko <notifications@franko.ai>',
       to: [to],
-      subject: conversationTitle
-        ? `New Response for "${conversationTitle}"`
-        : 'New Response Received',
+      subject,
       react: ResponseSummary({
         data: feedbackData,
         details: conversationDetails,

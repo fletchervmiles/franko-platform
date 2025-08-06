@@ -184,7 +184,7 @@ const TranscriptBlock = React.memo(function TranscriptBlock({
 
   return (
     <div className={`p-3 rounded ${index % 2 === 0 ? "bg-gray-100" : "bg-white"}`}>
-      <strong className="text-[#E4F222]">{speaker}:</strong>
+      <strong className="text-[#314842]">{speaker}:</strong>
       <p>{highlightedContent}</p>
     </div>
   );
@@ -308,7 +308,7 @@ export const ResponseCard = React.memo(function ResponseCard({
 
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center text-gray-900">
-              <FileText className="w-4 h-4 mr-1 text-[#E4F222]" />
+              <FileText className="w-4 h-4 mr-1 text-[#314842]" />
               <span>Summary</span>
             </h4>
             <div className="text-sm bg-white border border-gray-200 p-4 rounded prose max-w-none">
@@ -320,7 +320,7 @@ export const ResponseCard = React.memo(function ResponseCard({
                     <Button
                       variant="link"
                       onClick={toggleFullSummary}
-                      className="mt-2 p-0 h-auto font-normal text-[#E4F222]"
+                      className="mt-2 p-0 h-auto font-normal text-[#314842]"
                     >
                       {isFullSummary ? "Read less" : "Read more"}
                     </Button>
@@ -335,7 +335,7 @@ export const ResponseCard = React.memo(function ResponseCard({
           <Dialog>
             <DialogTrigger>
               <Button variant="outline" className="w-full">
-                <FileText className="w-4 h-4 mr-2 text-[#E4F222]" />
+                <FileText className="w-4 h-4 mr-2 text-[#314842]" />
                 <span>View Transcript</span>
               </Button>
             </DialogTrigger>
