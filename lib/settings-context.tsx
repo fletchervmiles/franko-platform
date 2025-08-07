@@ -89,6 +89,8 @@ const defaultSettings: AppSettings = {
       AGENT02: true,
       AGENT03: true,
       AGENT04: true,
+      AGENT05: true,
+      AGENT06: true,
     },
   },
 }
