@@ -91,17 +91,43 @@ export async function GET(request: Request) {
       .leftJoin(modalsTable, eq(chatInstancesTable.modalId, modalsTable.id))
       .where(and(...whereConditions));
 
+    // Get aggregated statistics for all filtered results
+    const aggregatedStatsQuery = db
+      .select({
+        totalCustomerWords: chatResponsesTable.user_words,
+        completionStatus: chatResponsesTable.completionStatus,
+      })
+      .from(chatResponsesTable)
+      .leftJoin(chatInstancesTable, eq(chatResponsesTable.chatInstanceId, chatInstancesTable.id))
+      .leftJoin(modalsTable, eq(chatInstancesTable.modalId, modalsTable.id))
+      .where(and(...whereConditions));
+
     // Execute queries
-    const [responses, totalCountResult] = await Promise.all([
+    const [responses, totalCountResult, allFilteredResults] = await Promise.all([
       query
         .orderBy(desc(chatResponsesTable.interviewEndTime))
         .limit(limit)
         .offset(offset),
-      totalCountQuery
+      totalCountQuery,
+      aggregatedStatsQuery
     ]);
 
     const totalCount = totalCountResult[0]?.count || 0;
     const totalPages = Math.ceil(totalCount / limit);
+
+    // Calculate aggregated statistics across all filtered results
+    const totalCustomerWords = allFilteredResults.reduce((sum, result) => {
+      return sum + parseInt(result.totalCustomerWords || '0', 10);
+    }, 0);
+
+    const avgCompletionRate = allFilteredResults.length > 0 
+      ? allFilteredResults.reduce((sum, result) => {
+          const rate = result.completionStatus 
+            ? parseInt(result.completionStatus.replace('%', ''), 10) 
+            : 0;
+          return sum + rate;
+        }, 0) / allFilteredResults.length
+      : 0;
 
     // Transform responses to include agent names
     const transformedResponses = responses.map(response => {
@@ -140,6 +166,11 @@ export async function GET(request: Request) {
         totalCount,
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
+      },
+      aggregatedStats: {
+        totalResponses: totalCount,
+        totalCustomerWords,
+        avgCompletionRate,
       },
       filters: {
         agentType: agentTypeFilter,
