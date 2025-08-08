@@ -44,9 +44,16 @@ export interface TransformedResponse {
   email: string;
 }
 
+export interface AggregatedStats {
+  totalResponses: number;
+  totalCustomerWords: number;
+  avgCompletionRate: number;
+}
+
 export interface AggregatedResponsesApiResponse {
   responses: TransformedResponse[];
   pagination: PaginationMeta;
+  aggregatedStats: AggregatedStats;
   filters: ResponseFilters;
 }
 

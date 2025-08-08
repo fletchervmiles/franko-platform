@@ -220,20 +220,16 @@ export function ResponsesPageClient({
     }
   }, [currentFilters, toast])
 
-  // Calculate summary statistics
+  // Get summary statistics from API aggregated data
   const summaryStats = useMemo(() => {
-    if (!data) return { totalResponses: 0, totalWords: 0, completionRate: 0 }
-    
-    const totalResponses = data.responses.length
-    const totalWords = data.responses.reduce((sum, response) => sum + response.customerWords, 0)
-    const avgCompletionRate = totalResponses > 0 
-      ? data.responses.reduce((sum, response) => sum + response.completionRate, 0) / totalResponses 
-      : 0
+    if (!data || !data.aggregatedStats) {
+      return { totalResponses: 0, totalWords: 0, completionRate: 0 }
+    }
     
     return {
-      totalResponses,
-      totalWords,
-      completionRate: avgCompletionRate
+      totalResponses: data.aggregatedStats.totalResponses,
+      totalWords: data.aggregatedStats.totalCustomerWords,
+      completionRate: data.aggregatedStats.avgCompletionRate
     }
   }, [data])
 
