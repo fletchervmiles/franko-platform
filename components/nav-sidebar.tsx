@@ -95,7 +95,12 @@ const getNavMainData = (membership: string | null) => {
           url: "/support",
           icon: <HelpCircle className="mr-0.5 h-4 w-4" />,
         },
-        // Feedback item removed – bubble handles feedback now
+        {
+          title: "Feedback",
+          url: "/workspace",
+          icon: <MessageCircle className="mr-0.5 h-4 w-4" />,
+        },
+        // Feedback item appears in sidebar and triggers existing Franko modal
         {
           title: "Account",
           url: "/account",
@@ -170,10 +175,37 @@ const SidebarMenuItemMemo = React.memo(function SidebarMenuItemComponent({
                   };
                 }
               }
-              
-              // Open Franko modal
-              if (typeof window !== 'undefined' && window.FrankoModal) {
-                window.FrankoModal.open();
+
+              const tryOpen = () => {
+                if (typeof window !== 'undefined' && (window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+                  (window as any).FrankoModal.open();
+                  return true;
+                }
+                return false;
+              };
+
+              const openWhenReady = () => {
+                if (tryOpen()) return;
+                const start = Date.now();
+                const interval = setInterval(() => {
+                  if (tryOpen() || Date.now() - start > 4000) {
+                    clearInterval(interval);
+                  }
+                }, 200);
+              };
+
+              const isWorkspace = typeof window !== 'undefined' && window.location.pathname === '/workspace';
+              const hasQuery = typeof window !== 'undefined' && window.location.search.length > 0;
+
+              if (isWorkspace && !hasQuery) {
+                // Already on clean /workspace – open directly (or when ready)
+                openWhenReady();
+              } else if (typeof window !== 'undefined') {
+                // Persist intent across navigation and go to clean /workspace
+                try {
+                  window.sessionStorage.setItem('franko_open_on_workspace', '1');
+                } catch {}
+                window.location.href = '/workspace';
               }
             }}
           >

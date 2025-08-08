@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { NavSidebar } from "@/components/nav-sidebar";
 import { SettingsProvider } from "@/lib/settings-context";
 import dynamic from "next/dynamic";
@@ -15,6 +15,30 @@ const ModalManager = dynamic(
 );
 
 export default function WorkspacePage() {
+  // If user navigated here via sidebar Feedback button, open modal once bubble is ready
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const flag = window.sessionStorage.getItem('franko_open_on_workspace');
+    if (!flag) return;
+    window.sessionStorage.removeItem('franko_open_on_workspace');
+
+    const tryOpen = () => {
+      if ((window as any).FrankoModal && typeof (window as any).FrankoModal.open === 'function') {
+        (window as any).FrankoModal.open();
+        return true;
+      }
+      return false;
+    };
+
+    if (tryOpen()) return;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      if (tryOpen() || Date.now() - start > 4000) {
+        clearInterval(interval);
+      }
+    }, 200);
+  }, []);
+
   return (
     <>
       <NavSidebar>
